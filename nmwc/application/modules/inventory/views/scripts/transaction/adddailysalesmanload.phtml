@@ -1,0 +1,787 @@
+<?php
+/**
+* @name       adddailysalesmanload.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$batch_detail_url = $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"batchdetails"), "default", true);
+
+$date = $this->date != '' ? $this->date : date('d-m-Y');
+
+?>
+<script type="text/javascript">
+
+	var batch_st		= '<?php echo $this->batch_status;?>';
+	var decimalplaces	= '<?php echo $this->decimalplaces;?>';
+	var selected_method	= '<?php echo $this->load_method;?>';
+	var depotinv_status	= '<?php echo $this->depotinv_status;?>';
+	
+	function loaddatasalesmanload(xurl,container)
+	{
+		$.ajax({
+			url:xurl,
+			beforeSend: function() {
+				$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+			},
+			success:function(data){
+				$("#"+container).html(data);
+				$("#loader").html("");
+				if(container == 'tran_invoice') {
+					$("a[rel^='prettyPhoto']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allow_resize: false});				
+				}
+				
+				<?php if($this->load_status == 1) { ?>	
+					//$('#table-example tr th:last').remove();
+					//$('#table-example tr td:last').remove();
+					$("#table-example th:last-child, #table-example td:last-child").remove();
+					$("#table-example th:last-child, #table-example td:last-child").remove();					
+				<?php } ?>
+				
+			}
+		})
+	}
+	
+	
+    $(document).ready(function() {
+		
+		$( "#txtdate" ).datepicker({
+			dateFormat: 'dd-mm-yy'
+		});
+		
+		<?php if($this->params["edit"]=="yes") { ?>
+			$('#ddlitem_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+			$('#ddlitem_chzn').addClass('chzn-container-active');
+			
+			getitemcombodata('<?php echo $this->formdata['ddlroute'];?>','<?php echo $date;?>');
+			
+		<?php } else { ?>
+			$('#ddlroute_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+			$('#ddlroute_chzn').addClass('chzn-container-active');	
+		<?php } ?>
+		
+		<?php if($this->formdata['ddlroute'] > 0) {  ?>
+			var ddate = $("#txtdate").val();
+			ddate = ddate.replace('/','-');
+			ddate = ddate.replace('/','-');
+				
+			var rid		=	'<?php echo $this->formdata['ddlroute'];?>';
+			var sid 	= 	'<?php echo $this->formdata['hdnsalesman'];?>';
+			var loadno	= 	'<?php echo $this->formdata['txtload'];?>';
+			
+			$("#hdnroute").val(rid);
+			$("#hdnsalesman").val(sid);
+			
+			var rtstatus = $("#hdnroutestatus").val();
+			loaddatasalesmanload('<?php echo $this->itemgrid; ?>/rtstatus/'+rtstatus+'/batch_st/'+batch_st+'/rid/'+rid+'/ddate/'+ddate+'/loadno/'+loadno,'item-grid');
+			
+			
+	
+		<?php } ?>
+	
+		$("#ddlroute").change(function() {
+			
+			var route_id 	= this.value;			
+			var ddate 		= $("#txtdate").val();
+			ddate 			= ddate.replace('/','-');
+			ddate 			= ddate.replace('/','-');
+			var invtype 	= $('#hdndepotinvstatus').val();
+		
+			if(route_id == '') {
+				return false;
+			}
+			
+			if(selected_method == 0)
+			{
+				$("#hdnroutestatus").attr("value",'0');
+				var rtstatus = $("#hdnroutestatus").val();
+				var url = base_url+"/inventory/transaction/getrouteinfo/id/"+route_id+"/ddate/"+ddate;
+				var result;
+				$.ajax({
+					url:url,
+					data:$("#frmdet").serialize(),
+					type:'post',
+					beforeSend: function() {
+						$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+					},
+					success:function(data){
+						var salesman_info = JSON.parse(data);
+						$("#txtcases").val('');
+						$("#txtupc").val('');
+						$("#txtpieces").val('');
+						$("#txtcaseprice").val('');
+						$("#txtsalesprice").val('');
+						$('#txterprefno').val('');
+						$("#txtbatchno").val('');
+						$("#txtexpdate").val('');
+						$("#loader").html('');
+						$("#txtload").val('');
+						$('#ddlitem').html('');
+						$("#txtsalesman").val(salesman_info[0][0]['salesmanname1']);
+						$("#txtload").val(salesman_info[0][0]['loadperiodnumber']);
+						$("#hdnroute").val(route_id);
+						$("#hdnsalesman").attr('value',salesman_info[0][0]['salesmancode']);
+						
+						$('#ddlitem').html('<option value="">--- Select --- <option/>');
+						// For Selected customer
+						if(typeof(salesman_info[1]) == 'object')
+						{
+							for (i=0;i<salesman_info[1].length;i++) {
+							   $('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlitem');
+							}
+						}
+						$('select').trigger('liszt:updated');
+						loaddatasalesmanload('<?php echo $this->itemgrid; ?>/rtstatus/'+rtstatus+'/batch_st/'+batch_st+'/rid/'+route_id+'/ddate/'+ddate+'/loadno/'+salesman_info[0][0]['loadperiodnumber'],'item-grid');
+					}
+				})
+			}			
+			else if(selected_method != 1)
+			{
+				var msg 			= '';
+				var load			= '';
+				var record_counter 	= 0;
+				
+				if(selected_method == 2) {
+					msg = 'Do You Want To Convert Load Request To Load ?';
+				}
+				else if(selected_method == 3) {
+					msg = "Do You Want To Convert Today's Order To Load ?";
+				}
+				else if(selected_method == 4) {
+					msg = 'Do You Want To Populate Previous Days Load ?';
+				}
+				else if(selected_method == 5) {
+					msg = 'Do You Want To Populate Suggest Load ?';
+				}
+				jConfirm( msg , 'Message', function(resp)
+				{
+					var flag = false;
+					var salesman_info ;
+					if(resp == true){
+						flag = true;
+						$("#hdnroutestatus").attr("value",'1');
+					}
+					else {
+						flag = true;
+						$("#hdnroutestatus").attr("value",'0');
+					}
+					var rtstatus = $("#hdnroutestatus").val();
+					
+					if(flag == true)
+					{
+						var  url = base_url+"/inventory/transaction/getrouteinfo/id/"+route_id+"/ddate/"+ddate+"/mthd/"+selected_method;
+						var result;
+						$.ajax({
+							url:url,
+							data:$("#frmdet").serialize(),
+							type:'post',
+							beforeSend: function() {
+								$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+							},
+							success:function(data){
+								salesman_info = JSON.parse(data);
+								$("#txtcases").val('');
+								$("#txtupc").val('');
+								$("#txtpieces").val('');
+								$("#txtcaseprice").val('');
+								$("#txtsalesprice").val('');
+								$('#txterprefno').val('');
+								$("#txtbatchno").val('');
+								$("#txtexpdate").val('');
+								$("#loader").html("");
+								$("#txtload").val('');
+								$('#ddlitem').html('');
+								$("#txtsalesman").val(salesman_info[0][0]['salesmanname1']);
+								$("#txtload").val(salesman_info[0][0]['loadperiodnumber']);
+								load = salesman_info[0][0]['loadperiodnumber'];
+								$("#hdnroute").val(route_id);
+								$("#hdnsalesman").attr("value",salesman_info[0][0]['salesmancode']);
+								$("#hdndepotcode").val(salesman_info[2][0]['depot_code']);
+								record_counter = salesman_info[3][0]['counter'];
+								
+								$('#ddlitem').html('<option value="">--- Select --- <option/>');
+								// For Selected customer
+								if(typeof(salesman_info[1]) == 'object') {
+									for (i=0;i<salesman_info[1].length;i++) {
+									   $('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlitem');
+									}
+								}
+								$('select').trigger('liszt:updated');
+								//loaddatasalesmanload('<?php echo $this->itemgrid; ?>/rtstatus/'+rtstatus+'/batch_st/'+batch_st+'/rid/'+route_id+'/ddate/'+ddate+'/loadno/'+salesman_info[0][0]['loadperiodnumber'],'item-grid');
+								if(resp == true) {
+									if(record_counter > 0) {
+										$.fn.prettyPhoto();
+										var popupurl = base_url+'/inventory/transaction/viewinventorystock/mthd/'+selected_method+'/invtype/'+invtype+'/routecode/'+route_id+'/expdate/'+ddate+'/loadno/'+salesman_info[0][0]['loadperiodnumber']+'/?q=prettyPhoto&iframe=true&width=1000&height=500';
+										$.prettyPhoto.open(popupurl);
+									} else if(selected_method == 2 && record_counter == 0 ) {
+										//jAlert('No Load Available On Previous Day.');
+										jAlert('No Load Requested Avaialble For Today.');
+										return false;								
+									} else if(selected_method == 3 && record_counter == 0 ) {
+										//jAlert('Load Requested Data Not Found.');
+										jAlert('No Sales Orders Avaialble For Today.');
+										return false;
+									} else if(selected_method == 4 && record_counter == 0 ) {
+										//jAlert("Today's Ordered Data Not Found.");
+										jAlert('No Load Available On Previous Day');
+										return false;
+									} else if(selected_method == 5 && record_counter == 0 ) {
+										//jAlert('Suggested Load Data Not Found.');
+										jAlert('No Suggested Load Data Found.');
+										return false;
+									}
+								}
+							}
+						})						
+					}
+				})
+			}
+		});
+	
+		$('#sbtnadd').click(function() {
+	   
+			if($("#frmdet").valid())
+			{
+				if($.trim($("#txtcases").val()) == '' &&  $.trim($("#txtpieces").val()) == '')
+				{
+					jAlert('Please Enter Case/Pcs.');
+					return false;
+				}
+				
+				if(depotinv_status > 0) {
+				
+					if($("#hdndepotinvstatus").val() > 1 && $("#hdngetcases").val() == '')
+					{
+						jAlert('Please Select Batch.');
+						return false;
+					}
+					if((parseFloat($("#txtcases").val()) > parseFloat($("#hdngetcases").val())) && $("#hdndepotinvstatus").val() > 1) {
+						jAlert('Quantity Must Be Less Then Available Quantity.');
+						return false;
+					}
+					if((parseFloat($("#txtpieces").val()) > parseFloat($("#hdngetpieces").val())) && $("#hdndepotinvstatus").val() > 1) {
+						jAlert('Quantity Must Be Less Then Available Quantity.');
+						return false;
+					}
+				}
+				
+				var ddate = $("#txtdate").val();
+				var rtstatus = $("#hdnroutestatus").val();
+				
+				ddate = ddate.replace('/','-');
+				ddate = ddate.replace('/','-');
+				
+				var loadno	= $("#txtload").val();
+				var url 	= base_url+'/inventory/transaction/addrouteloaddetail/';
+				var rid 	= $("#hdnroute").val();
+				
+				
+				
+				$("#ddlroute").attr('disabled',true);
+				$.ajax({
+					url:url,
+					data:$("#frmdet").serialize(),
+					type:'post',
+					beforeSend: function() {
+						$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+					},
+					success:function(data){
+						loaddatasalesmanload('<?php echo $this->itemgrid; ?>/add/yes/rtstatus/'+rtstatus+'/batch_st/'+batch_st+'/rid/'+rid+'/ddate/'+ddate+'/loadno/'+loadno,'item-grid');
+						$("#loader").html("");
+						$("#txtcases").val('');
+						$("#txtupc").val('');
+						$("#txtpieces").val('');
+						$("#txtsalesprice").val('');
+						$("#txtbatchno").val('');
+						$("#txtexpdate").val('');
+						
+						$("#txtcaseprice").val('');
+						$("#txtsalesprice").val('');
+						$("#loader").html("");
+						$("#ddlitem").val('');
+						$('select').trigger('liszt:updated');
+						
+						var abc = $('#batchlink').parent();
+						$('#batchlink').remove();
+						$(abc).html('<a id="batchlink" href="Javascript:void(0)"><?php echo $this->translate->_('Batch');?></a>');
+					}
+				})
+			}
+		});
+	
+		$('#ddlitem').change(function() {
+			
+			var itemid 	= $("#ddlitem").val();
+			var routeid = $("#ddlroute").val();
+			
+			getiteminfo(routeid,itemid)
+		});
+		
+    })
+	
+	function getiteminfo(route_code,item_id)
+	{
+		$("#txtupc").val('');		
+		$("#txtcaseprice").val('');
+		$("#txtsalesprice").val('');		
+		
+		if(item_id > 0 )
+		{
+			if(selected_method == 2 || selected_method == 3) {
+				
+				var ddate = $("#txtdate").val();
+				var loadno	= $("#txtload").val();
+				
+				ddate = ddate.replace('/','-');
+				ddate = ddate.replace('/','-');
+				
+				var url = base_url+'/home/index/getitemquantityinfo/itemid/'+item_id+'/routecode/'+route_code+'/ddate/'+ddate+'/loadno/'+loadno;	
+			} else {
+				var url = base_url+'/home/index/getitemquantityinfo/itemid/'+item_id+'/routecode/'+route_code;
+			}
+			
+			
+			var allow_entry = 0;
+			$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");
+				},
+				success:function(data)
+				{	
+					var item_info = JSON.parse(data);
+					if (item_info == '') {
+						return false;
+					}					
+					if(typeof(item_info[0]) == 'object')
+					{
+						var temp1 	= Number(item_info[0][0]['caseprice']);
+						var temp1 	= temp1.toFixed(decimalplaces);
+						var temp2 	= Number(item_info[0][0]['defaultsalesprice']);
+						var temp2 	= temp2.toFixed(decimalplaces);
+						var temp4 	= Number(item_info[0][0]['defaultgoodreturnprice']);
+						var temp4 	= temp4.toFixed(decimalplaces);
+						var temp5 	= Number(item_info[0][0]['defaultgoodreturncaseprice']);
+						var temp5 	= temp5.toFixed(decimalplaces);
+						
+						var invtype = $('#hdndepotinvstatus').val();
+						if(invtype > 0 && (typeof(item_info[1]) == 'object' || typeof(item_info[2]) == 'object')) {
+							$('#batchlink').attr('href',base_url+'/inventory/transaction/viewbatchinfo/invtype/'+invtype+'/itemid/'+item_id+'/depotcode/'+item_info[2][0]['depot_code']+'?q=prettyPhoto&iframe=true&width=1000&height=400');
+							$("a[id^='batchlink']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});
+							var available_qty = item_info[1][0]['cases']+'/'+item_info[1][0]['pieces'];
+						}						
+						
+						$("#txtupc").val(item_info[0][0]['unitspercase']);
+						$("#txtcaseprice").val(temp1);
+						$("#txtsalesprice").val(temp2);
+						$("#hdnretprice").val(temp4);
+						$("#hdnretcaseprice").val(temp5);
+						
+						//$("#hdngetcases").val(item_info[1][0]['cases']);
+						//$("#hdngetpieces").val(item_info[1][0]['pieces']);
+						$("#hdngetcases").val('');
+						$("#hdngetpieces").val('');
+						
+						if(selected_method == 2 || selected_method == 3) {
+							$('#txtcases').val(item_info[3][0]['cases']);
+							$('#txtpieces').val(item_info[3][0]['pieces']);
+						}
+						allow_entry = item_info[0][0]['allowbatchentry']
+						
+						if(batch_st == 1 && allow_entry == 1) {
+							$('#txtexpdate').val('');
+							$('#txtexpdate').addClass('required');
+							$('#txtbatchno').addClass('required');
+							
+							$( "#txtexpdate" ).datepicker({
+								dateFormat: 'dd-mm-yy'
+							});
+							
+							$('#txtbatchno').attr('readonly',false);
+							$('#txtbatchno').val('');
+							$("#txtexpdate").datepicker("enable");
+						}
+						else if(batch_st == 1) {
+							$('#txtexpdate').removeClass('required');
+							$('#txtbatchno').removeClass('required');
+							
+							$('#txtbatchno').attr('readonly',true);
+							$('#txtbatchno').val('NONE');
+							$('#txtexpdate').val('31-12-2099');
+							$("#txtexpdate").datepicker("disable");
+						}
+						$("#loader").html("");
+					}
+				}
+			})			
+		} else {
+			var abc = $('#batchlink').parent();
+			$('#batchlink').remove();
+			$(abc).html('<a id="batchlink" href="Javascript:void(0)"><?php echo $this->translate->_('Batch');?></a>');
+		}
+	}
+	
+	function addbatchinfo(depotinvkey,allowcases,allowpieces,batchno,expirydate)
+	{
+		$("#hdngetcases").val('');
+		$("#hdngetpieces").val('');
+		$("#txtbatchno").val('');
+		$("#txtexpdate").val('');
+		$('#txtcases').val('');
+		$('#txtpieces').val('');
+		
+		var rid 	= $("#hdnroute").val();
+		var loadno	= $("#txtload").val();
+		var ddate 	= $("#txtdate").val();
+			ddate 	= ddate.replace('/','-');
+			ddate 	= ddate.replace('/','-');
+		
+		if(depotinvkey !='')
+		{
+			var url = base_url+'/inventory/transaction/addinventorystock/routecode/'+rid+'/depotinvkey/'+depotinvkey+'/allowcases/'+allowcases+
+			'/allowpieces/'+allowpieces+'/batchno/'+batchno+'/expirydate/'+expirydate+'/mthd/'+selected_method+'/loadno/'+$("#txtload").val();			
+			$.ajax({
+				url:url,				
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+				},
+				success:function(data)
+				{
+					$('#loader').html('');
+					if (data == 0) {
+						return false;
+					}
+					loaddatasalesmanload('<?php echo $this->itemgrid; ?>/batch_st/'+batch_st+'/rid/'+rid+'/ddate/'+ddate+'/loadno/'+loadno,'item-grid');
+					$("#ddlroute").attr('disabled',true);
+					$('select').trigger('liszt:updated');
+				}
+			})			
+		}
+	}
+	
+	function batchinfo(depotinvkey)
+	{
+		$("#hdngetcases").val('');
+		$("#hdngetpieces").val('');
+		$("#txtbatchno").val('');
+		$("#txtexpdate").val('');
+		$('#txtcases').val('');
+		$('#txtpieces').val('');
+		
+		if(depotinvkey > 0 ) {
+			var url 		= base_url+'/home/index/getitembatchinfo/depotinvkey/'+depotinvkey;
+			var allow_entry = 0;
+			$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+				},
+				success:function(data)
+				{
+					var item_info = JSON.parse(data);
+					if (item_info == '') {
+						return false;
+					}
+					if(typeof(item_info[0]) == 'object') {
+						$("#hdngetcases").val(item_info[0][0]['cases']);
+						$("#hdngetpieces").val(item_info[0][0]['pieces']);
+						$('#txtcases').val(item_info[0][0]['cases']);
+						$('#txtpieces').val(item_info[0][0]['pieces']);
+						$('#txtbatchno').val(item_info[0][0]['batchno']);
+						$('#txtexpdate').val(item_info[0][0]['expirydate']);
+						if(depotinv_status > 0) {
+							$('#txtbatchno').attr('readonly',true);
+							$('#txtexpdate').attr('readonly',true);
+							$("#txtexpdate").datepicker("disable");
+							$('#txtexpdate').attr('disabled',false);
+						} else {
+							$('#txtbatchno').attr('readonly',false);
+							$('#txtexpdate').attr('disabled',false);
+							$("#txtexpdate").datepicker("enable");
+							$('#txtexpdate').attr('disabled',false);
+						}
+					}
+					$("#loader").html("");
+				}
+			})
+		}
+	}
+	
+	function getitemcombodata(route_id,ddate)
+	{
+		var batch_st	=	'<?php echo $this->batch_status;?>';
+		ddate = ddate.replace('/','-');
+		ddate = ddate.replace('/','-');
+			
+		var  url = base_url+"/inventory/transaction/getrouteinfo/id/"+route_id+"/ddate/"+ddate;
+		var result;
+		$.ajax({
+			url:url,
+			data:$("#frmdet").serialize(),
+			type:'post',
+			beforeSend: function() {
+				$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+			},
+			success:function(data){
+				var salesman_info = JSON.parse(data);
+				if(typeof(salesman_info[1]) == 'object')
+				{
+					for (i=0;i<salesman_info[1].length;i++) {
+					   $('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlitem');
+					}
+				}
+				$('select').trigger('liszt:updated');
+			}
+		})		
+	}
+	
+	</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="inventory_transaction_adddailysalesmanload">
+
+
+<form id="frmdet" name="frmdet" class="validate" novalidate action="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"adddailysalesmanload"), "default", true);?>" method="post">
+
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png">
+        <h3><?php echo $this->translate->_('Daily Salesman Load')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"dailysalesmanload"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn"><!--<input class="border_none" type="submit" value="" name="btnsave" id="btnsave">--> &nbsp;</div>
+    </div>
+</div>
+<div class="_100" style="text-align:center">
+
+	<div class="_20 label_text_align margin_top_7">&nbsp;</div>
+	<div class="_20 label_text_align margin_top_7"><label class="advance_search_css"><?php echo $this->translate->_('Select Date').''.$this->colan;?></label></div>
+	<div class="_20 label_text_align"><input type="text" id="txtdate" name="txtdate" value="<?php echo $date;?>" class="margin_zero"></div>
+	<div class="_10 margin_top_3"><input type="button" name="btnload" id="btnload" value="<?php echo $this->translate->_('OK'); ?>" class="margin_zero"></div>
+	<div class="_30">
+            &nbsp;
+        </div>
+</div>
+
+<div class="clear space_20"></div>
+<div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+               <li>
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"dailysalesmanload"),"default", true);?>"><?php echo $this->translate->_('Overview'); ?></a>
+			</li>
+			<?php if ($this->disableadd == false) { ?>
+				<li class="last-child">
+					<a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"adddailysalesmanload"),"default", true);?>"><b><?php echo $this->translate->_('Details'); ?></b></a>
+				</li>
+			<?php } ?>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+
+<div class="content with-actions min_height_10">
+
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100 edit_12_10">
+		<label class="_20 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Transaction Type')." ".$this->required;?>
+		</label>
+		<div class="_25 margin_right_1 margin_top_12 date_color">
+			<?php echo $this->flagname; ?>
+		</div>
+		<div class="_25 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Load Time').''.$this->colan;?>
+		</div>
+		<div class="_25 margin_right_1 margin_top_12 date_color ">
+			<?php echo $this->loadtime; ?>
+		</div>
+	</div>		
+	<div class="_100 edit_12_10">
+		<label class="_20 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Route')." ".$this->required;?>
+		</label>
+		<div class="_25 margin_right_1">
+		    <select id="ddlroute" name="ddlroute" class="required" <?php echo $this->formdata['ddlroute'] > 0 ? 'disabled' : '';?> >
+			<option value="">--- Select ---</option>
+			<?php
+			    for($i=0;$i<count($this->route);$i++)
+			    {
+			?>
+				<option value="<?php echo $this->route[$i]['id'];?>" <?php echo ($this->route[$i]['id'] == $this->formdata['ddlroute']) ? 'selected' : '' ?> ><?php echo $this->route[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		</div>
+		<div class="_25 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+		</div>
+		<div class="_25 ">
+			<input type="text" class="margin_top_7" value="<?php echo $this->formdata['txtsalesman']?>" readonly="readonly"  name="txtsalesman" id="txtsalesman" />
+		</div>
+	</div>
+	<div class="_100 edit_12_10">
+		<label class="_20 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Load No').''.$this->colan;?>
+		</label>
+		<div class="_25 margin_right_1">
+			<input type="text" class="margin_top_5" value="<?php echo $this->formdata['txtload']?>" readonly="readonly" name="txtload" id="txtload"/>
+		</div>
+		<label class="_25 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('ERP Reference No.').''.$this->colan;?>
+		</label>
+		<div class="_25">
+			<input type="text" class="margin_top_5" value="<?php echo $this->formdata['txterprefno']?>" name="txterprefno" id="txterprefno" />
+		</div>
+    </div>
+<?php if($this->params['view'] != 'yes' && $this->flagname != 'Load From ERP' && $this->load_status == 0) { ?>
+<div id="div_disable" class="content with-actions min_height_10">
+    <div class="_100 margin_top_25">
+	 <fieldset>
+	    <legend><?php echo $this->translate->_('Add Item');?>:</legend>
+	    <div class="_100">
+			<label class="_13 margin_top_12 label_text_align">
+				 <?php echo $this->translate->_('Item')." ".$this->required;?>
+			</label>
+			<div class="_30  margin_right_1">
+				<select id="ddlitem" name="ddlitem"  class="required">
+				<option value="">--- Select ---</option>
+				</select>
+			</div>
+			<div class="_15 margin_top_12 label_text_align">
+				<?php if($this->depotinv_status > 0) { ?>
+					<a id="batchlink" href="Javascript:void(0)">Batch</a>
+				<?php } else { echo '&nbsp;'; }?>
+			</div>
+			<label class="_15 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('UPC').''.$this->colan;?>
+			</label>
+			<div class="_13 margin_left_right_1  margin_right_2_2">
+				<input type="text" value="" readonly name="txtupc" id="txtupc" class="number ">
+			</div>			
+		</div>
+		<div class="_100">			
+			<label class="_13 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Case Price')." ".$this->colan;?>
+			</label>
+			<div class="_13 margin_right_1">
+				<input type="text" value="" name="txtcaseprice" readonly="readonly" id="txtcaseprice" class="">
+			</div>
+			<label class="_13 margin_top_12 label_text_align">
+				 <?php echo $this->translate->_('Sales Price').''.$this->colan;?>
+			</label>
+			<div class="_13 margin_right_1">
+				<input type="text" value="" name="txtsalesprice" readonly="readonly" id="txtsalesprice" class="">
+			</div>
+			<?php if($this->batch_status == 1) { ?>
+			<label class="_13 margin_top_12 label_text_align">
+				<?php if($this->batch_status == 1) { 
+						echo $this->translate->_('Batch')." ".$this->required;
+					} else {
+						echo $this->translate->_('Batch')." ".$this->colan;
+					}
+				?>
+			</label>
+			<div class="_13 margin_right_1">
+				<input type="text" value="" name="txtbatchno" id="txtbatchno" maxlength="20">
+			</div>
+			<?php } ?>
+		</div>
+		<div class="_100">
+			<label class="_13 margin_top_12 label_text_align">
+			    <?php echo $this->translate->_('Case')." ".$this->colan;?>
+			</label>
+			<div class="_13 margin_right_1">
+			    <input maxlength="4" type="text" value="" name="txtcases" id="txtcases" class="number" >
+			</div>			
+			<label class="_13 margin_top_12 label_text_align">
+			    <?php echo $this->translate->_('Pcs')." ".$this->colan;?>
+			</label>
+			<div class="_13 margin_right_1">
+			    <input maxlength="4" type="text" value="" name="txtpieces" id="txtpieces" class="number">
+			</div>
+			<?php if($this->batch_status == 1) { ?>
+			<label class="_13 margin_top_12 label_text_align">
+				<?php if($this->batch_status == 1) { 
+					echo $this->translate->_('Expiry Date').''.$this->required;
+				} else {
+					echo $this->translate->_('Expiry Date').''.$this->colan;
+				} ?>
+			</label>
+			<div class="_13 margin_right_1">
+			    <input type="text" value="" name="txtexpdate" id="txtexpdate">
+			</div>
+			<?php } ?>
+			<?php if ($this->disableadd == false) { ?>
+			<div class="_5"><input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd" name="sbtnadd"></div>
+			<?php } ?>
+	    </div>
+	</fieldset>
+        <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+		<input type="hidden" id="hdnsalesman" name="hdnsalesman" value="">
+		<input type="hidden" id="hdnroutestatus" name="hdnroutestatus" value="">
+		<input type="hidden" id="hdnroute" name="hdnroute" value="">
+		<input type="hidden" id="hdnretprice" name="hdnretprice" value="">
+		<input type="hidden" id="hdnretcaseprice" name="hdnretcaseprice" value="">
+		<input type="hidden" id="hdngetcases" name="hdngetcases" value="">
+		<input type="hidden" id="hdngetpieces" name="hdngetpieces" value="">
+		<input type="hidden" id="hdndepotcode" name="hdndepotcode" value="">
+		<input type="hidden" id="hdnbatchno" name="hdnbatchno" value="">
+		<input type="hidden" id="hdnexpdate" name="hdnexpdate" value="">
+		<input type="hidden" id="hdnbatchstatus" name="hdnbatchstatus" value="<?php echo $this->batch_status;?>" >
+		<input type="hidden" id="hdndepotinvstatus" name="hdndepotinvstatus" value="<?php echo $this->depotinv_status;?>" >		
+    </div>
+</div>
+
+<?php } ?>
+<div class="content with-actions margin_bottom_10" style="min-height:10px;margin-top:15px;">
+    <div id="loader"></div>
+<div id="item-grid"> <!--grid load here --> </div>
+    <div class="_25_1 margin_right_1 margin_bottom_10">
+		<!--<input type="button" value="<?php //echo $this->translate->_('Batch Details');?>" id="sbtnadd" name="sbtnadd" onclick="popup('<?php //echo $batch_detail_url; ?>',800,600);" class="batchdetail"/>-->
+	</div>
+</div>
+</div> <!-- End of .box -->
+</form>
+</div>
+</div>
+
+<script type="text/javascript">
+$(window).load(function() {
+
+	
+});
+</script>

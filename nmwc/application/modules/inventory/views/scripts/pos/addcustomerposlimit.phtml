@@ -1,0 +1,242 @@
+<?php
+/**
+* @name       adddailysalesmanload.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+	$(document).ready(function(){
+		
+		$("#txtposlimit").focus();
+		
+		var cust_code = '<?php echo $this->formdata['customercode'];?>';
+		
+		$("#ddlitem").change(function() {
+			
+			var item_id = this.value;
+			var  url = base_url+"/inventory/pos/checkiteminventorytype/item_id/"+item_id;
+			var result;
+			$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+				},
+				success:function(data){
+					$("#divadditem").html(data);
+					$("#loader").html("");	
+				}
+			})				
+		});
+		
+		$('#sbtnadd').click(function() {
+	   
+			if($("#frmdet").valid())
+			{
+				if($("#hdnoption").val() == 1){
+					
+					if($.trim($("#ddlitem").val()) == '')
+					{
+						jAlert('Please Select Item.');
+						return false;
+					}
+					if($.trim($("#txtquantity").val()) == '')
+					{
+						jAlert('Please Enter Quantity.');
+						return false;
+					}
+				}
+				else {
+					
+					if($.trim($("#ddlitem").val()) == '')
+					{
+						jAlert('Please Select Item.');
+						return false;
+					}
+					if($.trim($("#txtserialnumber").val()) == '')
+					{
+						jAlert('Please Enter Serial Number.');
+						return false;
+					}					
+				}
+				
+				
+				var url 	= base_url+'/inventory/pos/addcustomerposlimitgrid/';				
+				
+				$.ajax({
+					url:url,
+					data:$("#frmdet").serialize(),
+					type:'post',
+					beforeSend: function() {
+						$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+					},
+					success:function(data){						
+						$("#loader").html('');
+						if(data !='Duplicate')
+						{
+							$("#txtposbalance").attr("readOnly",false)
+							$("#txtposbalance").val(data);
+							$("#txtposbalance").attr("readOnly",true)
+							
+							$("#txtquantity").val('');
+							$("#txtserialnumber").val('');
+							$("#ddlitem").val("");
+							$('select').trigger('liszt:updated');
+							$("#ddlitem_chzn .chzn-drop .chzn-results #ddlitem_chzn_o_0 ").addClass('result-selected');
+						}						
+						loaddata('<?php echo $this->itemgrid; ?>/customercode/'+cust_code,'item-grid');
+					}
+				})
+			}
+		});
+		
+		loaddata('<?php echo $this->itemgrid; ?>/customercode/'+cust_code,'item-grid');
+	})
+</script>
+
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+    <form id="frmdet" name="frmdet" class="validate" action="" method="post">
+<div class="box" id="inventory_target_addcustomerposlimit">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png">
+        <h3><?php echo $this->translate->_('Customer POS Limit')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"inventory","controller"=>"pos","action"=>"customerposlimit"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+
+<div class="clear"></div>
+<div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+               <li>
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"pos","action"=>"customerposlimit"),"default", true);?>"><?php echo $this->translate->_('Overview'); ?></a>
+			</li>
+			<li class="last-child">
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"pos","action"=>"addcustomerposlimit"),"default", true);?>"><b><?php echo $this->translate->_('Details'); ?></b></a>
+			</li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<?php if($this->params["edit"]=="yes") { ?>
+	<div class="content with-actions min_height_10">
+<?php } else { ?>
+	<div class="content with-actions" style="min-height:250px;">
+<?php } ?>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	    <div class="_100">
+
+		<label class="_35_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Customer')." ".$this->required;?>
+		</label>
+		<div class="_25">
+            <select id="ddlcustomer" name="ddlcustomer" class="required" <?php if($this->formdata['customercode'] > 0) { echo 'disabled'; } ?>>
+			<option value="">--- Select ---</option>
+			<?php
+			    for($i=0;$i<count($this->customer_info);$i++)
+			    {
+			?>
+				<option value="<?php echo $this->customer_info[$i]['id'];?>" <?php if($this->customer_info[$i]['id'] ==  $this->formdata['customercode'] ) { echo 'selected'; } ?> ><?php echo $this->customer_info[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		</div>
+			<div class="_35">
+				&nbsp;
+			</div>
+        </div>
+		<div class="_100">
+			<label class="_35_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('POS Limit')." ".$this->required;?>
+			</label>
+			<div class="_25">
+				<input maxlength="11" type="text" name="txtposlimit" id="txtposlimit" class="required number" value="<?php echo $this->formdata['poslimit']; ?>" />
+			</div>
+			<div class="_35">&nbsp;</div>
+		</div>
+		<div class="_100">
+			<label class="_35_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('POS Balance')." ".$this->colan;?>
+			</label>
+			<div class="_25">
+				<input maxlength="11" type="text" name="txtposbalance" readonly="readonly" id="txtposbalance" value="<?php echo $this->formdata['posbalance']; ?>"/>
+			</div>
+			<div class="_35">&nbsp;</div>
+		</div>
+    </div>
+<input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>" />
+<?php if($this->params["edit"]=="yes") { ?>
+<div class="content with-actions">
+    <div class="_100">
+
+	 <fieldset>
+	    <legend><?php echo $this->translate->_('Add POS');?>:</legend>
+	    <div class="_100">
+		<label class="_15 margin_top_15 label_text_align">
+		     <?php echo $this->translate->_('POS')." ".$this->required;?>
+		</label>
+		<div class="_25 margin_top_3 margin_right_1">
+		     <select id="ddlitem" name="ddlitem" class="">
+			<option value="">--- Select ---</option>
+			<?php
+			    for($i=0;$i<count($this->item_info);$i++)
+			    {
+			?>
+				<option value="<?php echo $this->item_info[$i]['id'];?>" <?php echo ($this->item_info[$i]['id'] ==  1 )? 'selected': ''; ?> ><?php echo $this->item_info[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		</div>
+		<div id="divadditem"><div class="_20">&nbsp;</div><div class="_25">&nbsp;</div></div>		
+		
+		<div class="_5">&nbsp;</div>
+		<div class="_10"><input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd" name="sbtnadd"></div>
+	    </div>
+	</fieldset>
+        <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+		<input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>" />
+    </div>
+      <div class="_100">
+	<div id="loader"></div>
+        <div id="item-grid"> <!--grid load here --> </div>
+    </div>
+	<input type="hidden" id="hdncustomercode" name="hdncustomercode" value="<?php echo $this->formdata['customercode'];?>">	
+	
+</div>
+<?php } ?>
+</div> <!-- End of .box -->
+    </form>
+</div>

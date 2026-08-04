@@ -1,0 +1,111 @@
+.dataTables_length{
+    width:15%;
+}
+.dataTables_filter{
+    width:20%;
+}
+.fieldset_effect{
+    border: 0px solid #d2d2d2;
+    margin:0px;
+}
+.ie_grid{
+    margin-top:-40px;
+    z-index:0;
+}
+#ie_hr{
+    display:block;
+    height:1px;
+    margin-top:-8px;
+}
+.ie_nav_sub{
+    height:35px !important;
+}
+#ie_spacer{
+    display:block;
+    min-height:37px;
+}
+#searchReportGridForm #search{
+        padding-top:-3px;
+}
+.label_colan{
+    float:none !important;
+}
+.box .header{
+    margin-bottom:20px !important;
+}
+.box .shead{
+    width:97.8%;
+}
+input[type=submit],input[type=button]{line-height:18px; }
+
+
+/* ADDED FOR [OVERVIEW|DETAIL] - BY Bhagavati */
+li.current ul{ top:-10px !important;}
+
+select{ margin-top:10px !important; min-height:20px !important;}
+
+/* FOR THE MENU ISSUE */
+.grid_12{
+    position:static !important;
+}
+
+.grid_12 ._25_1{
+     width: 23%;
+}
+#content-wrapper {   position:static !important;  }
+ul#nav_main{ position:static !important}
+ul#nav_main ul{ line-height:normal !important; top: auto !important; }
+ul#nav_main li ul { left:auto !important;  position:static !important}
+ul#nav_main li ul li a{ padding-top:7px !important;}
+ul#nav_main li.current{  padding-top:0px !important;   }
+.box{ position: relativea !important}
+
+.toolcaption { padding-top:3px !important;}
+.toolcaption1 { padding-top:0px !important;}
+.toolcaption1 { float: none !important;}
+.toolcaption img, .dropdown li img{ float:left;}
+
+.dropdown{ width:75px; }
+.ie_margin_0{ margin-top:0px !important; }
+
+#hhctransaction_index_addinvoice _15_3{
+    width:14% !important;
+}
+
+/*#account_customer_addcustomer ._25_1,#account_customer_addcustomerset2 ._25_1 ,#organization_route_addroute ._25_1{
+    width: 23%;
+}*/
+.dropdown img ,.toolcaption img{
+    margin-top:3px !important;
+}
+.toolicon img{
+    margin-top:0 !important;
+}
+input{
+    /*height:15px !important;*/
+}
+select {
+    line-height:27px;
+    display:block;
+}
+.ie7marginright{
+    margin-right:15px;
+}
+#header {
+    overflow:hidden;
+}
+#dropdown_logout{
+    width:86px !important;
+}
+#switch_language{
+    width:75px;
+}
+#ie7_searchcombo{
+    margin-top:-15px !important;
+}
+#table-example checkbox{
+    float:none !important;
+}
+#sidebar_content #left , #content #left{
+    position:static !important;
+}

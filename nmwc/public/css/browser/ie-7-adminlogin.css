@@ -1,0 +1,15 @@
+/* ADDED FOR LOGIN PAGE - BY Bhagavati */
+
+.wrapper{ position:relative !important; margin:0px  auto 0px !important; top:80px !important; }
+.box form{ background:#fff; display:table; height:175px !important; }
+.login-right{ display:block; margin-top:-4px;}
+.login{ background:#fff !important; border:none !important;}
+#btnlogin{ padding:0px 10px !important; line-height:18px; margin-right:-10px; }
+.background{ position:relative !important}
+.logo{ margin-top:-60px !important;}
+.gradient{ background:#E3E3E3 !important; display:table;}
+.top{ height:620px !important }
+#loginForm{ margin-top:-20px; }
+#switch_language{
+    width:77px;
+}

@@ -1,0 +1,84 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/transactionroutereview/routevisit/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Route Start Date');?>','<?php echo $this->translate->_('Day');?>','<?php echo $this->translate->_('Route End Date');?>','<?php echo $this->translate->_('Scheduled Targets To Visit');?>','<?php echo $this->translate->_('Scheduled Targets Visited');?>','<?php echo $this->translate->_('Scheduled Targets Not Visited');?>','<?php echo $this->translate->_('Un Scheduled Targets Visited');?>','<?php echo $this->translate->_('Total Visits');?>','<?php echo $this->translate->_('Shedule Sale');?>','<?php echo $this->translate->_('Shedule No Sale');?>','<?php echo $this->translate->_('Un Shedule Sale');?>','<?php echo $this->translate->_('Un Shedule No Sale');?>','<?php echo $this->translate->_('Effective Visit');?>','<?php echo $this->translate->_('Starting Kms');?>','<?php echo $this->translate->_('Ending Kms');?>','<?php echo $this->translate->_('Total Kms Covered');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:75},
+		{name:'routestartdate',index:'routestartdate', width:75},
+		{name:'daytxt',index:'daytxt', width:70},
+		{name:'routeenddate',index:'routeenddate', width:75},
+        {name:'targettovisit',index:'targettovisit', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'targetvisits',index:'targetvisits', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'callexceptions',index:'callexceptions', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'nontargetvisits',index:'nontargetvisits', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'totalvisits',index:'totalvisits', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'schedulesale',index:'schedulesale', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'schedulenosale',index:'schedulenosale', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},	
+		{name:'unschedsale',index:'unschedsale', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'unschedulenosale',index:'unschedulenosale', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'effectivevisit',index:'effectivevisit', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'startkms',index:'startkms', width:75,align:'right',summaryType:'sum'},
+        {name:'endkms',index:'endkms', width:70,align:'right',summaryType:'sum'},
+        {name:'kmscovered',index:'kmscovered', width:70,align:'right',summaryType:'sum'}
+   	],
+	<?php if($this->css == 'ar_') { ?>
+		direction :"rtl",
+	<?php } ?>	
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+    rowList:eval(RP_ROWLISTSHOW),
+  //  loadonce:true,
+    pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,        
+	groupingView :
+        {
+            groupField : ['routecode'],
+            groupColumnShow : [false],
+            groupCollapse : true,
+            groupOrder: ['asc'] ,
+            groupSummary : [true],
+            groupDataSorted : true,
+            showSummaryOnHide: false
+        }
+});
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+</script>

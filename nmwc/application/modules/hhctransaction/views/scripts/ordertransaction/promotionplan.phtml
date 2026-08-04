@@ -1,0 +1,104 @@
+<?php
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+?>
+<script type="text/javascript">
+	   $(function()
+	     {
+		      $("a[rel^='prettyPhoto']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allow_resize: false});
+	     });
+</script>
+
+
+	   <input type="hidden" name="in_routekey"  id="in_routekey" value="<?php echo $this->in_routekey;?>" />
+	   <input type="hidden" name="in_visitkey"  id="in_visitkey" value="<?php echo $this->in_visitkey;?>" />
+	   <input type="hidden" name="in_customercode"  id="in_customercode" value="<?php echo $this->in_customercode;?>" />
+		<table class="table" id="table-example">
+		   
+		    <tr>
+			<tr>
+												  
+			<th width="13">
+			</th>
+			<th ><?php echo $this->translate->_('Promotion Key');?> </th>
+			<th class="sorting"><?php echo $this->translate->_('Description');?></th>
+			<th>&nbsp;</th>
+			<th>&nbsp;</th>
+									
+									      
+		    </tr>
+		   
+			<?php if(!empty($this->promotion_data) && $this->counter_val != 0)
+			{
+			   
+			    foreach($this->promotion_data as $value)
+			    {
+				 if($this->check_payment_terms == 1)
+				 {
+					    $checked ="";
+					    if($value['qualified_promotion'] == 1)
+					    $checked = "checked='checked'";
+				 ?>
+				  <tr>
+				<td><input type="checkbox" disabled="disabled" <?php echo $checked; ?> name="chk[][]" value="" id ="chk_<?php echo $value['primary_key'];?>"   /></td>
+				<td><?php echo $value['plannumber']; ?></td>
+				<td><?php echo $value['plandescription'] ?></td>
+				<td class="align_center" ><span id ="<?php echo $value['primary_key'];?>"><?php echo $value['qualified_promotion'];?></span>
+				<input type="hidden" name="qualified_promotion[]" id="qualified_val_<?php echo $value['primary_key'];?>" value="<?php echo $value['qualified_promotion']?>" />
+				<input type="hidden" name="allow_promotion[]" id="val_<?php echo $value['primary_key'];?>" value="<?php echo $value['qualified_promotion']; ?>" />
+				
+				<input type="hidden" name="allow_promotion_val[]" value='<?php echo $value['qualificationgroup']."_".$value['assignmentnumber']."_".$value['assignmentgroup']."_".$value['plannumber']."_".$value['rangebasis']."_".$value['primary_key']."_".$value['promotiontypecode'];?>' />
+                <input type="hidden" name="promotion_sales_qty[]" id="promotion_sales_qty_<?php echo $value['primary_key'];?>" value="0" />
+                <input type="hidden" name="promotion_sales_amt[]" id="promotion_sales_amt_<?php echo $value['primary_key'];?>" value="0" />
+                <input type="hidden" name="promotion_fixed_amt[]" id="promotion_fixed_amt_<?php echo $value['primary_key'];?>" value="0" />
+                <input type="hidden" name="repeatingrange_val[]" id="repeatingrange_val_<?php echo $value['primary_key'];?>" value="0" />
+					</td>
+				<td class="align_center" >
+				 <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"promotiondetailview","plannumber"=>$value['plannumber']))."?q=prettyPhoto&iframe=true&width=700&height=380"; ?>" rel="prettyPhoto[iframe]">Detail</a>
+				 </td>
+			    </tr>
+				 <?php
+				 }else{
+				?>
+				
+				 <tr>
+				<td><input type="checkbox" name="chk[][]" value="" id ="chk_<?php echo $value['primary_key'];?>" onclick="check_promotion('<?php echo $value['assignmentnumber'];?>','<?php echo $value['plannumber'];?>','<?php echo $value['rangebasis'];?>','<?php echo $value['primary_key'];?>','<?php echo $value['promotiontypecode'];?>','<?php echo $value['qualificationgroup']?>')" /></td>
+				<td><?php echo $value['plannumber']; ?></td>
+				<td><?php echo $value['plandescription'] ?></td>
+				<td class="align_center" ><span id ="<?php echo $value['primary_key'];?>">0</span>
+				<input type="hidden" name="qualified_promotion[]" id="qualified_val_<?php echo $value['primary_key'];?>" value="<?php echo $value['qualified_promotion']?>" />
+				<input type="hidden" name="allow_promotion[]" id="val_<?php echo $value['primary_key'];?>" value="0" />
+				
+				<input type="hidden" name="allow_promotion_val[]" value='<?php echo $value['qualificationgroup']."_".$value['assignmentnumber']."_".$value['assignmentgroup']."_".$value['plannumber']."_".$value['rangebasis']."_".$value['primary_key']."_".$value['promotiontypecode'];?>' />
+                <input type="hidden" name="promotion_sales_qty[]" id="promotion_sales_qty_<?php echo $value['primary_key'];?>" value="0" />
+                <input type="hidden" name="promotion_sales_amt[]" id="promotion_sales_amt_<?php echo $value['primary_key'];?>" value="0" />
+                <input type="hidden" name="promotion_fixed_amt[]" id="promotion_fixed_amt_<?php echo $value['primary_key'];?>" value="0" />
+                <input type="hidden" name="repeatingrange_val[]" id="repeatingrange_val_<?php echo $value['primary_key'];?>" value="0" />
+					</td>
+				<td class="align_center" >
+				 <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"promotiondetailview","plannumber"=>$value['plannumber']))."?q=prettyPhoto&iframe=true&width=700&height=380"; ?>" rel="prettyPhoto[iframe]">Detail</a>
+				 </td>
+			    </tr>
+				 <?php 
+				 }
+				?>
+			   
+			    <?php
+			    
+			    }
+			}else
+			{?>
+			<tr>
+				 <td colspan="5" class="align_center"><?php echo $this->translate->_('No Any Promotion Qualified');?></td>
+			</tr>
+				 
+			<?php }
+			
+			?>
+		   
+			
+		    </table>
+	   
+		 
+		
+      
+	  

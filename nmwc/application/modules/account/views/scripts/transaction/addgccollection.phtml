@@ -1,0 +1,110 @@
+<?php
+/**
+* @name       addgccollection.phtml
+* @since      03-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$date = $this->date != '' ? $this->date : date('d-m-Y');
+
+?>
+<script>
+    $(document).ready(function() {
+		
+		$('input[type="text"]').attr('readonly',true);
+		$('textarea').attr('readonly',true);
+		
+		$('#txterprefnum').attr('readonly',false);
+		
+		$(".tab_content").hide();
+		$("#tab1").show();
+		$("ul.tabs li").click(function() {
+			$("ul.tabs li a").removeClass("admin_active"); //Remove any "active" class
+			$(this).find("a").addClass("admin_active");
+			$(".tab_content").hide(); //Hide all tab content
+			var activeTab = $(this).find("a").attr("href"); //Find the rel attribute value to identify the active tab + content
+			$(activeTab).fadeIn(); //Fade in the active content
+			return false;
+		});	
+    })
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<div class="box" id="account_transaction_addgccollection">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+        <h3><?php echo $this->translate->_('GC Collection')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"gccollection"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn">
+		<?php if($this->params["id"] > 0) { ?>
+			<input class="border_none" type="button" value="" alt="<?php echo $this->baseUrl()."/account/transaction/gccollection/delid/".$this->params["id"]?>" name="btndeletetran" id="btndeletetran" >
+		<?php } else { ?>
+			<input class="border_none" type="submit" value="" name="btnsave" id="btnsave">
+		<?php } ?>
+	</div>
+    </div>
+</div>
+<div class="_100" style="text-align:center">
+	<div class="_20 label_text_align margin_top_7">&nbsp;</div>
+	<div class="_20 label_text_align margin_top_7"><label class="advance_search_css"><?php echo $this->translate->_('Select Date').''.$this->colan;?></label></div>
+	<div class="_20 label_text_align"><input type="text" id="txtdate" name="txtdate" value="<?php echo $date; ?>" class="margin_zero"></div>	
+</div>
+<div class="clear space_20"></div>
+<div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"gccollection"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <ul style="display: block; margin-left:75px;" class="tabs">
+                    <li> 
+                        <a href="#tab1" id="t1" class="admin_active"><?php echo $this->translate->_('Detail');?></a>
+                    </li>
+					<?php if($this->params["id"] > 0) { ?>
+                    <li>
+                        <a href="#tab2" id="t2"><?php echo $this->translate->_('MOP');?></a>
+                    </li>
+					<?php } ?>
+                </ul>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content with-actions ie_grid min_height_10">
+	<div id="tab1" class="tab_content">
+	    <?php include('generalgc.phtml');?>
+	</div>
+	<?php if($this->params["id"] > 0) { ?>
+	<div id="tab2" class="tab_content">
+	    <?php include('modeofpayment.phtml');?>
+	</div>
+	<?php } ?>
+	<div class="clear space_20">&nbsp;</div>
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>

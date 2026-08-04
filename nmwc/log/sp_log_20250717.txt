@@ -1,0 +1,1664 @@
+
+CALL sp_web_permissions()
+
+CALL sp_get_company_information()
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_decimal_places()
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%SLA0573%" OR alternatecode LIKE "%SLA0573%" OR customername LIKE "%SLA0573%" OR format(balance,3) LIKE "%SLA0573%" OR route.routecode LIKE "%SLA0573%" OR routename LIKE "%SLA0573%" OR invoicepaymentterms LIKE "%SLA0573%" OR activecustomer LIKE "%SLA0573%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("3818")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator',' AND (promotionkey LIKE "%34%" OR description LIKE "%34%" OR arbdescription LIKE "%34%" OR activeindicator LIKE "%34%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionkey("34")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc',0,'10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator',' AND (plannumber LIKE "%327%" OR plandescription LIKE "%327%" OR arbplandescription LIKE "%327%" OR activeindicator LIKE "%327%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionplan("327")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "327")','2')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator',' AND (plannumber LIKE "%326%" OR plandescription LIKE "%326%" OR arbplandescription LIKE "%326%" OR activeindicator LIKE "%326%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionplan("326")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "326")','2')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator',' AND (plannumber LIKE "%300%" OR plandescription LIKE "%300%" OR arbplandescription LIKE "%300%" OR activeindicator LIKE "%300%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionplan("330")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "330")','2')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator',' AND (plannumber LIKE "%298%" OR plandescription LIKE "%298%" OR arbplandescription LIKE "%298%" OR activeindicator LIKE "%298%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionplan("298")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "298")','2')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','10','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','20','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','10','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator',' AND (plannumber LIKE "%310%" OR plandescription LIKE "%310%" OR arbplandescription LIKE "%310%" OR activeindicator LIKE "%310%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionplan("310")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "310")','7')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplan('1','','','desc',0,'10','plannumber, plandescription, arbplandescription, activeindicator',' AND (plannumber LIKE "%309%" OR plandescription LIKE "%309%" OR arbplandescription LIKE "%309%" OR activeindicator LIKE "%309%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionplan("309")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "309")','7')
+
+CALL sp_get_promotions_customer_authorizegroup('','','desc',0,'10','groupnumber, groupdescription, groupnumber AS edit_del_primary_id',' AND grouptype = 1 ')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_customer_authorizegroup('','','desc',0,'10','groupnumber, groupdescription, groupnumber AS edit_del_primary_id',' AND (groupnumber LIKE "%191%" OR groupdescription LIKE "%191%" OR groupnumber LIKE "%191%") AND grouptype = 1 ')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_customer_addauthorizegroup("191")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_customer_authorizegroupitemgrid('','','desc',0,'10','im.alternatecode, im.itemshortdescription, primary_key AS edit_del_primary_id',' AND pgh.grouptype = 1 AND pgh.groupnumber =191 ')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','20','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','10','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','20','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc','10','10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc','330','10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','10','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc','320','10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc','310','10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc','300','10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_add_promotions_advance_promotionkeyitemgrid('34','310','1')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_edit_promotions_advance_promotionkeyitemgrid('2025-07-17','2025-07-31','1994')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_edit_promotions_advance_addpromotionkey('Salalah Scheme','1','','1','admin','34')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_tablet_check_load('134','28')
+
+CALL sp_ws_syncicsdata_setting('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','28','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','28')
+
+CALL sp_ws_updatesyncdate('134','cacb98a0068c1c8c','28')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','1')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('8','47869','3974','28','134','0','2025-07-14','11:45','2025-07-14','11:55','1','0','0','0','0','23.5892113','58.3753696','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('9','47869','4535','28','134','0','2025-07-16','17:10','2025-07-16','17:12','0','0','0','0','1','23.5891887','58.3753738','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('10','47869','3818','28','134','0','2025-07-16','17:12','2025-07-16','17:19','0','0','0','0','1','23.5892068','58.3753777','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('11','47869','3818','28','134','0','2025-07-17','10:26','2025-07-17','10:46','1','0','0','0','0','23.5891737','58.3753659','0')
+
+CALL sp_ws_getdata_from_routemaster('28','0','3117','1','1','1','12127','0','0','107022','8992','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('5','47869','11','28012127','28103117','2025-07-17','10:33:50','0','0','3818','28','134.0','0','2025-07-18','27.432','18.288','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-07-17','','11','0','9.144')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','11','281929','369.0','36','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','9.144','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','11','281929','333.0','0','0','0','6','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','11','281929','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','11','281929','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','11','281929','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_ardetail('47869','7','','7160','2020-08-11','104.0','0','10.0','94.0','0','0','0','0','0','200802346','134')
+
+CALL sp_ws_getdata_from_nonservicedcustomer('47869','4535','1')
+
+CALL sp_ws_getdata_from_nonservicedcustomer('47869','3818','1')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47869','11','','3818','2.80121e+07','2025-07-17','10:34:18','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','3','28','4535','0','1','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','3','28','3818','0','0','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','4','28','3818','0','0','1','0')
+
+CALL sp_ws_get_from_nosalesheader('4','47869','9','0','0','28','134','2025-07-16','17:12','1','0','0','4535','0','0','0')
+
+CALL sp_ws_get_from_nosalesheader('5','47869','10','0','0','28','134','2025-07-16','17:19','1','0','0','3818','0','0','0')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','2')
+
+CALL sp_check_isroute_closed("47869")
+
+CALL sp_ws_getdata_from_customeroperationcontrol('9','47869','4535','28','134','0','2025-07-16','17:10','2025-07-16','17:12','0','0','0','0','1','23.5891887','58.3753738','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('10','47869','3818','28','134','0','2025-07-16','17:12','2025-07-16','17:19','0','0','0','0','1','23.5892068','58.3753777','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('11','47869','3818','28','134','0','2025-07-17','10:26','2025-07-17','10:53','1','0','0','0','0','23.5891737','58.3753659','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('12','47869','4396','28','134','0','2025-07-17','12:16','2025-07-17','12:16','0','0','0','0','1','23.5891773','58.3753638','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('13','47869','4535','28','134','0','2025-07-17','12:16','2025-07-17','12:17','0','0','0','0','1','23.5892069','58.3753809','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('14','47869','3974','28','134','0','2025-07-17','12:18','2025-07-17','12:19','0','0','0','0','3','23.5891883','58.3753783','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('15','47869','3818','28','134','0','2025-07-17','12:19','2025-07-17','12:22','1','0','0','0','0','23.5891778','58.3753615','0')
+
+CALL sp_ws_getdata_from_routemaster('28','0','3118','1','1','1','12128','0','0','107022','8992','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('6','47869','15','28012128','28103118','2025-07-17','12:21:36','0','0','3818','28','134.0','0','2025-07-18','27.432','18.288','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-07-17','','15','0','9.144')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','15','281930','369.0','36','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','9.144','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','15','281930','333.0','0','0','0','6','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','15','281930','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','15','281930','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','15','281930','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_ardetail('47869','7','','7160','2020-08-11','104.0','0','10.0','94.0','0','0','0','0','0','200802346','134')
+
+CALL sp_ws_getdata_from_nonservicedcustomer('47869','4396','1')
+
+CALL sp_ws_getdata_from_nonservicedcustomer('47869','4535','1')
+
+CALL sp_ws_getdata_from_nonservicedcustomer('47869','3974','3')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47869','15','','3818','2.80121e+07','2025-07-17','12:21:59','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','4','28','4396','0','1','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','4','28','4535','0','0','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','4','28','3974','0','0','1','0')
+
+CALL sp_ws_get_from_nosalesheader('6','47869','12','0','0','28','134','2025-07-17','12:16','1','0','0','4396','0','0','0')
+
+CALL sp_ws_get_from_nosalesheader('7','47869','13','0','0','28','134','2025-07-17','12:17','1','0','0','4535','0','0','0')
+
+CALL sp_ws_get_from_nosalesheader('8','47869','14','0','0','28','134','2025-07-17','12:19','3','0','0','3974','0','0','0')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','2')
+
+CALL sp_check_isroute_closed("47869")
+
+CALL sp_ws_getdata_from_customeroperationcontrol('12','47869','4396','28','134','0','2025-07-17','12:16','2025-07-17','12:16','0','0','0','0','1','23.5891773','58.3753638','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('13','47869','4535','28','134','0','2025-07-17','12:16','2025-07-17','12:17','0','0','0','0','1','23.5892069','58.3753809','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('14','47869','3974','28','134','0','2025-07-17','12:18','2025-07-17','12:19','0','0','0','0','3','23.5891883','58.3753783','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('15','47869','3818','28','134','0','2025-07-17','12:19','2025-07-17','12:22','1','0','0','0','0','23.5891778','58.3753615','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('16','47869','3818','28','134','0','2025-07-17','12:36','2025-07-17','12:37','1','0','0','0','0','23.5891933','58.3753723','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('17','47869','3818','28','134','0','2025-07-17','12:47','2025-07-17','12:48','1','0','0','0','0','23.5891978','58.3753948','0')
+
+CALL sp_ws_getdata_from_routemaster('28','0','3120','1','1','1','12130','0','0','107022','8992','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('7','47869','16','28012129','28103119','2025-07-17','12:36:54','0','0','3818','28','134.0','0','2025-07-18','27.432','18.288','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-07-17','','16','0','9.144')
+
+CALL sp_ws_getdata_from_salesorderheader('8','47869','17','28012130','28103120','2025-07-17','12:48:00','0','0','3818','28','134.0','0','2025-07-18','28.956','18.288','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-07-17','','17','0','10.668')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','16','281931','369.0','36','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','9.144','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','16','281931','333.0','0','0','0','6','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','1.524','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','17','281932','369.0','36','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','9.144','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','17','281932','333.0','0','0','0','6','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','1.524','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','16','281931','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','16','281931','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','16','281931','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','17','281932','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','17','281932','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','17','281932','4','369','7','6','6','0','0','310','0','0','0','6','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_ardetail('47869','7','','7160','2020-08-11','104.0','0','10.0','94.0','0','0','0','0','0','200802346','134')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47869','16','','3818','2.80121e+07','2025-07-17','12:37:18','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47869','17','','3818','2.80121e+07','2025-07-17','12:48:29','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','2')
+
+CALL sp_check_isroute_closed("47869")
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("3818")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%39%" OR route.routename LIKE "%39%" OR salesman.salesmancode LIKE "%39%" OR salesman.salesmanname1 LIKE "%39%" OR subarea.subareaname LIKE "%39%" OR route.device_assigned_id LIKE "%39%" OR route.activestatus LIKE "%39%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('39')
+
+CALL sp_get_not_assigned_devices('5ced5a2585e2791d')
+
+CALL sp_get_organization_route_setting1('39')
+
+CALL sp_get_organization_route_setting2('39')
+
+CALL sp_get_organization_route_report('39')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc','90','10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('94')
+
+CALL sp_get_not_assigned_devices('ed2cceb588977a68')
+
+CALL sp_get_organization_route_setting1('94')
+
+CALL sp_get_organization_route_setting2('94')
+
+CALL sp_get_organization_route_report('94')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_get_admin_security_device()
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_add_admin_security_adddevice('a1b7f10aaf6fb057','f','admin')
+
+CALL sp_get_admin_security_device()
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('94')
+
+CALL sp_get_not_assigned_devices('ed2cceb588977a68')
+
+CALL sp_get_organization_route_setting1('94')
+
+CALL sp_get_organization_route_setting2('94')
+
+CALL sp_get_organization_route_report('94')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('94')
+
+CALL sp_get_not_assigned_devices('ed2cceb588977a68')
+
+CALL sp_get_organization_route_setting1('94')
+
+CALL sp_get_organization_route_setting2('94')
+
+CALL sp_get_organization_route_report('94')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('SL03','SL03','a1b7f10aaf6fb057')
+
+CALL sp_combo_itemmust()
+
+CALL sp_edit_organization_route_addroute('SL03 DIRECT','SL03 DIRECT','1','138','admin','2025-07-17','111111','0','0','0','111111',0,'0','0',0,0,'0','1',0,'1',0,'1','0','0','0','0','0',0,0,'SL03D',NULL,NULL,'1','1','1',0,'94','a1b7f10aaf6fb057',0)
+
+CALL sp_edit_organization_route_setting1('94','0','1','1','1',0,'1','1',0,'1','1','1','1',0,0,'4','0',0,'1',0,0,0,0,0,0,0,0,0,0,0,0,'admin','0',0,0,0,0,0)
+
+CALL sp_edit_organization_route_setting2('94','0','0','0','0','0',0,'1','0',0,0,'0','2','3','','','1',0,0,0,'1','0','0','0.000','0.000','0','0','admin','0.00000','0','0',0,0,0,'0',0,'0',0,0,0)
+
+CALL sp_edit_organization_route_report('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','94')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('SL03','SL03','a1b7f10aaf6fb057')
+
+CALL sp_get_organization_route_route('1','','','desc','90','10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus',' AND (salesmancode LIKE "%138%" OR alternatesalesmancode LIKE "%138%" OR salesmanname1 LIKE "%138%" OR getsalesmantype(type) LIKE "%138%" OR activestatus LIKE "%138%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_addsalesman("138")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('DSL03','DSL03','a1b7f10aaf6fb057')
+
+CALL sp_ws_tablet_check_load('138','94')
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("0")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_getrouteinfo('94','17-07-2025',0)
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "94" )','17-07-2025','1',0,'94','0')
+
+CALL sp_get_promotions_advance_addpromotionplan("310")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "310")','7')
+
+CALL sp_get_promotions_advance_addpromotionplan("309")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionplanitemgrid('1','','desc',0,'10','rangelow, rangehigh, repeatingrange, FORMAT(promotionamount,3) as promotionamount, range_id as edit_del_primary_id',' AND  (plannumber = "309")','7')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('94','369')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('369','94','100','6',0,'138','0.508','NONE','31-12-2099','3.048','17-07-2025','1','0','','0.508','3.048','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "94" )','17-07-2025','1','1','94','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('94','368')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('368','94','100','6',0,'138','0.508','NONE','31-12-2099','3.048','17-07-2025','1','0','','0.508','3.048','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "94" )','17-07-2025','1','1','94','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('94','367')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('367','94','100','6',0,'138','0.508','NONE','31-12-2099','3.048','17-07-2025','1','0','','0.508','3.048','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "94" )','17-07-2025','1','1','94','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('94','7')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('7','94','100','24',0,'138','0.031','NONE','31-12-2099','0.750','17-07-2025','1','0','','0.031','0.750','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "94" )','17-07-2025','1','1','94','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('94','8')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('8','94','100','12',0,'138','0.063','NONE','31-12-2099','0.750','17-07-2025','1','0','','0.063','0.750','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "94" )','17-07-2025','1','1','94','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_syncicsdata_setting('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','94','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','94')
+
+CALL sp_ws_updatesyncdate('138','a1b7f10aaf6fb057','94')
+
+CALL sp_ws_instertion_tbl_synclog('138','94','null','0','1')
+
+CALL sp_ws_tablet_check_load('138','94')
+
+CALL sp_ws_syncicsdata_setting('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','94','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','94','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','94')
+
+CALL sp_ws_updatesyncdate('138','a1b7f10aaf6fb057','94')
+
+CALL sp_ws_instertion_tbl_synclog('138','94','null','0','1')
+
+CALL sp_ws_stratendday('94','138','1','a1b7f10aaf6fb057','4.0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','1','NONE','7','2400','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','1','NONE','8','1200','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','1','NONE','367','600','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','1','NONE','368','600','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','1','NONE','369','600','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_inventorytransactionheader('47870','47870','1','94','138.0','2025-07-17','14:22:09','94000326','0','0','0','2025-07-17','0','0','0','94400103.0','1','0','0','2025-07-17','0','0','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36537','1','7.0','2400','0','0.031','1','0.75','0','2400','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36537','1','8.0','1200','0','0.063','1','0.75','0','1200','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36537','1','367.0','600','0','0.508','1','3.05','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36537','1','368.0','600','0','0.508','1','3.05','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36537','1','369.0','600','0','0.508','1','3.05','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventoryvariance('47870','0')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','7.0','47870','0','0','2400','0','0','0','0','0','0','0','0','0','0','0','0','0.031','0.031','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','8.0','47870','0','0','1200','0','0','0','0','0','0','0','0','0','0','0','0','0.063','0.063','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','367.0','47870','0','0','600','0','0','0','0','0','0','0','0','0','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','368.0','47870','0','0','600','0','0','0','0','0','0','0','0','0','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','369.0','47870','0','0','600','0','0','0','0','0','0','0','0','0','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_instertion_tbl_synclog('138','94','47870','0','2')
+
+CALL sp_check_isroute_closed("47870")
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%13018%" OR alternatecode LIKE "%13018%" OR customername LIKE "%13018%" OR format(balance,3) LIKE "%13018%" OR route.routecode LIKE "%13018%" OR routename LIKE "%13018%" OR invoicepaymentterms LIKE "%13018%" OR activecustomer LIKE "%13018%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13018")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal0006%" OR alternatecode LIKE "%sal0006%" OR customername LIKE "%sal0006%" OR format(balance,3) LIKE "%sal0006%" OR route.routecode LIKE "%sal0006%" OR routename LIKE "%sal0006%" OR invoicepaymentterms LIKE "%sal0006%" OR activecustomer LIKE "%sal0006%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13023")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal0011%" OR alternatecode LIKE "%sal0011%" OR customername LIKE "%sal0011%" OR format(balance,3) LIKE "%sal0011%" OR route.routecode LIKE "%sal0011%" OR routename LIKE "%sal0011%" OR invoicepaymentterms LIKE "%sal0011%" OR activecustomer LIKE "%sal0011%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13028")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal0031%" OR alternatecode LIKE "%sal0031%" OR customername LIKE "%sal0031%" OR format(balance,3) LIKE "%sal0031%" OR route.routecode LIKE "%sal0031%" OR routename LIKE "%sal0031%" OR invoicepaymentterms LIKE "%sal0031%" OR activecustomer LIKE "%sal0031%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13048")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal0001%" OR alternatecode LIKE "%sal0001%" OR customername LIKE "%sal0001%" OR format(balance,3) LIKE "%sal0001%" OR route.routecode LIKE "%sal0001%" OR routename LIKE "%sal0001%" OR invoicepaymentterms LIKE "%sal0001%" OR activecustomer LIKE "%sal0001%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13018")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal%" OR alternatecode LIKE "%sal%" OR customername LIKE "%sal%" OR format(balance,3) LIKE "%sal%" OR route.routecode LIKE "%sal%" OR routename LIKE "%sal%" OR invoicepaymentterms LIKE "%sal%" OR activecustomer LIKE "%sal%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal0%" OR alternatecode LIKE "%sal0%" OR customername LIKE "%sal0%" OR format(balance,3) LIKE "%sal0%" OR route.routecode LIKE "%sal0%" OR routename LIKE "%sal0%" OR invoicepaymentterms LIKE "%sal0%" OR activecustomer LIKE "%sal0%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13019")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13020")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13022")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13023")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13024")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13025")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13026")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc','10','10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%sal0%" OR alternatecode LIKE "%sal0%" OR customername LIKE "%sal0%" OR format(balance,3) LIKE "%sal0%" OR route.routecode LIKE "%sal0%" OR routename LIKE "%sal0%" OR invoicepaymentterms LIKE "%sal0%" OR activecustomer LIKE "%sal0%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13028")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13029")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13030")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13031")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13032")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13033")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("13035")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%91%" OR route.routename LIKE "%91%" OR salesman.salesmancode LIKE "%91%" OR salesman.salesmanname1 LIKE "%91%" OR subarea.subareaname LIKE "%91%" OR route.device_assigned_id LIKE "%91%" OR route.activestatus LIKE "%91%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%GR%" OR route.routename LIKE "%GR%" OR salesman.salesmancode LIKE "%GR%" OR salesman.salesmanname1 LIKE "%GR%" OR subarea.subareaname LIKE "%GR%" OR route.device_assigned_id LIKE "%GR%" OR route.activestatus LIKE "%GR%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%97%" OR route.routename LIKE "%97%" OR salesman.salesmancode LIKE "%97%" OR salesman.salesmanname1 LIKE "%97%" OR subarea.subareaname LIKE "%97%" OR route.device_assigned_id LIKE "%97%" OR route.activestatus LIKE "%97%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc','90','10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('94')
+
+CALL sp_get_not_assigned_devices('a1b7f10aaf6fb057')
+
+CALL sp_get_organization_route_setting1('94')
+
+CALL sp_get_organization_route_setting2('94')
+
+CALL sp_get_organization_route_report('94')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_edit_organization_route_addroute('SL03 DIRECT','SL03 DIRECT','1','138','admin','2025-07-17','111111','0','0','0','111111',0,'0','0',0,0,'0','1',0,'1',0,'1','0','0','0','0','0',0,0,'SL03D',NULL,NULL,'1','1','1',0,'94','',0)
+
+CALL sp_edit_organization_route_setting1('94','0','1','1','1',0,'1','1',0,'1','1','1','1',0,0,'4','0',0,'1',0,0,0,0,0,0,0,0,0,0,0,0,'admin','0',0,0,0,0,0)
+
+CALL sp_edit_organization_route_setting2('94','0','0','0','0','0',0,'1','0',0,0,'0','2','3','','','1',0,0,0,'1','0','0','0.000','0.000','0','0','admin','0.00000','0','0',0,0,0,'0',0,'0',0,0,0)
+
+CALL sp_edit_organization_route_report('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','94')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%81%" OR route.routename LIKE "%81%" OR salesman.salesmancode LIKE "%81%" OR salesman.salesmanname1 LIKE "%81%" OR subarea.subareaname LIKE "%81%" OR route.device_assigned_id LIKE "%81%" OR route.activestatus LIKE "%81%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('81')
+
+CALL sp_get_not_assigned_devices('')
+
+CALL sp_get_organization_route_setting1('81')
+
+CALL sp_get_organization_route_setting2('81')
+
+CALL sp_get_organization_route_report('81')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_getdata_from_batchdetail('47870','2','NONE','7','2400','6','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','2','NONE','8','1200','6','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','2','NONE','367','600','6','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','2','NONE','368','600','6','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47870','2','NONE','369','600','6','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_inventorytransactionheader('47870','47870','3','94','138.0','2025-07-17','14:31:22','94000327','0','0','0','2025-07-17','0','0','0','94400105.0','0','0','0','2025-07-17','0','0','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36538','6','7.0','2400','0','0.031','2','0.75','0','2400','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36538','6','8.0','1200','0','0.063','2','0.75','0','1200','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36538','6','367.0','600','0','0.508','2','3.048','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36538','6','368.0','600','0','0.508','2','3.048','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47870','36538','6','369.0','600','0','0.508','2','3.048','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventoryvariance('47870','0')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','7.0','47870','0','0','2400','0','0','0','0','0','0','0','0','2400','0','0','0','0.031','0.031','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','8.0','47870','0','0','1200','0','0','0','0','0','0','0','0','1200','0','0','0','0.063','0.063','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','367.0','47870','0','0','600','0','0','0','0','0','0','0','0','600','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','368.0','47870','0','0','600','0','0','0','0','0','0','0','0','600','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47870','369.0','47870','0','0','600','0','0','0','0','0','0','0','0','600','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_instertion_tbl_synclog('138','94','47870','0','2')
+
+CALL sp_check_isroute_closed("47870")
+
+CALL sp_ws_transactiondata('47870')
+
+CALL sp_ws_from_tablet_endday('47870','2025-07-17','14:31:33','2',0,'0.000','0','0','0.000','0.000','0.000','0','0','0.000','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','47870','13018','94','138','0','2025-07-17','14:24','2025-07-17','14:25','0','0','0','0','1','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_routemaster('94','0','1','219','1','104','327','0','0','0','1','1','','')
+
+CALL sp_ws_getdata_from_nonservicedcustomer('47870','13018','1')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13018','0','1','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13023','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13028','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13031','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13033','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13034','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13035','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13036','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13037','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13039','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13040','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13041','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13042','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13043','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13044','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13045','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13046','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13047','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13048','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13049','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13050','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13051','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13052','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13053','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13055','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13056','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13058','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13060','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13061','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13063','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13065','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13066','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13067','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13068','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13069','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13070','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13071','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13072','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13074','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13075','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13076','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13077','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13078','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13079','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13080','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13081','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13083','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13084','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13085','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13086','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13087','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13088','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13089','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13090','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13093','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13094','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13096','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13097','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13098','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13099','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13100','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13101','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13102','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13104','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13105','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13106','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13107','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13108','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13109','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13110','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13111','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13112','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13113','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13114','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13115','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13116','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13117','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13118','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13123','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13124','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13125','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13126','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13127','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13128','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13129','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13130','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13131','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13133','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13134','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13135','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13136','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13137','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13138','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13139','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13140','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13141','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13142','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13144','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13145','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13146','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13147','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13149','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13150','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13151','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13152','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13153','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13154','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13155','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13156','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13157','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13159','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13160','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13162','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13163','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13164','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13165','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13166','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13167','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13168','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13169','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13170','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13171','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13176','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13180','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13184','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13185','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13252','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13293','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13375','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13415','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13428','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13441','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13454','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13470','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13471','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13482','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13483','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13488','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13499','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13501','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13502','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13503','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13504','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13505','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13506','1','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47870','9','4','94','13511','1','1','0','0')
+
+CALL sp_ws_get_from_nosalesheader('1','47870','1','0','0','94','138','2025-07-17','14:25','1','0','0','13018','0','0','0')
+
+CALL sp_ws_instertion_tbl_synclog('138','94','47870','0','2')
+
+CALL sp_check_isroute_closed("47870")
+
+CALL recallpostsuggestedsalesinvoiceafterroutefilter("94")
+
+CALL sp_cron_average_sales_quantity("94")
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus',' AND (salesmancode LIKE "%110%" OR alternatesalesmancode LIKE "%110%" OR salesmanname1 LIKE "%110%" OR getsalesmantype(type) LIKE "%110%" OR activestatus LIKE "%110%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_addsalesman("110")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('GR1','GR1','a1b7f10aaf6fb057')
+
+CALL sp_combo_itemmust()
+
+CALL sp_edit_organization_route_addroute('GR1','GR1','1','110','admin','2025-07-17','111111','0','0','0','111111',0,'0','0',0,0,'0','0',0,'1',0,'1','0','0','0','0','0',0,0,'GR1',NULL,NULL,'1','1','1',0,'81','a1b7f10aaf6fb057',0)
+
+CALL sp_edit_organization_route_setting1('81','0','1','1','1',0,'2','1',0,'1','1','1','2',0,0,'4','0',0,'1',0,0,0,0,0,0,0,0,0,0,0,0,'admin','0',0,0,0,0,0)
+
+CALL sp_edit_organization_route_setting2('81','0','0','0','0','0',0,'1','0',0,0,'0','2','3','','','1',0,0,0,'1','0','0','0.000','0.000','380','0','admin','0.00000','0','0',0,0,0,'0',0,'0',0,0,0)
+
+CALL sp_edit_organization_route_report('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','81')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('GR1','GR1','a1b7f10aaf6fb057')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('GR1','GR1','a1b7f10aaf6fb057')
+
+CALL sp_ws_tablet_check_load('110','81')
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("0")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_getrouteinfo('81','17-07-2025',0)
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','1',0,'81','0')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%81%" OR route.routename LIKE "%81%" OR salesman.salesmancode LIKE "%81%" OR salesman.salesmanname1 LIKE "%81%" OR subarea.subareaname LIKE "%81%" OR route.device_assigned_id LIKE "%81%" OR route.activestatus LIKE "%81%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('81')
+
+CALL sp_get_not_assigned_devices('a1b7f10aaf6fb057')
+
+CALL sp_get_organization_route_setting1('81')
+
+CALL sp_get_organization_route_setting2('81')
+
+CALL sp_get_organization_route_report('81')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_edit_organization_route_addroute('GR1','GR1','1','110','admin','2025-07-17','111111','0','0','0','111111',0,'0','0',0,0,'0','0',0,'1',0,'1','0','0','0','0','0',0,0,'GR1',NULL,NULL,'1','1','1',0,'81','a1b7f10aaf6fb057',0)
+
+CALL sp_edit_organization_route_setting1('81','0','1','1','1',0,'2','1',0,'1','1','1','1',0,0,'4','0',0,'1',0,0,0,0,0,0,0,0,0,0,0,0,'admin','0',0,0,0,0,0)
+
+CALL sp_edit_organization_route_setting2('81','0','0','0','0','0',0,'1','0',0,0,'0','2','3','','','1',0,0,0,'1','0','0','0.000','0.000','380','0','admin','0.00000','0','0',0,0,0,'0',0,'0',0,0,0)
+
+CALL sp_edit_organization_route_report('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','81')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("0")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_getrouteinfo('81','17-07-2025',0)
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','1',0,'81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('81','369')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('369','81','100','6',0,'110','0.508','NONE','31-12-2099','3.048','17-07-2025','1','0','','0.508','3.048','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','1','1','81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('81','368')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('368','81','100','6',0,'110','0.508','NONE','31-12-2099','3.048','17-07-2025','1','0','','0.508','3.048','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','1','1','81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('81','367')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('367','81','100','6',0,'110','0.508','NONE','31-12-2099','3.048','17-07-2025','1','0','','0.508','3.048','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','1','1','81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("87943")
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("87943")
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("87943")
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_syncicsdata_setting('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','81','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','81')
+
+CALL sp_ws_updatesyncdate('110','a1b7f10aaf6fb057','81')
+
+CALL sp_ws_instertion_tbl_synclog('110','81','null','0','1')
+
+CALL sp_ws_stratendday('81','110','381','a1b7f10aaf6fb057','4.0')
+
+CALL sp_ws_getdata_from_batchdetail('47871','1','NONE','367','600','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47871','1','NONE','368','600','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47871','1','NONE','369','600','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_inventorytransactionheader('47871','47871','1','81','110.0','2025-07-17','14:36:02','81000052','0','0','0','2025-07-17','0','0','0','81400004.0','1','0','0','2025-07-17','0','0','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47871','36539','1','367.0','600','0','0.508','1','3.05','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47871','36539','1','368.0','600','0','0.508','1','3.05','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47871','36539','1','369.0','600','0','0.508','1','3.05','0','600','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventoryvariance('47871','0')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','367.0','47871','0','0','600','0','0','0','0','0','0','0','0','0','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','368.0','47871','0','0','600','0','0','0','0','0','0','0','0','0','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','369.0','47871','0','0','600','0','0','0','0','0','0','0','0','0','0','0','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_instertion_tbl_synclog('110','81','47871','0','2')
+
+CALL sp_check_isroute_closed("47871")
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%CAA%" OR alternatecode LIKE "%CAA%" OR customername LIKE "%CAA%" OR format(balance,3) LIKE "%CAA%" OR route.routecode LIKE "%CAA%" OR routename LIKE "%CAA%" OR invoicepaymentterms LIKE "%CAA%" OR activecustomer LIKE "%CAA%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%CAA00%" OR alternatecode LIKE "%CAA00%" OR customername LIKE "%CAA00%" OR format(balance,3) LIKE "%CAA00%" OR route.routecode LIKE "%CAA00%" OR routename LIKE "%CAA00%" OR invoicepaymentterms LIKE "%CAA00%" OR activecustomer LIKE "%CAA00%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%CAA0%" OR alternatecode LIKE "%CAA0%" OR customername LIKE "%CAA0%" OR format(balance,3) LIKE "%CAA0%" OR route.routecode LIKE "%CAA0%" OR routename LIKE "%CAA0%" OR invoicepaymentterms LIKE "%CAA0%" OR activecustomer LIKE "%CAA0%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("480")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("480")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator',' AND (promotionkey LIKE "%9%" OR description LIKE "%9%" OR arbdescription LIKE "%9%" OR activeindicator LIKE "%9%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionkey("9")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("9")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc',0,'10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "9" )')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','47871','480','81','110','0','2025-07-17','14:42','2025-07-17','14:43','1','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_get_from_customermaster('480','0','0','43','0','0','0','0','ABU OMRAN (ABU ANNAN SERVICES ',NULL,'Capital','','126.456','0','547','9','0','0','0','2','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',' ','','0','0','','ABU OMRAN (ABU ANNAN SERVICES ',NULL,'','0','0','0','0','0','0','1','0','0','0','0','0','0','','0','','0','0','','','1','0','0',' ','','','','0','1','0','0','0','0','0','0','1','2','0','0','3','0','0','2','3','0','3','1','0','0','1','0','0','0','4','CAA0085','1700','0','','0','',' ','0','','0','0','0','0','','0','0','0','','1','','','0','','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','1','0','0','0','1','0','0','0','0','','','0','0','0','0','0','0','0','0','0','0','0','0','23.5910510000','58.4209553000','0','','','','','0','0','0','1','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','','0','0','0','0','0','','')
+
+CALL sp_ws_getdata_invoiceheader('1','47871','1','81000053','81200028','2025-07-17','14:42:55','0','0','480','81','110','0','0','0','2025-07-17','0','28.956','18.288','0','0','0','0.0','0.0','28.956','0','0','1','0','0','0','1','0','0','2','0','0','0','10.668','0','0','0','0','0','0','0','0','2025-07-17','0','1','0','','0','0','0',0,0,0,'0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_tablet('47871','1','137048','367.0','36','0','0','6','0.508','0.508','0.508','0.508','6','9.144','0','0','0','0','0','0','0','1.524','0','0','0','3.048','3.048','3.048','3.048','0.508','3.048','3.048','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','2025-07-17 10:43:08',0,'0','0',0,0,'0','0','18.288','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47871','1','','4','0','7','6','0','0','0','310','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_customerinvoice('1.0','2','81000053','81200028','2025-07-17','14:43:18','480','81','110','28.956','18.288','0','0','0','0.0','0.0','0','0','28.956','1','0','1','0','110','0','0','81200028','0','0','2','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','2025-07-17')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','367.0','47871','0','0','600','0','0','0','36','0','0','0','0','0','0','6','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47871','1','137048','480','8.10001e+07','2025-07-17','14:43:16','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47871','9','4','81','480','0','0','1','0')
+
+CALL sp_ws_instertion_tbl_synclog('110','81','47871','0','2')
+
+CALL sp_check_isroute_closed("47871")
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_adddailysalesmanload("0")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_transaction_getrouteinfo('81','17-07-2025',0)
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','2',0,'81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('81','7')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('7','81','100','24',0,'110','0.031','NONE','31-12-2099','0.750','17-07-2025','2','0','','0.031','0.750','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','2','1','81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload_quantity('81','8')
+
+CALL sp_add_inventory_transaction_dailysalesmanloadgrid('8','81','100','12',0,'110','0.063','NONE','31-12-2099','0.750','17-07-2025','2','0','','0.063','0.750','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanloadgrid('1','','desc',0,'50','alternatecode, itemdescription, cases, units, upc, FORMAT(salesprice,3) as salesprice, loaddetailcode as edit_del_primary_id',' AND  (	routecode = "81" )','17-07-2025','2','1','81','0')
+
+CALL sp_get_inventory_transaction_dailysalesmanload('1','','','desc',0,'10','loaddetail.routecode, routename, salesmanname1, loadperiodnumber, erpreferencenumber, `status` AS loadstatus, loaddetailcode as edit_del_primary_id','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_tablet_check_load('110','81')
+
+CALL sp_ws_syncicsdata_setting('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','81','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','81','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','81')
+
+CALL sp_ws_updatesyncdate('110','a1b7f10aaf6fb057','81')
+
+CALL sp_ws_instertion_tbl_synclog('110','81','47871','0','1')
+
+CALL sp_ws_getdata_from_batchdetail('47871','2','NONE','7','2400','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_batchdetail('47871','2','NONE','8','1200','1','2099-12-31 00:00:00','0')
+
+CALL sp_ws_getdata_from_inventorytransactionheader('47871','47871','1','81','110.0','2025-07-17','14:47:38','81000054','0','0','0','2025-07-17','0','0','0','81400004.0','2','0','0','2025-07-17','0','0','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47871','36540','1','7.0','2400','0','0.031','2','0.75','0','2400','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventorytransactiondetail('47871','36540','1','8.0','1200','0','0.063','2','0.75','0','1200','1900-01-01','0')
+
+CALL sp_ws_getdata_from_inventoryvariance('47871','0')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','7.0','47871','0','0','2400','0','0','0','0','0','0','0','0','0','0','0','0','0.031','0.031','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','8.0','47871','0','0','1200','0','0','0','0','0','0','0','0','0','0','0','0','0.063','0.063','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_instertion_tbl_synclog('110','81','47871','0','2')
+
+CALL sp_check_isroute_closed("47871")
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','47871','480','81','110','0','2025-07-17','14:42','2025-07-17','14:45','1','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('2','47871','480','81','110','0','2025-07-17','14:47','2025-07-17','14:48','1','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_get_from_customermaster('480','0','0','43','0','0','0','0','ABU OMRAN (ABU ANNAN SERVICES ',NULL,'Capital','','127.332','0','547','9','0','0','0','2','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',' ','','0','0','','ABU OMRAN (ABU ANNAN SERVICES ',NULL,'','0','0','0','0','0','0','1','0','0','0','0','0','0','','0','','0','0','','','1','0','0',' ','','','','0','1','0','0','0','0','0','0','1','2','0','0','3','0','0','2','3','0','3','1','0','0','1','0','0','0','4','CAA0085','1700','0','','0','',' ','0','','0','0','0','0','','0','0','0','','1','','','0','','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','1','0','0','0','1','0','0','0','0','','','0','0','0','0','0','0','0','0','0','0','0','0','23.5910510000','58.4209553000','0','','','','','0','0','0','1','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','','0','0','0','0','0','','')
+
+CALL sp_ws_getdata_invoiceheader('2','47871','2','81000055','81200029','2025-07-17','14:48:15','0','0','480','81','110','0','0','0','2025-07-17','0','29.832','19.164','0','0','0','0.0','0.0','29.832','0','0','1','0','0','0','1','0','0','2','0','0','0','10.668','0','0','0','0','0','0','0','0','2025-07-17','0','2','0','','0','0','0',0,0,0,'0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_tablet('47871','2','137049','7.0','24','0','0','0','0.031','0.031','0.031','0.031','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0.75','0.75','0.031','0.75','0.75','0.031','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','2025-07-17 10:47:57',0,'0','0',0,0,'0','0','0.75','0','0')
+
+CALL sp_ws_getdata_from_tablet('47871','2','137049','8.0','2','0','0','0','0.063','0.063','0.063','0.063','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0.75','0.75','0.063','0.75','0.75','0.063','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','2025-07-17 10:48:02',0,'0','0',0,0,'0','0','0.126','0','0')
+
+CALL sp_ws_getdata_from_tablet('47871','2','137049','367.0','36','0','0','1','0.508','0.508','0.508','0.508','1','9.144','0','0','0','0','0','0','0','0.254','0','0','0','3.048','3.048','3.048','3.048','0.508','3.048','3.048','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','2025-07-17 10:48:43',0,'0','0',0,0,'0','0','18.288','0','0')
+
+CALL sp_ws_getdata_from_tablet('47871','2','137049','368.0','0','0','0','3','0.508','0.508','0.508','0.508','3','0','0','0','0','0','0','0','0','0.762','0','0','0','3.048','3.048','3.048','3.048','0.508','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',0,'0','0',0,0,'0','0','0','0','0')
+
+CALL sp_ws_getdata_from_tablet('47871','2','137049','369.0','0','0','0','2','0.508','0.508','0.508','0.508','2','0','0','0','0','0','0','0','0','0.508','0','0','0','3.048','3.048','3.048','3.048','0.508','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',0,'0','0',0,0,'0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47871','2','','4','0','7','6','0','0','0','310','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_customerinvoice('2.0','2','81000055','81200029','2025-07-17','14:48:55','480','81','110','29.832','19.164','0','0','0','0.0','0.0','0','0','29.832','1','0','1','0','110','0','0','81200029','0','0','2','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','2025-07-17')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','367.0','47871','0','0','600','0','0','0','72','0','0','0','0','0','0','7','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','368.0','47871','0','0','600','0','0','0','0','0','0','0','0','0','0','3','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','369.0','47871','0','0','600','0','0','0','0','0','0','0','0','0','0','2','0','0.508','0.508','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','7.0','47871','0','0','2400','0','0','0','24','0','0','0','0','0','0','0','0','0.031','0.031','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_inventorysummarydetail('47871','8.0','47871','0','0','1200','0','0','0','2','0','0','0','0','0','0','0','0','0.063','0.063','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0.75','0.75','0','0','0','0','0','0','0','0','0','0','0','0','')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47871','2','137049','480','8.10001e+07','2025-07-17','14:48:53','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_instertion_tbl_synclog('110','81','47871','0','2')
+
+CALL sp_check_isroute_closed("47871")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_index_items('1','','','desc',0,'10','item.actualitemcode, item.alternatecode, item.itemshortdescription AS itemshortdescription, igrp.itemgroupname AS itemgroupname, unitspercase, item.activeitem','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_index_items('1','','','desc',0,'10','item.actualitemcode, item.alternatecode, item.itemshortdescription AS itemshortdescription, igrp.itemgroupname AS itemgroupname, unitspercase, item.activeitem',' AND (item.actualitemcode LIKE "%KG-GRPET%" OR item.alternatecode LIKE "%KG-GRPET%" OR item.itemshortdescription LIKE "%KG-GRPET%" OR igrp.itemgroupname LIKE "%KG-GRPET%" OR unitspercase LIKE "%KG-GRPET%" OR item.activeitem LIKE "%KG-GRPET%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_index_additem('367')
+
+CALL sp_get_userwisepermission('7','160','1')

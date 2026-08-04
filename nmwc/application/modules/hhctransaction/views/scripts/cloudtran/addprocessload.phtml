@@ -1,0 +1,152 @@
+<?php
+/**
+* @name       addcompanygroup.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Comopany Group
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $('#ddlroute_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+	$('#ddlroute_chzn').addClass('chzn-container-active');
+	
+	$('#ddlroute').change(function(){
+		
+		if(this.value == '')
+		{
+			return false;
+		}
+		$('#ddlload').html('');
+		var routeid = this.value;
+		var  url = base_url+'/hhctransaction/cloudtran/getloadperiod/routeid/'+routeid;
+		$.ajax({
+			url:url,
+			data:$("#frmdet").serialize(),
+			type:'post',		
+			success:function(data)
+			{
+				var salesman_info = JSON.parse(data);
+				if (salesman_info == '')
+				{
+					return false;
+				}
+				$('#txtsalesman').val(salesman_info[0][0]['salesmanname1']);
+				$('#hdnsalesman').val(salesman_info[0][0]['salesmancode']);
+				if(typeof(salesman_info[1]) == 'object')
+				{
+					$('<option/>').val('').html('--- Select ---').appendTo('#ddlload');
+					for (i=0;i<salesman_info[1].length;i++) {						
+						$('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlload');
+					}
+				}
+				$('#ddlload').trigger('liszt:updated');
+				$("#txtroutekey").val(salesman_info[2][0]['routekey']);
+			}
+		})
+	});
+	
+	$('#ddlload').change(function(){
+	    var url =base_url+'/hhctransaction/processload/loaditemdetail/routekey/'+$("#txtroutekey").val();
+	    var routecode = $('#ddlroute').val();
+	    var loadid = $(this).val();
+	   
+	   loaddata(url+"/routecode/"+routecode+"/loadid/"+loadid,'item-grid');  
+	});
+});
+
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="hhctransaction_cloudtran_addprocessload">
+<form class="validate" method="post" action="" novalidate="novalidate">      
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+	<h3><?php echo $this->translate->_('Process Load');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"processload"),"default", true);?>')">
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+	<li class="current">
+	    <ul style="display: block;">
+		<li>
+		    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"processload"),"default", true);?>"><?php echo $this->overview;?></a>
+		</li>
+		<li class="last-child">
+		    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"addprocessload"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+		</li>
+	    </ul>
+	</li>
+    </ul>
+</div>
+</div>
+<div class="content no-padding with-actions">
+	<div class="_100">
+		<div class="clean"></div>
+	</div>
+	<div class="_100">
+		<label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Route').''.$this->required;?>
+		</label>
+		<div class="_25 margin_right_1">
+            <select id="ddlroute" name="ddlroute" class="required" >
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->routeinfo);$i++)
+				{
+				?>
+					<option  value="<?php echo $this->routeinfo[$i]['id'];?>"><?php echo $this->routeinfo[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+	    <input name="txtroutekey" id="txtroutekey" maxlength="50" type="text" readonly="readonly" value="">
+        </div>
+    </div>
+	<div class="_100">
+		<label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+		</label>
+		<div class="_25 margin_right_1">
+			<input name="txtsalesman" id="txtsalesman" maxlength="50" type="text" readonly="readonly" value="">
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Load Period').''.$this->required;?>
+		</label>
+		<div class="_25 margin_right_1">
+            <select id="ddlload" name="ddlload" class="required" >
+				<option value="">--- Select ---</option>				
+			</select>
+        </div>
+    </div>
+	<div class="_100">
+		<label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Date').''.$this->colan;?>
+		</label>
+		<div class="_15 margin_right_1">
+			<input name="txtdate" id="txtdate" maxlength="50" type="text" readonly="readonly" value="<?php echo date('d-m-Y'); ?>" >
+		</div>
+	</div>            
+	<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+	<input type="hidden" id="hdnsalesman" name="hdnsalesman" value="">
+	<input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>">
+	 <div class="_100 " id="divid" >
+	    <div class="clear"></div>
+	    <div id="loader"></div>
+	    <div  id="item-grid"></div>
+	</div> 
+</form>
+</div>
+</div>

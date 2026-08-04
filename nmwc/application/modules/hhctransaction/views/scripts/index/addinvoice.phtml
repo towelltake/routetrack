@@ -1,0 +1,437 @@
+<?php
+/**
+* @name       addinvoice.phtml
+* @since      03-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+
+/* $this->headScript()->appendFile($this->baseUrl().'/public/js/jquery.prettyPhoto.js');
+$this->headLink()->appendStylesheet($this->baseUrl().'/public/css/prettyPhoto.css'); */
+?>
+<script>
+    $(document).ready(function(){
+	loaddata('<?php echo $this->invoiceitemgrid; ?>','item-grid');
+    })
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="hhctransaction_index_addinvoice">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_10"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+        <h3><?php echo $this->translate->_('Invoice')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"index","action"=>"invoice"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+
+<div class="_100" >
+    <div class="_20 label_text_align margin_top_7">&nbsp;</div>
+		<div class="_20 label_text_align margin_top_17"><label class="advance_search_css"><?php echo $this->translate->_('Select Date').''.$this->colan;?></label></div>
+		<div class="_20 label_text_align"><input type="text" id="txtdate" name="txtdate" value="<?php echo date('d-m-Y');?>" class="margin_zero"></div>
+		<div class="_10 margin_top_3"><input type="button" name="btnload" id="btnload" value="<?php echo $this->translate->_('OK'); ?>" class="margin_zero"></div>
+                    <div class="_30">
+                        &nbsp;
+                    </div>
+</div>
+    <div class="clear space_20"></div>
+    <div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"index","action"=>"invoice"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"index","action"=>"addinvoice"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content with-actions ie_grid min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+
+	<div class="_100">
+	    <label class="_25_1 label_text_align margin_top_17">
+		<?php echo $this->translate->_('Invoice No').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_invoice_no" name="txt_invoice_no" value="917">
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_17">
+		<?php echo $this->translate->_('Invoice Date').''.$this->colan;?>
+	    </label>
+	    <label class="_25_1  margin_top_20 margin_right_1">
+		<?php echo date('d m Y h:i:s');?>
+	    </label>
+
+	</div>
+	<div class="_100">
+	    <label class="_25_1 label_text_align margin_top_17">
+		<?php echo $this->translate->_('Document No').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_doc_no" name="txt_doc_no" value="917">
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('Route Start of Day').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		&nbsp;
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_25_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('Route').''.$this->required;?>
+	    </label>
+	    <div class="_25_1 margin_top_7 margin_right_1">
+		<select id="ddlroute" name="ddlroute" class="required" >
+		    <option value="">--- Select ---</option>
+		    <?php
+			for($i=0;$i<count($this->route);$i++)
+			{
+		    ?>
+			    <option selected="selected" value="<?php echo $this->route[$i]['id'];?>"><?php echo $this->route[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_17">
+		<?php echo $this->translate->_('Invoice Type').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_invoice_type" name="txt_invoice_type" value="New">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_salesman" name="txt_salesman" value="" readonly="readonly" class="margin_top_5">
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('HHC Invoice No').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_hhc_invoice_no" name="txt_hhc_invoice_no" value="242"  class="margin_top_5">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_25_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('Customer').''.$this->required;?>
+	    </label>
+	    <div class="_25_1 margin_top_7 margin_right_1">
+		<select id="ddlcustomer" name="ddlcustomer" class="required" >
+		    <option value="">--- Select ---</option>
+		    <?php
+			for($i=0;$i<count($this->customer);$i++)
+			{
+		    ?>
+			    <option selected="selected" value="<?php echo $this->customer[$i]['id'];?>"><?php echo $this->customer[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_17">
+		<?php echo $this->translate->_('Document Status').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_doc_status" name="txt_doc_status" value="Valid">
+	    </div>
+	</div>
+
+	<div class="_100">
+	    <label class="_25_1 label_text_align">
+		&nbsp;
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		&nbsp;
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Acc Period').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txtacc_period" name="txtacc_period" value="OPENED" class="margin_top_5">
+	    </div>
+	</div>
+	<div class="clear space_20"></div>
+	<fieldset>
+	    <legend ><?php echo $this->translate->_('Add Item').''.$this->colan;?></legend>
+
+	    <div class="_100 margin_bottom_10">
+		<div class="_35">&nbsp;</div>
+		<label class="_15_2 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Item').$this->required;?>
+		</label>
+
+		<div class="_25 margin_left_1 margin_right_1">
+		    <select id="ddlitem" name="ddlitem" class="required" >
+		    <option value="">--- Select ---</option>
+		    <?php for($i=0;$i<count($this->item);$i++) { ?>
+			    <option selected="selected" value="<?php echo $this->item[$i]['id'];?>"><?php echo $this->item[$i]['val'];?></option>
+		    <?php if($i==25){ break; } } ?>
+		</select>
+		</div>
+		<div class="_20">&nbsp;</div>
+	    </div>
+
+	    <div class="_100 margin_bottom_10">
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('UPC').''.$this->colan;?>
+		</label>
+		<div class="_10_2">
+		    <input type="text" id="txt_upc" name="txt_upc" value="24"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Item Code').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1" >
+		    <input type="text" id="txt_item_code" name="txt_item_code" value="31"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Item Description').''.$this->colan;?>
+		</label>
+		<div class="_25 margin_right_1">
+		    <input type="text" id="txt_item_description" name="txt_item_description" value="CHIFFERINI 24X500G"  class="margin_top_3">
+		</div>
+
+	    </div>
+	    <div class="_100 margin_bottom_10">
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Price (Sale)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_price_sale" name="txt_price_sale" value="3.96"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Price (Return)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_price_return" name="txt_price_return" value="3.96"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Sales (Case)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_sales_case" name="txt_sales_case" value="1"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Sales (Pcs)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_sales_pieces" name="txt_sales_pieces" value="2"  class="margin_top_3">
+		</div>
+	    </div>
+
+	    <div class="_100 margin_bottom_10">
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Expiry (Case)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_expirey_case" name="txt_expirey_case" value="2"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Expiry (Pcs)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_expirey_pieces" name="txt_expirey_pieces" value="1"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('BuyBack (Case)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_buyback_cases" name="txt_buyback_cases" value="1"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('BuyBack (Pcs)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_buyback_pieces" name="txt_buyback_pieces" value="2"  class="margin_top_3">
+		</div>
+	    </div>
+
+	    <div class="_100 margin_bottom_10">
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Free (Case)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_freegood_cases" name="txt_freegood_cases" value="1"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Free (Pcs)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_freegood_pieces" name="txt_freegood_pieces" value="2"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Promo (Case)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_promotion_cases" name="txt_promotion_cases" value="3"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Promo (Pcs)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_promotion_pieces" name="txt_promotion_pieces" value="2"  class="margin_top_3">
+		</div>
+	    </div>
+
+	    <div class="_100 margin_bottom_10" >
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Damage (Case)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_damage_cases" name="txt_damage_cases" value="4"  class="margin_top_3">
+		</div>
+		<label class="_15_3 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Damage (Pcs)').''.$this->colan;?>
+		</label>
+		<div class="_10_2 margin_right_1">
+		    <input type="text" id="txt_damage_pieces" name="txt_damage_pieces" value="1"  class="margin_top_3">
+		</div>
+
+	    </div>
+
+	</fieldset>
+
+	<div class="clear"></div>
+	<div id="loader"></div>
+	<div class="_100" id="item-grid" >
+
+	</div>
+	<div class="clear space_20"></div>
+
+	<div class="_100">
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Total Sales').''.$this->colan;?>
+	    </label>
+	    <div class="_15">
+		<input type="text" id="txt_total_sales" name="txt_total_sales" value="3"  class="margin_top_3">
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Total Damaged').''.$this->colan;?>
+	    </label>
+	    <div class="_15" >
+		<input type="text" id="txt_total_damaged" name="txt_total_damaged" value="5"  class="margin_top_3">
+	    </div>
+	    <label class="_20 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Total BuyBack').''.$this->colan;?>
+	    </label>
+	    <div class="_15"  style="margin-right:-10px;" >
+		<input type="text" id="txt_total_buyback" name="txt_total_buyback" value="3"  class="margin_top_3">
+	    </div>
+
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Total Promotion').''.$this->colan;?>
+	    </label>
+	    <div class="_15">
+		<input type="text" id="txt_total_promotion" name="txt_total_promotion" value="5"  class="margin_top_3">
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Total Free Goods').''.$this->colan;?>
+	    </label>
+	    <div class="_15" >
+		<input type="text" id="txt_total_free_goods" name="txt_total_free_goods" value="3"  class="margin_top_3">
+	    </div>
+	    <label class="_20 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Net Item').''.$this->colan;?>
+	    </label>
+	    <div class="_15" style="margin-right:-10px;" >
+		<input type="text" id="txt_net_item" name="txt_net_item" value="19"  class="margin_top_3">
+	    </div>
+
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Line Item Tax').''.$this->colan;?>
+	    </label>
+	    <div class="_15">
+		<input type="text" id="txt_line_item_tax" name="txt_line_item_tax" value="12"  class="margin_top_3">
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Total Discount').''.$this->colan;?>
+	    </label>
+	    <div class="_15" >
+		<input type="text" id="txt_total_discount" name="txt_total_discount" value="13"  class="margin_top_3">
+	    </div>
+	    <label class="_20 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Amount Paid').''.$this->colan;?>
+	    </label>
+	    <div class="_15" style="margin-right:-10px;" >
+		<input type="text" id="txt_amount_paid" name="txt_amount_paid" value="10"  class="margin_top_3">
+	    </div>
+
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Special Discount').''.$this->colan;?>
+	    </label>
+	    <div class="_15">
+		<input type="text" id="txt_special_discount" name="txt_special_discount" value="15"  class="margin_top_3">
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Amount After Disc').''.$this->colan;?>
+	    </label>
+	    <div class="_15" >
+		<input type="text" id="txt_amount_after_disc" name="txt_amount_after_disc" value="229"  class="margin_top_3">
+	    </div>
+	    <label class="_20 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Advance Debited').''.$this->colan;?>
+	    </label>
+	    <div class="_15" style="margin-right:-10px;" >
+		<input type="text" id="txt_advance_debited" name="txt_advance_debited" value="200"  class="margin_top_3">
+	    </div>
+
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Invoice Balance').''.$this->colan;?>
+	    </label>
+	    <div class="_15">
+		<input type="text" id="txt_invoice_balance" name="txt_invoice_balance" value="29"  class="margin_top_3">
+	    </div>
+
+
+	</div>
+
+	<div class="clear space_100"></div>
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+	$( "#txtdate" ).datepicker({
+	    dateFormat: 'dd-mm-yy'
+	});
+    });
+
+    $("#ddlroute").change(function() {
+	var str = $(this).find("option:selected").text();
+	var substr = str.split(' -- ');
+	$("#txt_salesman").attr("value",substr[1]);
+    });
+});
+</script>

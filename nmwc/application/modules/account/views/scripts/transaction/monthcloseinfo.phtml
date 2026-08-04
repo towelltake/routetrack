@@ -1,0 +1,64 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<form name="frmoverview" id="frmoverview" action="" method="post">
+    <input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="grid_12">
+    <div class="box">
+        <div class="header">
+            <div class="_50_3 back_btn">
+				<img src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png" class="margin_top_7">
+				<h3><?php echo $this->translate->_('Month Close');?></h3>
+			</div>
+			<div class="_50_3">
+				<!--<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btnexport" id="btnexport"></div>
+				<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btnprint" id="btnprint"></div>-->				
+				<?php if($this->checkaccess("insert")) { ?><div class="_10 save_btn"><input class="border_none" type="button" value="" id="btnadd" name="btnadd" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"monthclose"), "default", true);?>')"></div><?php } ?>
+			</div>
+		</div>
+		<div class="_100" style="text-align:center">
+			<div class="_10 label_text_align margin_top_7">&nbsp;</div>
+			<div class="_10 label_text_align margin_top_12"><?php echo $this->translate->_('Year').''.$this->colan;?></div>
+			<div class="_20 text_align">
+				<select id="ddlyear" name="ddlyear">
+					<option value="">--- Select ---</option>
+					<?php
+					for($i=0;$i<count($this->years);$i++)
+					{
+					?>
+						<option value="<?php echo $this->years[$i]['id'];?>" <?php echo ($this->years[$i]['id'] == $this->year) ? 'selected' : ''; ?> ><?php echo $this->years[$i]['val'];?></option>
+					<?php } ?>
+				</select>
+			</div>
+			<div class="_10 label_text_align margin_top_12"><?php echo $this->translate->_('Month').''.$this->colan;?></div>
+			<div class="_20 text_align">
+				<select id="ddlmonth" name="ddlmonth">				
+					<option value="">--- Select ---</option>
+					<?php
+					for($i=0;$i<count($this->months);$i++)
+					{
+					?>
+						<option value="<?php echo $this->months[$i]['id'];?>" <?php echo ($this->months[$i]['id'] == $this->month) ? 'selected' : ''; ?> ><?php echo $this->months[$i]['val'];?></option>
+					<?php } ?>
+				</select>
+			</div>			
+			<div class="_10 label_text_align"><input type="submit" name="btnload" id="btnload" value="<?php echo $this->translate->_('OK'); ?>" class="margin_zero"></div>
+			<div class="_8 label_text_align"><input type="submit" name="btnreset" id="btnreset" value="<?php echo $this->translate->_('RESET'); ?>" class="margin_zero"></div>
+		</div>
+	<div class="clear space_20"></div>
+	<div class="clear"></div>
+	<?php echo $this->partial('datagrid.phtml', $this); ?>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->
+</form>

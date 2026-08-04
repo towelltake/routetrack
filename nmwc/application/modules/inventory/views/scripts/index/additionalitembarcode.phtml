@@ -1,0 +1,113 @@
+
+
+<?php
+/**
+* @name       additionalitembarcode.phtml
+* @since      6 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<style>
+.margin_zero {margin-top:0px !important;}
+</style>
+<script>
+$(document).ready(function(){
+    
+    var  url = base_url+"/inventory/transaction/additionalitembarcode/";
+    
+    $("#btnloaddata").click(function() {	
+		var val = $("#ddlitemcode").val();	
+		if(val > 0) {	    
+			window.location = url+"edit/yes/id/"+val;
+		}
+    });
+    
+    $("#btnnew").click(function(){	
+	window.location = url;	
+    });
+})
+</script>
+<div class="content with-actions">
+	<div class="_100">
+		<div class="clear"></div>
+	</div>
+	<div class="_100">
+		<div class="clear"></div>
+	</div>
+    <div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode1').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode1" id="txtbarcode1" class="" value="<?php echo $this->formdata['barcode1']; ?>"/>
+		</div>
+                <label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode2').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode2" id="txtbarcode2" class="margin_top_5" value="<?php echo $this->formdata['barcode2']; ?>"/>
+		</div>
+    </div>
+    <div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode3').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode3" id="txtbarcode3" class="margin_top_5" value="<?php echo $this->formdata['barcode3']; ?>"/>
+		</div>
+                <label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode4').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode4" id="txtbarcode4" class="margin_top_3" value="<?php echo $this->formdata['barcode4']; ?>"/>
+		</div>
+    </div>
+    <div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode5').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode5" id="txtbarcode5" class="margin_top_5" value="<?php echo $this->formdata['barcode5']; ?>" />
+		</div>
+                <label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode6').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode6" id="txtbarcode6" class="margin_top_3" value="<?php echo $this->formdata['barcode6']; ?>" />
+		</div>
+    </div>
+    <div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode7').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode7" id="txtbarcode7" class="margin_top_5" value="<?php echo $this->formdata['barcode7']; ?>" />
+		</div>
+                <label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode8').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode8" id="txtbarcode8" class="margin_top_3" value="<?php echo $this->formdata['barcode8']; ?>" />
+		</div>
+    </div>
+    <div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode9').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode9" id="txtbarcode9" class="margin_top_5" value="<?php echo $this->formdata['barcode9']; ?>"/>
+		</div>
+                <label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('BarCode10').''.$this->colan;?>
+		</label>
+		<div class="_20_1 ">
+		    <input type="text" name="txtbarcode10" id="txtbarcode10" class="margin_top_3" value="<?php echo $this->formdata['barcode10']; ?>" />
+		</div>
+    </div>	
+</div>

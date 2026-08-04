@@ -1,0 +1,226 @@
+<?php
+/**
+* @name       addsurvay.phtml
+* @since      30-01-12
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    
+    $("#txt_surveyplan").focus();
+    
+    $('#ddlquestion').transfer({
+	to:'#ddlselectedquestion',		//selector of second multiple select box
+	dblClick:true,				//true or false, activates double click transfer
+	addId:'#btn_move_cust',			//add buttong id
+	addAllId:'#btn_move_cust_all', 		// add all button id
+	removeId:'#btn_remove_cust', 		// remove button id
+	removeAllId:'#btn_remove_cust_all',	// remove all button id
+	tClass:'movedElement1'			//class to be added when option tranfered to another select.
+    });
+    
+    <?php if($this->params["edit"]=="yes") { ?>    
+	$('#ddlselectedquestion').dblclick(function() {
+	    
+	    var val = this.value;	
+	    $("#ddlselectedquestion option[value='"+val+"']").remove();	
+	    $("#ddlquestion option[value='"+val+"']").show();	
+	});
+    <?php } ?>
+    
+    
+    $("#ddlquestion").dblclick(function() {
+	
+	$("#lblddlselectedquestion").hide();
+	
+    });
+    
+    $("#btnsave").click(function() {
+	
+	if($("#ddlselectedquestion option").length == 0)
+	{
+	    
+	    $("#lblddlselectedquestion").show();
+	    
+	    return false;
+	}
+	else if($("#frmdet").valid())
+	{
+	    $("#lblddlselectedquestion").hide();
+	    
+	    var i 	= 0;
+	    var str 	= '';
+	    $("#ddlselectedquestion option").each(function()
+	    {
+		str += $(this).val()+',';
+		i++;
+	    });
+	    
+	    $("#hdnselectedquestion").val(str);
+	    $("#hdncount_question").val(i);
+	}
+    });
+})
+</script>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+    <div class="box" id="merchandize_index_addsurvey">
+	<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post" >	      
+	    <div class="header">
+		<div class="_50_3 back_btn">
+		    <img src="<?php echo $this->baseUrl()?>/public/images/icon_merchandizing.png" class="margin_top_7">
+		    <h3><?php echo $this->translate->_('Survey Plan')?></h3>
+		</div>
+		<div class="_50_3">
+		    <div class="_10 save_btn">
+			<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"surveyplan"),"default", true);?>')">
+		    </div>
+		    <div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+		</div>
+	    </div>
+	    <div id="nav_sub" class="ie_nav_sub">
+	    <div class="container_12">
+		<ul id="nav_main">
+		    <li class="current">
+			<ul style="display: block;">
+			    <li>
+				<a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"surveyplan"),"default", true);?>"><?php echo $this->overview?></a>
+			    </li>
+			    <li class="last-child">
+				<a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"addsurveyplan"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+			    </li>
+			</ul>
+		    </li>
+		</ul>
+	    </div>
+	    </div>
+
+    <div class="content with-actions ie_grid">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <label class="_20_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Code').''.$this->colan;?>
+	    </label>
+	    <div class="_20_1">
+		<input type="text" id="txt_code" name="txt_code" value="<?php echo $this->formdata['surveyplankey']; ?>" readonly="readonly" >
+	    </div>
+	    <label class="_20_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Survey Plan').''.$this->required;?>
+	    </label>
+	    <div class="_20_1">	
+		<input class="required" type="text" maxlength="50" id="txt_surveyplan" name="txt_surveyplan" value="<?php echo $this->formdata['surveydescription'];?>">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_20_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Survey Index').''.$this->required;?>
+	    </label>
+	    <div class="_20_1">
+		<input type="text" id="txt_surveyindex" maxlength="18" name="txt_surveyindex" class="required number" value="<?php echo $this->formdata['surveysequencenumber'];?>" >
+	    </div>
+	    <label class="_20_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Survey Plan ('.$this->sec_lang.')').''.$this->colan;?>
+	    </label>
+	    <div class="_20_1">	
+		<input type="text" id="txt_arbsurveyplan" maxlength="50" class="arb_text_align" name="txt_arbsurveyplan" value="<?php echo $this->formdata['arbsurveydescription'];?>" >
+	    </div>	
+	</div>
+	<div class="_100">
+	    <label class="_20_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Division').''.$this->colan;?>
+	    </label>
+	    <div class="_20_1">
+		<input type="text" id="txt_division" maxlength="18" name="txt_division"  value="<?php echo $this->formdata['remarks'];?>" >
+	    </div>
+	   
+	    <div class="_20_1">	
+		
+	    </div>	
+	</div>
+	<div class="_100">
+	    <div class="_20_1">&nbsp;</div>	    
+	    <div class="_20_1">
+		<div class="_20 margin_0">
+		    <input type="checkbox" id="chk_mandatory" name="chk_mandatory" <?php echo $this->formdata["surveymandatory"] == '1' ? 'checked' : '' ;?> value="1" >
+		</div>
+		<div class="margin_top_10">
+		    <?php echo $this->translate->_('Is Mandatory');?>
+		</div>		
+	    </div>	    
+	    <div class="_50">&nbsp;</div>
+	</div>
+	<div class="_100">
+	    <div class="_5">&nbsp;</div>
+	    <!--<label class="_20 left clear">-->
+	    <!--</label>-->
+	    <div class="_45 left">
+		<div style="width:75px;clear:both">
+		    <?php echo $this->translate->_('Definition').''.$this->colan;?>
+		</div>
+		<div class="simple_dropdown margin_top_10">
+		    <select id="ddlquestion" name="ddlquestion" multiple="multiple" size="15" style="height:250px">
+			<?php
+			    for($i=0;$i<count($this->questions);$i++)
+			    {
+				$selected = in_array($this->questions[$i],$this->selected_questions) ? 'class="movedElement1" selected="selected" style="display: none;"' : '';
+			?>
+				<option <?php echo $selected; ?> value="<?php echo $this->questions[$i]['id'];?>"><?php echo $this->questions[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		</div>
+	    </div>
+	    <div class="left">&nbsp;&nbsp;</div>
+	    <div class="left navigation_button">
+	       <input type="button" name="btn_move_cust" id="btn_move_cust" value="<?php echo $this->translate->_('moveone'); ?>" class="margin_top_50" >
+	       <input type="button" name="btn_move_cust_all" id="btn_move_cust_all" value="<?php echo $this->translate->_('moveall'); ?>" class="navigation_button margin_top_15" >
+	       <input type="button" name="btn_remove_cust" id="btn_remove_cust" value="<?php echo $this->translate->_('removeone'); ?>" class="navigation_button margin_top_15" >
+	       <input type="button" name="btn_remove_cust_all" id="btn_remove_cust_all" value="<?php echo $this->translate->_('removeall'); ?>" class="navigation_button" >
+	    </div>
+	    <div class="_45 left">
+		<div style="width:145px;clear:both">
+		    <?php echo $this->translate->_('Selected Definition').''.$this->required;?>
+		</div>
+		<div class="simple_dropdown  margin_top_10">
+		    <select id="ddlselectedquestion" name="ddlselectedquestion[]" multiple="multiple" size="15" style="height:250px">
+		    <?php
+			    for($i=0;$i<count($this->selected_questions);$i++)
+			    {
+			?>
+				<option value="<?php echo $this->selected_questions[$i]['id'];?>" selected="selected" class="movedElement1"><?php echo $this->selected_questions[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		    <label for="ddlselectedquestion" id="lblddlselectedquestion" name="lblddlselectedquestion" generated="true" class="error" style="display: none;">This field is required.</label>
+		</div>
+	    </div>	
+	</div>
+    </div>
+    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+    <input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>" />
+    <input type="hidden" id="hdncount_question" name="hdncount_question" value="" />
+    <input type="hidden" id="hdnselectedquestion" name="hdnselectedquestion" value="" />
+    
+    </form>	
+    </div> <!-- End of .box -->
+</div>

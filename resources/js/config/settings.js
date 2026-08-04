@@ -1,0 +1,66 @@
+export const settingsModules = [
+  {
+    key: "settings",
+    title: "Settings",
+    titleKey: "settings",
+    icon: "fa fa-gear",
+    groups: [
+      {
+        key: "administration-setup",
+        title: "Administration Setup",
+        titleKey: "administration_setup",
+        icon: "fa fa-screwdriver-wrench",
+        items: [
+          {
+            key: "basic-setup",
+            title: "Basic Setup",
+            titleKey: "basic_setup",
+            icon: "fa fa-sliders",
+            href: "/settings/basic-setup",
+            permission: "basic setup",
+            legacyModule: "admin",
+            legacyController: "index",
+            legacyAction: "index",
+            legacyProcedure: "sp_get_admin_index_index",
+          },
+          {
+            key: "control-panel",
+            title: "Control Panel",
+            titleKey: "control_panel",
+            icon: "fa fa-gears",
+            href: "/settings/control-panel",
+            permission: "control panel",
+            legacyModule: "admin",
+            legacyController: "cpanel",
+            legacyAction: "index",
+            legacyProcedure: "sp_get_admin_cpanel_general",
+          },
+        ],
+      },
+      {
+        key: "email-setup",
+        title: "Email Setup",
+        titleKey: "email_setup",
+        icon: "fa fa-envelope",
+        items: [
+          {
+            key: "email-templates",
+            title: "Email Templates",
+            titleKey: "email_templates",
+            icon: "fa fa-envelope",
+            href: "/settings/email-templates",
+            permission: "email templates",
+          },
+          {
+            key: "email-configuration",
+            title: "Email Configuration",
+            titleKey: "email_configuration",
+            icon: "fa fa-envelope-open",
+            href: "/settings/email-configuration",
+            permission: "email configuration",
+          },
+        ],
+      },
+    ],
+  },
+];

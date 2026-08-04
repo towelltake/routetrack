@@ -1,0 +1,104 @@
+<?php
+/**
+* @name       pwdgenerate.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Country Details
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+?>
+<!--getcustomerfromroutecode-->
+<script type="text/javascript">
+	$(document).ready(function() {
+		
+		$('#ddlroute').change(function() {
+			
+			if($('#ddlroute').val() == '') {
+				return false
+			}
+			$.blockUI();
+			$('#ddlcustomer').html('');
+			var  url = base_url+'/home/index/getcustomerfromroutecode/routeid/'+$('#ddlroute').val();
+			$.ajax({
+				url:url,
+				data:$("#userform").serialize(),
+				type:'post',				
+				success:function(data) {
+					var customer_info = JSON.parse(data);
+					if (customer_info == '')
+					{
+						return false;
+					}					
+					if(typeof(customer_info[0]) == 'object')
+					{
+						$('<option/>').val('').html('--- Select ---').appendTo('#ddlcustomer');
+						for (i=0;i<customer_info[0].length;i++) {							
+							$('<option/>').val(customer_info[0][i]['id']).html(customer_info[0][i]['val']).appendTo('#ddlcustomer');							
+						}
+					}
+					$('#ddlcustomer').trigger('liszt:updated');
+				}
+			})
+			$.unblockUI();
+		})
+	});	
+</script>
+<div class="clean"></div>
+<div class="grid_12" id="admin_security_pwdgenerate">
+<div class="box">
+<form id="userform" method="post" action="" class="validate" novalidate="novalidate">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_4"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_administration.png">
+	<h3><?php echo $this->translate->_('Password Generator');?></h3>
+    </div>
+</div>
+<div class="content no-padding with-actions">
+    <div class="_100">
+		<div class="clean"></div>
+    </div>    
+    <div class="_100">
+		<label class="_40 margin_top_10 label_text_align">
+			<?php echo $this->translate->_('Enter Key').''.$this->colan;?>
+		</label>
+		<div class="_25_3">
+			<input type="text" id="txtkey" name="txtkey" value="<?php echo $this->enterkey;?>" >
+		</div>
+    </div>
+	<div class="_100">
+		<label class="_40 margin_top_10 label_text_align">
+		   <?php echo $this->translate->_('Password').''.$this->colan;?>
+	   </label>
+		<div class="_30 margin_left_right_1_1 margin_top_10">
+			<?php echo $this->output;?>
+		</div>
+    </div>
+	<?php  /*
+    <div class="_100">
+		<div id="chk1" class="_40 label_text_align">
+			<input type="checkbox" class="fl_left" id="chkadminpwd" name="chkadminpwd" value="1">
+		</div>
+		<label class="_50 margin_top_10">
+			<?php echo $this->translate->_('Admin Password');?>
+		</label>
+    </div> */ ?>
+    <div class="_100 margin_top_15">
+		<div class="_40 label_text_align">&nbsp;</div>
+		<div class="_5_1 label_text_align">
+		   <input type="submit" class="fl_left" id="btnok" name="btnok" value="<?php echo $this->translate->_('OK');?>">
+	   </div>
+		<div class="_10 margin_left_0 label_text_align">
+			<input type="submit" class="fl_right" id="subbtncancel" name="subbtncancel" value="<?php echo $this->translate->_('CANCEL');?>">
+		</div>
+		<div class="_40 label_text_align">&nbsp;</div>
+    </div>
+</div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+</div>
+</div> <!-- End of .box -->

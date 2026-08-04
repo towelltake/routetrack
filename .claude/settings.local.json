@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(xargs cat *)",
+      "Bash(mkdir -p \"d:\\\\PHP Dev\\\\trac-v2\\\\app\\\\Http\\\\Controllers\\\\Usermanagement\")",
+      "Bash(mkdir -p \"d:\\\\PHP Dev\\\\trac-v2\\\\resources\\\\js\\\\views\\\\users\")",
+      "Bash(php -r \"require 'vendor/autoload.php'; new App\\\\Http\\\\Controllers\\\\Usermanagement\\\\UserController\\(\\); echo 'OK';\")",
+      "Bash(grep -n \"INSERT INTO \\\\`currencymaster\\\\`\" \"d:\\\\PHP Dev\\\\trac-v2\\\\nmwc\\\\nmwc_aswin_structure.sql\")",
+      "Bash(grep -n \"INSERT INTO \\\\`usertype\\\\`\" \"d:\\\\PHP Dev\\\\trac-v2\\\\nmwc\\\\nmwc_aswin_structure.sql\")",
+      "Bash(xargs grep *)",
+      "Bash(mysql -u root -proot sfa_nmwc -e \"DESCRIBE company; DESCRIBE depot; DESCRIBE region; DESCRIBE area; DESCRIBE subarea;\")",
+      "Bash(mysql -u root sfa_nmwc -e \"DESCRIBE company; DESCRIBE depot; DESCRIBE region; DESCRIBE area; DESCRIBE subarea;\")",
+      "Bash(php -v)",
+      "Bash(composer -V)",
+      "Bash(brew services *)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/mysqladmin -u root ping)",
+      "Bash(/Applications/XAMPP/xamppfiles/bin/mysql -u root tracv2_nmwc -e \"SHOW TABLES;\")"
+    ]
+  }
+}

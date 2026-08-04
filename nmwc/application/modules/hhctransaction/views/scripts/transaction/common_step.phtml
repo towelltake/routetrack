@@ -1,0 +1,54 @@
+<style>
+.active_menu{ font-weight:bold}
+</style>
+<ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"addinvoice","id"=>"1"), "default", true);?>"
+                        <?php
+                        echo ($this->params['action'] =="addinvoice") ? 'class="active_menu"' : '';
+                        ?>
+                >
+                    <?php echo $this->translate->_('STEP 1')?></a>  |
+                </li>
+                 <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"invoiceitem","id"=>"1"), "default", true);?>"
+                    <?php
+                        echo ($this->params['action'] =="invoiceitem") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 2')?></a> |
+                </li>
+                  <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"promotion","id"=>"1"), "default", true);?>"
+                    <?php
+                        echo ($this->params['action'] =="promotion") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 3')?></a> |
+                </li>
+                    <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"promotionreview","id"=>"1"), "default", true);?>"
+                                   <?php
+                        echo ($this->params['action'] =="promotionreview") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 4')?></a> |
+                </li>
+                      <li>
+                   <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"signature","id"=>"1"), "default", true);?>"
+                                  <?php
+                        echo ($this->params['action'] =="signature") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 5')?></a> |
+                </li>
+                        <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"transaction","action"=>"cashcollection","id"=>"1"), "default", true);?>"
+                                    <?php
+                        echo ($this->params['action'] =="transaction") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 6')?></a> 
+                </li>
+                     
+              
+            </ul>
+        </li>
+    </ul>

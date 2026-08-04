@@ -1,0 +1,254 @@
+<?php
+/**
+* @name       page.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Company Description
+*/
+
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $("#txtaltcode").focus();
+	
+	
+	$(".rdbutton").click(function() {
+		if($(this).val() == 2){
+			$("#ddlparent_com").attr('disabled',false);
+			$("#ddlparent_com").addClass('required');
+			if($('#hdnparent_com').val() > 0){
+				$("#ddlparent_com").val($('#hdnparent_com').val());
+			}
+			$('#lblparentcom').html("<?php echo $this->translate->_('Parent Company').''.$this->required;?>");
+		}
+		else
+		{
+			$("#ddlparent_com").val('');
+			$("#ddlparent_com").attr("disabled",true);
+			$("#ddlparent_com").removeClass('required');
+			$('#lblparentcom').html("<?php echo $this->translate->_('Parent Company').''.$this->colan;?>");
+		}
+		$('select').trigger('liszt:updated');
+	});
+	
+	<?php if($this->formdata['ddlparent_com'] != $this->params["id"]) { ?>
+		$("#ddlparent_com").attr('disabled',false);
+		$("#ddlparent_com").addClass('required');
+		$('#lblparentcom').html("<?php echo $this->translate->_('Parent Company').''.$this->required;?>");	
+	<?php } else { ?>
+		$("#ddlparent_com").attr('disabled',true);
+	<?php } ?>
+	
+	
+	
+    $('select').trigger('liszt:updated');
+})
+
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="basic_index_company">
+<form method="post" action="" novalidate="novalidate" class="validate">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_4" alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_basics.png">
+        <h3><?php echo $this->translate->_('Company');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"company"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"company"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"addcompany"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content no-padding with-actions">
+    <div class="_100">
+	<div class="clean"></div>
+    </div>
+    <div class="_100 margin_top_10">
+	<label class="_40_1 label_text_align">&nbsp;</label>
+	<div class="_50 margin_left_0">
+	    <label class="_5_1">
+		<input type="radio" class="rdbutton parentcomp" id="rdtype" name="rdtype" value="1" checked="checked" >
+	    </label>
+	    <label class="_36 margin_top_3">
+		<?php echo $this->translate->_('Parent Company');?>
+	    </label>
+	    <label class="_5_1">
+		<input type="radio" class="rdbutton" <?php echo $this->formdata['ddlparent_com'] != $this->params["id"] ? 'checked' : ''; ?> id="rdtype" name="rdtype" value="2">
+	    </label>
+	    <label class="_30_1 margin_right_2 margin_top_3">
+		<?php echo $this->translate->_('Sub Company');?>
+	    </label>
+	</div>
+    </div>
+    <div class="_100">
+	<label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Code').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtcode" id="txtcode" readonly="readonly" type="text" class="required text_align" value="<?php echo $this->formdata['txtcode'];?>" >
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Alternate Code').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtaltcode" id="txtaltcode" maxlength="50" type="text" class="text_align" value="<?php echo $this->formdata['txtaltcode'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Company Name').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtcom_name" id="txtcom_name" maxlength="50" type="text" class="text_align required" value="<?php echo $this->formdata['txtcom_name'];?>"/>
+	</div>
+    </div>
+    <div class="_100 "><!--margin_bottom_5-->
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Company('.$this->sec_lang.')').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtcom_arab" id="txtcom_arab" maxlength="50" type="text" class="arb_text_align" value="<?php echo $this->formdata['txtcom_arab'];?>"/>
+	</div>
+    </div>
+    <div class="_100"  id="divselect">
+	<label class="_36 margin_top_12 label_text_align" id="lblparentcom">
+	    <?php echo $this->translate->_('Parent Company').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <select id="ddlparent_com" name="ddlparent_com"  >
+		<option value="">--- Select ---</option>
+	    <?php
+
+		for($i=0;$i<count($this->parent_com);$i++)
+		{
+		    ?>		    
+		    <option <?php echo $this->formdata['ddlparent_com'] == $this->parent_com[$i]['id'] ? 'selected' : '' ;?> value="<?php echo $this->parent_com[$i]['id']; ?>"><?php echo $this->parent_com[$i]['val'];?></option>
+		    <?php
+		}
+	    ?>
+	    </select>
+	</div>
+	<input type="hidden" id="hdnparent_com" name="hdnparent_com" value="<?php echo $this->formdata['ddlparent_com']; ?>" />
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Contact Name').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtcont_name" id="txtcont_name" maxlength="50" class="text_align margin_top_5" type="text" value="<?php echo $this->formdata['txtcont_name'];?>" >
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Address').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtaddress" id="txtaddress" maxlength="50" class="text_align required" type="text" value="<?php echo $this->formdata['txtaddress'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Telephone Number').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txttel_num" id="txttel_num" maxlength="50" class="text_align required" type="text" value="<?php echo $this->formdata['txttel_num'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Fax').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtfax" id="txtfax" class="text_align" maxlength="50" type="text" value="<?php echo $this->formdata['txtfax'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('ZipCode').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtzipcode" id="txtzipcode" class="text_align" maxlength="20" type="text" value="<?php echo $this->formdata['txtzipcode'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Country Code').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtcnt_code" id="txtcnt_code" maxlength="20" class="number" type="text" value="<?php echo $this->formdata['txtcnt_code'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Country Name').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtcnt_name" id="txtcnt_name" class="text_align" maxlength="50" type="text" value="<?php echo $this->formdata['txtcnt_name'];?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Tax Registration Number').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txttaxregistration" id="txttaxregistration" class="text_align" maxlength="50" type="text" value="<?php echo $this->formdata['txttaxregistration'];?>"  >
+	</div>
+    </div>
+    <div class="_100 ">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Distributor Code').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1 ">
+	    <input name="txtdis_code" id="txtdis_code" class="text_align" type="text" maxlength="10" value="<?php echo $this->formdata['txtdis_code'];?>"  >
+	</div>
+    </div>
+
+    <div class="_100">
+	<label class="_36 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Status').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <select id="ddlstatus" name="ddlstatus">		
+		    <option <?php echo $this->formdata['ddlstatus'] == '1' ? 'selected' : '' ;?> value="1" selected><?php echo $this->translate->_('Active');?></option>
+		    <option <?php echo $this->formdata['ddlstatus'] == '0' ? 'selected' : '' ;?> value="0"><?php echo $this->translate->_('Inactive');?></option>
+	    </select>
+	</div>
+    </div>
+	<?php if($this->params["edit"]=="yes") { ?>
+	<div class="_100">
+		<label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Created Date').''.$this->colan;?>
+		</label>
+		<div class="_50 margin_top_12 date_color margin_right_1"><?php echo $this->formdata['createddate']; ?></div>
+    </div>
+	<?php } ?>
+    <div class="_100 space_100">&nbsp;</div>    
+</div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+</div> <!-- End of .box -->
+</div>

@@ -1,0 +1,415 @@
+<?php
+/**
+* @name       setting1.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add route setting
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $('#ddlunloadoversellmessage_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+    $('#ddlunloadoversellmessage_chzn').addClass('chzn-container-active');
+});
+</script>
+<div id="organization_route_setting1">
+    <div class="content no-padding with-actions" style="min-height:800px;">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+        <div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Unload Over Warning').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+                <select id="ddlunloadoversellmessage" name="ddlunloadoversellmessage">
+		    <option value="0" <?php if($this->formdata_setting1['unloadoversellmessage'] == '0'){ echo 'selected';}?>><?php echo $this->translate->_('Disable');?></option>
+		    <option value="1" <?php if($this->formdata_setting1['unloadoversellmessage'] == '1'){ echo 'selected';}?>><?php echo $this->translate->_('Enable');?></option>
+		</select>
+            </div>
+	    <div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenableeodaddchecks" <?php if($this->formdata_setting1['enableeodaddchecks'] == '1'){echo 'checked=true';} ?> name="chkenableeodaddchecks" value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable EOD Add Checks');?>
+	    </label>
+        </div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Inventory Value Print').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+                <select id="ddlinventoryvalueprint" name="ddlinventoryvalueprint">
+		    <?php
+			for($i=0;$i<count($this->inv_case_input);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->inv_case_input[$i]['id'];?>" <?php if($this->inv_case_input[$i]['id'] == $this->formdata_setting1['inventoryvalueprint']){ echo 'selected'; }?>><?php echo $this->inv_case_input[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+			<div class="_5 margin_top_7">
+					<input type="checkbox" id="chkenableeodexpenses" name="chkenableeodexpenses" <?php if($this->formdata_setting1['enableeodexpenses'] == '1'){echo 'checked=true';} ?> value="1">
+				</div>
+			<label class="_45 margin_top_15">
+			<?php echo $this->translate->_('Enable EOD Expenses');?>
+			</label>	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Prompt Odometer Input').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+                <select id="ddlpromptodominput" name="ddlpromptodominput">
+		    <?php
+			for($i=0;$i<count($this->odometer);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->odometer[$i]['id'];?>" <?php if($this->odometer[$i]['id'] == $this->formdata_setting1['promptodominput']){ echo 'selected'; }?>><?php echo $this->odometer[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+			<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenabledelayprint" name="chkenabledelayprint" <?php if($this->formdata_setting1['enabledelayprint'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Delay Print With No Customer No.');?>
+	    </label>	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Inventory Quantity Input').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+                <select id="ddlinventorycaseinput" name="ddlinventorycaseinput">
+		    <?php
+			for($i=0;$i<count($this->inv_case_input);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->inv_case_input[$i]['id'];?>" <?php if($this->inv_case_input[$i]['id'] == $this->formdata_setting1['inventorycaseinput'] && isset($this->formdata_setting1['inventorycaseinput'])){ echo 'selected'; } elseif($this->inv_case_input[$i]['id'] == 1 && (!isset($this->params["id"]))){echo 'selected';} ?>><?php echo $this->inv_case_input[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+			<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenableaddcustomer" <?php if($this->formdata_setting1['enableaddcustomer'] == '1'){echo 'checked=true';} ?> name="chkenableaddcustomer" value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Add/Edit Customer');?>
+	    </label>
+	    
+        </div>
+	<!--<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Load Req Report Format').''.$this->colan;?>
+            </label>
+	    <div class="_30_1">
+                <select id="ddlloadreqreportformat" name="ddlloadreqreportformat">
+		     <?php
+			for($i=0;$i<count($this->load_req_report);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->load_req_report[$i]['id'];?>" <?php if($this->load_req_report[$i]['id'] == $this->formdata_setting1['loadreqreportformat']){ echo 'selected'; }?>><?php echo $this->load_req_report[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+		<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkstartdaydate" name="chkstartdaydate" <?php if($this->formdata_setting1['enablestartdaydatetimeedit'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Start Day Date Time Edit');?>
+	    </label>	    
+        </div>-->
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Auto Calculated Unload').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+		<select id="ddlautocalculateloadin" name="ddlautocalculateloadin">
+		   <?php
+			for($i=0;$i<count($this->auto_calculated);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->auto_calculated[$i]['id'];?>" <?php if($this->auto_calculated[$i]['id'] == $this->formdata_setting1['autocalculateloadin'] && isset($this->formdata_setting1['autocalculateloadin'])){ echo 'selected'; } elseif($this->auto_calculated[$i]['id'] == 3 && (!isset($this->params["id"]))){echo 'selected';}?> ><?php echo $this->auto_calculated[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+			<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenforcecallsequence" name="chkenforcecallsequence" <?php if($this->formdata_setting1['enforcecallsequence'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enforce Journey Plan');?>
+	    </label>
+	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Require Unload').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+		<select id="ddlrequireloadin" name="ddlrequireloadin">
+		    <?php
+			for($i=0;$i<count($this->req_load_in);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->req_load_in[$i]['id'];?>" <?php if($this->req_load_in[$i]['id'] == $this->formdata_setting1['requireloadin']){ echo 'selected'; }?>><?php echo $this->req_load_in[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+			<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenablescancustomer" name="chkenablescancustomer" <?php if($this->formdata_setting1['enablescancustomer'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Customer Scan');?>
+	    </label>
+			<!-- <div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenablefoclimit" name="chkenablefoclimit" <?php if($this->formdata_setting1['enablefoclimit'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Customer Foc Limit');?>
+	    </label> -->	    
+        </div>
+	<div class="_100">
+	    <!--<label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Load Sheet Report').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+		<select id="ddlloadsheetreport" name="ddlloadsheetreport">
+		    <option value="0" <?php if($this->formdata_setting1['loadsheetreport'] == '0'){ echo 'selected';}?>><?php echo $this->translate->_('Disable');?></option>
+		    <option value="1" <?php if($this->formdata_setting1['loadsheetreport'] == '1'){ echo 'selected';}?>><?php echo $this->translate->_('Enable');?></option>
+		</select>
+            </div>-->
+				    
+        </div>
+	<div class="_100" id="margin_left_0">
+	    <label class="_20_1  margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Route Currency').''.$this->colan;?>
+	    </label>
+           <div class="_30_1 margin_left_2 margin_5px">                
+		<select id="ddlamountdecimaldigits" name="ddlamountdecimaldigits">		    
+		    <?php
+			for($i=0;$i<count($this->currency_info);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->currency_info[$i]['id'];?>" <?php if($this->currency_info[$i]['id'] == $this->formdata_setting1['amountdecimaldigits']){ echo 'selected'; }?>><?php echo $this->currency_info[$i]['val'];?></option>
+		    <?php } ?>
+		</select>        
+		    </div>
+		   <div class="_5 margin_top_7">
+                <input type="checkbox" id="chkloadoutadjustments" name="chkloadoutadjustments" <?php if($this->formdata_setting1['loadoutadjustments'] == '1'){echo 'checked=true';} ?> value="1"> 
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Load Out Adjustment');?>
+	    </label>
+        </div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Tablet ItemCode Display').''.$this->colan;?>
+	    </label>
+            <div class="_30_1">
+                <select id="ddlitemcodedisplay" name="ddlitemcodedisplay">
+		    <?php
+			for($i=0;$i<count($this->hhc_item_data);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->hhc_item_data[$i]['id'];?>" <?php if($this->hhc_item_data[$i]['id'] == $this->formdata_setting1['itemcodedisplay']){ echo 'selected'; }?>><?php echo $this->hhc_item_data[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+            </div>
+			<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenablepostvoid" name="chkenablepostvoid" <?php if($this->formdata_setting1['enablepostvoid'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Post Void');?>
+	    </label>
+	    <!--<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkenablecashonlydiscount" name="chkenablecashonlydiscount" <?php if($this->formdata_setting1['enablecashonlydiscount'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Cash Only Discount');?>
+	    </label> -->
+        </div>
+	<div class="_100">
+	   <!-- <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Route Item Group').''.$this->colan;?>
+	    </label>
+	    <div class="_30_1">
+		<select id="ddlrouteitemgrpcode" name="ddlrouteitemgrpcode">		    
+		    <?php
+			for($i=0;$i<count($this->itemgroupcode);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->itemgroupcode[$i]['id'];?>" <?php if($this->itemgroupcode[$i]['id'] == $this->formdata_setting1['routeitemgrpcode']){ echo 'selected'; }?>><?php echo $this->itemgroupcode[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>-->
+		
+	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Print Alternate Itemcode').''.$this->colan;?>
+	    </label>
+	    <div class="_30_1">
+		<select id="ddlprint_alternate" name="ddlprint_alternate">
+		    <?php
+			for($i=0;$i<count($this->print_alternate);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->print_alternate[$i]['id'];?>" <?php if($this->print_alternate[$i]['id'] == $this->formdata_setting1['inventoryreportcontrol']){ echo 'selected'; }?>><?php echo $this->print_alternate[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+		<div class="_5 margin_top_7">
+				<input type="checkbox" id="chkspe_inv_seq"  name="chkspe_inv_seq" <?php if($this->formdata_setting1['transactionnoseq'] == '1'){echo 'checked=true';} ?> value="1">
+			</div>
+			<label class="_45 margin_top_15">
+				<?php echo $this->translate->_('Use Separate Invoice Sequencing For Sales & Return');?>
+			</label>
+	    <?php /*<div class="_5 margin_top_7">
+			<input type="checkbox" id="chkenableeodadjchecks"  name="chkenableeodadjchecks" <?php if($this->formdata_setting1['enableeodadjchecks'] == '1'){echo 'checked=true';} ?> value="1">
+		</div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable EOD Adj Checks');?>
+	    </label>
+			  */ ?>
+			  
+        </div>
+		<div class="_100">
+			<label class="_20_1 padding_0 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Tablet CustomerCode Display').''.$this->colan;?>
+			</label>
+			<div class="_30_1">
+				<select id="ddlusealternatecodes" name="ddlusealternatecodes">
+					<?php
+					for($i=0;$i<count($this->use_alt_code);$i++)
+					{
+					?>
+						<option value="<?php echo $this->use_alt_code[$i]['id'];?>" <?php if($this->use_alt_code[$i]['id'] == $this->formdata_setting1['usealternatecodes']){ echo 'selected'; }?>><?php echo $this->use_alt_code[$i]['val'];?></option>
+					<?php } ?>
+				</select>
+			</div>
+			<div class="_5 margin_top_7">
+				<input type="checkbox" id="chkenabledraftcopy"  name="chkenabledraftcopy" value="1" <?php if($this->formdata_setting1['enabledraftcopy'] == '1'){echo 'checked=true';} ?>>
+			</div>
+			<label class="_45 margin_top_15">
+				<?php echo $this->translate->_('Enable Draft Copy');?>
+			</label>
+			
+        </div>
+	<div class="_100">
+		<label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Enable Load Transfer').''.$this->colan;?>
+	    </label>
+	    <div class="_30_1">
+		<select id="ddlenableloadtransfer" name="ddlenableloadtransfer">
+		    <?php
+			for($i=0;$i<count($this->ena_load_trans);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->ena_load_trans[$i]['id'];?>" <?php if($this->ena_load_trans[$i]['id'] == $this->formdata_setting1['enableloadtransfer']){ echo 'selected'; }?> ><?php echo $this->ena_load_trans[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+			<div class="_5 margin_top_7">
+		<input type="checkbox" id="chkenablefreereason"  name="chkenablefreereason" value="1" <?php if($this->formdata_setting1['enablefreereason'] == '1'){echo 'checked';} ?> >
+	    </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Enable Free Reason');?>
+	    </label>
+		
+	</div>	
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Enable Scanner Use').''.$this->colan;?>
+	    </label>
+	    <div class="_30_1">
+		<select id="ddlenablescanneruse" name="ddlenablescanneruse">
+		    <?php
+			for($i=0;$i<count($this->ena_scan_use);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->ena_scan_use[$i]['id'];?>" <?php if($this->ena_scan_use[$i]['id'] == $this->formdata_setting1['enablescanneruse']){ echo 'selected'; }?>><?php echo $this->ena_scan_use[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+		<div class="_5 margin_top_7">
+                <input type="checkbox" id="chkvoidoverride" name="chkvoidoverride" <?php if($this->formdata_setting1['voidoverride'] == '1'){echo 'checked=true';} ?> value="1">
+            </div>
+	    <label class="_45 margin_top_15">
+		<?php echo $this->translate->_('Use Password For Void');?>
+	    </label>
+		<!--<div class="_5 margin_top_7">
+			<input type="checkbox" id="chkrouteunloadvariance"  name="chkrouteunloadvariance" value="1" <?php if($this->formdata_setting1['routeunloadvariance'] == '1'){echo 'checked';} ?> >
+	    </div>
+	    <label class="_45 margin_top_15">
+			<?php echo $this->translate->_('Route Unload Variance');?>
+	    </label>-->
+	
+	</div>
+	<div class="_100">
+	    <label class="_20_1 padding_0 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Target and Goal Set By').''.$this->colan;?>
+	    </label>
+	    <div class="_30_1">
+		<select id="ddlsalesmantargetdays" name="ddlsalesmantargetdays">
+			<option value="1" <?php if($this->formdata_setting1['salesmantargetdays'] == '1'){ echo 'selected';}?>><?php echo $this->translate->_('Weekly');?></option>
+		    <option value="2" <?php if($this->formdata_setting1['salesmantargetdays'] == '2'){ echo 'selected';}?>><?php echo $this->translate->_('Monthly');?></option>
+		</select>
+	    </div>		
+	</div>
+	<!---->	
+	<div class="clear space_5">&nbsp;</div>	
+	<div class="content with-actions ie_grid min_height_10">
+	    <fieldset class="">
+		<legend><?php echo $this->translate->_('GPS');?></legend>		
+		
+		
+			
+			
+			
+			<div id="chk" class="_25_1" style="width: 21%;">
+				<input type="checkbox" id="chkenable_gps" name="chkenable_gps" <?php if($this->formdata_setting2['enablegps'] == "1"){ echo 'checked=true';}?> value="1">
+			</div>
+			<label class="_25_1 margin_top_10 margin_right_1">
+				<?php echo $this->translate->_('Enable GPS');?>
+			</label>
+			
+			
+			<div class="_50_3 margin_left_3_1" style="margin-left: -10%;">
+			<label class="_50 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Allowed Radius').''.$this->colan;?>
+			</label>
+			<div class="_50 margin_right_1">
+				<input type="text" maxlength="15" class="number" id="txtallowradius" name="txtallowradius" value="<?php echo number_format($this->formdata_setting2['allowedradius'],5);?>">
+			</div>
+			</div>
+			
+		    <div class="_100">
+			<div id="chk" class="_25_1" style="width: 21%;">
+				<input type="checkbox" id="chkupd_gps" name="chkupd_gps" <?php if($this->formdata_setting2['updategps'] == "1"){ echo 'checked=true';}?> value="1">
+			</div>
+			<label class="_25_1 margin_top_10 margin_right_1">
+				<?php echo $this->translate->_('Update GPS Coordinates');?>
+			</label>
+			<div id="chk" class="_20_2" style="width: 6%;;margin-left: 5%;">		    
+				<input type="checkbox" id="chkenforce_gps" name="chkenforce_gps" <?php if($this->formdata_setting2['enforcegps'] == "1"){ echo 'checked=true';}?> value="1">
+			</div>
+			<label class="_25_1 margin_top_10">
+				<?php echo $this->translate->_('Enforce GPS Coordinates Check');?>
+			</label>
+			</div>
+			
+			
+			
+			
+		
+	    </fieldset>
+	</div> 
+	<!---->
+    </div>
+</div>

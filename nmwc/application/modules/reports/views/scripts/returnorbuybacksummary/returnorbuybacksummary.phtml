@@ -1,0 +1,128 @@
+<?php
+/**
+* @name       routestartenddays.phtml
+* @since      16 feb, 2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10" id="for_report_only">
+<div class="box" id="report_basic_commstatus">
+<form id="thisform" name="thisform" onsubmit="return addhidden();"  class="validate" target="_blank" action="<?php echo $this->url(array("module"=>"reports","controller"=>"returnorbuybacksummary","action"=>"index"), "default", true);?>" method="post" >
+    <div class="header">
+        <div class="_50_3 back_btn">
+        <img class="margin_top_4"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_reports.png">
+            <h3><?php echo $this->translate->_('Return/Buy Back Summary');?></h3>
+        </div>
+    </div>
+    <div class="content with-actions min_height_10">
+        <!--TOP RADIOS-->
+        <div class="_100">
+            <label class="_40_1 label_text_align margin_top_12">
+                <?php echo $this->translate->_('Filter By').''.$this->colan;?>
+            </label>
+            <div class="_30 margin_right_1">
+                <select id="ddlfilterby" name="ddlfilterby">
+                <option value="">--- All ---</option>
+                <?php
+                for($i=0;$i<count($this->filterby);$i++)
+                {
+                ?>
+                    <option value="<?php echo $this->filterby[$i]['id'];?>"><?php echo $this->filterby[$i]['val'];?></option>
+                <?php } ?>
+                </select>
+            </div>
+        </div>
+        <!--<div class="clear"></div>-->
+        <div class="_100" id="item-grid-div" style="display:none;">
+            <label class="_25 margin_top_10 label_text_align">&nbsp;</label>
+            <div id="loader">&nbsp;</div>
+            <div class="_60" id="item-grid">
+               &nbsp;
+            </div>
+        </div>
+
+        <div class="_100">
+            <label class="_40_1 label_text_align margin_top_12">
+            <?php echo $this->translate->_('Transaction Date - From').''.$this->colan;?>
+            </label>
+            <div class="_30 margin_right_1">
+                <input name="txt_route_start_date" id="txt_route_start_date" maxlength="50" type="text"  value="<?php echo date('d-m-Y');?>"  class="margin_top_5">
+            </div>
+        </div>
+        
+        <div class="_100">
+            <label class="_40_1 label_text_align margin_top_12">
+            <?php echo $this->translate->_('Transaction Date - To').''.$this->colan;?>
+            </label>
+            <div class="_30 margin_right_1">
+                <input name="txt_route_end_date" id="txt_route_end_date" maxlength="50" type="text"  value="<?php echo date('d-m-Y');?>" class="margin_top_5">
+            </div>
+        </div>
+        
+        <div class="clear space_20"></div>
+        <div class="_100" id="ok_button">
+            <div class="_45">&nbsp</div>
+            <div class="_10_1">
+                <input type="submit" id="sub_ok" name="sub_ok" value="<?php echo $this->translate->_('OK');?>" />
+            </div>
+        
+        </div>
+        <div class="clear space_20"></div>
+    </div>
+</form>
+</div> <!-- End of .box -->
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    $( "#txt_route_start_date" ).datepicker({	    
+        dateFormat: 'dd-mm-yy',
+            changeYear:true,
+            yearRange: '-10:+15'
+    });
+    $( "#txt_route_end_date" ).datepicker({	    
+        dateFormat: 'dd-mm-yy',
+            changeYear:true,
+            yearRange: '-10:+15'
+    });
+    $('#ddlfilterby').change(function(){
+			
+			var access_val = $('#ddlfilterby').val();
+			if(access_val > 0) {
+                $("#item-grid-div").show();
+				filluseraccessgrid(access_val);
+			}
+			else {
+                $("#item-grid-div").hide();
+				$('#item-grid').html('').removeAttr('style');
+			}
+	});
+});
+function filluseraccessgrid(access_val)
+{
+	$('#item-grid').html('');
+	var  url = '<?php echo $this->itemgrid; ?>'+'/key/'+access_val;
+	$.ajax({
+		url:url,
+		data:{},
+		type:'post',
+		beforeSend: function() {
+			$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+		},
+		success:function(returndata){
+			$('#item-grid').html(returndata).removeAttr('style');
+            if($('#item-grid').height() > 200) {
+                $('#item-grid').css({"height":"200px","overflow-y":"auto"});
+            }
+            
+			$("#loader").html('');
+		}
+	});	
+}
+</script>

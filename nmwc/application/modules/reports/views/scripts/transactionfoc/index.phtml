@@ -1,0 +1,66 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/transactionfoc/foc/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Transaction Date');?>','<?php echo $this->translate->_('Transaction Time');?>','<?php echo $this->translate->_('Invoice Number');?>','<?php echo $this->translate->_('Salesman Code');?>','<?php echo $this->translate->_('Customer Code');?>','<?php echo $this->translate->_( 'Customer Name');?>','<?php echo $this->translate->_('Sales Amount');?>','<?php echo $this->translate->_('Free Amount');?>','<?php echo $this->translate->_('Invoice Amount');?>','<?php echo $this->translate->_('Discount Amount');?>','<?php echo $this->translate->_('Net Amount');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:100},
+		{name:'actualtransactiondate',index:'actualtransactiondate', width:120},
+		{name:'transactiontime',index:'transactiontime', width:100},
+		{name:'invoicenumber',index:'invoicenumber', width:100},
+		{name:'salesmancode',index:'salesmancode', width:70},
+        {name:'customercode',index:'customercode', width:70},
+		{name:'customername',index:'customername', width:250},
+        {name:'totalsalesamount',index:'totalsalesamount', width:80, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},
+		{name:'totalfreesampleamount',index:'totalfreesampleamount', width:80, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},
+		{name:'totalinvoiceamount',index:'totalinvoiceamount', width:80, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},		
+        {name:'totaldiscountamount',index:'totaldiscountamount', width:80, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},
+		{name:'netamount',index:'netamount', width:80, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }}
+   	],
+	<?php if($this->css == 'ar_') { ?>
+		direction :"rtl",
+	<?php } ?>	
+    height: 'auto',
+    width: eval(reportwidth),
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+    rowList:eval(RP_ROWLISTSHOW),
+   // loadonce:true,
+    pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,        
+	groupingView :
+        {
+            groupField : ['routecode','actualtransactiondate'],
+            groupColumnShow : [false,false],
+            groupCollapse : true,
+            groupOrder: ['asc','asc'] ,
+            groupSummary : [false,true],
+            groupDataSorted : true,
+            showSummaryOnHide: true
+        }
+});
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+
+</script>

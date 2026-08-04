@@ -1,0 +1,147 @@
+<?php
+/**
+* @name       routesequence.phtml
+* @since      17 Feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script type="text/javascript">
+$(document).ready(function(){
+    
+    $('#ddlfromweek_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+    $('#ddlfromweek_chzn').addClass('chzn-container-active');
+    
+    $('#copyseq').click(function() {
+		if($("#frmoverview").valid())
+		{			
+			if($('#ddlfromweek').val() == $('#ddltoweek').val() && $('#ddlfromday').val() == $('#ddltoday').val())
+			{
+				jAlert('Invalid Week/ Day Selection.');
+				return false;
+			}
+			if($('#ddlfromday').val() =='8' && $('#ddltoday').val() < '8')
+			{
+				jAlert('Invalid Week/ Day Selection.');
+				return false;
+			}
+		}
+    });
+})
+
+</script>
+<div class="clean"></div>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="grid_12">
+<div class="box">
+<form name="frmoverview" id="frmoverview" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	<h3><?php echo $this->translate->_('Copy Sequence');?></h3>
+    </div>
+    <div class="_50_3">
+	&nbsp;
+    </div>
+</div>
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>         
+        <div class="_100 margin_top_5">            
+            <label class="_40 label_text_align margin_top_15">
+                 <?php echo $this->translate->_('From Week')." ".$this->required;?>
+            </label>
+            <div class="_50_3 margin_right_3">
+                <select id="ddlfromweek" name="ddlfromweek" class="required">
+		<option value="">--- Select ---</option>		
+		    <?php
+		    for($i=0;$i<count($this->week);$i++)
+		    {
+		?>
+			<option value="<?php echo $this->week[$i]['id'];?>"><?php echo $this->week[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>            
+        </div>
+        <div class="_100 margin_top_5">             
+            <label class="_40 label_text_align margin_top_15">
+                 <?php echo $this->translate->_('To Week')." ".$this->required;?>
+            </label>
+            <div class="_50_3 margin_right_3">
+                <select id="ddltoweek" name="ddltoweek" class="required">
+		<option value="">--- Select ---</option>		
+		    <?php
+		    for($i=0;$i<count($this->week);$i++)
+		    {
+		?>
+			<option value="<?php echo $this->week[$i]['id'];?>"><?php echo $this->week[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>            
+        </div>
+        <div class="_100 margin_top_5">             
+            <label class="_40 label_text_align margin_top_15">
+                <?php echo $this->translate->_('From Day')." ".$this->required;?>
+            </label>
+            <div class="_50_3 margin_right_3">
+                <select id="ddlfromday" name="ddlfromday" class="required">
+		<option value="">--- Select ---</option>
+		<option value="8">All</option>
+		    <?php
+		    for($i=0;$i<count($this->day_name);$i++)
+		    {
+		?>
+			<option value="<?php echo $this->day_name[$i]['id'];?>"><?php echo $this->day_name[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>            
+        </div>
+        <div class="_100 margin_top_5">             
+            <label class="_40 label_text_align margin_top_15">
+                 <?php echo $this->translate->_('To Day')." ".$this->required;?>
+            </label>
+            <div class="_50_3 margin_right_3">
+                <select id="ddltoday" name="ddltoday" class="required">
+		<option value="">--- Select ---</option>
+		<option value="8">All</option>
+		    <?php
+		    for($i=0;$i<count($this->day_name);$i++)
+		    {
+		?>
+			<option value="<?php echo $this->day_name[$i]['id'];?>"><?php echo $this->day_name[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>            
+        </div>
+	<div class="clear space_50">&nbsp;</div>
+        <div class="_100 margin_top_5">             
+            <label class="_40">
+                &nbsp;
+            </label>
+            <div class="_50_3">
+               <input type="submit" name="copyseq" id="copyseq" value=" <?php echo $this->translate->_('Copy Sequences');?>"/>
+            </div>            
+        </div>
+	<div class="clear space_100">&nbsp;</div>
+    </div>
+    <input type="hidden" id="hdnroute" name="hdnroute" value="<?php echo $this->selected_route;?>">
+</form>
+	<div class="clear"></div>
+</div> <!-- End of .box -->
+</div>

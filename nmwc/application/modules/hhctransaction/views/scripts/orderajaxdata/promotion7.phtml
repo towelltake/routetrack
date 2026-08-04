@@ -1,0 +1,120 @@
+
+<div id ="promotion7_<?php echo $this->plan_number ?>" class="promo">
+<div class="content with-actions ie_grid min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+
+	<div class="_100">
+	    <label class="_15 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Promotion  Key').''.$this->colan;?>
+	    </label>
+	    <div class="_20 margin_left_1">
+		<input type="text" id="txt_promo_key7_<?php echo $this->plan_number?>" readonly="readonly" name="txt_promo_key_<?php echo $this->plan_number?>" value="<?php echo $this->final_arr[7][$this->plan_number][0]['promotionplannumber'];?>">
+	    </div>
+	    <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Promotion Description').''.$this->colan;?>
+	    </label>
+	    <div class="_35_1 margin_left_1">
+		<input type="text" id="txt_promo_desc_<?php echo $this->plan_number?>" readonly="readonly" name="txt_promo_desc_<?php echo $this->plan_number?>" value="<?php echo $this->final_arr[7][$this->plan_number][0]['plandescription'];?>">
+            </div>
+
+	</div>
+	<div class="_100">&nbsp;
+	</div>
+	<fieldset>
+	    <legend>Item</legend>
+	    <div class="_100">&nbsp;</div>
+	<div>
+	     <table id="table-example" class="table">
+                    <thead>
+                            <tr>
+                                    <th>Item Code</th>
+                                    <th>Item Description</th>
+                                    <th width="11%">Order Qty</th>
+				    <th width="6%">UPC</th>
+                                    <th>Given Free</th>
+                                   
+                            </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <?php
+                        foreach($this->free_item_list[$this->plan_number] as $value)
+                        {
+                            
+                            ?>
+                            
+                            <tr class="gradeX">
+                                    <td style="padding-top:15px;"><?php echo $value['new_item_code'];?></td>
+                                    <td style="padding-top:15px;"><?php echo $value['itemshortdescription'];?></td>
+                                    <td style="text-align:right;padding-top:15px;"><?php echo $value['case_sales_qty'];?> </td>
+				    <td style="text-align:right;padding-top:15px;"><?php echo $value['pcs_sales_qty'];?></td>
+                                    <td> <input type="text" name="txt_free_item[]"
+						id="txt_free_item_<?php echo $this->plan_number;?>"
+						class="qty_<?php echo $this->plan_number;?>"
+                        
+                        <?php if($value["rangebasis"] == "3" || $value["rangebasis"] == "4") { ?>
+                            value="<?php echo $value["promotionquantity"]; ?>" readonly="readonly"
+                        <?php } else { ?>
+                            value="0"
+                        <?php } ?>
+                        onblur="checkvalue('<?php  echo $this->plan_number;?>')" style="width:150px !important;">
+					 <input type="hidden" name="txt_free_item_code[]"  value="<?php echo $value['itemcode']; ?>" >
+				    </td>
+                                    
+                            </tr>
+                            
+                        <?php }
+                        
+                        ?>
+                            
+                          
+                           
+                            
+                    </tbody>
+            </table>
+	<div class="clear"></div>
+        
+            
+	</div>
+	<div class="clear space_20"></div>
+	<div class="_100">
+	    <label class="_20 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Free Item Quantity').''.$this->colan;?>
+	    </label>
+	    <div class="_20_1 margin_left_1">
+		<input type="text" id="txt_free_item_given_<?php echo $this->plan_number;?>" readonly="readonly" name="txt_free_item_given[]" value="<?php echo $this->freeitem[$this->plan_number]; ?>" class="invoice_qty_width_150">
+	    </div>
+	    
+	</div>
+	<div class="clear space_20"></div>
+	 <div class="_100">
+		<?php if($this->next !='_') {?>
+			<div style="float:right"><input type="button" onclick="shownext('<?php echo $this->next;?>')" name="btn_next_promotion_overview"  id="btn_next_promotion_overview" value="Next" /></div>
+		<?php } ?>
+			<div style="float:right">&nbsp;&nbsp;</div>
+	   <?php if($this->previous !='') { ?>
+			<div style="float:right"><input type="button" onclick="shownext('<?php echo $this->previous;?>')" name="btn_prev_promotion_overview" id="btn_prev_promotion_overview" value="Previous" /></div>
+	   <?php } ?>
+	</div>
+	</fieldset>
+	
+    
+</div>
+<?php
+$this->final_amount = $this->new_amount;
+?>
+<script>
+ $(function()
+{
+    var plan_id ='<?php echo $this->plan_number;?>';
+    $('.qty_'+plan_id).keyup(function () { 
+    this.value = this.value.replace(/[^0-9\.]/g,'');
+});
+    });
+</script>
+</div>

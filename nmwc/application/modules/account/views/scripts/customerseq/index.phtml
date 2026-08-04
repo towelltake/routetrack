@@ -1,0 +1,173 @@
+
+<?php
+/**
+* @name       index.phtml
+* @since      17 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+$sales_calender_url = $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"salescalender"), "default", true);
+
+$arrange_customer_url = $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"arrangecustomer"), "default", true);
+
+$route_sequence_url = $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"routesequence"), "default", true);
+
+$copy_sequence_url = $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"copysequence"), "default", true);
+?>
+<style>
+.margin_zero {margin-top:0px !important;}
+a:hover,a:active,a:visited
+{
+	text-decoration:none !important;
+	color:#386FA7;
+}
+</style>
+<script>
+$(document).ready(function(){
+	
+	$('#ddlroute_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+	$('#ddlroute_chzn').addClass('chzn-container-active');	
+
+	var counter = '<?php echo $this->counter; ?>';
+	
+	$('#arrangecustomer').click(function() {
+	   
+	   if(counter > 0) {
+			if($("#frmdetail").valid())
+			{
+				var week 	= $('#ddlweek').val();	    
+				var route	= $('#ddlroute').val();
+				var promourl = "<?php echo $arrange_customer_url; ?>"+"?week="+week+"&route="+route+"&q=prettyphoto&iframe=true&width=1000&height=600";
+				
+				$.prettyPhoto.open(promourl);
+			}
+		}
+		else
+		{
+			jAlert("Please Load Current Year Data In Sales Calender.");
+		}
+	});
+		
+	$('#routesequence').click(function() {
+		if(counter > 0) {
+			if($("#frmdetail").valid())
+			{
+				var week 	= $('#ddlweek').val();	    
+				var route	= $('#ddlroute').val();
+				/*Height 675 to 550 done by nilesh on 17Mar2016*/
+				var promourl = "<?php echo $route_sequence_url; ?>"+"?week="+week+"&route="+route+"&q=prettyphoto&iframe=true&width=1100&height=550";
+				
+				$.prettyPhoto.open(promourl);
+			}
+		}
+		else
+		{
+			jAlert("Please Load Current Year Data In Sales Calender.");
+		}
+	});	
+	
+	$('#copysequence').click(function() {
+		   
+		if($("#frmdetail").valid())
+		{
+			var week 	= $('#ddlweek').val();	    
+			var route	= $('#ddlroute').val();
+			var promourl = "<?php echo $copy_sequence_url; ?>"+"?week="+week+"&route="+route+"&q=prettyphoto&iframe=true&width=500&height=530";
+			
+			$.prettyPhoto.open(promourl);
+		}
+    });
+})
+</script>
+<div class="grid_12">
+    <div class="box" id="account_transaction_index">
+
+          <div class="header">
+            <div class="_50_3 back_btn">
+		<img src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png" class="margin_top_7">
+		<h3><?php echo $this->translate->_('Customer Sequence');?></h3>
+	    </div>
+        </div>
+
+	<div class="clear"></div>
+	<div class="clear"></div>
+        <form id="frmdetail" name="frmdetail" class="validate" novalidate action="" method="post">
+            <div class="content with-actions">                
+                <div class="_100">                    
+                    <label class="_40 label_text_align margin_top_10">
+                        <?php echo $this->translate->_('Route')." ".$this->required;?>
+                    </label>
+                    <div class="_30 margin_left_right_1">
+                        <select id="ddlroute" name="ddlroute" class="required">
+							<option value="">--- Select ---</option>
+								<?php
+									for($i=0;$i<count($this->route);$i++)
+									{
+								?>
+										<option value="<?php echo $this->route[$i]['id'];?>"><?php echo $this->route[$i]['val'];?></option>
+								<?php } ?>
+                        </select>
+                    </div>                    
+                </div>
+                <div class="_100">                    
+                     <label class="_40 label_text_align margin_top_10">
+                        <?php echo $this->translate->_('Week')." ".$this->colan;?>
+                    </label>
+                    <div class="_30 margin_left_right_1">
+                        <select id="ddlweek" name="ddlweek">
+                    <?php
+                        for($i=0;$i<count($this->week);$i++)
+                        {
+                    ?>
+                            <option value="<?php echo $this->week[$i]['val'];?>" ><?php echo $this->week[$i]['val'];?></option>
+                    <?php } ?>
+                        </select>
+                    </div>                    
+                </div>            
+                <div class="_100 margin_top_115">
+                    <div class="_100">
+                        <div class="_30">&nbsp;</div>
+                        <div class="_20">
+							<h6><a href="#" class="center" onclick="popup('<?php echo $sales_calender_url; ?>',800,600);" id="salescalender" name="salescalender" ><span><div class="sidebar_img"></div><div class="sidebar_menu_text" style="padding-left: 20px;color:black;"><strong><?php echo $this->translate->_('Sales Calendar');?></strong></div></span></a></h6>
+                        </div>
+                        <div class="_10">&nbsp;</div>
+                        <div class="_20">							
+							<h6><a href="#" class="" id="arrangecustomer" name="arrangecustomer"><span><div class="sidebar_img"></div><div class="sidebar_menu_text" style="padding-left: 12px;color:black;"> <strong><?php echo $this->translate->_('Arrange Customer');?></strong></div></span></a></h6>
+                        </div>
+						<div class="_30">&nbsp;</div>
+                    </div>
+                    <div class="_100 margin_top_5">
+                        <div class="_30">&nbsp;</div>
+                        <div class="_20">	                        
+							<h6><a href="#" class="" id="routesequence" name="routesequence"><span><div class="sidebar_img"></div><div class="sidebar_menu_text" style="padding-left: 20px;color:black;"> <strong><?php echo $this->translate->_('Route Sequence');?></strong></div></span></a></h6>
+                        </div>
+                        <div class="_10">&nbsp;</div>
+                        <div class="_20">							
+							<h6><a href="#" class="" id="copysequence" name="copysequence"><span><div class="sidebar_img"></div><div class="sidebar_menu_text" style="padding-left: 20px;color:black;"> <strong><?php echo $this->translate->_('Copy Sequence');?></strong></div></span></a></h6>
+                        </div>
+						<div class="_30">&nbsp;</div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+		$( "#txtdate" ).datepicker({
+			dateFormat: 'dd-mm-yy'
+		});
+    });
+
+    $("a[class^='ico edit']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});
+
+});
+</script>

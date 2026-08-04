@@ -1,0 +1,114 @@
+<?php
+//SFA_Comman::pre($this->params);
+?>
+<script type="text/javascript">
+$(document).ready(function(){
+	var selected_method = '<?php echo $this->inventory_method?>';
+	$('.cls_expdate').datepicker({
+		dateFormat: 'dd-mm-yy'
+	});
+	$('#btnselect').click(function(){
+		var ids = '';
+		var allowcases 	= '';
+		var allowpieces = '';
+		var batchno 	= '';
+		var expirydate	= '';
+		var success 	= true;
+		var i 			= 0;
+		var len = $("#table-example input[type='checkbox'][name='chk[]']:checked").length;
+		
+		if(len < 1) {
+			jAlert('Please Select Atleast One Record.');
+		} else {
+			$('#table-example input:checkbox.sel_checkbox_all').each(function() {
+				if(this.checked) {
+					i++;
+					ids += this.value+'_';					
+					if($('#txtcases_'+this.value).val() <= $('#span_'+this.value).html()) {
+						allowcases += $('#txtcases_'+this.value).val()+'_';
+					} else if(selected_method != 4) {
+						jAlert('Allow Cases Must Be Lower Then The Requested Cases.');
+						success = false;
+					}
+					
+					if($('#txtpcs_'+this.value).val() <= $('#span1_'+this.value).html()) {
+						allowpieces += $('#txtpcs_'+this.value).val()+'_';
+					} else if(selected_method != 4) {
+						jAlert('Allow Cases Must Be Lower Then The Requested Pieces.');
+						success = false;
+					}
+					
+					if($('#txtbatchno_'+this.value).val() == '') {						
+						jAlert('Please Enter Batch No.');
+						success = false;
+					} else if(selected_method != 4) {
+						batchno += $('#txtbatchno_'+this.value).val()+'_';
+					}
+					
+					if($('#txtexpdate_'+this.value).val() == '') {						
+						jAlert('Please Enter Expiry Date.');
+						success = false;
+					} else if(selected_method != 4) {
+						expirydate += $('#txtexpdate_'+this.value).val()+'_';
+					}					
+				}
+			});			
+			if(i == $('.sel_checkbox_all:checked').length && success == true) {
+				parent.eval('addbatchinfo("'+ids+'","'+allowcases+'","'+allowpieces+'","'+batchno+'","'+expirydate+'")');
+				parent.eval('$.prettyPhoto.close()');
+			}			
+		}
+	})
+	
+	$('#batchdata').change(function(){
+		
+		var mthd		= '<?php echo $this->params['mthd']?>';
+		var invtype		= '<?php echo $this->params['invtype']?>';
+		var routecode 	= '<?php echo $this->params['routecode']?>';
+		var expdate 	= '<?php echo $this->params['expdate']?>';
+		var loadno 		= '<?php echo $this->params['loadno']?>';
+		var nodata		= this.value;
+
+		winloc(base_url+'/inventory/transaction/viewinventorystock/nodata/'+nodata+'/mthd/'+mthd+'/invtype/'+invtype+'/routecode/'+routecode+'/expdate/'+expdate+'/loadno/'+loadno);
+	})
+})
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+input, textarea {
+	margin-top: 0 !important;
+}
+</style>
+<form name="frmoverview" id="frmoverview" action="" method="post">
+<div class="grid_12">
+    <div class="box">
+        <div class="header">
+            <div class="_50_3 back_btn">
+		<img src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png" class="margin_top_7">
+		<h3><?php echo $this->title?></h3>
+	    </div>
+	    <div class="_50_3">&nbsp;</div>
+        </div>
+		<?php if($this->tablename != '') { ?>
+	<div class="_100">
+		<div class="_30">
+			<select id="batchdata" name="batchdata">
+				<option value="2" <?php if($this->dontshow == 2) { echo 'selected';} ?>>With Batch</option>
+				<option value="1" <?php if($this->dontshow == 1) { echo 'selected';} ?>>Without Batch</option>
+			</select>
+		</div>
+	</div>
+	<?php } ?>
+	<div class="_100" id="batchinfo" style="overflow-x:auto;height:400px;">
+		<?php echo $this->partial('datagrid_inventory.phtml', $this); ?>
+	</div>
+	<?php if($this->datacounter > 0 && $this->dontshow == 2) { ?>
+	<div class="_100">
+		<div class="_50">&nbsp;</div>
+		<input type="button" id="btnselect" name="btnselect" value="ADD" />
+	</div>
+	<?php } ?>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->
+</form>

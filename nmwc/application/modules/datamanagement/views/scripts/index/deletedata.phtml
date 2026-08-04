@@ -1,0 +1,117 @@
+
+<?php
+/**
+* @name       startofday.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $("#btnload").click(function(){
+	
+		if($("#ddldeletedata").val() == "All Transactions")
+		{
+			jConfirm('Are You Sure To Delete Transactions?<br/><br/>', 'Message', function(resp)
+			{
+				if(resp) {
+					$("#frmsearch").submit();
+				} else {
+					return false;
+				}
+			});
+		}
+		else if($("#ddldeletedata").val() == "All Customers")
+		{
+			jConfirm('Are You Sure To Delete All Customers?<br/><br/>', 'Message', function(resp)
+			{
+				if(resp) {
+					$("#frmsearch").submit();
+				} else {
+					return false;
+				}
+			});
+		}
+		else if($("#ddldeletedata").val() == "All Masters")
+		{
+			jConfirm('Are You Sure To Delete All Masters?<br/><br/>', 'Message', function(resp)
+			{
+				if(resp) {
+					$("#frmsearch").submit();
+				} else {
+					return false;
+				}
+			});
+		}
+		else if($("#ddldeletedata").val() == "All Hierarchy")
+		{
+			jConfirm('Are You Sure To Delete All Hierarchy?<br/><br/>', 'Message', function(resp)
+			{
+				if(resp) {
+					$("#frmsearch").submit();
+				} else {
+					return false;
+				}
+			});
+		}
+		else{
+			return false;
+		}    
+    });    
+});
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+</style>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="grid_12">
+    <div class="box" id="datamanagement_index_deletedata">
+
+          <div class="header">
+            <div class="_50_3 back_btn">
+		<img src="<?php echo $this->baseUrl()?>/public/images/icon_datamanagement.png" class="margin_top_4">
+		<h3><?php echo $this->translate->_('Delete Data');?></h3>
+	    </div>
+        </div>
+	<div class="clear"></div>
+	<div class="clear"></div>        
+        <form id="frmsearch" name="frmsearch" class="validate" novalidate action="" method="post">
+            <div class="content with-actions">
+                <div class="_100 margin_top_50">
+                    <div class="space_50">
+                    <div class="_20 label_text_align margin_top_7">&nbsp;</div>
+                    <div class="_20 label_text_align margin_top_12 margin_right_1">
+			<?php echo $this->translate->_('Select Data')." ".$this->colan;?>
+		    </div>
+                    <div class="_20">
+			<select id="ddldeletedata" name="ddldeletedata">
+			    <option value="">--- Select ---</option>
+			    <?php			    
+			    for($i=0;$i<count($this->combo_data);$i++){
+			    ?>
+			    <option value="<?php echo $this->combo_data[$i]['val'];?>"><?php echo $this->combo_data[$i]['val'];?></option>
+			    <?php
+			    }			    
+			    ?>
+			</select>
+		    </div>
+                    <div class="_10 margin_top_7">
+			<input type="button" name="btnload" id="btnload" value="<?php echo $this->translate->_('DELETE'); ?>" class="margin_zero">
+		    </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->

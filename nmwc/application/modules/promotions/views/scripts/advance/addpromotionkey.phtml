@@ -1,0 +1,195 @@
+<?php
+/**
+* @name       addpromotionkey.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$url = $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"promotionkeyplan"), "default", true);
+?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<script>
+    $(document).ready(function(){
+	
+	$('#ddl_type_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+	$('#ddl_type_chzn').addClass('chzn-container-active');
+	
+	loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+	loaddata('<?php echo $this->itemgrid2; ?>','item-grid-2');
+	$("#sbtnadd").click(function(){
+	    if($('#frmselection').valid())
+	    {
+		var values = $('#frmselection').serialize();
+		$.ajax({
+		    type : "POST",
+		    url : base_url+"/promotions/advance/promotionkeyitemgrid/key/<?php echo $this->params["id"]; ?>",
+		    data :values+'&add=yes',
+		    success:function(returndata){
+		       
+			$('#item-grid').html(returndata);
+		    }
+		});
+	    }
+	});
+    });
+</script>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box">
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<form id="frmdet" name="frmdet" class="validate" novalidate action="<?php echo $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"addpromotionkey"), "default", true);?>" method="post">
+    <div class="header">
+	<div class="_50_3 back_btn">
+	    <img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_promotions.png">
+	    <h3><?php echo $this->translate->_('Promo Key')?></h3>
+	</div>
+	<div class="_50_3">
+	    <div class="_10 save_btn">
+		<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"promotionkey"), "default", true);?>')" >
+	    </div>
+	    <div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+	</div>
+    </div>
+    <div class="clear"></div>
+    <div class="clear"></div>
+    <div id="nav_sub" class="ie_nav_sub">
+    <div class="container_12">
+	<ul id="nav_main">
+	    <li class="current">
+		<ul style="display: block;">
+		   <li>
+			<a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"promotionkey"),"default", true);?>"><?php echo $this->translate->_('Overview'); ?></a>
+		    </li>
+		    <li class="last-child">
+			<a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"addpromotionkey"),"default", true);?>"><b><?php echo $this->translate->_('Details'); ?></b></a>
+		    </li>
+		</ul>
+	    </li>
+	</ul>
+    </div>
+    </div>
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <label class="_20 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Promotion Key').''.$this->colan;?>
+	    </label>
+	    <div class="_25 margin_right_1">
+		<input type="text" name="txt_promotionkey" id="txt_promotionkey" value="<?php echo isset($this->formdata['promotionkey'])?$this->formdata['promotionkey']:"" ;?>"  readonly="readonly" />
+	    </div>
+	    <label class="_20 margin_top_12 label_text_align">
+		 <?php echo $this->translate->_('Promotion Type').''.$this->colan;?>
+	    </label>
+	    <div class="_25">
+		 <select id="ddl_type" name="ddl_type">
+		    <option value=""> --- Select --- </option>
+		    <?php for($i=0;$i<count($this->promotion_type);$i++) { ?>
+			    <option value="<?php echo $this->promotion_type[$i]['id'];?>" <?php echo ($this->promotion_type[$i]['id'] == $this->formdata['type'])?'selected':''; ?> ><?php echo $this->promotion_type[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_20 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Description')."".$this->required;?>
+	    </label>
+	    <div class="_25 margin_right_1">
+		<input type="text" maxlength="50" name="txt_description" id="txt_description" value="<?php echo isset($this->formdata['description'])?$this->formdata['description']:"" ;?>" />
+	    </div>
+	    <label class="_20 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Description ('.$this->sec_lang.')').''.$this->colan;?>
+		</label>
+	    <div class="_25 margin_right_1">
+		<input type="text" maxlength="50" name="txt_arbdescription" id="txt_arbdescription" class="arb_text_align" value="<?php echo isset($this->formdata['arbdescription'])?$this->formdata['arbdescription']:"" ;?>" />
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_20 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Status').''.$this->colan;?>	
+	    </label>
+	    <div class="_25">
+		<select id="ddl_activeindicator" name="ddl_activeindicator">
+			<option value="1" <?php echo ($this->formdata['activeindicator']=='1')?'selected':''; ?> ><?php echo $this->translate->_('Active');?></option>
+			<option value="0" <?php echo ($this->formdata['activeindicator']=='0')?'selected':''; ?> ><?php echo $this->translate->_('Inactive');?></option>
+		</select>
+	    </div>
+	    <div class="_25_1">&nbsp;</div>
+	    <div class="_25_1">&nbsp;</div>	    
+	</div>
+    </div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+<input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>" />
+</form>
+
+<div class="content with-actions">
+    <?php if($this->params["id"] > 0) { ?>
+   <form id="frmselection" name="frmselection" class="validate" novalidate action="" method="post">
+	<div class="_100 margin_top_25">
+	    <fieldset id="ab" name="ab" class="fieldset_effect">
+		
+		<legend class="ttl"><?php echo $this->translate->_('Plan Selection');?></legend>
+		<hr id="ie_hr" >
+		<div class="_5 clear_only">&nbsp;</div>
+		<div class="_100">
+		    <div id="loader"></div>
+		    <div id="item-grid-2"> <!--grid load here --> </div>
+		</div>
+		<div class="_100" style="text-align:center;" >
+		    <div class="_40">&nbsp;</div>
+		    <div class="_15">
+			<input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd" name="sbtnadd" class="margin_top_5">
+		    </div>
+		    <div class="_40">&nbsp;</div>
+		</div>
+	    </fieldset>
+	</div>
+   </form>
+	<div class="_100 margin_top_25">
+	    <form id="frmdetsec" name="frmdetsec" class="validate" novalidate action="" method="post">
+	    <fieldset id="ab" name="ab" class="fieldset_effect">
+		
+		<legend class="ttl"><?php echo $this->translate->_('Promotion Key');?></legend>
+		<hr id="ie_hr" >
+		<div class="_5 clear_only">&nbsp;</div>
+		<div class="_100">
+		    <div id="loader"></div>
+		    <div id="item-grid"> <!--grid load here --> </div>
+		</div>
+		
+	    </fieldset>
+	    </form>
+	</div>
+    
+    <?php } ?>
+</div>
+
+</div> <!-- End of .box -->
+</div>

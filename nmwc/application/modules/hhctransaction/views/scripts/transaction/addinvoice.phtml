@@ -1,0 +1,135 @@
+<div id="hhctransaction_transaction_invoiceadd_detail1" >
+<form class="validate" novalidate action="" id="add_invoice">
+ <div class="content with-actions" id="hhctransaction_invoiceadd_addinvoice_data">
+    <input type="hidden" name="hdndata" value="add_invoice" />
+    <div class="_100">
+	    <label class="_17_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Route').''.$this->required;?>
+	    </label>
+	    <div class="_30 margin_right_2_2">
+		<select id="ddlroute" name="ddlroute" class="required" >
+		    <option value="">--- Select ---</option>
+		    <?php
+			for($i=0;$i<count($this->route);$i++)
+			{
+		    ?>
+			    <option  value="<?php echo $this->route[$i]['id'];?>"><?php echo $this->route[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	    <label class="_30 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Invoice Date').''.$this->colan;?>
+	    </label>
+	    <label class="_25  margin_top_12 margin_right_1">
+		<?php echo date('d-m-Y h:i:s');?>
+	    </label>
+
+    </div>
+     <div class="_100">
+	    <label class="_17_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+	    </label>
+	    <div class="_30 margin_right_2_2">
+		<input type="text" class="margin_top_5" id="txt_salesman" name="txt_salesman" value=""  readonly="readonly">
+	    </div>
+	    <label class="_30 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Invoice No').''.$this->colan;?>
+	    </label>
+	    <label class="_25   margin_right_2_2">
+		<input type="hidden" name="invoice_id_auto" id="invoice_id_auto" value="<?php echo $this->invoice_no; ?>" />
+		<input type="text" id="txt_invoice_no" name="txt_invoice_no" value="" readonly="readonly" class="margin_top_5">
+	    </label>
+
+    </div>
+     <div class="_100">
+	    <label class="_17_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Customer').''.$this->required;?>
+	    </label>
+	    <div class="_30 margin_right_2_2">
+		<select id="ddlcustomer" name="ddlcustomer" class="required" >
+		    <option value="">--- Select ---</option>
+		</select>
+		
+	    </div>
+	    <label class="_30 label_text_align margin_top_12">
+		
+		<?php echo $this->translate->_('Document No').''.$this->colan;?>
+	    </label>
+	    <label class="_25   margin_right_2_2">
+		<input type="hidden" name="document_id_auto" id="document_id_auto" value="<?php echo $this->document_no; ?>" />
+		<input type="text" id="txt_doc_no" name="txt_doc_no" value="" readonly="readonly" class="margin_top_5">
+	    </label>
+
+    </div>
+     
+      <div class="_100">
+	    <label class="_17_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Address').''.$this->colan;?>
+	    </label>
+	    <div class="_30 margin_right_2_2">
+		<input type="text" name="txt_customer_address" id="txt_customer_address" value="" readonly="readonly" class="margin_top_5" />
+		<!--<input type="hidden" id="invoice_payment_terms" name="invoice_payment_terms" value="" readonly="readonly">-->
+	    </div>
+	    <label class="_30 label_text_align margin_top_12">
+		
+		<?php echo $this->translate->_('Invoice Payment Terms').''.$this->colan;?>
+	    </label>
+	    <label class="_25   margin_right_2_2">
+	    <input type="text" name="customer_payment_terms_text" id="customer_payment_terms_text" value=""  readonly="readonly" class="margin_top_5" />
+		
+	    </label>
+
+    </div>
+     <div class="_100">
+	    <label class="_17_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Credit Limit').''.$this->colan;?>
+	    </label>
+	    <div class="_30 margin_right_2_2">
+		<input type="text" name="txt_customer_creditlimit" id="txt_customer_creditlimit" value="" readonly="readonly" class="margin_top_5" />
+	    </div>
+	    <label class="_30 label_text_align margin_top_12">
+		
+		<?php echo $this->translate->_('Credit Days').''.$this->colan;?>
+	    </label>
+	    <label class="_25   margin_right_2_2">
+	    <input type="text" name="txt_customer_credit_day" id="txt_customer_credit_day" value="" readonly="readonly" class="margin_top_5" />
+		
+	    </label>
+
+    </div>
+    <div class="_100 margin_top_10">		
+		<label class="_17_1 label_text_align">
+			<?php echo $this->translate->_('Remarks').''.$this->colan;?>	
+		</label>
+		<div class="_25_3">&nbsp;</div>
+		<label class="_30 label_text_align  margin_right_2_2">
+			<?php echo $this->translate->_('Signature').$this->colan;?>
+		</label>
+		<label class="_20   margin_right_1"> <a href="javascript:;" onclick=clear_sig() >Clear</a></label>
+    </div>
+     <div class="_100">
+	   <div class="_17_1">&nbsp;</div>
+	    <div class="_30 margin_right_2_2 margin_left_0">
+			<textarea cols="45" rows="3" name="txt_invoice_comment" class="transaction" ></textarea>
+	    </div>
+	    <div class="_25_3 margin_left_right_0">&nbsp;</div>
+		<div class="_20 margin_top_7" id="signature_id">		
+				<div class="sigPad signed">
+					<div class="sigWrapper">
+					  <canvas class="pad" width="200" height="66"></canvas>
+					  <input type="hidden" name="output" class="output">
+					</div>
+				</div>
+		
+	    </div>
+    </div>
+  
+    <div class="clear"></div>
+    <div class="_100">
+	  
+           <div class="float_right" style="margin-right:55px"><input type="button" name="btn_next" value="Next" id="btn_next_add_invoice"/></div>
+    </div>
+    <div class="clear space_20"></div>
+</div><!-- Main div end -->
+</form>
+</div>

@@ -1,0 +1,551 @@
+<?php
+/**
+ 
+ * @since      Class available since Pagignation
+ * @version    Release: @1.0@
+ * @author     M@M <miral@elantechnologies.com>
+ * @copyright  Elan technologies
+ * Short description : this data grid is for ajax grid - it uses paging3.php class
+ * 				it is used when needed 2 grid on same page
+ *
+ *
+ */
+
+$this->paginator = $this->pagegridshow_4['paginator'];
+
+$grid_js_settings =  $this->pagegridshow_4['datagrid']['settings'];
+
+$grid_js_settings[] = $this->url();
+
+$this->showdatagrid = $this->pagegridshow_4['datagrid'];
+
+/*
+ * Added stylesheet for paging
+ */
+echo $this->headLink()->appendStylesheet($this->baseUrl().'/public/css/pagegrid_style_4.css');
+
+$datashowgrid = $this->showdatagrid['data'];
+
+//echo "<pre>";
+//print_r($grid_js_settings);
+//echo "</pre>";
+
+////print_r($datashowgrid);
+
+/*
+ * Retrieve search parameters form values
+ */
+$this->searchvalues = $grid_js_settings['search_values'];
+
+$Paginator_SearchDetails = new Zend_Session_Namespace('Paginator_SearchDetails');
+$Paginator_Paging = new Zend_Session_Namespace('Paginator_Paging');
+
+
+
+?>
+<style>
+#paging_grid{
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* commented by hiren dave*/
+  /*max-width: 875px;*/
+  
+}
+</style>
+<script type="text/javascript">
+	var base_url = '<?php echo $this->baseurl();?>';
+	
+	/*
+	* Hide show search box
+	*/
+	
+	$(document).ready(function(){
+	
+		var reqUrl = '<?php echo $_SERVER["REQUEST_URI"]; ?>';
+		
+		$('#paging_grid_4 .page_number').click(function(){
+		   
+		   var xurl = removeQS(this.id);
+		   loaddata(xurl,'item-grid-2');
+	        });
+		
+		$('#paging_grid_4 .icodel').click(function(){
+			
+			// jConfirm IS UNABLE TO GET this.id so removed it			
+			jConfirm('Are You Sure To Delete This Record(s)?', 'Message', function(resp)
+			{
+				if(resp) {
+					
+					
+					//var xurl = removeQS(reqUrl) + this.id;
+					var xurl = removeQS(reqUrl) + '/id/9999999/delete/yes';
+					loaddata(xurl,"item-grid-2");
+				}
+			})
+			
+		});
+		
+		$('#paging_grid_4 .xedit').click(function(){
+			
+			var xurl = removeQS(reqUrl) + this.id;
+			loaddata(xurl,"item-grid-2");
+		});
+		
+		$('#btnupdate_grid_4').click(function(){
+			
+			
+			
+			var callUrl = urlReplace(reqUrl,'/edit/', '/update/');
+			
+			var xdata = '';
+			// fetch all check box values
+			$('#paging_grid_4 .update_vals').each(function(){
+				
+				xdata = xdata + this.id + '=' + this.value + '&';
+			});
+			
+			$.ajax({
+				url:callUrl,
+				data: xdata,
+				success:function(data){
+				    $("#item-grid-2").html(data);
+				    
+				}
+			})
+		});
+		
+		$('#btncancel_grid_4').click(function(){
+			
+			xurl = removeQS(reqUrl);
+			loaddata(xurl,"item-grid-2");
+		});
+		
+		$(".alert .hide").click(function() {
+			$(this).parent().slideUp();
+		});
+		
+	});
+	
+	
+	// remove content from strign (eg. remove id/2/delete/yes from string)
+	function removeQS(str)
+	{
+		var xstr = '';
+		//switch(ty)
+		//{
+		//	case 'd' : xstr = str.replace(/(\/id\/\d+\/delete\/yes)\.*/g, "");  break;
+		//	case 'e' : xstr = str.replace(/(\/id\/\d+\/edit\/yes)\.*/g, "");  break;
+		//	case 'u' : xstr = str.replace(/(\/id\/\d+\/update\/yes)\.*/g, "");  break;
+		//}
+		//xstr = str.replace(/(\/id\/\d+\/(.*)\/yes)\.*/g, "");
+		xstr = str.replace(/(\/id\/\d+\/).*/g, "");
+		return xstr;
+		
+	}
+	function urlReplace(xurl,xfind,yreplace)
+	{
+		return xurl.replace(xfind, yreplace);
+	}
+	
+	function searchbox(obj) {
+		if(obj == 'hide') {
+		    $('#draggable_4').hide();
+		    $('#table-searchall_4').show();
+		    $('#table-showpages').show();
+		    
+		} else {
+		    $('#draggable_4').show();
+		    $('#table-searchall_4').hide();
+		    $('#table-showpages').hide();
+		}
+	}
+	
+	/*
+	* Reset button will redirect to current url
+	*/
+	function resetSearch() {
+		
+		$('.sefield').val('');
+		$('#reset_val_4').val(1);
+		$('#frmoverview').submit();		
+	}
+	
+	
+	function toggleChecked(status) {
+		
+		$("#table-example_4 input:checkbox.sel_checkbox_all").each( function() {
+			$(this).attr("checked",status);
+		});
+	}
+	 
+	function toggleUnChecked(status,val) {
+		
+		$('#chkall_4').attr("checked",false);
+
+		var totalch = $("#table-example_4 input:checkbox.sel_checkbox_all").size();
+		var checkedch = $("#table-example_4 input:checkbox.sel_checkbox_all:checked").size();
+		
+		//alert(status + '-' + checkedch + '-' + totalch );
+		if(status){
+			if(checkedch==totalch)
+				$('#chkall_4').attr("checked",true);
+		}
+	}
+	
+	<?php if(isset($this->showdatagrid['columns'])) { ?>
+	var grid_colsname = new Array("<?php echo implode('","',array_values($this->showdatagrid['columns']));?>");
+	<?php } ?>
+</script>
+
+<script type="text/javascript">
+    function changeRowRange(obj) {
+	if(obj!="")
+	{
+		var newUrl = "<?php echo $this->url(array('prow'=>'prowval','page'=>'1')); ?>";        
+		newUrl = newUrl.replace("prowval",obj)        
+		window.location = newUrl;
+	}
+    }
+
+
+</script>
+
+	<!-- Content -->
+	
+	<div id="paging_grid_4">
+				
+					<!--<h2 class="grid_12">Tables</h2>
+					<div class="clear"></div>-->
+					
+	<div class="grid_12">
+	<div class="box">
+							
+		<?php
+		if($grid_js_settings['configuration_params']['show_grid_heading'] == true || $grid_js_settings['configuration_params']['show_searchbox'] == true) {
+			echo '<div class="header">';
+			
+		if($grid_js_settings['configuration_params']['show_grid_heading'] == true)
+		{
+			echo '<h3>'.$grid_js_settings['configuration_params']['grid_heading_message'].'</h3>';
+		}
+		if($grid_js_settings['configuration_params']['show_searchbox'] == true) {
+		    ?>
+		    <div class="right">
+			    <a href="javascript:;" onclick="javascript:searchbox();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/search_icon.png" /></a>
+		    </div>
+		    <?php }
+		    echo '</div>';
+		    } ?>
+					
+			<div class="content" style="min-height:10px;">
+				<!-- SearchBox  -->
+				<div id="draggable_4"  class="top" style="display:none;" >
+					
+					<div class="grid_12">
+									<div class="box tabbed">
+										<div class="header no-icon">
+											<h3>Advance Search</h3>
+											<div class="right">
+												<!--<span class="ui-icon ui-icon-close" title="Close" onclick="searchbox('hide')">-->
+												<a title="Close" onclick="searchbox('hide')">
+													<img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/close.png" />
+												<!--</span>	-->
+												</a>
+												</div>
+										</div>
+										
+									</div> <!-- End of .box -->
+								</div>
+				
+				    
+			<!--	Comment By Hiren dave on 7th Feb 2012   -->
+				    <!--</form>-->
+				</div>
+				<!-- End SearchBox -->
+			
+				<div class="top" style="display:none;" >
+				      <?php
+				      //echo "<pre>";
+				      //print_r($grid_js_settings);
+				      //echo "</pre>";
+				      
+				      if(isset($Paginator_Paging->show_records_per_page))
+					      $show_records_per_page = $Paginator_Paging->show_records_per_page;
+				      else
+					      $show_records_per_page = $grid_js_settings["configuration_params"]["show_records_per_page"];
+					      
+				      
+				      if( ($grid_js_settings['configuration_params']['show_grid_heading'] == true && $grid_js_settings['total_data'] > $this->paginator->getItemCountPerPage() ) || $grid_js_settings['total_data'] > 10)
+				      { ?>
+				      
+						<!--	<div id="table-showpages" class="dataTables_length">-->
+						<!--    <label>-->
+						<!--    Show entries:-->
+						<!--    <select name="show_records_per_page" size="1" id="selMBC" class="pageitem" onchange="this.form.submit();" >-->
+						<!--      <option value="10" <?php if($show_records_per_page==10 ) { ?> selected="selected" <?php } ?> >10</option>-->
+						<!--      <option value="25" <?php if($show_records_per_page==25 ) { ?> selected="selected" <?php } ?> >25</option>-->
+						<!--      <option value="50" <?php if($show_records_per_page==50 ) { ?> selected="selected" <?php } ?> >50</option>-->
+						<!--      <option value="100" <?php if($show_records_per_page==100 ) { ?> selected="selected" <?php } ?> >100</option>-->
+						<!--    </select>-->
+						<!--      </label>-->
+						<!--  </div>-->
+				      
+				      <?php		
+				      }	
+				      ?>
+				
+			      <?php
+				      if($grid_js_settings['configuration_params']['show_searchbox'] == true) {
+			      ?>
+			      
+				<div id="table-searchall_4" class="dataTables_filter">
+				  
+				    <div class="left" ><label>Search:</label></div>
+				    <input type="text" class="sea" name="grid_search_text_4" id="grid_search_text_4" value="<?php echo $Paginator_SearchDetails->shortsearch_value; ?>" >
+				</div>
+				<div class="clear"></div>
+			      
+				<?php } ?>
+				</div>
+	
+				<?php
+				// Check the data for the data grid display
+				if(isset($grid_js_settings['total_data']) && $grid_js_settings['total_data'] > 0)
+				{
+				?>
+				<table id="table-example_4" class="table">
+					<thead>
+					<tr>
+												  
+					<?php
+					    /*
+					     * Display checkbox if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_selectbox'] == true) { 
+						echo '<th width="13"><input type="checkbox" id="chkall_4" name="chkall_4" onclick="toggleChecked(this.checked);" class="checkbox" /></th>';
+					    }
+					    
+					    $colsname_int = 0;
+						
+						/*
+						* Set default sort order images
+						*/
+						$grid_js_settings['order_imagetype'] = "sorting";
+						
+						
+						
+						
+						/*
+						* Set sorting images
+						*/
+						if(isset($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="asc")
+						{
+							$grid_js_settings['order_imagetype'] = "sorting_asc";
+						}
+						else if(isset($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="desc")
+						{
+							
+							$grid_js_settings['order_imagetype'] = "sorting_desc";
+						}
+								    
+						$data_display_collection = "";
+						
+						
+						foreach($this->showdatagrid['columns'] as $key => $val)
+						{
+							$colnameshow = "";
+							if(is_integer($key))
+							{
+								$colnameshow = $val;
+							}
+							else
+							{
+								$colnameshow = $key;
+							}
+							$colnameshow = $val;
+							
+							// set the link of sorting (by Meral)
+							$currentSortLink = $grid_js_settings['order_type']=="asc"?"desc":"asc";
+							
+							/*
+							* Prepare data grid columns heading with sorting parameters
+							*/
+							if(!is_null($grid_js_settings['order_columns_number']) && $grid_js_settings['order_columns_number']==$colsname_int)
+							{
+								$data_display_collection.= "<th class='".$grid_js_settings['order_imagetype']."'>";
+							
+							    $data_display_collection.= "<a href='javascript:void(0)' class='page_number' id='".$this->url(array('order'=> $colsname_int.'_'.$currentSortLink))."'>".ucfirst($colnameshow)." </a>";
+							}
+							else
+							{
+								$data_display_collection.= "<th class='sorting'>";
+								
+							$data_display_collection.= "<a href='javascript:void(0)' class='page_number' id='".$this->url(array('order'=> $colsname_int.'_asc'))."'>"
+									.ucfirst($colnameshow)."</a>";
+			
+							}
+							$data_display_collection.= "</th>";
+							
+							
+							$colsname_int++;
+						}
+						echo $data_display_collection;
+					    /*
+					     * Display editlink if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_editlink'] == true) { 
+						echo '<th >&nbsp;</th>';
+					    }
+					    
+					    /*
+					     * Display deletelink if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_deletelink'] == true) {
+						echo '<th >&nbsp;</th>';}
+						
+						/*
+						* Display extra link if is set to true
+						*/
+						if($grid_js_settings['configuration_params']['show_extralink'] == true) {
+							    
+							    for($sel=0; $sel<count($grid_js_settings['configuration_params']['extralink']); $sel++)
+								    echo '<th >&nbsp;</th>';
+						    }
+					    ?>
+													</tr>
+												</thead>
+												<tbody>
+						<?php
+						
+						if(isset($grid_js_settings['configuration_params']['mastervalues']) && is_array($grid_js_settings['configuration_params']['mastervalues']))
+						{
+						    // gathering the option values for dropdown on edit mode
+						    $mastervalues = $grid_js_settings['configuration_params']['mastervalues'];
+						
+						    // select box is required for following fields - print_r($mastervaluesKeys)
+						    $mastervaluesKeys = array_keys($mastervalues);    
+						}
+						if(isset($grid_js_settings['configuration_params']['noeditfields']) && is_array($grid_js_settings['configuration_params']['noeditfields']))
+						{
+						    // these fields are not required in edit mode while editing
+						    $no_edit_fields = $grid_js_settings['configuration_params']['noeditfields'];
+						}
+						/*
+						 * fill data array in table body
+						 */
+						
+						for($k=0;$k<count($datashowgrid);$k++)
+						{
+							$classname='class="gradeC"';
+							if(($k+1)%2==0)
+							{
+								$classname='class="gradeA"';
+							}
+							
+							echo "<tr ".$classname." >";
+							
+							## if the grid is in edit mode - value available in textbox
+							
+							
+							if($grid_js_settings['configuration_params']['editmode'] && $datashowgrid[$k]["PRIMARYKEY"]==$grid_js_settings['configuration_params']['editmodeid'])
+							{
+								
+							
+								foreach($datashowgrid[$k] as $key => $val)
+								{
+									if($key!="edit_del_primary_id" && $key!="PRIMARYKEY")
+									{
+										echo "<td>";
+										if($key!="delete_link" && $key!="edit_link"){
+											
+											// if the field is in no edit then only simpel value will be displayed - no input fields
+											if(isset($no_edit_fields) && is_array($no_edit_fields) && in_array($key,$no_edit_fields))
+											{
+											     echo ($val!="" && strlen($val))?$val:"&nbsp;";
+											}
+											// if the column required the select box - checking the passed dropdown requirement
+											elseif(isset($mastervaluesKeys) && is_array($mastervaluesKeys) && in_array($key,$mastervaluesKeys))
+											{
+											    $cSelected = "";
+											    
+											    $keySelect = '<select class="update_vals" name="'.$key.'" id="'.$key.'" >';
+											    $keySelect .= '<option value=""  >---</option>';
+											    if(isset($mastervalues[$key]) && is_array($mastervalues[$key]) && count($mastervalues[$key])){
+												foreach($mastervalues[$key] as $comboKey=>$comboValue)
+												{
+												    if($val==$comboKey)
+													$cSelected = 'selected="selected"';
+												    else
+													$cSelected = "";
+													
+												    $keySelect .= '<option value="'.$comboKey.'" '.$cSelected.' >'.$comboValue.'</option>';
+												}
+											    }
+											    $keySelect .= '</select>';
+											    
+											    echo $keySelect;
+											}
+											else // if there is only text box
+											{
+											  echo '<input class="update_vals" style="width:80% !important" type="text" name="'.$key.'" id="'.$key.'" value="'.$val.'" />';
+											}
+										}
+										
+										if($key=="edit_link")
+											echo '<a href="javascript:void(0)" name="btnupdate_grid_4" id="btnupdate_grid_4" >Update</a>';
+											
+											
+										if($key=="delete_link")
+											echo '<a href="javascript:void(0)" name="btncancel_grid_4" id="btncancel_grid_4" >Cancel</a>';
+											
+									}	
+									
+									echo "</td>";
+								}
+							}
+							else
+							{
+								foreach($datashowgrid[$k] as $key => $val)
+								{
+									if($key!="edit_del_primary_id" && $key!="PRIMARYKEY")
+									{
+									    echo "<td>";
+									    echo ($val!="" && strlen($val))?$val:"&nbsp;";
+									    echo "</td>";
+									}
+									
+								}
+							}
+							echo "</tr>";
+						}
+						?>
+						</tbody>
+					</table>
+					<div class="actions">
+					<?php
+					/*
+					* Display paging
+					*/		
+					if($grid_js_settings['total_data'] > $grid_js_settings['total_row_per_page'])
+					{
+					   echo $this->partial('pagination_ajax_extra.phtml', $this);
+					}
+					?>
+					
+					</div>
+					<div class="clean space_20"></div>
+					<!--</div> M@M commented as structure was not ready --> <!-- End of .content -->
+				<?php
+				}
+				else{ ?>
+					<div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b><?php echo $grid_js_settings['configuration_params']['nodata_message']; ?></b></div>
+				<?php } ?>
+			</div>
+		<div class="clear"></div>
+	</div> <!-- End of .box -->
+	</div> <!-- End of .grid_12 -->
+					
+	<div class="clean"></div>
+	
+	

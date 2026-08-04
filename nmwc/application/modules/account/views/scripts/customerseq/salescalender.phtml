@@ -1,0 +1,162 @@
+<?php
+/**
+* @name       salescalender.phtml
+* @since      17 Feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$current_year = date("Y");
+
+$url	= $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"index"), "default", true);
+?>
+<script>
+	$(document).ready(function(){		
+		
+		$('#ddlyear_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+		$('#ddlyear_chzn').addClass('chzn-container-active');
+    
+		var counter = '<?php echo $this->counter; ?>';
+		
+		loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+		
+		$("#auto").click(function(){
+			$("#load_second").show();
+			$("#load_first").hide();
+			
+			var val = $("#ddlyear").val();			
+			loaddata('<?php echo $this->itemgrid; ?>/auto/true/year/'+val,'item-grid');
+		});
+		
+		$("#auto1").click(function(){
+			
+			var val = $("#ddlyear").val();			
+			loaddata('<?php echo $this->itemgrid; ?>/auto/true/year/'+val,'item-grid');
+		});
+		
+		$("#loadtdata").click(function(){
+			var val = $("#ddlyear").val();			
+			loaddata('<?php echo $this->itemgrid; ?>/loaddata/true/year/'+val,'item-grid');
+		});
+		$("#delete").click(function(){
+			var val = $("#ddlyear").val();			
+			loaddata('<?php echo $this->itemgrid; ?>/delete/true/year/'+val,'item-grid');
+		});
+		$("#save").click(function(){
+			var val = $("#ddlyear").val();			
+			loaddata('<?php echo $this->itemgrid; ?>/save/true/year/'+val,'item-grid');
+		});
+		
+		if(counter == '0') {
+			$(".close_popup").click(function(){
+				parent.eval('$.prettyPhoto.close()');
+				parent.eval('winloc("<?php echo $url; ?>")');
+				//parent.window.reload();		
+			});
+		}
+	});
+</script>
+<style type="text/css">
+input, textarea { margin-top:5px; }
+</style>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="account_transaction_salescalender">
+<form name="frmoverview" id="frmoverview" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	<h3><?php echo $this->translate->_('Sales Calendar');?></h3>
+    </div>
+    <div class="_50_3">
+	&nbsp;
+    </div>
+</div>
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_100">
+		<label class="_20 margin_top_10 label_text_align">
+		   <?php echo $this->translate->_('Week Start Day')." ".$this->colan;?>
+		</label>
+		<div class="_25 margin_right_1">
+			<select id="ddlweekstartday" name="ddlweekstartday" disabled="disabled">
+				<option value="">--- Select ---</option>
+					<?php 
+					for($i=0;$i<count($this->wkday);$i++)
+					{
+				?>
+					<option value="<?php echo $this->wkday[$i]['id'];?>" <?php echo ($this->wkday[$i]['id'] == $this->startday) ? 'selected' : ''; ?> ><?php echo $this->wkday[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+		<label class="_10 margin_top_10 label_text_align">
+		   <?php echo $this->translate->_('Year')." ".$this->colan;?>
+		</label>
+		<div class="_25 margin_right_1">
+			<select id="ddlyear" name="ddlyear">
+				<option value="">--- Select ---</option>
+					<?php
+					for($i=0;$i<count($this->year);$i++)
+					{
+				?>
+					<option value="<?php echo $this->year[$i]['id'];?>" <?php echo ($this->year[$i]['id'] == $current_year) ? 'selected' : ''; ?> ><?php echo $this->year[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+		<div class="_5">&nbsp;</div>
+		<div class="_15 margin_right_1">
+			<input type="button" name="loaddata" id="loadtdata" value="<?php echo $this->translate->_('LOAD DATA')?>"/>
+		</div>
+	</div>
+        <div class="clear space_50"></div>
+        <div id="loader"></div>
+		<div style="height:300px;overflow-y:scroll;">
+			<div id="item-grid"></div>
+		</div>
+        <!--div class="clear"></div-->
+         <div class="_100 margin_top_10 margin_bottom_10" id="load_first">
+             <div class="_36">&nbsp;</div>
+            <div class="_10_1">
+                 <input type="button" name="auto" id="auto" value="<?php echo $this->translate->_('AUTO')?>" />
+            </div>            
+            <div class="_10_1">
+                 <input type="button" name="delete" id="delete" value="<?php echo $this->translate->_('DELETE')?>"/>
+            </div>            
+            <div class="_10">
+                 <input type="button" name="close" id="close" class="close_popup" value="<?php echo $this->translate->_('CLOSE')?>" />
+            </div>
+            <div class="_30">&nbsp;</div>
+        </div>
+		 <div class="_100 margin_top_10 margin_bottom_10" id="load_second" style="display:none">
+             <div class="_36">&nbsp;</div>
+            <div class="_10_1">
+                 <input type="button" name="save" id="save" value="<?php echo $this->translate->_('SAVE')?>" />
+            </div>            
+            <div class="_10_1">
+                 <input type="button" name="auto1" id="auto1" value="<?php echo $this->translate->_('AUTO')?>"/>
+            </div>            
+            <div class="_10">
+                 <input type="button" name="close" id="close" class="close_popup" value="<?php echo $this->translate->_('CLOSE')?>" />
+            </div>
+            <div class="_30">&nbsp;</div>
+        </div>
+    </div>
+    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?'edit':'add'; ?>">
+</form>
+<div class="clear"></div>
+</div> <!-- End of .box -->
+</div>
+<script>
+    $(window).load(function(){
+        $(".close_popup").click(function() {
+            parent.eval('$.prettyPhoto.close()');
+        });		
+    });
+</script>

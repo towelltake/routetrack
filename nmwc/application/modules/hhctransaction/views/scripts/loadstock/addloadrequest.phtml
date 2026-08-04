@@ -1,0 +1,394 @@
+<?php
+/**
+* @name       addloadrequest.phtml
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+	var decimalplaces	= '<?php echo $this->decimalplaces;?>';	
+        $(document).ready(function(){
+          //  loaddata_popup('<?php echo $this->itemgrid; ?>','item-grid');
+			$('#ddlitem').change(function() {
+			
+			var itemid 	= $("#ddlitem").val();
+			var routeid = $("#ddlroute").val();
+			getiteminfo(routeid,itemid);			
+		});
+			$("#ddlroute").change(function() {
+		
+			$('#ddlitem').html('');						
+			$('#ddlitem').trigger('liszt:updated');
+			var route_id 	= this.value;
+			$("#salesman").val('');
+			if(route_id == '') {
+				return false;
+			}
+				$("#hdnroutestatus").attr("value",'0');
+				var rtstatus = $("#hdnroutestatus").val();
+				var url = base_url+"/hhctransaction/loadstock/getrouteinfo/id/"+route_id;
+				var result;
+				$.ajax({
+					url:url,
+					data:$("#frmdet").serialize(),
+					type:'post',
+					beforeSend: function() {
+						//$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+					},
+					success:function(data){
+						var salesman_info = JSON.parse(data);
+						$("#salesman").val(salesman_info[0][0]['salesmanname1']);					
+						$("#hdnroute").val(route_id);
+						$("#hdnsalesman").attr('value',salesman_info[0][0]['salesmancode']);
+						$('#ddlitem').html('');
+						$('#ddlitem').html('<option value="">--- <?php echo $this->translate->_('Select');?> --- <option/>');
+						if(typeof(salesman_info[1]) == 'object')
+						{
+							for (i=0;i<salesman_info[1].length;i++) {
+							   $('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlitem');
+							}
+						}
+						$('select').trigger('liszt:updated');
+						
+						}
+				})
+						
+			
+		});
+        })
+		
+		
+	function getiteminfo(route_code,item_id)
+	{
+		$("#txtupc").val('');		
+		$("#txtcaseprice").val('');
+		$("#txtsalesprice").val('');		
+		
+		if(item_id > 0 )
+		{
+			
+				var url = base_url+'/home/index/getitemquantityinfo/itemid/'+item_id+'/routecode/'+route_code;
+			
+			var allow_entry = 0;
+			$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");
+				},
+				success:function(data)
+				{	
+					var item_info = JSON.parse(data);
+					if (item_info == '') {
+						return false;
+					}					
+					if(typeof(item_info[0]) == 'object')
+					{
+						var temp1 	= Number(item_info[0][0]['caseprice']);
+						var temp1 	= temp1.toFixed(decimalplaces);
+						var temp2 	= Number(item_info[0][0]['defaultsalesprice']);
+						var temp2 	= temp2.toFixed(decimalplaces);
+						var temp4 	= Number(item_info[0][0]['defaultgoodreturnprice']);
+						var temp4 	= temp4.toFixed(decimalplaces);
+						var temp5 	= Number(item_info[0][0]['defaultgoodreturncaseprice']);
+						var temp5 	= temp5.toFixed(decimalplaces);
+						
+						var invtype = $('#hdndepotinvstatus').val();
+						if(invtype > 0 && (typeof(item_info[1]) == 'object' || typeof(item_info[2]) == 'object')) {
+							$('#batchlink').attr('href',base_url+'/inventory/transaction/viewbatchinfo/invtype/'+invtype+'/itemid/'+item_id+'/depotcode/'+item_info[2][0]['depot_code']+'?q=prettyPhoto&iframe=true&width=1000&height=400');
+							$("a[id^='batchlink']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});
+							var available_qty = item_info[1][0]['cases']+'/'+item_info[1][0]['pieces'];
+						}						
+						
+						$("#txtupc").val(item_info[0][0]['unitspercase']);
+						
+						$("#txtcaseprice").val(temp1);
+						$("#txtsalesprice").val(temp2);
+						$("#hdnretprice").val(temp4);
+						$("#hdnretcaseprice").val(temp5);						
+						$("#hdngetcases").val('');
+						$("#hdngetpieces").val('');
+					
+						allow_entry = item_info[0][0]['allowbatchentry']						
+						$("#loader").html("");
+					}
+				}
+			})			
+		} else {
+			var abc = $('#batchlink').parent();
+			$('#batchlink').remove();
+			$(abc).html('<a id="batchlink" href="Javascript:void(0)"><?php echo $this->translate->_('Batch');?></a>');
+		}
+	}
+	
+		function addloadreq()
+		{	
+			if($("#frmdet").valid())
+			{
+				if($.trim($("#ddlitem").val()) == '' )
+				{
+					jAlert('Please Select Item.');
+					return false;
+				}
+				if($.trim($("#txtcases").val()) == '' &&  $.trim($("#txtpieces").val()) == '')
+				{
+					jAlert('Please Enter Cases Or Pieces.');
+					return false;
+				}
+				
+				var url 	= base_url+'/hhctransaction/loadstock/addloadrequestdetail/';
+				//$("#hdndetailkey").val('');
+				$.ajax({
+					url:url,
+					data:$("#frmdet").serialize(),
+					type:'post',
+					beforeSend: function() {
+						$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+					},
+					success:function(data){	
+						if(data > 0)
+						{	
+						$("#hdndetailkey").attr('value',data);
+						$("#hdndetailkey").val(data);						
+						$('#ddlroute').attr('disabled',true);
+						$('#ddlroute').trigger('liszt:updated');						
+						$("#txtreqdate").attr('disabled',true);
+						$('#ddldepotroute').attr('disabled',true);
+						$('#chkisurgent').attr('disabled',true);											
+						loaddata_popup('<?php echo $this->itemgrid; ?>/key/'+data,'item-grid');
+						}
+						
+						$("#loader").html("");
+						$("#txtcases").val('');
+						$("#txtupc").val('');
+						$("#txtpieces").val('');
+						$("#txtsalesprice").val('');
+						$("#txtbatchno").val('');
+						$("#txtexpdate").val('');
+						
+						$("#txtcaseprice").val('');
+						$("#txtsalesprice").val('');
+						$("#loader").html("");
+						$("#ddlitem").val('');
+						$('select').trigger('liszt:updated');
+						
+						var abc = $('#batchlink').parent();
+						$('#batchlink').remove();
+						$(abc).html('<a id="batchlink" href="Javascript:void(0)"><?php echo $this->translate->_('Batch');?></a>');
+					}
+				})
+		}
+			}
+    </script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="hhctransaction_load_viewloadrequest">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["id"] > 0 ? $this->params["id"]:0; ?>" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_10"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+        <h3><?php echo $this->translate->_('Load Request')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadstock","action"=>"loadrequest"), "default", true);?>')" >
+	</div>
+	<?php if($this->checkaccess("update")) { ?>
+	<!--<div class="_10 save_btn">
+		<input class="border_none" type="submit" value="" name="btnsave" id="btnsave">
+	</div>-->
+	<?php } ?>
+	<div class="_10 save_btn">&nbsp;</div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub" >
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadstock","action"=>"loadrequest"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="javascript:;" class="admin_active"><?php echo $this->details;?></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content with-actions ie_grid min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+
+	<!--<div class="_100">
+	    <div class="_5">&nbsp;</div>
+	    <label class="_15 label_text_align"><?php echo $this->translate->_('Transaction Date').''.$this->colan;?></label>
+	    <div class="_15"><?php echo $this->formdata['transactiondate'];?></div>
+	    <label class="_15 label_text_align"><?php echo $this->translate->_('Transaction Time').''.$this->colan;?></label>
+	    <div class="_15"><?php echo $this->formdata['transactiontime'];?></div>
+	    <label class="_15 label_text_align"><?php echo $this->translate->_('Route Start Date').''.$this->colan;?></label>
+	    <div class="_15"><?php echo $this->formdata['routestartdate'];?></div>
+	    <div class="_5">&nbsp;</div>
+	</div>-->
+	<!--div class="_100 margin_top_10 ">
+	    <label class="_25_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Document No.').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txtpromo_key" name="txtpromo_key" value="<?php echo $this->formdata['documentnumber'];?>">
+	    </div>
+	     <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Document Valid').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1 margin_left_right_1">
+		<input type="text"  readonly="readonly" id="txtdoc_valid" name="txtdoc_valid" value="Valid">
+	    </div>
+	</div-->
+	<div class="_100">
+	    <label class="_25_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Route').''.$this->required;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<select id="ddlroute" name="ddlroute" class="required">
+		    <option value="">--- Select ---</option>
+		    <?php
+			for($i=0;$i<count($this->route_info);$i++)
+			{
+		    ?>
+			    <option <?php echo ($this->formdata['routecode'] == $this->route_info[$i]['id']) ? 'selected' : '' ;?> value="<?php echo $this->route_info[$i]['id'];?>"><?php echo $this->route_info[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+	   <?php echo $this->translate->_('Salesman').''.$this->required;?>		
+	    </label>
+	    <div class="_25_1 margin_right_1 margin_left_right_1">
+		<input type="text" id="salesman" class="required" readonly="readonly" name="salesman" value="<?php echo $this->formdata['salesmanname1'];?>"  class="margin_top_5">
+	   </div>
+	</div>
+	<div class="_100">
+		  <label class="_25_1 margin_top_12 label_text_align" >
+		<?php echo $this->translate->_('Depot/ Warehouse').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<select id="ddldepotroute" name="ddldepotroute">
+		    <option value="">--- Select ---</option>
+		    <?php
+			for($i=0;$i<count($this->depot_route_info);$i++)
+			{
+		    ?>
+			    <option <?php echo ($this->formdata['warehouse'] == $this->depot_route_info[$i]['id']) ? 'selected' : '' ;?> value="<?php echo $this->depot_route_info[$i]['id'];?>"><?php echo $this->depot_route_info[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+		</div>
+		
+		<?php if($this->checkaccess("update")) { ?>
+		<label class="_15 margin_top_10 label_text_align">
+			<?php echo $this->translate->_('Request Date').''.$this->required;?>
+		</label>
+		<div class="_25_1 margin_right_1 margin_left_right_1">
+		<input type="text" class="required" readonly="readonly" id="txtreqdate" name="txtreqdate" value="<?php echo $this->formdata['requestdate'];?>" class="margin_top_5" >
+	    </div><?php } ?>
+	
+	</div>
+		<div class="_100 ">		
+		<div class="_25_1  label_text_align" id="chk">
+				<input class="right" <?php echo $this->formdata['chkisurgent'] == '1' ? 'checked' :'';?> type="checkbox" id="chkisurgent" name="chkisurgent" value="1">
+		</div>
+		<label class="_25 margin_top_10" style="margin-left:0px;">
+		<?php echo $this->translate->_('Urgent Request')?>
+		</label>		
+	    </div>
+	
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Add Item');?>:</legend>
+	    <div class="_100 margin_bottom_10">
+			<label class="_25_1 margin_top_12 label_text_align">
+				 <?php echo $this->translate->_('Item')." ".$this->required;?>
+			</label>
+			<div class="_25_1  margin_right_1">
+				<select id="ddlitem" name="ddlitem">
+				<option value="">--- Select ---</option>			
+				</select>
+			</div>
+			<label class="_15 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('UPC').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1 margin_left_right_1">
+				<input type="text" value="" readonly name="txtupc" id="txtupc" class="number ">
+			</div>			
+		</div>
+		 <div class="_100">			
+			
+			<div class="_13 margin_right_1">
+				<input type="hidden" value="" name="txtcaseprice" readonly="readonly" id="txtcaseprice" class="">
+			</div>
+			
+			<div class="_13 margin_right_1">
+				<input type="hidden" value="" name="txtsalesprice" readonly="readonly" id="txtsalesprice" class="">
+			</div>
+			
+		</div>
+		<div class="_100">
+			<label class="_25_1 margin_top_5 label_text_align">
+			    <?php echo $this->translate->_('Cases')." ".$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1" style="margin-top:-5px;">
+			    <input maxlength="4" type="text" value="" name="txtcases" id="txtcases" class="number" >
+			</div>			
+			<label class="_15 margin_top_5 label_text_align">
+			    <?php echo $this->translate->_('Pieces')." ".$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1 margin_left_right_1" style="margin-top:-5px!important;">
+			    <input maxlength="4" type="text" value="" name="txtpieces" id="txtpieces" class="number">
+			</div>
+			
+			<?php //if ($this->disableadd == false)
+			{ ?>
+			<div class="_5"><input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd1" name="sbtnadd1" onclick="addloadreq();"></div>
+			<?php } ?>
+	    </div>
+	</fieldset>
+	<input type="hidden" id="hdnsalesman" name="hdnsalesman" value="">
+	<input type="hidden" id="hdnroute" name="hdnroute" value="">
+	<input type="hidden" id="hdndetailkey" name="hdndetailkey" value="">
+
+	    <hr id="ie_hr" >
+		<div id="loader"></div>
+	     <div class="_100" id="item-grid">
+		<?php //echo $this->partial('datagrid.phtml', $this); ?>
+	    </div>
+	
+	
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+		$( "#txtdate" ).datepicker({
+			dateFormat: 'dd-mm-yy'
+		});
+		
+		$( "#txtreqdate" ).datepicker({
+			dateFormat: 'dd-mm-yy'		
+		});
+		$( "#txtdeldate" ).datepicker({
+			dateFormat: 'dd-mm-yy'		
+		});
+    });
+});
+</script>

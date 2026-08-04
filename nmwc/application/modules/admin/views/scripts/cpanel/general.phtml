@@ -1,0 +1,457 @@
+<?php
+/**
+* @name       index.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of website
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+$Settings_NameSpace = new Zend_Session_Namespace('Settings');
+$disabled = '';
+if($Settings_NameSpace->cpanel['PDC Clearance With CashierReceipt']['status'] == '1' ) {
+	//$disabled 	= ' disabled="disabled';
+	$pdcclr 	= $Settings_NameSpace->cpanel['PDC Clearance With CashierReceipt']['flagid'];
+}elseif($Settings_NameSpace->cpanel['PDC Clearance WithOut CashierReceipt']['status'] == '1') {
+	//$disabled 	= ' disabled="disabled';
+	$pdcclr   	= $Settings_NameSpace->cpanel['PDC Clearance WithOut CashierReceipt']['flagid'];
+}
+?>
+<script type="text/javascript">
+$(window).load(function() {
+			var dx = $('#chkmonth_close').is(':checked');
+			
+			if(dx==true)
+			{
+				//$("#closingtime").val($("#hdntxtroundingoff").val());
+				$("#closingtime").removeAttr('readonly');
+			}
+			else {
+				$("#closingtime").val("00:00");
+				$("#closingtime").attr('readonly','readonly');
+			}
+});
+
+    $(document).ready(function(){
+		
+		var dptinv 		= 0;
+		var totalsum	= '<?php echo $this->totalsum;?>';
+		
+		<?php if($pdcclr) { ?>
+		$('#hdnpdcclr').val('<?php echo $pdcclr; ?>')
+		<?php } ?>
+		
+		<?php if($this->cpanel_data['Load From ERP']['status'] == '1') { ?>
+			$("#chkcnvrtldsalesman").attr('disabled','disabled')
+			$("#chkldfrmsales").attr('disabled','disabled')
+			$("#chkpopulateord").attr('disabled','disabled')
+		<?php } ?>
+		
+		<?php if($this->selected_flagid == '14' && $this->totalsum > 0 ) { ?>			
+			$('#chkadvdept').attr('checked',false);
+			$('#chkadvdept').attr('disabled','disabled');
+			dptinv 		= 14;			
+		<?php } elseif($this->selected_flagid == '64' && $this->totalsum > 0 ) { ?>		
+			$('#chkdepotstd').attr('checked',false);
+			$('#chkdepotstd').attr('disabled','disabled');
+			dptinv = 64;			
+		<?php } ?>
+		
+		$('.keys').click(function() {
+			
+			if(this.id == 'chkdiskey')
+			{
+				$('#chkdistrikey').attr('checked',false);
+			}
+			else if(this.id == 'chkdistrikey')
+			{
+				$('#chkdiskey').attr('checked',false);
+			}
+			else
+			{
+				$('#chkdiskey').attr('checked',false);
+				$('#chkdistrikey').attr('checked',false);
+			}
+		});
+		//$('#chkadvdept').attr('checked',true);
+		$('.depotinv').click(function() {
+			
+			if(dptinv == 14)
+			{
+				$('#chkadvdept').attr('disabled','disabled');
+				$('#chkdepotstd').attr('checked',false);
+				if(this.id == 'chkadvdept')
+				{
+					$('#chkdepotstd').attr('checked',true);
+				}
+			}
+			else if(dptinv == 64)
+			{
+				$('#chkdepotstd').attr('disabled','disabled');
+				$('#chkadvdept').attr('checked',false);
+				if(this.id == 'chkdepotstd')
+				{
+					$('#chkadvdept').attr('checked',true);
+				}
+			}
+			else if(dptinv == 0 && totalsum > 0)
+			{
+				$('#chkadvdept').attr('disabled','disabled');
+				$('#chkdepotstd').attr('disabled','disabled');
+			}
+			else if(this.id == 'chkdepotstd' && dptinv == 0)
+			{
+				$('#chkadvdept').attr('checked',false);
+			}
+			else if(this.id == 'chkadvdept' && dptinv == 0)
+			{
+				$('#chkdepotstd').attr('checked',false);
+			}			
+		});
+		
+		
+		$('.dailysalemanload').click(function() {
+			
+			if(this.id == 'chkcnvrtldsalesman')
+			{
+				$('#chkldfrmsales').attr('checked',false);
+				$('#chkpopulateord').attr('checked',false);
+				$('#chksugload').attr('checked',false);
+			}
+			else if(this.id == 'chkldfrmsales')
+			{
+				$('#chkcnvrtldsalesman').attr('checked',false);
+				$('#chkpopulateord').attr('checked',false);
+				$('#chksugload').attr('checked',false);
+			}
+			else if(this.id == 'chkpopulateord')
+			{
+				$('#chkldfrmsales').attr('checked',false);
+				$('#chkcnvrtldsalesman').attr('checked',false);
+				$('#chksugload').attr('checked',false);
+			}
+			else if(this.id == 'chksugload')
+			{
+				$('#chkldfrmsales').attr('checked',false);
+				$('#chkpopulateord').attr('checked',false);
+				$('#chkcnvrtldsalesman').attr('checked',false);
+			}
+			else
+			{
+				$('#chkcnvrtldsalesman').attr('checked',false);
+				$('#chkldfrmsales').attr('checked',false);
+				$('#chkpopulateord').attr('checked',false);
+				$('#chksugload').attr('checked',false);
+			}
+		});
+		
+		$("#chkloaderp").click(function() {
+			
+			var cl = $("#chkloaderp").is(':checked');
+			if(cl) {
+				cl=false;
+			}else {
+				cl=true;
+			}
+			
+			if(cl)
+			{
+				$("#divloaderp span").removeClass('checkbox-checked');
+				$("#divcnvrtldsalesman span").removeClass('radio-button-checked');
+				$("#divldfrmsales span").removeClass('radio-button-checked');
+				$("#divpopulateord span").removeClass('radio-button-checked');
+				
+				
+				$("#chkcnvrtldsalesman").attr('disabled','disabled')
+				$("#chkldfrmsales").attr('disabled','disabled')
+				$("#chkpopulateord").attr('disabled','disabled')
+			}
+			else
+			{
+				$("#chkcnvrtldsalesman").attr('disabled',false)
+				$("#chkldfrmsales").attr('disabled',false)
+				$("#chkpopulateord").attr('disabled',false)
+			}
+			
+		});
+		
+		$('#btnsave').click(function() {
+			if(($('#txtcost_price').val() == 0 || $('#txtcost_price').val() == '') && $('#chkcostprice').is(':checked')) {
+				jAlert("Cost Price Calculation % Can't Be 0.");
+				
+				$("#general_tab").removeClass('admin_active');
+				$("#route_tab").removeClass('admin_active');
+				$("#customer_tab").removeClass('admin_active');
+				$("#item_tab").addClass('admin_active');
+				
+				$("#tab1").hide();
+				$("#tab2").hide();
+				$("#tab3").hide();
+				$("#tab4").show();
+				return false;
+			}
+		});
+		
+		$('#chkround_return_posting').click(function() {
+		
+			var dx = $('#chkround_return_posting').is(':checked');
+			if(!dx)
+			{
+				$("#txtroundingoff").val($("#hdntxtroundingoff").val());
+				$("#txtroundingoff").removeAttr('readonly');
+			}
+			else {
+				$("#txtroundingoff").val(0);
+				$("#txtroundingoff").attr('readonly','readonly');
+			}
+		});
+		
+		
+		/**/
+		
+		$('#chkmonth_close').click(function() {
+		
+			var dx = $('#chkmonth_close').is(':checked');
+			
+			if(!dx)
+			{
+			
+				$("#closingtime").removeAttr('readonly');
+			}
+			else {
+				$("#closingtime").val("00:00");
+				$("#closingtime").attr('readonly','readonly');
+			}
+		});
+		
+		/**/
+		
+		
+		
+		<?php if($this->cpanel_data["Round Return Amount While Posting"]['status']) { ?>
+			$("#txtroundingoff").removeAttr('readonly');
+		<?php } ?>
+		
+	});
+
+</script>
+<div class="content with-actions">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<fieldset>
+		<legend><?php echo $this->translate->_('General');?></legend>
+		<div class="_100 ">
+			<div class="_5_2">
+				<input type="checkbox" id="chkpwd_gen" name="chkcpanel[]" <?php echo $this->cpanel_data["Password Generator"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Password Generator"]['flagid']; ?>" >
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Use Password Generator');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkfoc" name="chkcpanel[]" <?php echo $this->cpanel_data["Customer Free Contract"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Customer Free Contract"]['flagid']; ?>" >
+			</div>		
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Customer Free Contracts');?>
+			</label>
+		</div>
+		<div class="_100 ">
+			<div class="_5_2">
+				<input type="checkbox" id="chksuggst_sales" name="chkcpanel[]" <?php echo $this->cpanel_data["Suggested Sales"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Suggested Sales"]['flagid']; ?>" >
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Use Suggested Sales');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" class="keys" id="chkdiskey" name="rdbtncpanel[4]" <?php echo $this->cpanel_data["Discount Key"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Discount Key"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Discount Key (Item Level Ranged Discounts)');?>
+			</label>
+		</div>
+		<div class="_100">
+			<div class="_5_2">
+				<input type="checkbox" id="chkautho_item_grp" name="chkcpanel[]" <?php echo $this->cpanel_data["Enable Authorized Item Group"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Enable Authorized Item Group"]['flagid']; ?>">
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Authorized Item Group');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" class="keys" id="chkdistrikey" name="rdbtncpanel[4]" <?php echo $this->cpanel_data["Distribution Key"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Distribution Key"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Distribution Key (Item Level Case Price Discounts)');?>
+			</label>
+		</div>
+		<div class="_100">
+			<div class="_5_2">
+				<input type="checkbox" id="chkoutlet_prod_cust" name="chkcpanel[]" <?php echo $this->cpanel_data["Enable Outlet Product Code"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Enable Outlet Product Code"]['flagid']; ?>">
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Outlet Product Code');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkdepot_expiry" name="chkcpanel[]" <?php echo $this->cpanel_data["Depot Damage Expiry"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Depot Damage Expiry"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Depot Damage Expiry');?>
+			</label>
+		</div>
+		<div class="_100 ">
+			<div class="_5_2">
+				<input type="checkbox" id="chkuseralt_code" name="chkcpanel[]" <?php  echo $this->cpanel_data["Use Alternate Code"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Use Alternate Code"]['flagid']; ?>">
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Use Alternate Code In Backoffice (Customer & Item)');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkdmg_mngt" name="chkcpanel[]" <?php echo $this->cpanel_data["Damage/Expiry Management"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Damage/Expiry Management"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Damage/Expiry Management');?>
+			</label>
+		</div>
+		<div class="_100">
+			<div class="_5_2">
+				<input type="checkbox" id="chkuse_alternate_pending_invoice" name="chkcpanel[]"  <?php echo $this->cpanel_data["User Alternate Code For Pending Invoices"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["User Alternate Code For Pending Invoices"]['flagid']; ?>" >
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Use Alternate Code For Pending Invoices');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkfix_qual_assign" name="chkcpanel[]" <?php echo $this->cpanel_data["Fixed Qualification/Fixed Assignment"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Fixed Qualification/Fixed Assignment"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Use Fixed Qualification And Fixed Assignment');?>
+			</label>
+		</div>
+		<div class="_100 ">
+			<div class="_5_2">
+				<input type="checkbox" id="chkdwnld_route_pending" name="chkcpanel[]" <?php echo $this->cpanel_data["Download Other Route Pending Invs"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Download Other Route Pending Invs"]['flagid']; ?>">
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Download Other Route Pending Invoices');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkranged_quali_fix" name="chkcpanel[]" <?php echo $this->cpanel_data["Ranged Qualification on Fixed Assignment"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Ranged Qualification on Fixed Assignment"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Use Ranged Qualification On Fixed Assignment');?>
+			</label>
+		</div>
+		<div class="_100">
+			<div class="_5_2">
+				<input type="checkbox" id="chkdis_bal_updt" name="chkcpanel[]" <?php echo $this->cpanel_data["Disable Balance Update"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Disable Balance Update"]['flagid']; ?>" >
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Post PDC Collected As Cash');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkpdc_amt_ci" name="chkcpanel[]" <?php echo $this->cpanel_data['Pdc Balance Amount']['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Pdc Balance Amount"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Get PDC Amount From CI');?>
+			</label>			
+		</div>
+		<div class="_100">
+			<div class="_5_2 margin_top_0">
+			<input type="checkbox" id="chkinsert_ar_respect" name="chkcpanel[]" <?php  echo $this->cpanel_data["Insert AR with Old Salesman"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Insert AR with Old Salesman"]['flagid']; ?>">
+				
+			</div>
+			<label class="_55 margin_top_7 text_align">
+				
+				<?php echo $this->translate->_('Post Collection With Respect To Invoiced Salesman');?>
+			</label>
+			<div class="_5_2">
+				<input type="checkbox" id="chkpdc_amt_ard" name="chkcpanel[]" <?php echo $this->cpanel_data["Include PDC Amount in ARD"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Include PDC Amount in ARD"]['flagid']; ?>">
+			</div>
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Get PDC Amount From ARD');?>
+			</label>
+		</div>
+		<div class="_100 ">		
+			<div class="_5_2">
+				<input type="checkbox" id="chk_allow_cloud_tran_entry" name="chkcpanel[]" <?php echo $this->cpanel_data["Allow Cloud Transaction Entry"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Allow Cloud Transaction Entry"]['flagid']; ?>">
+			</div>
+			<label class="_55 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Transaction Posting In Cloud');?>
+			</label>
+			
+			<div class="_5_2">
+				<input type="checkbox" id="chk_enbl_tax" name="chkcpanel[]" <?php echo $this->cpanel_data["Enable Tax"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Enable Tax"]['flagid']; ?>" >
+			</div>
+			
+			<label class="_40 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Tax');?>
+			</label>
+	    </div>
+		<!--div class="_100 ">
+			<div class="_5_2">
+				<input type="checkbox" id="chkround_return_posting" name="chkcpanel[]" <?php echo $this->cpanel_data['Round Return Amount While Posting']['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Round Return Amount While Posting"]['flagid']; ?>">
+			</div>
+			<label class="_30 margin_top_10 text_align">
+				<?php echo $this->translate->_('Enable Invoice Rounding Off');?>
+			</label>
+			<label class="_15 margin_top_10 text_align" style="margin-right:-5%;width:13%;margin-left:1.5%;">
+				<?php echo $this->translate->_('Round To :');?>
+			</label>
+			<div class="_15_3">
+				<input class="margin_top_3 number" type="text" readonly="readonly"  id="txtroundingoff" name="txtroundingoff" value="<?php  echo number_format($this->cpanel_data["Round Return Amount While Posting"]['flagvalue'],$this->decimalplaces);?>">
+				<input type="hidden" id="hdnroundingoff" name="hdnroundingoff" value="<?php  echo number_format($this->cpanel_data["Round Return Amount While Posting"]['flagvalue'],$this->decimalplaces);?>">
+			</div>
+	    </div-->
+		
+			<div class="_100">
+			<div class="_5_2 margin_top_0">
+				<input type="checkbox" id="chkmonth_close" name="chkcpanel[]" <?php echo $this->cpanel_data["Month Close"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Month Close"]['flagid']; ?>">
+			</div>
+			<label class="_30 margin_top_7 text_align">
+				<?php echo $this->translate->_('Enable Month Closing');?>
+				
+			</label>			
+			
+			<label class="_15 margin_top_10 text_align" style="margin-right:-5%;margin-left: -54px;  width:20.5%;">
+				<?php echo $this->translate->_('Closing Time(HH:MM):');?>
+			</label>
+			<div class="_15_3">
+					<input id="closingtime" maxlength="5" readonly="readonly" name="closingtime" placeholder ='00:00' data-format="hh:mm" type="text" value="<?php  echo $this->cpanel_data["Month Closing Time"]['flagvalue'];?>">
+			</div>
+			
+		</div>
+		
+		
+	</fieldset>	
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Accounts');?></legend>
+		<input type="hidden" id="hdnpdcclr" name="hdnpdcclr" value="">
+	    <div class="_100 margin_top_5">
+			<div class="_5_2">
+				<input type="radio" id="chkwithcashierac" name="rdbtncpanel[1]" <?php echo $this->cpanel_data['PDC Clearance With CashierReceipt']['status'] == '1' ? 'checked'.$disabled : $disabled ;?> value="<?php echo $this->cpanel_data['PDC Clearance With CashierReceipt']['flagid'] ?>">
+			</div>
+			<label class="_55 text_align margin_top_3">
+				<?php echo $this->translate->_('PDC Clearance With CashierReceipt');?>
+			</label>
+			<div class="_5_2">
+				<input type="radio" id="chkwithcashierac" name="rdbtncpanel[1]" <?php  echo $this->cpanel_data['PDC Clearance WithOut CashierReceipt']['status'] == '1' ? 'checked'.$disabled : $disabled ;?> value="<?php echo $this->cpanel_data["PDC Clearance WithOut CashierReceipt"]['flagid'] ?>" >
+			</div>
+				<label class="_40 text_align margin_top_3"><?php echo $this->translate->_('PDC Clearance WithOut CashierReceipt');?></label>
+			</div>
+	</fieldset>
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Depot Inventory');?></legend>
+	    <div class="_100 margin_top_5">
+		<div class="_5_2">
+		    <input type="checkbox" id="chkdepotstd" name="rdbtncpanel[2]" class="depotinv" <?php echo $this->cpanel_data['Standard Depot Inventory']['status'] == '1' ? 'checked' : '' ;?> value="<?php echo $this->cpanel_data['Standard Depot Inventory']['flagid'] ?>">
+		</div>
+		<label class="_55 text_align margin_top_10">
+		    <?php echo $this->translate->_('Standard');?>
+		</label>
+		<div class="_5_2">
+			<input type="checkbox" id="chkadvdept" name="rdbtncpanel[2]" class="depotinv" <?php echo $this->cpanel_data['Advanced Depot Inventory']['status'] == '1' ? 'checked' : '' ;?> value="<?php echo $this->cpanel_data['Advanced Depot Inventory']['flagid'] ?>" />
+		</div>
+			<label class="_40 text_align margin_top_10"><?php echo $this->translate->_('Advance');?></label>
+		</div>
+	</fieldset>
+</div>

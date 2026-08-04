@@ -1,0 +1,94 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({
+   	url:base_url+"/reports/nmwcroutesummary/routesummarydata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route (Salesman)');?>','<?php echo $this->translate->_('Route Start Time');?>','<?php echo $this->translate->_('Route End Time');?>','<?php echo $this->translate->_('Actaul Working Hours');?>','<?php echo $this->translate->_('Total Order Value');?>','<?php echo $this->translate->_('Total Cash');?>','<?php echo $this->translate->_('Total Cheques');?>','<?php echo $this->translate->_('Total Collection Value');?>','<?php echo $this->translate->_('Van cash sales');?>','<?php echo $this->translate->_('Van credit sales');?>','<?php echo $this->translate->_('Total Van Sales');?>'],
+   	colModel:[
+		{name:'routes',index:'routes', width:250},
+   		{name:'routestarttime',index:'routestarttime', width:70,align:'center'},
+        {name:'routeendtime',index:'routeendtime', width:70,align:'center'},
+		{name:'actualworkinghrs',index:'actualworkinghrs', width:70,align:'center'},
+        {name:'totalorderamount',index:'totalorderamount', width:70,align:'center'},
+		{name:'totalcash',index:'totalcash', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'totalchecks',index:'totalchecks', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'totalardocuments',index:'totalardocuments', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'totalcashsales',index:'totalcashsales', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+	   {name:'totalgcsales',index:'totalgcsales', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},	   
+	   {name:'totalinvoiceamount',index:'totalinvoiceamount', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }}
+	],
+	
+	/*
+	
+	  $responce->userdata['routes'] = $this->translate->_("Total");
+        $responce->userdata['routestarttime'] = "";
+        $responce->userdata['routeendtime'] = "";
+        $responce->userdata['actualworkinghrs'] = "";
+		$responce->userdata['totalorderamount'] = $totalorderamount;
+        $responce->userdata['totalcash'] = $totalcash;
+        $responce->userdata['totalchecks'] = $totalchecks;
+        $responce->userdata['totalacctsreceivable'] = $totalardocuments;
+$responce->userdata['totalcashsales'] = $totalcashsales;		
+        $responce->userdata['totalgcsales'] = $totalgcsales;
+        $responce->userdata['totalinvoiceamount'] = $totalinvoiceamount;
+	*/
+	
+	
+	
+	
+    <?php if($this->session->lang == "ar_AR") { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+    footerrow : true,
+	userDataOnFooter : true,
+   	altRows : false,
+    grouping:false,
+    groupingView :
+    {
+        groupField : ['routecode'],
+        groupColumnShow : [true],
+        groupCollapse : true,
+        groupOrder: ['asc']
+    }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+
+</script>

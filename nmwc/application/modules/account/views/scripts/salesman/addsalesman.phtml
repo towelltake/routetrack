@@ -1,0 +1,205 @@
+<?php
+/**
+* @name       page.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Salesman
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="account_index_addsalesman">
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+<div class="alert error">
+    <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+</div>
+<?php } ?>
+<form class="validate" method="post" action="" id="myform" novalidate="novalidate">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	<h3><?php echo $this->translate->_('Salesman');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"salesman","action"=>"salesman"),"default", true);?>')">
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"account","controller"=>"salesman","action"=>"salesman"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"account","controller"=>"salesman","action"=>"addsalesman"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content no-padding with-actions">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+        <div class="_100">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Code').''.$this->required;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input name="txtcode" id="txtcode" readonly="readonly" type="text" class="required text_align" value="<?php echo $this->formdata['txtcode'];?>" >
+            </div>
+        </div>
+        <div class="_100">
+             <label class="_36 margin_top_10 label_text_align">
+                <?php echo $this->translate->_('Alternate Code').''.$this->required;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input name="txtaltcode" id="txtaltcode" maxlength="50"  type="text" value="<?php echo $this->formdata['txtaltcode'];?>" class="required margin_top_5">
+            </div>
+        </div>
+        <div class="_100">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Name').''.$this->required;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input name="txtname" id="txtname" maxlength="50"  type="text" class="margin_top_5 required" value="<?php echo $this->formdata['txtname'];?>" >
+            </div>
+        </div>
+	<div class="_100 ">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Name ('.$this->sec_lang.')').''.$this->colan;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input name="txtname_arb" id="txtname_arb"  maxlength="50" class="margin_top_5 arb_text_align" type="text" value="<?php echo $this->formdata['txtname_arb'];?>" >
+            </div>
+        </div>
+		
+		<div class="_100 ">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Contact Number').''.$this->colan;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input name="txt_contactnumber" id="txt_contactnumber"  maxlength="50"  type="text" value="<?php echo $this->formdata['salesmanname2'];?>" >
+            </div>
+        </div>
+	<div class="_100">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Message Key').''.$this->colan;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <select id="ddlmsg_key" name="ddlmsg_key" class="">
+		<option value="">--- Select ---</option>
+		    <?php
+		    for($i=0;$i<count($this->msgkey);$i++)
+		    {
+		?>
+			<option <?php echo $this->formdata['ddlmsg_key'] == $this->msgkey[$i]['id'] ? 'selected' : '';?> value="<?php echo $this->msgkey[$i]['id'];?>"><?php echo $this->msgkey[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>
+        </div>
+	<div class="_100">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Type').''.$this->required;?>
+            </label>
+            <div class="_50  margin_right_1">
+                <select id="ddltype" name="ddltype" class="required">
+		<option value="">--- Select ---</option>
+		<?php
+		    for($i=0;$i<count($this->type_data);$i++)
+		    {
+		?>
+			<option <?php echo $this->formdata['ddltype'] == $this->type_data[$i]['id'] ? 'selected' : '';?> value="<?php echo $this->type_data[$i]['id'];?>"><?php echo $this->type_data[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>
+        </div>
+	<div class="_100">
+            <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Parent Company').''.$this->required;?>
+            </label>
+            <div class="_50  margin_right_1">
+                <select id="ddlprnt_com" name="ddlprnt_com" class="required">
+		<option value="">--- Select ---</option>
+		<?php
+		    for($i=0;$i<count($this->parent_com);$i++)
+		    {
+		?>
+			<option <?php echo $this->formdata['ddlprnt_com'] == $this->parent_com[$i]['id'] ? 'selected' : '';?> value="<?php echo $this->parent_com[$i]['id'];?>"><?php echo $this->parent_com[$i]['val'];?></option>
+		<?php } ?>
+		</select>
+            </div>
+        </div>	
+	 <div class="_100">
+		<label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Tablet Username').''.$this->required;?>
+		</label>
+		<div class="_50 margin_right_1">
+		<input name="txtsfausername_old" id="txtsfausername_old"   type="hidden"  value="<?php echo $this->formdata['txtsfausername'];?>" >
+			<input name="txtsfausername" id="txtsfausername"  maxlength="50" type="text"  class="required margin_top_5" value="<?php echo $this->formdata['txtsfausername'];?>" >
+		</div>
+    </div>
+	  <div class="_100">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Tablet Password').''.$this->required;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input name="txtsfapassword" id="txtsfapassword"  maxlength="50" type="password" class="margin_top_5 required " value="<?php echo $this->formdata['password'];?>" >
+            </div>
+        </div>
+	<div class="_100 ">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Confirm Password').''.$this->required;?>
+            </label>
+            <div class="_50 margin_right_1">
+                <input type="password" id="txtcnfmsfapassword"  maxlength="50" name="txtcnfmsfapassword" class="margin_top_5 required" value="<?php echo $this->formdata['password'];?>" >
+            </div>
+        </div>	
+	<div class="_100">
+             <label class="_36 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Status').''.$this->colan;?>
+            </label>
+            <div class="_50  margin_right_1">
+                <select id="ddlstatus" name="ddlstatus">
+		    <option <?php echo $this->formdata['ddlstatus'] == '1' ? 'selected' : '';?> value="1"><?php echo $this->translate->_('Active');?></option>
+		    <option <?php echo $this->formdata['ddlstatus'] == '0' ? 'selected' : '';?> value="0"><?php echo $this->translate->_('Inactive');?></option>
+		</select>
+            </div>
+        </div>
+	<?php if($this->params["edit"]=="yes") {?>
+	<div class="_100">
+             <label class="_36 margin_top_10 label_text_align">
+                <?php echo $this->translate->_('Created Date').''.$this->colan;?>
+            </label>
+            <div class="_50  margin_top_10 date_color margin_right_1"><?php echo $this->formdata['createddate'];?>
+            </div>
+    </div>
+	<?php } ?>
+</div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+</div>
+</div> <!-- End of .box -->
+
+<script>
+    $(window).load(function(){
+	$('#btnsave').click(function(){	    
+	    if(($('#txtcnfmsfapassword').val() != "") && ($('#txtsfapassword').val() != "") && ($('#txtcnfmsfapassword').val() !=  $('#txtsfapassword').val()) )
+	    {
+		jAlert('Password And Confirm Password Must Be Same.');
+		return false;
+	    }
+	});
+	$("#txtaltcode").focus();
+    });
+</script>

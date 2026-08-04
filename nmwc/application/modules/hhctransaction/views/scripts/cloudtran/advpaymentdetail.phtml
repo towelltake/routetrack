@@ -1,0 +1,134 @@
+<?php
+/**
+* @name       addinvoice.phtml
+* @since      03-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+if($this->formdata['voidflag'] == 'VOIDED')
+	$invoice_status = '<div style="color:red;"><b>'.$this->formdata['voidflag'].'</b></div>';
+else
+	$invoice_status = $this->formdata['voidflag'];
+?>
+<div class="content with-actions ie_grid min_height_10">	
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Document No').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_doc_no" name="txt_doc_no" value="<?php echo $this->formdata['documentnumber']; ?>">
+	</div>
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Receipt No').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_invoice_no" name="txt_invoice_no" value="<?php echo $this->formdata['invoicenumber']; ?>">
+	</div>
+    </div>
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Receipt Date').''.$this->colan;?>
+	</label>
+	<label class="_25_1  margin_top_12 margin_right_1">
+	    <?php echo date('d-m-Y',strtotime($this->formdata['transactiondate'])); ?>
+	</label>
+	<div class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Receipt Time').''.$this->colan;?>
+	</div>
+	<div class="_25_1  margin_top_12 margin_right_1">
+	    <?php echo $this->formdata['transactiontime']; ?>
+	</div>	    
+    </div>
+    <div class="_100 margin_top_10">
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Route').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <select id="ddlroute" name="ddlroute" disabled="disabled" >
+		<option value="">--- Select ---</option>
+		<?php
+		    for($i=0;$i<count($this->route_info);$i++)
+		    {
+		?>
+			<option <?php  echo ($this->formdata['routecode'] == $this->route_info[$i]['id']) ? 'selected' : ''; ?> value="<?php echo $this->route_info[$i]['id'];?>"><?php echo $this->route_info[$i]['val'];?></option>
+		<?php } ?>
+	    </select>
+	</div>
+	<label class="_25_1 label_text_align margin_top_10">
+	    <?php echo $this->translate->_('Route Start Date').''.$this->colan;?>
+	</label>
+	<div class="_25_1  margin_top_12 margin_right_1">
+	    <?php echo $this->formdata['routestartdate']; ?>
+	</div>	    
+    </div>
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Salesman').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_salesman" name="txt_salesman" value="<?php echo $this->formdata['salesmanname']; ?>" readonly="readonly" class="margin_top_5">
+	</div>
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Receipt Status').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1 margin_top_12">
+	    <?php echo $invoice_status; ?>
+	</div>	    
+    </div>
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Customer Code').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_cust_code" name="txt_cust_code" value="<?php echo $this->formdata['customercode']; ?>">
+	</div>	    
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Customer Name').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_doc_status" name="txt_doc_status" value="<?php echo $this->formdata['customername']; ?>">
+	</div>
+    </div>
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Address').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_address" name="txt_address" value="<?php echo $this->formdata['customeraddress1']; ?>">
+	</div>
+	<label class="_25_1 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Customer Payment Term').''.$this->colan;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <input type="text" id="txt_invo_pay_term" name="txt_invo_pay_term" value="<?php echo $this->formdata['paymentterm']; ?>">
+	</div>
+    </div>
+    <div class="clear space_20">&nbsp;</div>    
+    
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12"><?php echo $this->translate->_('Total Receipt Amount').''.$this->colan;?></label>
+	<div class="_25_1 margin_right_1">	    
+	    <input type="text" id="totalinvoiceamount" name="totalinvoiceamount" value="<?php echo number_format($this->formdata['totalinvoiceamount'],$this->decimalplaces); ?>">
+	</div>
+	<label class="_25_1 label_text_align margin_top_12"><?php echo $this->translate->_('Amount Paid').''.$this->colan;?></label>
+	<div class="_25_1 margin_right_1">	    
+	    <input type="text" id="amountpaid" name="amountpaid" value="<?php echo number_format($this->formdata['amountpaid'],$this->decimalplaces); ?>">
+	</div>
+    </div>
+    <div class="_100">
+	<label class="_25_1 label_text_align margin_top_12"><?php echo $this->translate->_('Balance Due').''.$this->colan;?></label>
+	<div class="_25_1 margin_right_1">	    
+	    <input type="text" id="balancedue" name="balancedue" value="<?php echo number_format($this->formdata['balancedue'],$this->decimalplaces); ?>">
+	</div>
+	<label class="_25_1 label_text_align margin_top_10"><?php echo $this->translate->_('Comment').''.$this->colan;?></label>
+	<div class="_25_1 margin_right_1">
+		<textarea readonly="readonly" id="comment" name="comment"><?php echo $this->formdata['comments']; ?></textarea>
+	</div>
+    </div>
+    <div class="clear space_20">&nbsp;</div>
+</div>

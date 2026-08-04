@@ -1,0 +1,557 @@
+<?php
+    $modulename     = Zend_Controller_Front::getInstance()->getRequest()->getModuleName();
+    //echo $modulename.'<br />';
+    $controllername = Zend_Controller_Front::getInstance()->getRequest()->getControllerName();
+    //echo $controllername.'<br />';
+    
+    //For getting menu data.
+    $Menu_NameSpace     = new Zend_Session_Namespace('Menu');
+    $menu_array         = $Menu_NameSpace->header_menu;
+    
+    $Setup_NameSpace    = new Zend_Session_Namespace('Setup');
+    $setup_array        = $Setup_NameSpace->options;
+    
+    $Settings_NameSpace    = new Zend_Session_Namespace('Settings');
+    $seting_array        = $Settings_NameSpace->cpanel;
+    
+    $companyinfo        = new Zend_Session_Namespace('Company_Info');
+	$company_name       = $companyinfo->companyname;
+    
+    
+    $this->currentUser = SFA_Loginauth::getIdentity();
+    
+    $base_public    = $this->baseUrl().'/public/';
+    
+	$userid = $this->currentUser->userid;						
+	$this->SFA_Comman 		= new SFA_Comman();	
+    
+    //for check selected language parameter
+    if($_COOKIE['lang'] !='' && isset($_COOKIE['lang'])) {
+        $language = explode('_',$_COOKIE['lang']);
+        $lang = $language[0];
+     } else {
+        $lang = 'en';
+    }
+    
+  //  print_r($menu_array['Allow Cloud Transaction Entry']);
+?>
+
+   
+    <div id="header">
+        <div class="name _8 margin_0 save_btn">
+            <div class="toolbar_large">
+                <div class="toolbutton margin_0">
+                    <div class="toolmenu">
+                        <div id="lang_switch" class="toolcaption padding_zero">
+                            <?php if($lang == 'en'){?>
+                            <div class="toolicon"><img src="<?php echo $this->baseUrl()?>/public/images/en.png"></div><span>&nbsp;English&nbsp;</span>
+                            <?php }else{?>
+                            <div class="toolicon"><img src="<?php echo $this->baseUrl()?>/public/images/ar.png"></div><span>&nbsp;Arabic&nbsp;</span>
+                             <?php } ?>
+                            </div>                         
+                            <div class="dropdown padding_zero" id="switch_language">
+                                <ul>
+                                    <?php if($lang == 'en'){?>
+                                    <li style="width:80px;">
+                                        <div class="toolicon">
+                                            <img src="<?php echo $this->baseUrl()?>/public/images/ar.png">
+                                        </div>&nbsp;<a href="<?php echo $this->url(array("controller"=>"index","action"=>"changelang",'lang'=>'ar_AR'), "default", true);?>" title="Arabic" alt="Arabic">Arabic&nbsp;</a>
+                                    </li>
+                                     <?php }else{?>
+                                    <li style="width:80px;">
+                                        <div class="toolicon">
+                                            <img src="<?php echo $this->baseUrl()?>/public/images/en.png">
+                                        </div>&nbsp;<a href="<?php echo $this->url(array("controller"=>"index","action"=>"changelang",'lang'=>'en_US'), "default", true);?>" title="English" alt="English">English</a>
+                                    </li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="name _15_1 margin_0 save_btn">
+            <div class="toolbar_large" id="header_administrator">
+                <div class="toolbutton margin_0">
+                    <div class="toolicon">
+                        <img src="<?php echo $base_public;?>img/icons/16X16/user.png" width="16" height="16" alt="user" >
+                    </div>
+                    <div class="toolmenu">
+                        <div class="toolcaption toolcaption1" style="width:70px;">
+                            <span><?php echo ucfirst($this->currentUser->username);?></span>
+                        </div>                       
+                        <div class="dropdown" id="dropdown_logout">
+                            <ul>
+                                <li>
+                                    <a href="<?php echo $this->url(array("module"=>"home","controller"=>"index","action"=>"logout"), "default", true);?>">Logout</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- End of large toolbar button -->
+        </div>
+        
+        <div class="container_12 no-mar-left logo _75 margin_0">
+            <div class="_100 text_align no-mar-left no-mar-right" style="height:50px; padding-bottom: 5px;">
+                <div class="_20 margin_0">
+                    <h1>
+                        <a target="_blank" href="http://www.mirnah.com/">
+                            <img src="<?php echo $this->baseUrl();?>/public/images/original-Logo.png" alt="mirnah" title="RoutePro SFA Cloud">
+                        </a>
+                    </h1>
+                </div>
+                <div class="_80">
+                    <!--<div class="_100 font_size_22">ARMADA</div>-->
+                    <!--<div class="min_height_28"></div>-->
+                    <div class="_100 bold" style="font-size:16px;font-family: Arial;padding-top: 18px;padding-left: 65px;"><?php echo $company_name; ?></div>
+                    <div class="min_height_10">&nbsp;</div>                    
+                </div>
+            </div>
+        </div>
+        
+            <div id="header-inner">
+            <div id="home">
+                    <a href="<?php echo $this->url(array("module"=>"home","controller"=>"index","action"=>"home"), "default", true);?>"></a>
+            </div>
+            <!-- quick -->
+            <ul id="quick">
+                <li>
+                    <a href="javascript:void(0)" <?php if($modulename == 'basic') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_basics.png" /></span><span>Basic</span></a>
+                    <ul style="visibility: hidden;">                       
+                        <?php if($menu_array['Enable Company and Region']['status'] == 1 ) { ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"company"), "default", true);?>">Company</a></li>
+                        <?php } ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"currency"), "default", true);?>">Currency</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"bank"),"default",true);?>">Bank Master</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"cashdesc"), "default", true);?>">Cash Description</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"inventoryloc"), "default", true);?>">Inventory Location</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"salesmanager"), "default", true);?>">National Sales Manager</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"regionmanager"), "default", true);?>">Regional Manager</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"depotmanager"), "default", true);?>">Branch/Depot Manager</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"areamanager"), "default", true);?>">Area Manager</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"supervisor"), "default", true);?>">Supervisor</a></li>
+                    <?php   /*	<li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"streetmanager"),"default",true);?>">Street Manager</a></li>	*/ ?>
+                        <li>
+                            <a class="childs" href="javascript:void(0)">Reason</a>
+                            <ul style="display: none;" class="menu_right">
+                                <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"reasons","action"=>"nonservice"), "default", true);?>">Non Serviced</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"reasons","action"=>"goodreturn"), "default", true);?>">Good Return</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"reasons","action"=>"badreturn"), "default", true);?>">Bad Return</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"reasons","action"=>"focreason"), "default", true);?>">Free</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"reasons","action"=>"voidreason"), "default", true);?>">Void/Cancel</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"basic","controller"=>"reasons","action"=>"expensereason"), "default", true);?>">Expense</a></li>                           
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="javascript:void(0)" <?php if($modulename == 'organization') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_org.png" /></span><span>Organization</span></a>
+                    <ul style="visibility: hidden;">
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"country"), "default", true);?>">Country</a></li>
+                        <?php if($menu_array['Enable Company and Region']['status'] == 1 ) { ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"region"), "default", true);?>">Region</a></li>
+                        <?php } ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"branch"), "default", true);?>">Branch/Depot</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"area"), "default", true);?>">Area</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"subarea"), "default", true);?>">Sub Area</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"van"), "default", true);?>">Van</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"routecat"), "default", true);?>">Route Category</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"route","action"=>"route"), "default", true);?>">Route</a></li>
+                        <li class="last"><a href="<?php echo $this->url(array("module"=>"organization","controller"=>"route","action"=>"routetmpl"), "default", true);?>">Route Template</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'account') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png" /></span><span>Account</span></a>
+                    <ul style="display: none;">
+                        <li>
+                            <a class="childs" href="javascript:void(0)">Message</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"salesman","action"=>"salesmanmsgs"), "default", true);?>">Salesman Message</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"messages"), "default", true);?>">Customer Message</a></li>                                   
+                            </ul>
+                        </li>
+                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"salesman","action"=>"salesman"), "default", true);?>">Salesman</a></li>
+                        <?php if($menu_array['Enabled Channel Master']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"channel"), "default", true);?>">Customer Channel</a></li>
+                        <?php } ?>    
+                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"custcat"), "default", true);?>">Customer Category</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"customer"), "default", true);?>">Customer</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"index"), "default", true);?>">Customer Sequence</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"template"), "default", true);?>">Customer Template</a></li>
+                        <?php if($menu_array['Enable Outlet Product Code']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"index","action"=>"outletproduct"), "default", true);?>">Outlet Product Code</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Enable Authorized Item Group']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"authorizegroup"), "default", true);?>">Customer Authorize Group</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Enable Item Must List']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"itemmust"), "default", true);?>">Item Must List</a></li>
+                        <?php } ?>
+						<?php if($seting_array['Enable Tax']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"tax","action"=>"index"), "default", true);?>"><?php echo $this->translate->_('Tax');?></a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Damage/Expiry Management']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"index","action"=>"expirymanagement"), "default", true);?>">Expiry Management</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Journey Plan Credit Limit']['status'] == 1 ) { ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"index","action"=>"journeyplan"), "default", true);?>">Journey Plan Credit Limit</a></li>
+                        <?php } ?>
+                        <li>
+                            <a class="childs" href="javascript:void(0)">Transaction</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"openingbal"), "default", true);?>">Opening Balance</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"gccollection"), "default", true);?>">GC Collection</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"hocollection"), "default", true);?>">HO Collection</a></li>
+                                <li><a class="childs" href="javascript:void(0)">Debit Note</a>
+                                    <ul style="display: none;" class="menu_right">
+                                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"notes","action"=>"debitcustomer"), "default", true);?>">Debit Note (Customer)</a></li>
+                                        <li class="last"><a href="<?php echo $this->url(array("module"=>"account","controller"=>"notes","action"=>"debitroute"), "default", true);?>">Debit Note (Route)</a></li>
+                                    </ul>
+                                </li>
+                                <li><a class="childs" href="javascript:void(0)">Credit Note</a>
+                                    <ul style="display: none;" class="menu_right">
+                                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"notes","action"=>"creditcustomer"), "default", true);?>">Credit Note (Customer)</a></li>
+                                        <li class="last"><a href="<?php echo $this->url(array("module"=>"account","controller"=>"notes","action"=>"creditroute"), "default", true);?>">Credit Note (Route)</a></li>
+                                    </ul>
+                                </li>
+                                <?php if($menu_array['Month Close']['status'] == 1 ) { ?>
+                                <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"transaction","action"=>"monthcloseinfo"), "default", true);?>" >Month Close</a></li>
+                                <?php } ?>
+                            </ul>
+                        </li>
+                        <li class="last">
+                                <a class="childs" href="javascript:void(0)">Settlement</a>
+                                <ul style="display: none;">
+                                    <?php if($menu_array['PDC Clearance With CashierReceipt']['status'] == 1 ) { ?>
+                                        <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"settlement","action"=>"cashreceipt"), "default", true);?>">Cashier Receipt</a></li>
+                                    <?php } ?>
+                                    <li class="last"><a href="<?php echo $this->url(array("module"=>"account","controller"=>"settlement","action"=>"pdc"), "default", true);?>">PDC Clearance</a></li>
+                                </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'promotions') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_promotions.png" /></span><span>Scheme</span></a>
+                    <ul style="display: none;">                       
+                        <li><a class="childs" href="javascript:void(0)">Promotion</a>
+                            <ul style="display: none;">
+                                <li><a class="childs" href="javascript:void(0)">Promo Group</a>
+                                    <ul style="display: none;">
+                                        <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"index","action"=>"qualificationgrp"), "default", true);?>">Qualification Group</a></li>
+                                        <li class="last"><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"index","action"=>"assignmentgrp"), "default", true);?>">Assignment Group</a></li>
+                                    </ul>
+                                </li>
+                                <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"promotionplan"), "default", true);?>">Promo Plan</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"advance","action"=>"promotionkey"), "default", true);?>">Promo Key</a></li>
+                            </ul>
+                        </li>                       
+                        <li><a class="childs" href="javascript:void(0)">Special Price</a>
+                             <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"advancepricing","action"=>"pricingplan"), "default", true);?>">Pricing Plan</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"advancepricing","action"=>"pricingkey"), "default", true);?>">Pricing Key</a></li>
+                            </ul>
+                        </li>
+						<li><a class="childs" href="javascript:void(0)">Loyalty </a>
+                             <ul style="display: none;">
+								<li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"loyality","action"=>"qualificationgrp"), "default", true);?>">Loyalty Group</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"loyality","action"=>"loyalityplan"), "default", true);?>">Loyalty Plan</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"loyality","action"=>"loyalitykey"), "default", true);?>">Loyalty Key</a></li>
+                            </ul>
+                        </li>
+                        <?php if($menu_array['Discount Key']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"discount","action"=>"discountkey"), "default", true);?>">Discount Key</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Distribution Key']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"discount","action"=>"distributionkey"), "default", true);?>">Distribution Key</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Customer Free Contract']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"customer","action"=>"freegoods"), "default", true);?>">Customer Free Contract</a></li>
+                        <?php } ?>
+						 
+                          
+                        
+                    </ul>
+                </li>
+                <!--<li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'merchandize') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_merchandizing.png"  /></span><span>Merchandizing</span></a>
+                    <ul style="display: none;">
+                        <li><a class="childs cursor_default" href="javascript:void(0)">Survey</a>
+                         <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"survey"), "default", true);?>">Survey Definition</a></li>
+                                <li ><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"surveyplan"), "default", true);?>">Survey Plan</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"surveykey"), "default", true);?>">Survey Key</a></li>
+                            </ul>
+                        </li>
+                         <li><a class="childs" href="javascript:void(0)">POS</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"pos","action"=>"index"), "default", true);?>">POS Master</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"pos","action"=>"customerposlimit"), "default", true);?>">Customer POS Limit</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"pos","action"=>"posinstruction"), "default", true);?>">POS Instruction</a></li>
+                            </ul>
+                        </li>
+                        <li class="last">                           
+                            <a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"customerimages"), "default", true);?>">Customer Images</a>                            
+                        </li>
+                    </ul>
+                </li>-->
+				 <li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'merchandize') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_merchandizing.png"  /></span><span>Merchandizing</span></a>
+                    <ul style="display: none;">
+                        <li><a class="childs cursor_default" href="javascript:void(0)">Survey</a>
+                         <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"survey"), "default", true);?>">Survey Definition</a></li>
+                                <li ><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"surveyplan"), "default", true);?>">Survey Plan</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"surveykey"), "default", true);?>">Survey Key</a></li>
+				<!--<li class="last"><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"pricesurvey"), "default", true);?>">Price Survey</a></li>-->
+                            </ul>
+                        </li>
+                         <li><a class="childs" href="javascript:void(0)">POS</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"pos","action"=>"index"), "default", true);?>">POS Master</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"pos","action"=>"customerposlimit"), "default", true);?>">Customer POS Limit</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"pos","action"=>"posinstruction"), "default", true);?>">POS Instruction</a></li>
+                            </ul>
+                        </li>
+			 <?php if($menu_array['Enabled Distribution Check']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"distributioncheck"), "default", true);?>">Distribution Check</a></li>
+                        <?php } ?>
+			   <?php if($menu_array['Enabled Inventory Check']['status'] == 1 ) { ?>
+			  <!--<li>                           
+                            <a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"inventorycheck"), "default", true);?>">Inventory Check</a>                            
+                        </li>-->
+			  <?php }?>
+			<li>                           
+                            <a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"visuals"), "default", true);?>">Planogram</a>                            
+                        </li>
+			<!--<li>                           
+                            <a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"advertise"), "default", true);?>">Advertising</a>                            
+                        </li>-->
+                        <li class="last">                           
+                            <a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"customerimages"), "default", true);?>">Images Captured</a>                            
+                        </li>
+                    </ul>
+                </li>
+
+                <li><a href="javascript:void(0)" <?php if($modulename == 'links') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_links.png"  /></span><span>Link</span></a>
+                     <ul style="display: none;">
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"customer","action"=>"customercatlink"), "default", true);?>">Category Key</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"promo","action"=>"promotionlink"), "default", true);?>">Promotion</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"promo","action"=>"pricelink"), "default", true);?>">Special Price</a></li>
+                        <?php if($menu_array['Discount Key']['status'] == 1 ) { ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"promo","action"=>"discountlink"), "default", true);?>">Discount Key</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Distribution Key']['status'] == 1 ) { ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"promo","action"=>"distributionlink"), "default", true);?>">Distribution Key</a></li>
+                        <?php } ?>
+                        <?php if($menu_array['Enable Item Must List']['status'] == 1 ) { ?>
+                            <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"customer","action"=>"itemmustlink"), "default", true);?>">Item Must List</a></li>
+                        <?php } ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"customer","action"=>"surveylink"), "default", true);?>" >Survey</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"route","action"=>"outletproductlink"), "default", true);?>">Outlet Product Code</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"route","action"=>"routeitemlink"), "default", true);?>">Route Item Group</a></li>
+                        <?php /*<li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"index","action"=>"customerlink"), "default", true);?>">Customer Link</a></li>*/ ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"links","controller"=>"route","action"=>"activenonactive"), "default", true);?>">Active/ In Active Items</a></li>
+						<li class="last"><a href="<?php echo $this->url(array("module"=>"links","controller"=>"route","action"=>"itemgroup"), "default", true);?>">Items Group</a></li>
+                    </ul>
+                </li>               
+                <li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'inventory') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_4"><img src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png" /></span><span>Inventory</span></a>
+                    <ul style="display: none;">                       
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"companygroup"), "default", true);?>">Company Group</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"majorcat"), "default", true);?>">Major Category</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"submajorcat"), "default", true);?>">Sub Major Category</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"itemgrp"), "default", true);?>">Item Group</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"items"), "default", true);?>" >Items</a></li>
+                        <!--<li><a href="<?php //echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"additionalitembarcode"), "default", true);?>">Additional Item Barcode</a></li>-->
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"routeitemgroup"), "default", true);?>" >Route Item Group</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"dailysalesmanload"), "default", true);?>">Daily Salesman Load</a></li>
+						
+						<?php						
+						$user_permissions = $this->SFA_Comman->checkpermission("7","160",$userid);	// 7 is module id and 160 is form id				
+						if( ($user_permissions[0] == NULL)||( $user_permissions[0][0]["readdata"] == 1 || $user_permissions[0][0]["updatedata"] == 1 || $user_permissions[0][0]["insertdata"] == 1 || $user_permissions[0][0]["deletedata"] == 1))
+						{ ?>						
+						<li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"delivery"), "default", true);?>"><?php echo $this->translate->_('Delivery');?></a></li>
+                        <?php } ?>
+						
+                        <li><a class="childs" href="javascript:void(0)">Target & Commission</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"target","action"=>"itempackage"), "default", true);?>" >Target Group</a></li>
+                                <!--<li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"target","action"=>"quota"), "default", true);?>" >Quota</a></li>-->
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"target","action"=>"salesmantarget"), "default", true);?>" >Target & Commission</a></li>
+                            </ul>
+                        </li>
+						
+                        <?php if($menu_array['Standard Depot Inventory']['status'] == 1 || $menu_array['Advanced Depot Inventory']['status'] == 1 ) { ?>
+                        <li><a class="childs" href="javascript:void(0)" >Depot Inventory</a>
+                            <ul style="display: none;">
+                                <?php if($menu_array['Standard Depot Inventory']['status'] == 1 ) { ?>                                   
+                                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"depotinventory"), "default", true);?>">Inventory</a></li>
+                                        <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"depotstock"), "default", true);?>">Stock Status</a></li>
+                                        <?php if($menu_array['Depot Damage Expiry']['status'] == 1 ) { ?>
+                                            <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"depotdamageexpiry"), "default", true);?>" >Damage/Expiry</a></li>
+                                        <?php }
+                                }
+                                if($menu_array['Advanced Depot Inventory']['status'] == 1 ) { ?>
+                                    <li><a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"grn"), "default", true);?>">GRN</a></li>
+                                    <li><a class="cursor_default" href="javascript:void(0)">Stock Release</a></li>
+                                    <li><a class="cursor_default" href="javascript:void(0)">Free Issue</a></li>
+                                    <li><a class="cursor_default" href="javascript:void(0)">Damage Entry</a></li>
+                                    <li><a class="cursor_default" href="javascript:void(0)">Damage Release</a></li>
+                                    <li><a class="cursor_default" href="javascript:void(0)">Stock Adjustment</a></li>
+                                    <li><a class="cursor_default" href="javascript:void(0)">Stock Status</a></li>                                   
+                                <?php } ?>
+                            </ul>
+                        </li>
+                        <?php } ?>
+                    </ul>
+                </li>
+                <li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'hhctransaction') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_7"><img src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png"  /></span><span>Transaction</span></a>
+                    <ul style="display: none;">                       
+                        <?php if($menu_array['Allow Cloud Transaction Entry']['status'] == 1 ) { ?>
+                        <li><a class="childs" href="javascript:void(0)" >Cloud Transaction</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"routestartday","action"=>"routestartday"), "default", true);?>">Route Start Day</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"processload","action"=>"processload"), "default", true);?>">Process Load</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"salesorder"), "default", true);?>">Order</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"invoice"), "default", true);?>">Sales</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"arcollection"), "default", true);?>">Receipts</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"advpayment"), "default", true);?>">Advance Collection</a></li>
+                                <li ><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"routeendday","action"=>"routeendday"), "default", true);?>">Route End Day</a></li>
+                            </ul>
+                        </li>
+                        <?php } ?>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadstock","action"=>"beginstock"), "default", true);?>" >Begin/ Opening Stock</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadstock","action"=>"load"), "default", true);?>" >Load</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadstock","action"=>"loadrequest"), "default", true);?>" >Load Request</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadtransfer","action"=>"loadtransfer"), "default", true);?>">Load Transfer</a></li>                       
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"inventory","action"=>"customerinventory"), "default", true);?>">Customer Inventory</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"invoice","action"=>"salesorder"), "default", true);?>">Sales Order</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"invoice","action"=>"invoice"), "default", true);?>">Invoice</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"invoice","action"=>"advpayment"), "default", true);?>">Advance Payment</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"invoice","action"=>"arcollection"), "default", true);?>">AR Collection</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"unload","action"=>"unloadret"), "default", true);?>">Unload Inventory</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"unload","action"=>"unloadvar"), "default", true);?>">Unload Variance</a></li>
+                        <li><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"loadtransfer","action"=>"damageret"), "default", true);?>">Damage Return</a></li>
+                        <li class="last"><a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"inventory","action"=>"inventorysummary"), "default", true);?>">Inventory Summary</a></li>                        
+                    </ul>
+                </li>
+                
+				<li>
+                    <a href="javascript:void(0)"  <?php if($modulename == 'reports') { ?>class="header_hover"<?php } ?>><span class="icon padding_top_3"><img src="<?php echo $this->baseUrl()?>/public/images/icon_reports.png"  /></span><span><?php echo $this->translate->_('Reports');?></span></a>
+                    <ul style="display: none;">
+                        <li>
+                            <a class="childs" href="javascript:void(0)" >Daily Report</a>
+                            <ul style="display: none;">
+                              <!--  <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routesyncstatus","action"=>"routesyncstatus"), "default", true);?>">Tablet Sync Status</a></li>-->
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routesummary","action"=>"routesummary"), "default", true);?>">Route Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"dailyrouteactivity","action"=>"dailyrouteactivity"), "default", true);?>">Route Activity</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routeinventory","action"=>"routeinventory"), "default", true);?>">Route Inventory Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routetripanalysis","action"=>"routetripanalysis"), "default", true);?>">Route Trip Analysis</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routedepositsummary","action"=>"routedepositsummary"), "default", true);?>">Route Deposit Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"discountsummary","action"=>"discountsummary"), "default", true);?>">Discount Summary</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"pricingsummary","action"=>"pricingsummary"), "default", true);?>">Pricing Summary</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a class="childs" href="javascript:void(0)">Transaction Report</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"salessummary","action"=>"salessummary"), "default", true);?>">Sales Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"ordersummary","action"=>"ordersummary"), "default", true);?>">Order Summary </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"returnsummary","action"=>"returnsummary"), "default", true);?>">Bad Returns Summary </a></li>
+                                <!--<li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"transactionfoc","action"=>"focsummary"), "default", true);?>">FOC Summary </a></li>-->
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"transactioncollectionsummary","action"=>"collectionsummary"), "default", true);?>">Collection Summary </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"transactionroutereview","action"=>"routereview"), "default", true);?>">Route Visit Summary </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"transactionpaymentsummary","action"=>"paymentsummary"), "default", true);?>">Payment Summary </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"transactiondepositsummary","action"=>"depositsummary"), "default", true);?>">Deposit Summary </a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"transactionitemhistory","action"=>"itemhistory"), "default", true);?>">Item History</a></li>
+                             <!--   <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"returnsummary","action"=>"returnsummary"), "default", true);?>">Tragets And Achievements</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"report","controller"=>"transaction","action"=>"skudiscountreport"), "default", true);?>">SKU Discount Report</a></li>
+                              <li class="last"><a href="javascript:void(0)" >Distribution Report</a></li>-->
+                            </ul>
+                        </li>
+                         <li>
+                            <a class="childs" href="javascript:void(0)">Merchandizing Report</a>
+                            <ul style="display: none;">
+                                 <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"merchandizingpos","action"=>"posstatus"), "default", true);?>">Pos Status</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"merchandizingsurvey","action"=>"surveytracking"), "default", true);?>">Survey </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"wastagestock","action"=>"wastagestock"), "default", true);?>">Wastage Stock</a></li>
+				<li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"customerassets","action"=>"customerassets"), "default", true);?>">Assets Availabilities</a></li>
+				<li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"distributionchecksummary","action"=>"distributionchecksummary"), "default", true);?>">Distribution Check Summary</a></li>
+                              <!--    <li><a href="<?php echo $this->url(array("module"=>"report","controller"=>"transaction","action"=>"skudiscountreport"), "default", true);?>">SKU Discount Report</a></li>
+                              <li class="last"><a href="javascript:void(0)" >Distribution Report</a></li>-->
+                            </ul>
+                        </li>
+                         <li>
+                            <a class="childs" href="javascript:void(0)">Accounts Report</a>
+                            <ul style="display: none;">
+                               <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"accountrouteageing","action"=>"routeageing"), "default", true);?>">Route Ageing  </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"accountcustomerageing","action"=>"customerageing"), "default", true);?>">Customer Ageing </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routependingbalance","action"=>"routependingbalance"), "default", true);?>">Route Pending Balance </a></li>
+                              <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"customerbalance","action"=>"customerpendingbalance"), "default", true);?>">Customer Pending Balance</a></li>
+                                <!--<li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"soa","action"=>"soa"), "default", true);?>">Statement Of Account </a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"pdc","action"=>"pdc"), "default", true);?>">PDC Report </a></li>-->
+                                
+                            </ul>
+                        </li>
+                      <!--  <li>
+                            <a class="childs" href="javascript:void(0)" >Tablet Report</a>
+                            <ul style="display: none;">
+                               <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"tabletsalessummary","action"=>"salessummary"), "default", true);?>" >Sales Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"tabletreport","action"=>"tabletreport"), "default", true);?>">Route Inventory</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"cashchequecollection","action"=>"cashchequecollection"), "default", true);?>" >Cash/ Cheque Collection</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"tabletrouteactivity","action"=>"routeactivity"), "default", true);?>" >Route Activity</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"returnorbuybacksummary","action"=>"returnorbuybacksummary"), "default", true);?>" >Return/ Buy Back Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"tabletfreesummary","action"=>"freesummary"), "default", true);?>" >Free Summary</a></li>
+                             <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"hhcsummary","action"=>"collectionsummary"), "default", true);?>" >Bad Return</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"tabletvoidtransaction","action"=>"voidtransaction"), "default", true);?>" >Void Transactions</a></li>
+                               
+                            </ul>
+                        </li>-->
+                        <li>
+                            <a class="childs" href="javascript:void(0)">Data Analysis</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"datamonthlyrevenue","action"=>"datamonthlyrevenue"), "default", true);?>">Route Monthly Revenue</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"datasalesfree","action"=>"salesfreesummary"), "default", true);?>">Sales And Free Summary</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"itemsalessummary","action"=>"itemsalessummary"), "default", true);?>" >Item Sales Summary</a></li>
+                              <!--  <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"dataitemdistribution","action"=>"itemdistribution"), "default", true);?>">Item Distribution Report</a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"Dataitemdistributionmonthly","action"=>"itemdistribution"), "default", true);?>">Item Distribution Monthly Comprison</a></li>-->
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"itemgroupwisesales","action"=>"itemgroupwisesales"), "default", true);?>">Item Group Wise Sales</a></li>
+                                
+                               
+                            </ul>
+                        </li>
+						
+						<!-- <li>
+                            <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"otherreport","action"=>"otherreport"), "default", true);?>"><?php echo $this->translate->_('Other Report');?></a></li>
+                           
+                        </li> -->
+						<li>
+                            <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"routetracking","action"=>"routetracking"), "default", true);?>"><?php echo $this->translate->_('Route Tracking');?></a></li>
+                           
+                        </li>
+                        <!-- <li>
+                            <a class="childs" href="javascript:void(0)">KPI</a>
+                            <ul style="display: none;">
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"strikeratecallrateavgtime","action"=>"strikeratecallrateavgtime"), "default", true);?>">StrikeRate CallRate Discipline Length AvgTime </a></li>
+                                <li><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"salesmanproductivity","action"=>"salesmanproductivity"), "default", true);?>">Salesman Productivity</a></li>
+                                <li class="last"><a href="<?php echo $this->url(array("module"=>"reports","controller"=>"averagedropsize","action"=>"averagedropsize"), "default", true);?>" >Average Drop Size</a></li>
+                            </ul>
+                        </li>-->
+                         <!--<li>
+                            <?php if($setup_array['misreport'] != '') { ?>
+                                <a href="<?php echo $setup_array['misreport'];?>" target="_blank">MIS Reports</a>
+                            <?php } else { ?>
+                                <a href="javascript:void(0)" onclick="nomisrptlink()">MIS Reports</a>
+                            <?php } ?>
+                        </li>-->
+                    </ul>
+                </li>        
+        </ul>
+        <!-- end quick -->
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+    </div>
+
+    </div>

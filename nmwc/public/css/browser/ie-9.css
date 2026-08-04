@@ -1,0 +1,42 @@
+.dataTables_length{
+    width:20%;
+    text-align:left;
+}
+.fieldset_effect{
+       border: 0px solid #d2d2d2;
+       margin:0px;
+       width:100%;
+}
+.ie_grid{
+    margin-top:-40px;
+    z-index:0;
+}
+#ie_hr{
+	display:block;
+	height:1px;
+}
+.ie_nav_sub{
+    height:80px !important;
+}
+
+#ie_spacer{
+    display:block;
+    min-height:37px;
+    
+}
+#search_field{ width:178% !important; }
+#searchReportGridForm #search{
+    padding-top:-3px;
+}
+#main_content{
+    padding-top:10px;
+}
+#header #header-inner #quick li{
+    margin-right:3px !important;
+}
+#dropdown_logout{
+    width:84px !important;
+}
+#switch_language{
+    width:73px;
+}

@@ -1,0 +1,79 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+$title = 'Images';
+$results = $this->invoiceimg;
+
+echo $this->headLink()->appendStylesheet($this->baseUrl().'/public/css/prettyPhoto.css');
+?>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+	$("a[rel^='prettyPhoto']").prettyPhoto({animation_speed:'fast', theme:'light_rounded', allow_resize: true, slideshow:3000, autoplay_slideshow:false, opacity:0.70});
+    });
+</script>
+
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+#content div.box table td {border-left: 1px solid #cdcdcd;border-top: 1px solid #cdcdcd;}
+
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="hhctransaction_loadtransfer_viewdamageret">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+<div class="content with-actions ie_grid min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100 space_20">&nbsp;</div>
+	<fieldset class="fieldset_effect">
+		<legend class="ttl" ><?php echo $this->translate->_($title);?></legend>
+		<hr id="ie_hr" >
+		<?php
+			
+		//for($k=0;$k<count($results[0]);$k++)			
+		{
+			?>
+		<div class="_100">
+		<table border="1" cellpadding="10px" >
+            <tr> 
+                <?php
+                $i=0;
+				
+               for($k=0;$k<count($results);$k++)
+                {
+                    if(file_exists($this->path.$results[$k]['imagename'])) 
+						{
+							$image = file_get_contents($this->path.$results[$k]['imagename']);
+
+							$image_codes = base64_encode($image);
+                        ?>
+                        <td align="center" class="padding_top_10">
+						<a href="<?php echo "data:image/jpg;charset=utf-8;base64,$image_codes";?>" rel="prettyPhoto[gallery]" id="pretty_link" title="<?php echo $results[$k]['imagename']?>" class="btn btn2"><?php echo '<img height="150" width="150" src="data:image/jpg;charset=utf-8;base64,'.$image_codes.'" />&nbsp;'; ?>
+						</a>
+						</td>
+						
+                        <?php
+                        if(++$i%4 == 0) echo '</tr><tr>';
+                    }
+                }
+                ?>
+            </tr>
+        </table>
+			
+		</div>	
+		<?php
+		
+		}
+		?>
+	</fieldset>
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>

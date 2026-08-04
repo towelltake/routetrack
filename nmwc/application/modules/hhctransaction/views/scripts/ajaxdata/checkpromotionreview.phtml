@@ -1,0 +1,94 @@
+<style>
+#content div.box table td{ height:22px; padding:5px;}
+.promo{ display:none}
+.promo ._25_1{ margin-right:0px !important; }
+
+</style>
+<input type="hidden" name="final_total_amount_first" value="<?php echo $this->final_amount;?>" />
+<?php
+//print_r($this->promtoiontype);
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+//foreach($this->promtoiontype as $promo_val)
+for($i=0;$i<count($this->promtoiontype) ;$i++)
+{
+    $promo_val = $this->promtoiontype[$i];
+    
+    
+    if($i != 0)
+    {
+        $this->previous = $this->promtoiontype[$i - 1]['promotiontypecode']."_".$this->promtoiontype[$i - 1]['promotionplannumber'];;
+	$this->next = $this->promtoiontype[$i+1]['promotiontypecode']."_".$this->promtoiontype[$i+1]['promotionplannumber'];
+    }
+    else
+    {
+        $this->previous ;
+        $this->next = $this->promtoiontype[$i+1]['promotiontypecode']."_".$this->promtoiontype[$i+1]['promotionplannumber'];
+    }
+    $this->plan_number =$promo_val['promotionplannumber'];
+    $file_name = "promotion".$promo_val['promotiontypecode'].".phtml";
+
+
+    include($file_name);
+}
+?>
+<input type="hidden" name="final_total_amount_last" id="final_total_amount_last" value="<?php echo number_format($this->final_amount,$this->decimalplaces);?>" />
+<script>
+var code = '<?php echo $this->promtoiontype[0]['promotiontypecode']."_".$this->promtoiontype[0]['promotionplannumber']?>';
+$("#promotion"+code).show();
+
+ function checkvalue(plannumber,itemtrasactiontype,itemcode,thisobj)
+    {
+	if(itemtrasactiontype == 1)
+	{
+	    var final_val =$("#txt_free_item_given_"+plannumber).val();
+	    var add = 0;
+        $(".qty_"+plannumber+"_"+itemtrasactiontype).each(function() {
+            add += Number($(this).val());
+            if(final_val < add )
+            {
+               jAlert("Free Given Qty Can't Exceeded Allowed "+ final_val);
+              $(this).val(0); 
+                   return false;
+            } 
+        });
+         
+		if(final_val < add )
+		{
+            jAlert("Free Given Qty Can't Exceeded Allowed "+ final_val);
+            return false;
+		}
+        else
+        {
+            var qntsend = $(thisobj).val();
+            $.post(ajax_page_URL+"onblurreturnavailableqty",{qty:qntsend,itemcode:itemcode,type:"promo"},function(data){
+                
+            });
+        }
+	}
+	else{
+	    var final_val =$("#txt_free_item_given1_"+plannumber).val();
+	    var add = 0;
+        $(".qty_"+plannumber+"_"+itemtrasactiontype).each(function() {
+            add += Number($(this).val());
+            if(final_val < add )
+            {
+               jAlert("Free Given Qty Can't Exceeded Allowed "+ final_val);
+              $(this).val(0); 
+                   return false;
+            }
+        });
+         
+		if(final_val < add )
+		{
+            jAlert("Return Qty Allowed "+ final_val+ " Only");
+			return false;
+		}   
+	}
+      
+     
+     
+    }
+ 
+
+</script>

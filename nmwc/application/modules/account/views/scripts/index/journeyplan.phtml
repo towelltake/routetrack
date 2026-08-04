@@ -1,0 +1,201 @@
+<?php
+/**
+* @name       index.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$('#btnsave').click(function(){
+		
+		if($('#frmoverview').valid()) {
+			
+			$.blockUI();			
+			
+			var amt = '';
+			var ids = '';
+			var i	= 0;
+			
+			$('#table-example [type=text]').each(function() {
+				i++;
+				if($(this).val() !='') {				
+					var tmp1 = $(this).val();
+					var	tmp2 = tmp1.replace(',','');					
+			
+					amt += $(this).val()+'$';
+					ids += this.id+'$';
+					
+				}
+			});
+			
+			amt = amt.replace(/\,/g,'');
+			$('#credit_limits').val(amt);
+			$('#route_ids').val(ids);
+			$('#total_record').val(i);
+			
+			var  url = base_url+'/account/index/journeyplangrid/apply/true/';
+			$.ajax({
+				url:url,
+				data:$("#frmoverview").serialize(),
+				type:'post',
+				success:function(data) {
+					$("#item-grid").html(data);
+				}
+			})
+			
+			$.unblockUI();
+		}
+	})
+	
+	$('#ddldepot').change(function(){
+		
+		$("#ddlcustomer").html("");
+		$('#ddlcustomer').trigger('liszt:updated');
+		
+		var depotid = $('#ddldepot').val();
+		getcustomerdepotcode(depotid,'');
+	})
+	$('#ddlcustomer').change(function() {
+		
+		getgriddata(2);
+	})
+})
+function getcustomerdepotcode(depotid,customerid)
+{
+	if(depotid > 0)
+	{
+		var values = $('#frmdetsec').serialize();
+		$.blockUI();
+		$.ajax({
+			type : "POST",
+			url : base_url+"/home/index/getcustomerdepotcode/depotid/"+depotid,
+			data :values,
+			success:function(data) {
+				var customer_info = JSON.parse(data);
+				if (customer_info == '')
+				{
+					return false;
+				}				
+				if(typeof(customer_info[0]) == 'object')
+				{
+					$('<option/>').val('').html('--- Select ---').appendTo('#ddlcustomer');
+					for (i=0;i<customer_info[0].length;i++) {
+						if(customerid > 0 && customerid == customer_info[0][i]['id']) {
+							$('<option selected />').val(customer_info[0][i]['id']).html(customer_info[0][i]['val']).appendTo('#ddlcustomer');
+						}
+						else {
+							$('<option/>').val(customer_info[0][i]['id']).html(customer_info[0][i]['val']).appendTo('#ddlcustomer');
+						}
+					}
+					$('#ddlcustomer').trigger('liszt:updated');
+				}
+			}
+		});
+		$.unblockUI();
+	}
+}
+function getgriddata(control_status)
+{
+	
+	if(!$("#frmoverview").valid())
+	{
+		return false;
+	}
+	
+	
+	$.blockUI();
+	$('#item-grid').html('');
+	var  url = base_url+'/account/index/journeyplangrid';
+	$.ajax({
+		url:url,
+		data:$("#frmoverview").serialize(),
+		type:'post',
+		success:function(data) {
+			$('#item-grid').html(data);
+			
+			$('#item-grid #table-example [type=text]').each(function() {
+				var control_id = this.id;
+				if(control_status == 1) {
+					$("#"+control_id).attr('readonly',true);
+				}
+				else {
+					$("#"+control_id).attr('readonly',false);
+				}				
+			});
+		}
+	})
+	$.unblockUI();
+}
+</script>
+<style type="text/css">
+input, textarea { margin-top:5px; }
+</style>
+<div class="clean"></div>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="grid_12">
+<div class="box" id="account_index_journeyplan">
+<form name="frmoverview" id="frmoverview" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	<h3><?php echo $this->translate->_('Journey Plan Customer Credit Limit');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"index","action"=>"journeyplan"),"default", true);?>')"></div>
+	<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_100">
+		<label class="_15_2 margin_top_10 label_text_align">
+			<?php echo $this->translate->_('Branch/Depot').''.$this->required;?>
+		</label>
+		<div class="_36 margin_right_1">
+			<select id="ddldepot" name="ddldepot" class="required">
+				<option value="">--- Select ---</option>
+					<?php
+							for($i=0;$i<count($this->depot_data);$i++)
+							{
+						?>
+							<option value="<?php echo $this->depot_data[$i]['id'];?>"><?php echo $this->depot_data[$i]['val'];?></option>
+						<?php } ?>
+			</select>
+        </div>
+		<label class="_15_2 margin_top_10 label_text_align">
+			<?php  echo $this->translate->_('Customer').''.$this->required;?>
+		</label>
+		<div class="_36 margin_right_1">
+			<select id="ddlcustomer" name="ddlcustomer" class="required">
+				<option value="">--- Select ---</option>				
+			</select>
+		</div>
+        </div>
+        <div class="clear"></div>
+        <div class="_100 margin_top_10 space_50" style="overflow-y:auto;height:400px;">
+			<div id="item-grid"><!--grid load here --> </div>
+		</div>		
+		<div class="clear space_20">&nbsp;</div>
+    </div>
+	<input type="hidden" name="route_ids" id="route_ids" value="">
+	<input type="hidden" name="credit_limits" id="credit_limits" value="">
+	<input type="hidden" name="total_record" id="total_record" value="">
+</form>
+	<div class="clear"></div>
+</div> <!-- End of .box -->
+</div>

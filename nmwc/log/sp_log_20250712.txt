@@ -1,0 +1,176 @@
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','47869','3372','28','134','0','2025-07-11','0:21','2025-07-11','0:24','1','0','0','0','0','23.5885824','58.3706729','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('2','47869','3818','28','134','0','2025-07-11','0:24','2025-07-11','0:26','1','0','0','0','0','23.5885866','58.3706738','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('3','47869','3818','28','134','0','2025-07-12','16:17','2025-07-12','16:19','1','0','0','0','0','23.5885199','58.3706837','0')
+
+CALL sp_ws_getdata_from_routemaster('28','0','3115','1','1','1','12124','0','0','107022','8991','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('2','47869','2','28012123','28103114','2025-07-11','00:26:26','0','0','3818','28','134.0','0','2025-07-12','1.716','3.2','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-07-11','','2','1.5','0')
+
+CALL sp_ws_getdata_from_salesorderheader('3','47869','3','28012124','28103115','2025-07-12','16:18:45','0','0','3818','28','134.0','0','2025-07-13','6.588','6.548','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-07-12','','3','1.5','1.524')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','2','281926','47.0','48','0','0','0','0.067','0.067','0.067','0.067','0','1.6','1.6','1.6','1.6','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','3','281927','47.0','48','0','0','0','0.067','0.067','0.067','0.067','0','1.6','1.6','1.6','1.6','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','3','281927','182.0','24','0','0','0','0.127','0.127','0.127','0.127','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','1.524','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('47869','3','281927','306.0','6','0','0','0','0.05','0.05','0.05','0.05','0','0.3','0.3','0.3','0.3','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','2','281926','4','47','2','46.875','0','0','0','172','0','0','0','1.5','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','2','281926','4','47','2','46.875','0','0','0','172','0','0','0','1.5','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','3','281927','4','47','2','46.875','0','0','0','172','0','0','0','1.5','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_promotiondetail('47869','3','281927','4','47','2','46.875','0','0','0','172','0','0','0','1.5','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47869','2','','3818','2.80121e+07','2025-07-11','00:26:47','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_getdata_from_sigcaptchdata('47869','3','','3818','2.80121e+07','2025-07-12','16:19:04','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47869','9','6','28','3818','0','1','1','0')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','2')
+
+CALL sp_check_isroute_closed("47869")
+
+CALL sp_ws_syncicsdata_setting('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('134','0','28','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('134','134','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('134','0','28')
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_customer_customer('1','','','desc',0,'10','customercode, alternatecode, customername, FORMAT(balance,3) AS balance, route.routecode, routename, payment_mode(invoicepaymentterms) AS invoicepaymentterms, activecustomer',' AND (customercode LIKE "%3818%" OR alternatecode LIKE "%3818%" OR customername LIKE "%3818%" OR format(balance,3) LIKE "%3818%" OR route.routecode LIKE "%3818%" OR routename LIKE "%3818%" OR invoicepaymentterms LIKE "%3818%" OR activecustomer LIKE "%3818%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_getcombobox_account_customer_setting1()
+
+CALL sp_get_account_customer_addcustomer("3818")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator',' AND (promotionkey LIKE "%34%" OR description LIKE "%34%" OR arbdescription LIKE "%34%" OR activeindicator LIKE "%34%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_addpromotionkey("34")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_getplanlist_promotions_advance_promotionplanselectionitemgrid("34")
+
+CALL sp_get_promotions_advance_promotionplanselectionitemgrid('1','','asc',0,'10','plannumber, plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup','')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc','10','10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_edit_promotions_advance_promotionkeyitemgrid('2025-07-14','2025-12-31','1921')
+
+CALL sp_get_promotions_advance_promotionkeyitemgrid('1','','desc',0,'10','p.plannumber, DATE_FORMAT(p.startdate,"%d/%m/%Y") as startdate, DATE_FORMAT(p.enddate,"%d/%m/%Y") AS enddate, pd.plandescription, CONCAT(p.qualificationgroup," --- ",pgh.groupdescription) AS qualificationgroup, CONCAT(p.assignmentgroup," --- ",pgh1.groupdescription) AS assignmentgroup, active, primary_key as edit_del_primary_id',' AND  (promotionkey = "34" )')
+
+CALL sp_edit_promotions_advance_addpromotionkey('Salalah Scheme','1','','1','admin','34')
+
+CALL sp_get_promotions_advance_promotionkey('1','','','desc',0,'10','promotionkey, description, arbdescription, activeindicator','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_syncicsdata_setting('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('134','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('134','0','28','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('134','134','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('134','0','28')
+
+CALL sp_ws_tablet_check_load('134','28')
+
+CALL sp_ws_syncicsdata_setting('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','28','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','28')
+
+CALL sp_ws_updatesyncdate('134','cacb98a0068c1c8c','28')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','1')
+
+CALL sp_ws_tablet_get_supervisor_foc('28')

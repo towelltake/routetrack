@@ -1,0 +1,97 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/tabletreport/tabletreportdata/",
+	datatype: "json",
+	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Item');?>','<?php echo $this->translate->_('Description');?>','<?php echo $this->translate->_('Opening Case');?>','<?php echo $this->translate->_('Opening Pcs');?>','<?php echo $this->translate->_('Load Case');?>','<?php echo $this->translate->_('Load Pcs');?>','<?php echo $this->translate->_('Tran.IN Case');?>','<?php echo $this->translate->_('Tran.IN Pcs');?>','<?php echo $this->translate->_('Tran.OUT Case');?>','<?php echo $this->translate->_('Tran.OUT Pcs');?>','<?php echo $this->translate->_('Sales Case');?>','<?php echo $this->translate->_('Sales Pcs');?>','<?php echo $this->translate->_('Good Return Case');?>','<?php echo $this->translate->_('Good Return Pcs');?>','<?php echo $this->translate->_('Damaged Case');?>','<?php echo $this->translate->_('Damaged Pcs');?>','<?php echo $this->translate->_('Expiry Case');?>','<?php echo $this->translate->_('Expiry Pcs');?>','<?php echo $this->translate->_('Promo Case');?>','<?php echo $this->translate->_('Promo Pcs');?>','<?php echo $this->translate->_('Free Case');?>','<?php echo $this->translate->_('Free Pcs');?>','<?php echo $this->translate->_('Closing Case');?>','<?php echo $this->translate->_('Closing Pcs');?>','<?php echo $this->translate->_('Load Value');?>','<?php echo $this->translate->_('Closing Value');?>'],
+   	colModel:[
+        {name:'routecode',index:'routecode', width:120},
+		{name:'actualitemcode',index:'actualitemcode', width:70},
+   		{name:'itemdescription',index:'itemdescription', width:250},
+        {name:'beginqtycase',index:'beginqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'beginqtypcs',index:'beginqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'loadqtycase',index:'loadqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'loadqtypcs',index:'loadqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'loadaddqtycase',index:'loadaddqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'loadaddqtypcs',index:'loadaddqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'loadcutqtycase',index:'loadcutqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'loadcutqtypcs',index:'loadcutqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'salesqtycase',index:'salesqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'salesqtypcs',index:'salesqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'returnqtycase',index:'returnqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'returnqtypcs',index:'returnqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'damagedqtycase',index:'damagedqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'damagedqtypcs',index:'damagedqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'expiryqtycase',index:'expiryqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'expiryqtypcs',index:'expiryqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'freesampleqtycase',index:'freesampleqtycase', width:50,align:'right',summaryType:'sum'},
+		{name:'freesampleqtypcs',index:'freesampleqtypcs', width:50,align:'right',summaryType:'sum'},
+        {name:'manualfreeqtycase',index:'manualfreeqtycase', width:50,align:'right',summaryType:'sum'},
+        {name:'manualfreeqtypcs',index:'manualfreeqtypcs', width:50,align:'right',summaryType:'sum'},
+		{name:'endqtycase',index:'endqtycase', width:50,align:'right',summaryType:'sum'},
+        {name:'endqtypcs',index:'endqtypcs', width:50,align:'right',summaryType:'sum'},
+		{name:'truckstockvalue',index:'truckstockvalue', width:90,align:'right',formatter: 'number', formatoptions:  { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'endstockvalue',index:'endstockvalue', width:90,align:'right',formatter: 'number', formatoptions:  { decimalPlaces: decimalplaces },summaryType:'sum'}
+		
+	],
+	
+		<?php if($this->css == 'ar_') { ?>
+			direction :"rtl",
+		<?php } ?>	
+        height: 'auto',
+        width: 'auto',
+        rowNum:eval(RP_NOOFRECORDSHOW),
+        rowList:eval(RP_ROWLISTSHOW),
+        pager: '#pagersr',
+        sortname: 'routecode,actualitemcode',
+        viewrecords:true,
+        sortorder: "asc",
+        footerrow : true,
+        userDataOnFooter : true,
+        altRows : false,
+        grouping:true,
+        loadonce:false,
+        groupingView :
+        {
+            groupField : ['routecode'],
+            groupColumnShow : [false],
+            groupCollapse : true,
+            groupOrder: ['asc'],
+            groupSummary : [true],
+        }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+</script>

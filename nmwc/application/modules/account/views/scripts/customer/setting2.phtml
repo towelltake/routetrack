@@ -1,0 +1,343 @@
+<?php
+/**
+* @name       setting2.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+$Settings_NameSpace = new Zend_Session_Namespace('Settings');
+?>
+<div id="account_customer_setting2">
+<div class="clean"></div>
+    <div class="content with-actions chk_margin_0 min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Invoice Format');?></legend>
+	    <div class="_100">
+		    <label class="_25_1 margin_top_10 label_text_align">
+			    <?php echo $this->translate->_('Sales').''.$this->colan;?>
+		    </label>
+		    <div class="_25_1 margin_right_1 margin_top_2">
+			    <select id="ddlsales" name="ddlsales">
+			    <?php
+			    for($i=0;$i<count($this->sales_res);$i++)
+			    {
+			    ?>
+				    <option <?php echo $this->sales_res[$i]['id'] == $this->formdata['ddlsales'] ? 'selected' : ''; ?> value="<?php echo $this->sales_res[$i]['id'];?>"><?php echo $this->sales_res[$i]['val'];?></option>
+			    <?php } ?>
+			    </select>
+		    </div>
+		    <label class="_25_1 margin_top_10 label_text_align">				
+				<?php echo $this->translate->_('Latitude Coordinates').''.$this->colan;?>
+		    </label>
+		    <div class="_25_1">
+				<input type="text" value="<?php echo $this->formdata['txtfixlati'];?>" name="txtfixlati"  maxlength="37"  id="txtfixlati" class="number">
+		    </div>
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Print Language').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1 ">
+				<select id="ddlprnt_lang" name="ddlprnt_lang">
+				<?php
+				for($i=0;$i<count($this->lang_res);$i++)
+				{
+				?>
+					<option <?php echo $this->lang_res[$i]['id'] == $this->formdata['ddlprnt_lang'] ? 'selected' : ''; ?> value="<?php echo $this->lang_res[$i]['id'];?>"><?php echo $this->lang_res[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Longitude Coordinates').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" value="<?php echo $this->formdata['txtfixlong'];?>" name="txtfixlong"  maxlength="37" id="txtfixlong" class="number">
+			</div>
+		</div>
+	    <div class="_100">
+			<label class="_25_1 margin_right_1  margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Enable Sales Promotion').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1 ">
+				<select id="ddlena_promo_edit_invs" name="ddlena_promo_edit_invs">
+				<?php
+				for($i=0;$i<count($this->promo_edit);$i++)
+				{
+				?>
+					<option <?php echo $this->promo_edit[$i]['id'] == $this->formdata['ddlena_promo_edit_invs'] ? 'selected' : ''; ?> value="<?php echo $this->promo_edit[$i]['id'];?>"><?php echo $this->promo_edit[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+				
+			</div>
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Enable Rounding').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="chkroundnetamt" name="chkroundnetamt" class="">
+					<option value="">--- Select ---</option>
+					<?php		
+					for($i=0;$i<count($this->enable_round);$i++)
+					{
+					?>
+						<option <?php echo $this->enable_round[$i]['id'] == $this->formdata['chkroundnetamt'] ? 'selected' : ''; ?> value="<?php echo $this->enable_round[$i]['id'];?>"><?php echo $this->enable_round[$i]['val'];?></option>
+					<?php } ?>
+				</select>
+			</div>		
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Enable Order Promotion').''.$this->colan;?>
+			</label>				
+			<div class="_25_1">
+				<select id="ddlena_promo_edit_ord" name="ddlena_promo_edit_ord">
+				<option <?php echo $this->formdata['ddlena_promo_edit_ord'] == '0' ? 'selected' : '';?> value="0"><?php echo $this->translate->_('Disable');?></option>
+				<option <?php echo $this->formdata['ddlena_promo_edit_ord'] == '1' ? 'selected' : '';?> value="1"><?php echo $this->translate->_('Enable');?></option>
+				</select>
+			</div>	
+			<!--following rounding type added by nilesh on 11 Aug 2016-->
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Rounding Type').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlroundingtype" name="ddlroundingtype" class="">			
+				<?php		
+				for($i=0;$i<count($this->round_type);$i++)
+				{
+				?>
+					<option <?php echo $this->round_type[$i]['id'] == $this->formdata['ddlroundingtype'] ? 'selected' : ''; ?> value="<?php echo $this->round_type[$i]['id'];?>"><?php echo $this->round_type[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			
+			
+			
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('History Max Deliveries').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txthis_max_del" class="number"  maxlength="4"  name="txthis_max_del" value="<?php echo $this->formdata['txthis_max_del'];?>">
+			</div>	
+			
+			<label class="_25_1 margin_right_1  margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Planogram Key').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1 ">
+		    <select id="ddlcust_visual" name="ddlcust_visual">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->customer_visual);$i++)
+			{
+			?>
+			    <option <?php echo $this->customer_visual[$i]['id'] == $this->formdata['ddlcust_visual'] ? 'selected' : ''; ?> value="<?php echo $this->customer_visual[$i]['id'];?>"><?php echo $this->customer_visual[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		</div>
+			
+	    </div>
+	    <div class="_100 ">
+			<label class="_25_1 margin_top_10 label_text_align"><?php echo $this->translate->_('Forward Factor').''.$this->colan;?></label>
+			<div class="_25_1">
+				<input type="text" id="txtforward_factor"  maxlength="8"  class="number" name="txtforward_factor" value="<?php echo $this->formdata['txtforward_factor'];?>">
+			</div>
+			<div class="_25_1 margin_top_5" id="chk">
+				<input type="checkbox" <?php echo $this->formdata['chkenforce_promo'] == '1' ? 'checked' :'';?> id="chkenforce_promo" name="chkenforce_promo" value="1">
+			</div>
+			<label class="_25_1 margin_top_15 margin_right_1 ">
+				<?php echo $this->translate->_('Enforce Promotion');?>
+			</label>			
+	    </div>
+	    <div class="_100">
+		<label class="_25_1 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Control Invoice Transactions').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1 ">
+		    <select id="ddlcntrl_invo_trxn" name="ddlcntrl_invo_trxn">
+			<option <?php echo $this->formdata['ddlcntrl_invo_trxn'] == '0' ? 'selected' : '';?> value="0"><?php echo $this->translate->_('Disable');?></option>
+			<option <?php echo $this->formdata['ddlcntrl_invo_trxn'] == '1' ? 'selected' : '';?> value="1"><?php echo $this->translate->_('Enable');?></option>
+		    </select>
+		</div>
+		<div class="_25_1 margin_top_7" id="chk">
+		    <input class="right" <?php echo $this->formdata['chkdraftcpy'] == '1' ? 'checked' :'';?> type="checkbox" id="chkdraftcpy" name="chkdraftcpy" value="1">
+		</div>
+		<label class="_25_1 margin_top_15 margin_right_1 ">
+		    <?php echo $this->translate->_('Enable Draft Copy');?>
+		</label>		
+	    </div>
+	    <div class="_100">
+		<label class="_25_1 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Zip').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <input type="text" id="txtzip" name="txtzip"  maxlength="10"  class="" value="<?php echo $this->formdata['txtzip'];?>">
+		</div>
+		<div class="_25_1 margin_top_5" id="chk">
+		    <input class="right" <?php echo $this->formdata['chkprint_outlet'] == '1' ? 'checked' :'';?> type="checkbox" id="chkprint_outlet" name="chkprint_outlet" value="1">
+		</div>
+		<label class="_25_1 margin_top_15">
+		    <?php echo $this->translate->_('Print Outlet Item Code');?>
+		</label>		
+	    </div>
+		<div class="_100">
+			<?php if($Settings_NameSpace->cpanel['Use Grace Period']['status'] == 1) { ?>
+				<label class="_25_1 margin_top_10 label_text_align">
+					<?php echo $this->translate->_('Grace Period').''.$this->colan;?>
+				</label>
+				<div class="_25_1">
+					<input type="text" class="number" id="chkgraceperiod" name="chkgraceperiod" value="<?php echo $this->formdata['chkgraceperiod']; ?>" >
+				</div>
+			<?php } else { ?>
+			<div class="_25_1 margin_top_10 label_text_align">&nbsp;</div>
+			<div class="_25_1">&nbsp;</div>
+			<?php } ?>
+			<div class="_25_1 margin_top_5 margin_left_0" id="chk">
+				<input class="right" <?php echo $this->formdata['chkallow_cash'] == '1' ? 'checked' :'';?> type="checkbox" id="chkallow_cash" name="chkallow_cash" value="1">
+			</div>
+			<label class="_25_1 margin_top_15">
+				<?php echo $this->translate->_('Allow Cash If Credit Exceeds');?>
+			</label>
+		</div>
+	</div>	    
+	</fieldset>	
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Memo');?></legend>
+	    <div class="_100" id="chk_mar">
+		<label class="_25_1 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Memo1').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <input type="text" id="txtmemo1" name="txtmemo1"  maxlength="50" value="<?php echo $this->formdata['txtmemo1'];?>">
+		</div>
+		<label class="_25_1 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Memo2').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <input type="text" id="txtmemo2" name="txtmemo2"  maxlength="50" value="<?php echo $this->formdata['txtmemo2'];?>">
+		</div>
+		
+	    </div>	    
+	</fieldset>
+	
+	<fieldset>	
+	    <legend><?php echo $this->translate->_('Tax');?></legend>
+		<!--
+		<div class="_100">
+		<label class="_25_1 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Cust Tax Key 1').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		   <select id="ddlcust_tax_key1" name="ddlcust_tax_key1" class="">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->customer_tax_key);$i++)
+			{
+			?>
+			    <option <?php echo $this->customer_tax_key[$i]['id'] == $this->formdata['ddlcust_tax_key1'] ? 'selected' : ''; ?> value="<?php echo $this->customer_tax_key[$i]['id'];?>"><?php echo $this->customer_tax_key[$i]['val'];?></option>
+			<?php } ?>			
+		    </select>
+		</div>
+		<label class="_25_1 margin_top_10 label_text_align">
+		    <?php echo $this->translate->_('Cust Tax Key 2').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <select id="ddlcust_tax_key2" name="ddlcust_tax_key2" class="">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->customer_tax_key);$i++)
+			{
+			?>
+			    <option <?php echo $this->customer_tax_key[$i]['id'] == $this->formdata['ddlcust_tax_key2'] ? 'selected' : ''; ?> value="<?php echo $this->customer_tax_key[$i]['id'];?>"><?php echo $this->customer_tax_key[$i]['val'];?></option>
+			<?php } ?>
+		    </select>
+		</div>
+		</div>
+		<div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Cust Tax Key 3').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlcust_tax_key3" name="ddlcust_tax_key3" class="">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->customer_tax_key);$i++)
+				{
+				?>
+					<option <?php echo $this->customer_tax_key[$i]['id'] == $this->formdata['ddlcust_tax_key3'] ? 'selected' : ''; ?> value="<?php echo $this->customer_tax_key[$i]['id'];?>"><?php echo $this->customer_tax_key[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+		</div>
+		-->
+		<div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('TRA Registered Name').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txttraname" name="txttraname"  maxlength="100" value="<?php echo $this->formdata['txttraname'];?>">
+			</div>
+			
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('TRA Registered Name(arabic)').''.$this->colan;?>
+		    </label>
+		    <div class="_25_1">
+				<input type="text" id="txttranamearabic" name="txttranamearabic"  maxlength="100" value="<?php echo $this->formdata['txttranamearabic'];?>">
+		    </div>
+			
+	    </div>	
+		<div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Tax Registration').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txttaxregistraion" name="txttaxregistraion"  maxlength="50" value="<?php echo $this->formdata['txttaxregistraion'];?>">
+			</div>
+			<!--
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Tax ID').''.$this->colan;?>
+		    </label>
+		    <div class="_25_1">
+				<input type="text" id="txttax_id" name="txttax_id" maxlength="20" class="margin_top_7" value="<?php echo $this->formdata['txttax_id'];?>">
+		    </div>
+			-->
+	    </div>	
+	    <div class="_100">
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Tax Print').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddltax_option" name="ddltax_option">
+				<?php
+				for($i=0;$i<count($this->tax_data);$i++)
+				{
+				?>
+					<option <?php echo $this->tax_data[$i]['id'] == $this->formdata['ddltax_option'] ? 'selected' : ''; ?> value="<?php echo $this->tax_data[$i]['id'];?>"><?php echo $this->tax_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			
+			<label class="_25_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Apply Tax').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlapplytax_option" name="ddlapplytax_option">
+					<?php
+					for($i=0;$i<count($this->applytax_data);$i++)
+					{
+					?>
+						<option <?php echo $this->applytax_data[$i]['id'] == $this->formdata['ddlapplytax_option'] ? 'selected' : ''; ?> value="<?php echo $this->applytax_data[$i]['id'];?>"><?php echo $this->applytax_data[$i]['val'];?></option>
+					<?php } ?>
+				</select>
+			</div>	
+		</div>		
+		    
+	</fieldset>
+    </div>
+</div>

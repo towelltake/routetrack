@@ -1,0 +1,1077 @@
+<?php
+/**
+ 
+ * @since      Class available since Pagignation
+ * @version    Release: @1.0@
+ * @author     M@M <miral@elantechnologies.com>
+ * @copyright  Elan technologies
+ *
+ * Short description : this data grid is for ajax grid - it uses paging3.php class
+ *
+ *
+ */
+$this->SFA_Comman		= new SFA_Comman();
+$this->decimalplaces 	= $this->SFA_Comman->getdecimalplaces();
+
+$modulename     = Zend_Controller_Front::getInstance()->getRequest()->getModuleName();
+$controllername = Zend_Controller_Front::getInstance()->getRequest()->getControllerName();
+$actionname 	= Zend_Controller_Front::getInstance()->getRequest()->getActionName();
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+$this->paginator = $this->pagegridshow['paginator'];
+
+$grid_js_settings =  $this->pagegridshow['datagrid']['settings'];
+
+//SFA_Comman::pre($grid_js_settings);
+
+$grid_js_settings[] = $this->url();
+
+$this->showdatagrid = $this->pagegridshow['datagrid'];
+
+/*
+ * Added stylesheet for paging
+ */
+$this->headLink()->appendStylesheet($this->baseUrl().'/public/css/pagegrid_style.css');
+
+
+$datashowgrid = $this->showdatagrid['data'];
+
+
+/*
+ * Retrieve search parameters form values
+ */
+$this->searchvalues = $grid_js_settings['search_values'];
+
+$Paginator_SearchDetails = new Zend_Session_Namespace('Paginator_SearchDetails');
+$Paginator_Paging = new Zend_Session_Namespace('Paginator_Paging');
+
+
+#echo "<pre>";
+#print_r($grid_js_settings['configuration_params']);
+#echo "</pre>";
+
+?>
+<style>
+#paging_grid{
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* commented by hiren dave*/
+  /*max-width: 875px;*/
+  
+}
+</style>
+<script type="text/javascript"> 
+	var base_url 		= '<?php echo $this->baseurl();?>';
+	var decimal_places  = '<?php echo $this->decimalplaces;?>';
+	/*
+	* Hide show search box
+	*/
+	
+	$(document).ready(function(){
+	
+		var reqUrl = '<?php echo $_SERVER["REQUEST_URI"]; ?>';
+		
+		var module_name 	= '<?php echo $modulename; ?>';
+		var controller_name = '<?php echo $controllername; ?>';
+		var action_name 	= '<?php echo $actionname; ?>';
+		
+		$('#startdate').attr('readonly',true);
+		$('#enddate').attr('readonly',true);
+		$( "#expirydate" ).attr('readonly',true);
+		
+		$( "#startdate" ).datepicker({
+		    dateFormat: 'dd-mm-yy',
+		});
+		$( "#enddate" ).datepicker({
+		    dateFormat: 'dd-mm-yy'
+		});
+		$( "#expirydate" ).datepicker({
+		    dateFormat: 'dd-mm-yy'
+		});
+		
+		if(module_name == 'inventory' && controller_name == 'target' &&  action_name == 'salesmanmonthlytargetgrid') {
+			
+			$('#fromdate').attr('readonly',true);
+			$('#todate').attr('readonly',true);
+				
+			$( "#fromdate" ).datepicker({
+				dateFormat: 'dd-mm-yy'
+			});
+			$( "#todate" ).datepicker({
+				dateFormat: 'dd-mm-yy'
+			});
+				
+			//$("#fromdate").change(function() {
+			//	var startDate = $('#fromdate').val();
+			//	$("#todate").datepicker( "option", "minDate",startDate);
+			//	
+			//	if($('#hdndayspotion').val() == 1){
+			//		var date2 = $('#fromdate').datepicker('getDate', '+6d');
+			//		date2.setDate(date2.getDate()+6);
+			//		
+			//		var from_date 	= $('#fromdate').datepicker('getDate', '+6d'),
+			//			from_month 	= from_date.getMonth() + 1;
+			//		
+			//	} else {
+			//		var date2 = $('#fromdate').datepicker('getDate', '+32d');
+			//		date2.setDate(date2.getDate()+32);
+			//		
+			//		var from_date 	= $('#fromdate').datepicker('getDate', '+32d'),
+			//			from_month 	= from_date.getMonth() + 1;
+			//	}
+			//	
+			//	$('#todate').datepicker('setDate', date2);
+			//	
+			//	
+			//		
+			//	var to_date 	= $('#todate').datepicker('getDate'),
+			//		to_month 	= to_date.getMonth() + 1;
+			//		
+			//	if(parseInt(from_month) < parseInt(to_month)){
+			//		if($('#hdndayspotion').val() == 1){
+			//			var date = $('#fromdate').datepicker('getDate', '+6d');
+			//		} else {
+			//			var date = $('#fromdate').datepicker('getDate', '+32d');
+			//		}
+			//		date.setMonth(date.getMonth() + 1, 0);
+			//		$('#todate').datepicker('setDate',date);
+			//	}
+			//});
+		}
+
+		//$("#startdate").change(function() {
+		//    var startDate = $('#startdate').val();
+		//    $("#enddate").datepicker( "option", "minDate",startDate);
+		//});
+		//
+		//$("#enddate").change(function() {
+		//    var endDate = $('#enddate').val();
+		//    $("#startdate").datepicker( "option", "maxDate",endDate);
+		//});
+		
+		$('#paging_grid .page_number').click(function(){
+		   
+		   var xurl = removeQS(this.id);
+		   loaddata(xurl,'item-grid');
+	        });
+		
+		$('#paging_grid .icodel').click(function(){
+			
+			var msg_text	= 'Are You Sure To Delete This Record(s)?';
+			
+			var delURL  	= $("#table-example a[class^='icodel']").attr('id');
+			pathArray = delURL.split( '/' );
+			var msg_cust = pathArray[6];
+			
+			if(msg_cust != 'undefined' && msg_cust == 'curr')
+			{
+				//var isFound = $(this).attr('id').search('/msg/curr');
+				msg_text	= 'Are You Sure To Delete Exchange Details?';
+			}			
+			
+			var del_id = '';
+			del_id   = this.id;
+			// jConfirm IS UNABLE TO GET this.id so removed it
+			jConfirm(msg_text, 'Message', function(resp)
+			{
+				if(resp) {
+					var xurl = removeQS(reqUrl) + del_id;
+					//var xurl = removeQS(reqUrl) + '/id/9999999/delete/yes';
+					loaddata(xurl,"item-grid");
+				}
+			})			
+		});
+		
+		$('#paging_grid .xedit').click(function(){
+			
+			var xurl = removeQS(reqUrl) + this.id;
+			loaddata(xurl,"item-grid");
+		});
+		
+		$('#btnupdate_grid').click(function(){
+			
+			if($('#startdate').val() != undefined || $('#enddate').val() != undefined) {
+				
+				var start		= $('#startdate').val();
+				var end 		= $('#enddate').val();
+				var n = start.indexOf("-");
+				if(n > 0){
+					var var_str 	= start.split('-');
+					var start_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}else{
+					var var_str 	= start.split('/');
+					var start_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}
+				
+				var n = end.indexOf("-");
+				if(n > 0){
+					var var_str 	= end.split('-');
+					var end_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}else{
+					var var_str 	= end.split('/');
+					var end_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}
+				
+				if(parseInt(end_date) < parseInt(start_date)){
+					alert('End Date Must be Greater Then Start Date.')
+					return false;
+				}
+			}
+			
+			if($('#fromdate').val() != undefined || $('#todate').val() != undefined) {
+				
+				var start		= $('#fromdate').val();
+				var end 		= $('#todate').val();
+				var n = start.indexOf("-");
+				if(n > 0){
+					var var_str 	= start.split('-');
+					var start_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}else{
+					var var_str 	= start.split('/');
+					var start_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}
+				
+				var n = end.indexOf("-");
+				if(n > 0){
+					var var_str 	= end.split('-');
+					var end_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}else{
+					var var_str 	= end.split('/');
+					var end_date	= var_str[2]+''+var_str[1]+''+var_str[0];
+				}
+				
+				if(parseInt(end_date) < parseInt(start_date)){
+					alert('To Date Must be Greater Then From Date.')
+					return false;
+				}
+			}
+			
+			var callUrl = urlReplace(reqUrl,'/edit/', '/update/');
+			
+			var xdata = '';
+			// fetch all check box values
+			$('.update_vals').each(function(){
+				
+				xdata = xdata + this.id + '=' + this.value + '&';
+			});
+			
+			$.ajax({
+				url:callUrl,
+				data: xdata,
+				success:function(data){
+				    $("#item-grid").html(data);
+				}
+			})
+		});
+		
+		$('#btncancel_grid').click(function()
+		{
+			xurl = removeQS(reqUrl);
+			
+			// Added by hiren dave on 
+			// Below code is to solved to add duplicate record in daily salesman load because if we click on cancel on multiple time then record
+			// entry is going to be added multiple time.
+			
+			var st = xurl.search('/cancel/');
+			if(st == -1)
+				loaddata(xurl+'/cancel/1',"item-grid");
+			else
+				loaddata(xurl,"item-grid");			
+		});
+		
+		$(".alert .hide").click(function() {
+			$(this).parent().slideUp();
+		});
+		
+		$('#chkall').click(function() {		
+			$('#chkfirstout').attr("checked",false);
+			$('#table-example input:checkbox.sel_checkbox_all').each( function() {
+				
+				var str 		= this.id;
+				var substr 		= str.split('_');
+				var t_id 		= 'extratextbox_'+substr[1];			
+				var mcCbxCheck  = $(this);
+				var span_val	= ($('#span_'+substr[1]).text()).replace(',','');
+				var pdc_amount	= ($('#span1_'+substr[1]).text()).replace(',','');
+				var final_amt 	= (Number(span_val)-Number(pdc_amount));				
+				final_amt 		= addCommas(final_amt,decimal_places);
+				
+				if(mcCbxCheck.is(':checked')) {
+					$('#'+t_id).attr('readonly',false);
+					$('#'+t_id).val(final_amt);
+				}
+				else {
+					$('#'+t_id).attr('readonly',true);
+					$('#'+t_id).val('');
+				}				
+			})
+		})
+		
+		$('.sel_checkbox_all').click(function() {
+			
+			$('#chkfirstout').attr("checked",false);
+			
+			var str 		= this.id;
+			var substr 		= str.split('_');
+			var t_id 		= 'extratextbox_'+substr[1];
+			var span_val	= ($('#span_'+substr[1]).text()).replace(',','');
+			var pdc_amount	= ($('#span1_'+substr[1]).text()).replace(',','');
+			var final_amt 	= (span_val-pdc_amount);			
+			final_amt 		= addCommas(final_amt,decimal_places);
+			
+			var mcCbxCheck = $(this);
+			
+			if(mcCbxCheck.is(':checked')) {
+				$('#'+t_id).attr('readonly',false);
+				$('#'+t_id).val(final_amt);
+			}
+			else {
+				$('#'+t_id).attr('readonly',true);
+				$('#'+t_id).val('');
+			}
+		})
+	});
+	
+	// remove content from strign (eg. remove id/2/delete/yes from string)
+	function removeQS(str)
+	{
+		var xstr = '';
+		
+		//xstr = str.replace(/(\/id\/\d+\/(.*)\/yes)\.*/g, "");		
+		//xstr = str.replace(/(\/id\/\d+\/).*/g, "");
+		
+		xstr = str.replace(/(\/id\/(\d+_\d+|\d+)\/).*/g, "");
+		return xstr;		
+	}
+	function urlReplace(xurl,xfind,yreplace)
+	{
+		return xurl.replace(xfind, yreplace);
+	}
+	
+	function searchbox(obj) {
+		if(obj == 'hide') {
+		    $('#draggable').hide();
+		    $('#table-searchall').show();
+		    $('#table-showpages').show();
+		    
+		} else {
+		    $('#draggable').show();
+		    $('#table-searchall').hide();
+		    $('#table-showpages').hide();
+		}
+	}
+	
+	/*
+	* Reset button will redirect to current url
+	*/
+	function resetSearch() {
+		
+		$('.sefield').val('');
+		$('#reset_val').val(1);
+		$('#frmoverview').submit();		
+	}
+	
+	
+	function toggleChecked(status) {
+		$('#table-example input:checkbox.sel_checkbox_all').each( function() {		
+			$(this).attr("checked",status);
+			
+			var str 	= this.id;
+			var substr 	= str.split('_');
+			var t_id 	= 'extratextbox_'+substr[1];
+			var mcCbxCheck = $(this);			
+			if(mcCbxCheck.is(':checked')) {
+				$('#'+t_id).attr('readonly',false);
+			}
+			else {
+				$('#'+t_id).attr('readonly',true);
+				$('#'+t_id).val('');
+			}
+		});
+	}
+	 
+	function toggleUnChecked(status,val) {
+		
+		$('#chkall').attr("checked",false);
+
+		var totalch = $("#table-example input:checkbox.sel_checkbox_all").size();
+		var checkedch = $("#table-example input:checkbox.sel_checkbox_all:checked").size();
+		
+		if(status)
+		{
+		    if(checkedch==totalch)
+				$('#chkall').attr("checked",true);
+		}
+	}
+	
+	function checkinvobal(val,tid)
+	{
+		var decimal_places = '<?php echo $this->decimalplaces; ?>';
+		
+		if(parseInt(val) > 0)
+		{
+			var substr 	= tid.split('_');
+			var val1 =  $("#span_"+substr[1]).html();
+				val1 =  val1.replace(',','');
+				
+			// span1 value
+			var val2 =  $("#span1_"+substr[1]).html();
+				val2 =  val2.replace(',','');
+				val2 = parseFloat(val1) - parseFloat(val2);
+			
+			val = val.replace(',','');
+			
+			if(parseFloat(Math.abs(val)) > parseFloat(Math.abs(val2)))
+			{
+				$('#'+tid).val('');
+				$('#'+tid).focus();
+				jAlert('Amount Exceeds Present Balance.');
+				$('#chk_'+substr[1]).attr('checked',false);
+				$('#chkall').attr('checked',false);
+				return false;
+			}
+			if(val2 > 0 && parseFloat(Math.abs(val)) > parseFloat(Math.abs(val2)))
+			{
+				$('#'+tid).val('');
+				$('#'+tid).focus();
+				jAlert('A PDC Is Collected Against The Invoice.');
+				$('#chk_'+substr[1]).attr('checked',false);
+				$('#chkall').attr('checked',false);
+				return false;
+			}
+			if(parseFloat(Math.abs(val1)) < parseFloat(Math.abs(val)))
+			{
+				$('#'+tid).val('');
+				$('#'+tid).focus();
+				jAlert('Current Amount Must Be Lower Than The Present Amount.');
+				return false;
+			}
+		}
+	}
+	
+	<?php if(isset($this->showdatagrid['columns'])) { ?>
+	var grid_colsname = new Array("<?php echo implode('","',array_values($this->showdatagrid['columns']));?>");
+	<?php } ?>
+</script>
+
+<script type="text/javascript">
+    function changeRowRange(obj) {
+	if(obj!="")
+	{
+		var newUrl = "<?php echo $this->url(array('prow'=>'prowval','page'=>'1')); ?>";        
+		newUrl = newUrl.replace("prowval",obj)        
+		window.location = newUrl;
+	}
+    }
+
+
+</script>
+
+	<!-- Content -->
+	
+	<div id="paging_grid">
+				
+					<!--<h2 class="grid_12">Tables</h2>
+					<div class="clear"></div>-->
+					
+	<div class="grid_12">
+	<div class="box">
+							
+		<?php
+		if($grid_js_settings['configuration_params']['show_grid_heading'] == true || $grid_js_settings['configuration_params']['show_searchbox'] == true) {
+			echo '<div class="header">';
+			
+		if($grid_js_settings['configuration_params']['show_grid_heading'] == true)
+		{
+			echo '<h3>'.$grid_js_settings['configuration_params']['grid_heading_message'].'</h3>';
+		}
+		if($grid_js_settings['configuration_params']['show_searchbox'] == true) {
+		    ?>
+		    <div class="right">
+			    <a href="javascript:;" onclick="javascript:searchbox();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/search_icon.png" /></a>
+		    </div>
+		    <?php }
+		    echo '</div>';
+		    } ?>
+					
+			<div class="content" style="min-height:10px;">
+				<!-- SearchBox  -->
+				<div id="draggable"  class="top" style="display:none;" >
+					
+					<div class="grid_12">
+									<div class="box tabbed">
+										<div class="header no-icon">
+											<h3>Advance Search</h3>
+											<div class="right">
+												<!--<span class="ui-icon ui-icon-close" title="Close" onclick="searchbox('hide')">-->
+												<a title="Close" onclick="searchbox('hide')">
+													<img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/close.png" />
+												<!--</span>	-->
+												</a>
+												</div>
+										</div>
+										<div class="content" style="min-height:10px;">
+											<!--	Comment By Hiren dave on 7th Feb 2012   -->
+											<!--<form id="searchForm" name="searchForm" method="post">-->
+											<table id="mydata" width="100"  class="table">
+											<tbody>
+					    <?php
+					    /*
+					     * Display searched values in form
+					     */
+					    if(count($this->searchvalues[0]) > 0) {
+						$tempGroupon = $this->searchvalues[3];
+						
+						for($sm=0; $sm<count($this->searchvalues[0]); $sm++)
+						{
+							$tempFields = $this->searchvalues[0];
+							$tempValues = $this->searchvalues[1];
+							$tempOpt = $this->searchvalues[2];
+						?>
+					    <tr class="sf">
+						<td class="fields" width="40%" >
+						    <select name="field[]" class="" style="width:200%;" >
+							<?php
+							$tmp = 0;
+							foreach($this->showdatagrid['columns'] as $key => $val)
+							{
+								$selected = ($tempFields[$sm] == $tmp) ? 'selected="selected"' : '';
+							    echo '<option value="'.$tmp.'" '.$selected .'>'.ucfirst($val).'</option>';
+							    $tmp++;
+							}
+							?>
+						    </select>
+						</td>
+						<td class="ops" width="25%">
+							<select  name="op[]"  class="default "  >
+								<option value="eq" <?php if($tempOpt[$sm]=='eq') echo "selected='selected'"; ?>>equal</option><option value="ne" <?php if($tempOpt[$sm]=='ne') echo "selected='selected'"; ?>>not equal</option><option value="lt" <?php if($tempOpt[$sm]=='lt') echo "selected='selected'"; ?>>less</option><option value="le" <?php if($tempOpt[$sm]=='le') echo "selected='selected'"; ?>>less or equal</option><option value="gt" <?php if($tempOpt[$sm]=='gt') echo "selected='selected'"; ?>>greater</option><option value="ge" <?php if($tempOpt[$sm]=='ge') echo "selected='selected'"; ?>>greater or equal</option><option value="bw" <?php if($tempOpt[$sm]=='bw') echo "selected='selected'"; ?>>begins with</option><option value="bn" <?php if($tempOpt[$sm]=='bn') echo "selected='selected'"; ?>>does not begin with</option><option value="in" <?php if($tempOpt[$sm]=='in') echo "selected='selected'"; ?>>is in</option><option value="ni" <?php if($tempOpt[$sm]=='ni') echo "selected='selected'"; ?>>is not in</option><option value="ew" <?php if($tempOpt[$sm]=='ew') echo "selected='selected'"; ?>>ends with</option><option value="en" <?php if($tempOpt[$sm]=='en') echo "selected='selected'"; ?>>does not end with</option><option value="cn" <?php if($tempOpt[$sm]=='cn') echo "selected='selected'"; ?>>contains</option><option value="nc" <?php if($tempOpt[$sm]=='nc') echo "selected='selected'"; ?>>does not contain</option>
+							</select>
+						</td>
+						<td class="data"  ><input type="text" style="" name="seachvalue[]" value="<?php echo $tempValues[$sm]; ?>" class="sea sefield" ></td>
+						<td width="5%" style="padding-top:10px;" >
+							<div class="ui-del ui-state-default ui-corner-all"><span class="ui-icon ui-icon-minus"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/remove.png" /></span></div>
+						</td>
+						<td width="5%" style="padding-top:10px;" >
+							<div class="ui-add ui-state-default ui-corner-all"><span class="ui-icon ui-icon-plus" onclick="addMore();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/add.png" /></span></div>
+						</td>
+					    </tr>	
+						<?php
+						}
+					    } else {
+					    ?>
+					    <tr >
+						<td class="fields margin_t" width="40%" >
+						    <select name="field[]" class="default" style="width:200%;" >
+							<?php
+							$tmp = 0;
+							if(isset($this->showdatagrid['columns'])) {
+								foreach($this->showdatagrid['columns'] as $key => $val)
+								{
+								    echo '<option value="'.$tmp.'">'.ucfirst($val).'</option>';
+								    $tmp++;
+								}
+							} 
+							?>
+						    </select>
+						</td>
+						<td class="ops" width="25%" >
+							<select class="default" name="op[]" >
+								<option value="eq">equal</option><option value="ne">Not Equal</option><option value="lt">Less</option><option value="le">less or equal</option><option value="gt">greater</option><option value="ge">greater or equal</option><option value="bw">begins with</option><option value="bn">does not begin with</option><option value="in">is in</option><option value="ni">is not in</option><option value="ew">ends with</option><option value="en">does not end with</option><option value="cn">contains</option><option value="nc">does not contain</option>
+							</select>
+						</td>
+						<td class="data" width="25%" ><input type="text" style="" name="seachvalue[]" class="default vdata sea sefield"></td>
+						<td width="5%" style="padding-top:10px;" >
+							<div class="ui-del ui-state-default ui-corner-all margin_t2"><span class="ui-icon ui-icon-minus"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/remove.png" /></span></div>
+						</td>
+						<td width="5%" style="padding-top:10px;">
+							<div class="ui-add ui-state-default ui-corner-all margin_t2"><span class="ui-icon ui-icon-plus" onclick="addMore();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/add.png" /></span></div>
+						</td>
+					    </tr>
+					    <?php } ?>
+					</tbody>
+					<tfoot>
+						<tr>
+						    <td width="33%">
+							<div class="_10 margin_top_10" style="display: inline-block; float: left;" >				   
+							    <input type="button" name="reset" value="Reset" onclick="resetSearch();" />
+							    <input type="hidden" value="0" name="reset_val" id="reset_val">
+							</div>
+						    </td>
+							 <td width="33%">
+							<div class="_100 margin_top_15">
+							    <span class="matchText left margin_left_1 margin_top_10">Match</span>
+							    <div class="left">
+									<select name="groupOp[]"  >
+										<option value="AND" <?php if($tempGroupon[0]=='AND') { echo 'selected="selected"'; } ?>>all</option>
+										<option value="OR" <?php if($tempGroupon[0]=='OR') { echo 'selected="selected"'; } ?>>any</option>
+									</select>
+								</div>
+							    <span class="rulesText left margin_right_1 margin_top_10"> rules</span>
+							</div>
+							</td>
+							 <td width="33%">
+							
+							<div class="_10 margin_top_10">
+							    <input type="submit" name="search" value="Find" />
+							</div>				
+						    </td>
+						</tr>
+						<tr>
+							<td>&nbsp;
+							</td>
+						</tr>
+					</tfoot>	
+											</table>								
+										</div> <!-- End of .content -->
+									</div> <!-- End of .box -->
+								</div>
+				
+				    
+			<!--	Comment By Hiren dave on 7th Feb 2012   -->
+				    <!--</form>-->
+				</div>
+				<!-- End SearchBox -->
+			
+				<div class="top" style="display:none;" >
+				      <?php
+				      //echo "<pre>";
+				      //print_r($grid_js_settings);
+				      //echo "</pre>";
+				      
+				      if(isset($Paginator_Paging->show_records_per_page))
+					      $show_records_per_page = $Paginator_Paging->show_records_per_page;
+				      else
+					      $show_records_per_page = $grid_js_settings["configuration_params"]["show_records_per_page"];
+					      
+				      
+				      if( ($grid_js_settings['configuration_params']['show_grid_heading'] == true && $grid_js_settings['total_data'] > $this->paginator->getItemCountPerPage() ) || $grid_js_settings['total_data'] > 10)
+				      { ?>
+				      
+						<!--	<div id="table-showpages" class="dataTables_length">-->
+						<!--    <label>-->
+						<!--    Show entries:-->
+						<!--    <select name="show_records_per_page" size="1" id="selMBC" class="pageitem" onchange="this.form.submit();" >-->
+						<!--      <option value="10" <?php if($show_records_per_page==10 ) { ?> selected="selected" <?php } ?> >10</option>-->
+						<!--      <option value="25" <?php if($show_records_per_page==25 ) { ?> selected="selected" <?php } ?> >25</option>-->
+						<!--      <option value="50" <?php if($show_records_per_page==50 ) { ?> selected="selected" <?php } ?> >50</option>-->
+						<!--      <option value="100" <?php if($show_records_per_page==100 ) { ?> selected="selected" <?php } ?> >100</option>-->
+						<!--    </select>-->
+						<!--      </label>-->
+						<!--  </div>-->
+				      
+				      <?php		
+				      }	
+				      ?>
+				
+			      <?php
+				      if($grid_js_settings['configuration_params']['show_searchbox'] == true) {
+			      ?>
+			      
+				<div id="table-searchall" class="dataTables_filter">
+				  
+				    <div class="left" ><label>Search:</label></div>
+				    <input type="text" class="sea" name="grid_search_text" id="grid_search_text" value="<?php echo $Paginator_SearchDetails->shortsearch_value; ?>" >
+				</div>
+				<div class="clear"></div>
+			      
+				<?php } ?>
+				</div>
+	
+				<?php
+				// Check the data for the data grid display
+				if(isset($grid_js_settings['total_data']) && $grid_js_settings['total_data'] > 0)
+				{
+				?>
+				<table id="table-example" class="table">
+					<thead>
+					<tr>
+												  
+					<?php
+					    /*
+					     * Display checkbox if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_selectbox'] == true) { 
+						echo '<th width="13"><input type="checkbox" id="chkall" name="chkall" onclick="toggleChecked(this.checked);" class="checkbox" /></th>';
+					    }
+					    
+					    $colsname_int = 0;
+						
+						/*
+						* Set default sort order images
+						*/
+						$grid_js_settings['order_imagetype'] = "sorting";
+						
+						
+						
+						
+						/*
+						* Set sorting images
+						*/
+						if(isset($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="asc")
+						{
+							$grid_js_settings['order_imagetype'] = "sorting_asc";
+						}
+						else if(isset($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="desc")
+						{
+							
+							$grid_js_settings['order_imagetype'] = "sorting_desc";
+						}
+								    
+						$data_display_collection = "";
+						 //Code added by - Gpatel --start
+						 //display top merged row at column header
+						if($this->showdatagrid['columns_top'] == true)
+						{
+							echo "<tr>";
+						foreach($this->showdatagrid['columns_top_value'] as $key => $val)
+						{
+							echo "<th class='top_header' colspan='".$val[0]."' >".$val[1]."</th>";
+						}
+						echo "</tr>";
+						}
+						 //Code added by - Gpatel --end
+						foreach($this->showdatagrid['columns'] as $key => $val)
+						{
+							$colnameshow = "";
+							if(is_integer($key))
+							{
+								$colnameshow = $val;
+							}
+							else
+							{
+								$colnameshow = $key;
+							}
+							$colnameshow = $val;
+							
+							// set the link of sorting (by Meral)
+							$currentSortLink = $grid_js_settings['order_type']=="asc"?"desc":"asc";
+				
+							/*
+							* Prepare data grid columns heading with sorting parameters
+							*/
+							if(!is_null($grid_js_settings['order_columns_number']) && $grid_js_settings['order_columns_number']==$colsname_int)
+							{
+								if($grid_js_settings['configuration_params']['show_datasorting'] == true)
+								{
+									if(in_array($colnameshow,$grid_js_settings['configuration_params']['show_header_right_side']))
+										$data_display_collection.= "<th class='align_right'>";
+									else
+										$data_display_collection.= "<th>";
+									$data_display_collection.= "<a href='javascript:void(0)'>".ucfirst($colnameshow)." </a>";
+								}
+								else
+								{
+									if(in_array($colnameshow,$grid_js_settings['configuration_params']['show_header_right_side']))
+										$data_display_collection.= "<th class='align_right ".$grid_js_settings['order_imagetype']."'>";
+									else
+										$data_display_collection.= "<th class='".$grid_js_settings['order_imagetype']."'>";
+										
+									$data_display_collection.= "<a href='javascript:void(0)' class='page_number' id='".$this->url(array('order'=> $colsname_int.'_'.$currentSortLink))."'>".ucfirst($colnameshow)." </a>";
+								}								
+							}
+							else
+							{
+								if($grid_js_settings['configuration_params']['show_datasorting'] == true)
+								{
+									if(in_array($colnameshow,$grid_js_settings['configuration_params']['show_header_right_side']))
+										$data_display_collection.= "<th class='align_right'>";
+									else
+										$data_display_collection.= "<th>";
+										
+									$data_display_collection.= "<a href='javascript:void(0)'>".ucfirst($colnameshow)." </a>";
+								}
+								else
+								{
+									if(in_array($colnameshow,$grid_js_settings['configuration_params']['show_header_right_side']))
+										$data_display_collection.= "<th class='sorting align_right'>";
+									else
+										$data_display_collection.= "<th class='sorting'>";
+										
+									$data_display_collection.= "<a href='javascript:void(0)' class='page_number' id='".$this->url(array('order'=> $colsname_int.'_asc'))."'>"
+									.ucfirst($colnameshow)."</a>";
+								}
+							}
+							$data_display_collection.= "</th>";
+							
+							
+							$colsname_int++;
+						}
+						echo $data_display_collection;
+						
+					    /*
+					     * Display editlink if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_editlink'] == true) { 
+							echo '<th>&nbsp;</th>';
+					    }
+					    
+					    /*
+					     * Display deletelink if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_deletelink'] == true) {
+						echo '<th >&nbsp;</th>';}
+						
+						/*
+						* Display extra link if is set to true
+						*/
+						if($grid_js_settings['configuration_params']['show_extralink'] == true) {
+							
+							for($sel=0; $sel<count($grid_js_settings['configuration_params']['extralink']); $sel++)
+								echo '<th >&nbsp;</th>';
+						}
+						
+						if($grid_js_settings['configuration_params']['show_extralink_popup'] == true) {
+							
+							for($sel=0; $sel<count($grid_js_settings['configuration_params']['extralink']); $sel++)
+								echo '<th >&nbsp;</th>';
+						}					
+						
+							
+						/*
+						* Display extra textbox if is set to true
+						*/
+						if($grid_js_settings['configuration_params']['show_extratextbox'] == true) {
+							if($grid_js_settings['configuration_params']['show_extratextboxtitle'] != '') {
+								echo '<th><a href="javascript:void(0)">'.$this->translate->_($grid_js_settings['configuration_params']['show_extratextboxtitle']).'</a></th>';
+							}else {
+								echo '<th><a href="javascript:void(0)">'.$this->translate->_('Current Amount').'</a></th>';	
+							}
+						}
+						
+					    ?>
+							</tr>
+						</thead>
+					<?php
+					
+					//echo "<pre>";
+					//	print_r($grid_js_settings);
+					//	print_r($datashowgrid);
+					//	echo "</pre>";
+					?>
+					
+						<tbody>
+						<?php
+						
+						if(isset($grid_js_settings['configuration_params']['mastervalues']) && is_array($grid_js_settings['configuration_params']['mastervalues']))
+						{
+						    // gathering the option values for dropdown on edit mode
+						    $mastervalues = $grid_js_settings['configuration_params']['mastervalues'];
+						
+						    // select box is required for following fields - print_r($mastervaluesKeys)
+						    $mastervaluesKeys = array_keys($mastervalues);    
+						}
+						if(isset($grid_js_settings['configuration_params']['noeditfields']) && is_array($grid_js_settings['configuration_params']['noeditfields']))
+						{
+						    // these fields are not required in edit mode while editing
+						    $no_edit_fields = $grid_js_settings['configuration_params']['noeditfields'];
+						}
+						/*
+						 * fill data array in table body
+						 */
+						 $final_amount=array();
+						for($k=0;$k<count($datashowgrid);$k++)
+						{
+							$classname='class="gradeC"';
+							if(($k+1)%2==0)
+							{
+								$classname='class="gradeA"';
+							}
+							
+							echo "<tr ".$classname." >";
+							
+							## if the grid is in edit mode - value available in textbox							
+							
+							if($grid_js_settings['configuration_params']['editmode'] && $datashowgrid[$k]["PRIMARYKEY"]==$grid_js_settings['configuration_params']['editmodeid'])
+							{
+								//SFA_Comman::pre($datashowgrid[$k]);
+								foreach($datashowgrid[$k] as $key => $val)
+								{
+									if($key!="edit_del_primary_id" && $key!="PRIMARYKEY" && $key!="sett_tran_type")
+									{
+										if(in_array($key,$this->showdatagrid['columns_show_right'])){
+											echo "<td class='align_right'>";
+										} else {
+											echo "<td>";
+										}
+										if($key!="delete_link" && $key!="edit_link"){
+											
+											// if the field is in no edit then only simpel value will be displayed - no input fields
+											if(isset($no_edit_fields) && is_array($no_edit_fields) && in_array($key,$no_edit_fields))
+											{
+											    echo ($val!="" && strlen($val))?$val:"&nbsp;";
+											}
+											// if the column required the select box - checking the passed dropdown requirement
+											elseif(isset($mastervaluesKeys) && is_array($mastervaluesKeys) && in_array($key,$mastervaluesKeys))
+											{
+											    $cSelected = "";
+											    
+											    $keySelect = '<select class="update_vals" name="'.$key.'" id="'.$key.'" >';
+											    $keySelect .= '<option value=""  >---</option>';
+											    if(isset($mastervalues[$key]) && is_array($mastervalues[$key]) && count($mastervalues[$key])){
+												foreach($mastervalues[$key] as $comboKey=>$comboValue)
+												{
+												    if($val==$comboKey)
+													$cSelected = 'selected="selected"';
+													elseif($val==$comboValue) # Added By Hiren Dave, it's compare selected value with combo.
+													$cSelected = 'selected="selected"';
+												    else
+													$cSelected = "";
+													
+												    $keySelect .= '<option value="'.$comboKey.'" '.$cSelected.' >'.$comboValue.'</option>';
+												}
+											    }
+											    $keySelect .= '</select>';
+											    
+											    echo $keySelect;
+											}
+											else // if there is only text box
+											{
+												if(($key == 'batchnumber' && $val == 'NONE') || ($key == 'batchno' && $val == 'NONE') || ($key == 'expirydate' && $val == '31-12-2099'))
+												{
+													echo $val;
+												}
+												elseif($key == 'expirylimit')
+												{
+													echo '<input class="update_vals number" style="width:80% !important" type="text" name="'.$key.'" id="'.$key.'" value="'.$val.'" />';
+												}
+												else
+												{
+													echo '<input class="update_vals" style="width:80% !important" type="text" name="'.$key.'" id="'.$key.'" value="'.$val.'" />';
+												}
+												
+											}
+										}
+										
+										if($key=="edit_link" &&  isset($datashowgrid[$k]['delete_link'])) {
+											echo '<a href="javascript:void(0)" name="btnupdate_grid" id="btnupdate_grid" >Update</a>';
+										}
+										else if($key=="edit_link") {
+											echo '<a href="javascript:void(0)" name="btnupdate_grid" id="btnupdate_grid" >Update</a>';
+											echo '&nbsp;&nbsp;<a href="javascript:void(0)" name="btncancel_grid" id="btncancel_grid" >Cancel</a>';
+										}										
+										if($key=="delete_link")
+											echo '<a href="javascript:void(0)" name="btncancel_grid" id="btncancel_grid" >Cancel</a>';
+									
+										echo "</td>";
+									}
+								}
+							}
+							else
+							{
+								$cl = 0;
+								
+								foreach($datashowgrid[$k] as $key => $val)
+								{
+								  //Code added by - Gpatel --start
+								 //summation of selected columan
+								  if($this->showdatagrid['columns_total'] == true)
+								  {
+								    if(array_key_exists($key,$this->showdatagrid['columns_total_value']))
+								    {
+								      $final_amount[$key][]=str_replace(",","",$val);
+								    }
+								
+								  }
+								   //Code added by - Gpatel --end
+								//  echo $key."<br/>";
+									if($key!="edit_del_primary_id" && $key!="PRIMARYKEY" && $key!="sett_tran_type")
+									{	
+										if(in_array($key,$this->showdatagrid['columns_show_right'])){
+											echo "<td class='align_right'>";
+										}
+										else
+										{
+											echo "<td>";
+										}
+										if($key == 'creditlimit_xyz')
+										{
+											$creditlimit_id = $datashowgrid[$k]['routecode'];
+											echo '<input class="number" style="width:50% !important" type="text" name="'.$creditlimit_id.'" id="'.$creditlimit_id.'" value="'.$val.'" />';
+										}
+										else
+										{
+											echo ($val!="" && strlen($val))?$val:"&nbsp;";	
+										}
+										
+										// store invoicebalance value in span for validating with current amount.
+										if($grid_js_settings['configuration_params']['show_extratextbox'] == true && $key=="invoicebalance") {										
+											echo '<span style="display:none" id="span_'.$datashowgrid[$k]["invoicenumber"].'">'.$datashowgrid[$k]["invoicebalance"].'</span>';
+										}
+										// store invoicebalance value in span for validating with current amount.
+										if($grid_js_settings['configuration_params']['show_extratextbox'] == true && $key=="pdcbalance") {
+											$txt_invo_val = 0;
+											//$txt_invo_val = ($datashowgrid[$k]["pdcbalance"]+$datashowgrid[$k]["amountpaid"]);
+											$txt_invo_val = ($datashowgrid[$k]["pdcbalance"]);
+											echo '<span style="display:none" id="span1_'.$datashowgrid[$k]["invoicenumber"].'">'.$txt_invo_val.'</span>';
+										}
+									    echo "</td>";
+										
+									}
+								}
+							}
+							echo "</tr>";
+						}
+						?>
+					<?php
+						 //Code added by - Gpatel --start
+						 //display Last Row of Total count or grand totatl value
+						if($this->showdatagrid['columns_total'] == true)
+						{
+						 echo "<tr>";						
+						  foreach($datashowgrid[$k-1] as $key => $val)
+						  {
+							if($key!="edit_del_primary_id" && $key!="PRIMARYKEY" && $key!="sett_tran_type")
+							{
+								if(array_key_exists($key,$this->showdatagrid['columns_total_value']))
+								{
+									
+									if($this->showdatagrid['columns_total_value'][$key] == 1)
+										echo "<td class='total_price'>".number_format(array_sum($final_amount[$key]),$this->showdatagrid['columns_total_msg'][2])."</td>";
+									else
+										echo "<td class='total_price'>".array_sum($final_amount[$key])."</td>";
+								}
+								else
+								{
+									if($key == $this->showdatagrid['columns_total_msg'][0])
+										echo "<td class='total_msg'>".$this->showdatagrid['columns_total_msg'][1]."</td>";
+									else
+										echo "<td class='total_msg'>&nbsp;</td>";
+								}
+							}
+						 }
+						echo "</tr>";
+						}
+						 //Code added by - Gpatel --end
+						
+						?>
+						</tbody>
+					</table>
+					
+						<?php
+						/*
+						* Display paging
+						*/
+						if($grid_js_settings['total_data'] > $grid_js_settings['total_row_per_page'])
+						{
+							echo '<div class="actions">';
+									echo $this->partial('pagination_ajax.phtml', $this);
+							echo '</div>';
+						}
+						?>					
+						<div class="clean space_20"></div>
+						<!--</div> M@M commented as structure was not ready --> <!-- End of .content -->
+				<?php
+				}
+				else{ ?>
+					<div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b><?php echo $grid_js_settings['configuration_params']['nodata_message']; ?></b></div>
+				<?php } ?>
+			</div>
+		<div class="clear"></div>
+	</div> <!-- End of .box -->
+	</div> <!-- End of .grid_12 -->
+					
+	<div class="clean"></div>
+	
+	

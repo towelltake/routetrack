@@ -1,0 +1,107 @@
+<?php
+/**
+* @name       addinvoice.phtml
+* @since      03-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$date = $this->date != '' ? $this->date : date('d-m-Y');
+
+?>
+<script>
+    $(document).ready(function() {
+	
+	loaddata('<?php echo $this->invoiceitemgrid; ?>','item-grid');
+	
+	$('input[type="text"]').attr('readonly',true);
+	$('textarea').attr('readonly',true);
+	
+	$(".tab_content").hide();
+	$("#tab1").show();
+	$("ul.tabs li").click(function() {
+	    $("ul.tabs li a").removeClass("admin_active"); //Remove any "active" class
+	    $(this).find("a").addClass("admin_active");
+	    $(".tab_content").hide(); //Hide all tab content
+	    var activeTab = $(this).find("a").attr("href"); //Find the rel attribute value to identify the active tab + content
+	    $(activeTab).fadeIn(); //Fade in the active content
+	    return false;
+	});	
+    })
+function winloc_order_print(url)
+{
+   window.open(url, '_blank');
+}
+</script>
+<style>
+#btnprint1:active, #btnprint1:hover, #btnprint1   { background-image: url("../../../../public/images/colors/blue/print.png") !important; background-repeat: no-repeat; background-color: transparent;}
+
+
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="hhctransaction_index_addinvoice">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_10"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+        <h3><?php echo $this->translate->_('Sales Order')?></h3>
+    </div>
+	 <div class="_50_3"><div class="_10 save_btn">
+	<?php $salesorderid = $this->salesorderid; ?>
+		<input class="border_none" type="button" value=""  id="btnprint1" onclick="winloc_order_print('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"Salesorderprint","action"=>"salesorderpdf","id"=>"$salesorderid"), "default", true);?>')" >
+	</div>
+    </div>
+    <div class="_50_3">&nbsp;</div>
+</div>
+
+<div class="_100" >
+    <div class="_20 label_text_align margin_top_7">&nbsp;</div>
+	<div class="_20 label_text_align margin_top_5"><label class="advance_search_css"><?php echo $this->translate->_('Order Date').''.$this->colan;?></label></div>
+	<div class="_20 label_text_align"><input type="text" id="txtdate" readonly="txtselecteddate" name="txtselecteddate" value="<?php echo $date;?>" class="margin_zero"></div>
+	<!--<div class="_10 margin_top_3"><input type="button" name="btnload" id="btnload" value="<?php //echo $this->translate->_('OK'); ?>" class="margin_zero"></div>-->
+	<div class="_30">&nbsp;</div>
+</div>
+    <div class="clear space_20"></div>
+    <div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"invoice","action"=>"salesorder"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+		<ul style="display: block; margin-left:75px;" class="tabs">
+		    <li> 
+			<a href="#tab1" id="t1" class="admin_active"><?php echo $this->translate->_('Header');?></a>
+		    </li>
+		    <li class="last-child">
+			<a href="#tab2" id="t2"><?php echo $this->translate->_('Detail');?></a>
+		    </li>
+		</ul>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content with-actions ie_grid min_height_10">
+	<div id="tab1" class="tab_content">
+	    <?php include('generalsalesorder.phtml');?>
+	</div>
+	<div id="tab2" class="tab_content">
+	    <?php include('salesorderdetail.phtml');?>
+	</div>	
+	<div class="clear space_20">&nbsp;</div>
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>

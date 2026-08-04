@@ -1,0 +1,151 @@
+<?php
+/**
+* @name       routetmpl.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of Route Template
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+?>
+<script type="text/javascript">
+    function chack_val(val)
+    {
+	if(val.value > 5 || val.value == 0)
+	{
+	    jAlert("Value Must Be Between 1 to 5.");
+	    val.value = '';
+	    return false;
+	}
+    }
+</script>
+<div class="content with-actions">
+    <div class="_100"><div class="clean"></div></div>
+	<div class="_100">
+		<label class="_40_3 label_text_align margin_top_15">
+			<?php echo $this->translate->_('Template Name').''.$this->colan;?>
+		</label>
+		<div class="_25">
+			<input type="text" id="txttemplatename" name="txttemplatename" value="<?php echo $this->formdata['templatename'];?>" maxlength="100">
+		</div>
+    </div>
+    <div class="space_20 clean">&nbsp;</div>
+    <fieldset class="_36 margin_left_0 margin_right_0" id="input_textarea_94" >
+	<legend><?php echo $this->translate->_('Security Password');?></legend>
+	<div class="_100">
+	    <label class="_40_3 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Password').' 1'.''.$this->colan;?>
+	    </label>
+	    <div class="_60">
+		<input type="text" id="txtpwd1" name="txtpwd1" value="<?php echo $this->formdata['password1'];?>" maxlength="10" class="number">
+	    </div>
+	</div>
+		<div class="_100">
+	    <label class="_40_3 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Password').' 2'.''.$this->colan;?>
+	    </label>
+	    <div class="_60">
+		<input type="text" id="txtpwd2" name="txtpwd2" value="<?php echo $this->formdata['password2'];?>" maxlength="10" class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Password').' 3'.''.$this->colan;?>
+	    </label>
+	    <div class="_60">
+		<input type="text" id="txtpwd3" name="txtpwd3" value="<?php echo $this->formdata['password3'];?>" maxlength="10" class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Password').' 4'.''.$this->colan;?>
+	    </label>
+	    <div class="_60">
+		<input type="text" id="txtpwd4" name="txtpwd4" value="<?php echo $this->formdata['password4'];?>" maxlength="10" class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Password').' 5'.''.$this->colan;?>
+	    </label>
+	    <div class="_60">
+		<input type="text" id="txtpwd5" name="txtpwd5" value="<?php echo $this->formdata['password5'];?>" maxlength="10" class="number">
+	    </div>
+	</div>
+    </fieldset>
+    <fieldset class="_60">
+	<legend><?php echo $this->translate->_('Security Assignment');?></legend>
+	<div class="_100">
+	    <label class="_40_3 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Date Time Change').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtdt_time" name="txtdt_time" value="<?php echo $this->formdata['passwordarray01'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	    <label class="_30_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Start Of Day').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtst_day" name="txtst_day" value="<?php echo $this->formdata['passwordarray07'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Price Change').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtpr_chng" name="txtpr_chng" value="<?php echo $this->formdata['passwordarray02'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	    <label class="_30_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Program Exit').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtprg_exit" name="txtprg_exit" value="<?php echo $this->formdata['passwordarray08'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Promo Override').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtpromo_ovr" name="txtpromo_ovr" value="<?php echo $this->formdata['passwordarray03'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	    <label class="_30_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Settlement').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtsettl" name="txtsettl" value="<?php echo $this->formdata['passwordarray09'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Route Setup').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtrt_setup" name="txtrt_setup" value="<?php echo $this->formdata['passwordarray04'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	    <label class="_30_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Print Doc At EOD').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtprnt_doc" name="txtprnt_doc" value="<?php echo $this->formdata['passwordarray13'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_40_3 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('New/Request/View Stock').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtnewreq" name="txtnewreq" value="<?php echo $this->formdata['passwordarray16'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	    <label class="_30_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Load Adjust/Unload').''.$this->colan;?>
+	    </label>
+	    <div class="_10 margin_right_1">
+		<input type="text" id="txtload_adj" name="txtload_adj" value="<?php echo $this->formdata['passwordarray11'];?>" maxlength="1" onblur="return chack_val(this);"  class="number">
+	    </div>
+	</div>
+    </fieldset>
+</div>

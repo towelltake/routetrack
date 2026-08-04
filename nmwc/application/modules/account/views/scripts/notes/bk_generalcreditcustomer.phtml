@@ -1,0 +1,616 @@
+<?php
+/**
+* @name       generalcreditcustomer.phtml
+* @since      26 jan, 2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$date = $this->date != '' ? $this->date : date('d-m-Y');
+?>
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	var decimal_places = '<?php echo $this->decimalplaces; ?>';
+	$('#ddlroute_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+	$('#ddlroute_chzn').addClass('chzn-container-active');
+	
+	
+	$('#showbtn').hide();		
+	
+	
+	
+	$('#btnsave').click(function()
+	{
+		var val1 =  $("#hdntotalinvoamt").val();
+		val1 =  val1.replace(',','');
+		
+		var val2 =  $("#txtamount").val();
+		val2 =  val2.replace(',','');
+		
+		if($('#chkfirstout').attr('checked')) {
+			
+			var vl 	= val2+'$';			
+			var	tmp2 	= vl.replace(',','');
+			$('#hdninvoamt').val(tmp2);
+			$('#hdntxtamount').val(tmp2);
+		}
+	});
+	
+	$('#btnloadtotal').click(function() {
+		
+		var ids = '';
+		var amt = '';
+		var i 	= 0;
+		var sum = 0;
+		if($('#chkfirstout').attr('checked')) {
+			
+			$('#table-example [type=text]').val('');
+			
+			var ids = '';
+			var amt = '';
+			var i 	= 0;
+			var sum = 0;
+
+			$('#table-example input:checkbox.sel_checkbox_all').each( function() {
+				
+				ids += this.value+'$';
+				i++;
+				
+				$(this).attr("checked",true);
+				$(this).attr("disabled",true);
+				var str 		= this.id;
+				var substr 		= str.split('_');
+				var t_id 		= 'extratextbox_'+substr[1];
+				var span_val	= $('#span_'+substr[1]).text();
+				var mcCbxCheck = $(this);
+				
+				$('#'+t_id).val(span_val);
+				$('#'+t_id).attr('readonly',true);
+				var	tmp2 = span_val.replace(',','');
+				
+					sum += Number(tmp2);
+				amt += span_val+'$';
+			});
+			
+			var sum = addCommas(sum,decimal_places);
+			amt = amt.replace(/\,/g,'');
+			
+			
+			$('#hdninvoamt').val(amt);
+			$('#txtamount').val(sum);
+			$('#hdntxtamount').val(sum);
+			
+			$('#chkall').attr("checked",true);
+			$('#chkall').attr("disabled",true);
+			
+			var strLen = ids.length;
+			ids = ids.slice(0,strLen-1);
+			
+			if(ids !='') {			
+				getinvoicetotal(ids);
+				$('#hdncheckinvo').val(i);
+				$('#hdninvono').val(ids);
+				$('#txtamount_paid').val('');
+				$('#txtamount_paid').val(sum);
+			}
+			$('#txtamount').attr('readonly',false);
+		}
+		else
+		{
+			$('#txtamount').attr('readonly',true);
+			$('#table-example input:checkbox.sel_checkbox_all').each(function() {
+				if(this.checked) {
+					ids += this.value+'$';
+					i++;
+				}
+			});
+			
+			$('#table-example [type=text]').each(function() {
+				
+				if($(this).val() !='')
+				{
+					$('#'+this.id).attr('readonly',false);
+					var tmp1 = $(this).val();
+					var	tmp2 = tmp1.replace(',','');
+					
+					sum += Number(tmp2);					
+					amt += $(this).val()+'$';
+				}
+				else
+				{
+					$('#'+this.id).attr('readonly',true);
+					$('#'+this.id).val('');
+				}
+				
+			});
+		}
+			
+			
+		var sum = addCommas(sum,decimal_places);
+			amt = amt.replace(/\,/g,'');		
+		
+		$('#hdninvoamt').val(amt);
+		$('#txtamount').val(sum);
+		$('#hdntxtamount').val(sum);
+
+		var strLen = ids.length;
+		ids = ids.slice(0,strLen-1);
+		
+		if(ids !='') {			
+			getinvoicetotal(ids);
+			$('#hdncheckinvo').val(i);
+			$('#hdninvono').val(ids);
+			$('#txtamount_paid').val('');
+			$('#txtamount_paid').val(sum);
+			if(parseInt(sum) > 0) {
+				$("#ddlpaymode").val('');
+				$("#ddlpaymode").attr('disabled',false);
+				paymodeoption(1)
+			} else {
+				$("#ddlpaymode").val(0);
+				$("#ddlpaymode").attr('disabled',true);
+				paymodeoption(0)
+			}
+			$('#ddlpaymode').trigger('liszt:updated');
+		}
+		else
+		{
+			clearinvoinfo();
+		}
+	})
+
+	$('#ddlpaymode').change(function() {
+		paymodeoption(this.value);
+	})
+	
+	$('#chkfirstout').click(function() {
+		
+		cleartraninfo();
+		clearinvoinfo();
+		
+		if(!$('#chkfirstout').attr('checked'))
+		{
+			$('#table-example [type=text]').val('');
+			var ids = '';
+			var amt = '';
+			var i 	= 0;
+			var sum = 0;
+			
+			$('#table-example input:checkbox.sel_checkbox_all').each( function() {
+				
+				ids += this.value+'$';
+				i++;
+				
+				$(this).attr("checked",true);
+				$(this).attr("disabled",true);
+				var str 		= this.id;
+				var substr 		= str.split('_');
+				var t_id 		= 'extratextbox_'+substr[1];
+				var span_val	= $('#span_'+substr[1]).text();
+				var mcCbxCheck = $(this);
+				
+				$('#'+t_id).val(span_val);
+				$('#'+t_id).attr('readonly',true);
+				var	tmp2 = span_val.replace(',','');
+					sum += Number(tmp2);
+					amt += span_val+'$';
+			});
+			
+			var sum = addCommas(sum,decimal_places);
+			amt = amt.replace(/\,/g,'');
+			
+			
+			$('#hdninvoamt').val(amt);
+			$('#txtamount').val(sum);
+			$('#hdntxtamount').val(sum);
+			
+			$('#chkall').attr("checked",true);
+			$('#chkall').attr("disabled",true);
+			
+			var strLen = ids.length;
+			ids = ids.slice(0,strLen-1);
+			
+			if(ids !='') {			
+				getinvoicetotal(ids);
+				$('#hdncheckinvo').val(i);
+				$('#hdninvono').val(ids);
+				$('#txtamount_paid').val('');
+				$('#txtamount_paid').val(sum);
+			}
+			$('#txtamount').attr('readonly',false);
+		}
+		else
+		{
+			$('#table-example input:checkbox.sel_checkbox_all').each( function() {
+				$(this).attr("checked",false);
+				$(this).attr("disabled",false);
+				
+				var str 		= this.id;
+				var substr 		= str.split('_');
+				var t_id 		= 'extratextbox_'+substr[1];
+				
+				$('#'+t_id).attr('readonly',true);
+				$('#'+t_id).val('');
+				
+			});
+			$('#chkall').attr("checked",false);
+			$('#chkall').attr("disabled",false);
+		}
+	});
+	
+	$('#ddlroute').change(function(){		
+		$('#item-grid').html('');
+		$('#showbtn').hide();
+		$.blockUI();
+		if($('#ddlroute').val() > 0) {
+			getsalesman($('#ddlroute').val(),'');
+		}
+		$.unblockUI();
+	})
+	
+	$('#ddlcustomer').change(function(){
+		
+		var route_id 	= $('#ddlroute').val();
+		var customer_id = $('#ddlcustomer').val();
+		var tran_date 	= $('#txtdate').val();
+		
+		$.blockUI();
+		loaddata('<?php echo $this->itemgrid; ?>/key1/'+route_id+'/key2/'+customer_id+'/key3/'+tran_date,'item-grid');
+		$.unblockUI();
+		cleartraninfo();
+		clearinvoinfo();
+		$('#chkfirstout').attr('checked',false);
+	})
+	<?php if($this->params["id"] > 0) { ?>
+		getsalesman('<?php echo $this->formdata['routecode'];?>','<?php echo $this->formdata['customercode'];?>');
+		
+		var route_id 	= '<?php echo $this->formdata['routecode'];?>';
+		var customer_id = '<?php echo $this->formdata['customercode'];?>';
+		var tran_id = '<?php echo $this->formdata['transactionkey'];?>';
+		var tran_date 	= $('#txtdate').val();
+		
+		loaddata('<?php echo $this->itemgrid; ?>/key1/'+route_id+'/key2/'+customer_id+'/key3/'+tran_date,'item-grid');
+		$('input[type=text]').attr('readonly',true);
+		$('select').attr('disabled',true);		
+		$('select').trigger('liszt:updated');		
+		$('#chkfirstout').attr("disabled",true);
+	<?php } ?>
+})
+function paymodeoption(paymode)
+{
+	if(paymode == 0)	{
+		$('#txtcheckno').val('');
+		$('#txtcheckdt').val('');
+		$('#ddlbankname').val('');
+		
+		$('#txtcheckno').attr('readonly',true);
+		$('#txtcheckdt').attr('readonly',true);
+		$('#ddlbankname').attr('disabled',true);
+		
+		$("#txtcheckdt").datepicker("disable");
+		$('#txtcheckno').removeClass('required');
+		$('#txtcheckdt').removeClass('required');
+		$('#ddlbankname').removeClass('required');
+		
+		$('#lblbanknm span').html('');
+		$('#lblbanknm span').html('&nbsp;:');
+		$('#lblchkno span').html('');
+		$('#lblchkno span').html('&nbsp;:');
+		$('#lblchkdt span').html('');
+		$('#lblchkdt span').html('&nbsp;:');
+	}
+	else {
+		
+		$( "#txtcheckdt" ).datepicker({
+			dateFormat: 'dd-mm-yy'
+		});
+		$("#txtcheckdt").datepicker("enable");
+		
+		$('#txtcheckno').attr('readonly',false);
+		$('#txtcheckdt').attr('readonly',false);
+		$('#ddlbankname').attr('disabled',false);
+		
+		$('#txtcheckno').addClass('required');
+		$('#txtcheckdt').addClass('required');
+		$('#ddlbankname').addClass('required');
+		
+		$('#lblbanknm span').html('');
+		$('#lblbanknm span').html('&nbsp;<font color="red">*</font>&nbsp;:');
+		$('#lblchkno span').html('');
+		$('#lblchkno span').html('&nbsp;<font color="red">*</font>&nbsp;:');
+		$('#lblchkdt span').html('');
+		$('#lblchkdt span').html('&nbsp;<font color="red">*</font>&nbsp;:');
+	}
+	$('#ddlbankname').trigger('liszt:updated');
+}
+function cleartraninfo()
+{
+	$('#ddlpaymode').val('');
+	$('#txtamount').val('');
+	$('#txtcheckno').val('');
+	$('#txtcheckdt').val('');
+	$('#ddlbankname').val('');
+	$('#divcash').show();
+	$('#divbank').hide();
+	
+	$('#ddlpaymode').trigger('liszt:updated');
+	$('#ddlbankname').trigger('liszt:updated');
+}
+function clearinvoinfo()
+{
+	$('#txtinvo_amount').val('');
+	$('#txtamount_paid').val('');
+	$('#txtbal_amount').val('');
+	
+	$('#table-example input:checkbox.sel_checkbox_all').each( function() {		
+		$(this).attr("checked",false);
+	});
+	$('#chkall').attr("checked",false);	
+}
+function getsalesman(routeid,customerid)
+{
+	$('#ddlcustomer').html('');
+	var  url = base_url+'/home/index/getgccustomerfromroutecode/routeid/'+routeid;
+	$.ajax({
+		url:url,
+		data:$("#frmdet").serialize(),
+		type:'post',		
+		success:function(data) {
+			var salesman_info = JSON.parse(data);
+			if (salesman_info == '')
+			{
+				return false;
+			}
+			$('#txtsalesman').val(salesman_info[0][0]['salesmanname1']);
+			$('#hdnsalesman').val(salesman_info[0][0]['salesmancode']);
+			
+			if(customerid == '')
+			{
+				$('#hdnmaxid').val(salesman_info[2][0]['lastid']);			
+				var doc_invo = routeid+''+$('#hdnmaxid').val();
+				$('#txtdoc_no').val(doc_invo);
+				$('#txtinvo_no').val(doc_invo);
+			}
+			
+			if(typeof(salesman_info[1]) == 'object')
+			{
+				$('<option/>').val('').html('--- Select ---').appendTo('#ddlcustomer');
+				for (i=0;i<salesman_info[1].length;i++) {
+					if(customerid > 0 && customerid == salesman_info[1][i]['id']) {
+						$('<option selected />').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlcustomer');
+					}
+					else {
+						$('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlcustomer');
+					}
+				}
+			}
+			$('#ddlcustomer').trigger('liszt:updated');
+		}
+	})
+}
+function getinvoicetotal(ids)
+{
+	$('#txtinvo_amount').val('');
+	$('#txtamount_paid').val('');
+	$('#txtbal_amount').val('');
+	$('#hdntotalinvoamt').val('');
+	
+	var  url = base_url+'/account/transaction/getinvoicetotal/invoiceid/'+ids;
+	
+	$.ajax({
+		url:url,
+		type:'post',
+		data:$("#frmdet").serialize(),
+		success:function(data) {
+			var invoice_info = JSON.parse(data);			
+			if(typeof(invoice_info) == 'object')
+			{
+				$('#hdntotalinvoamt').val(invoice_info[2]);
+				$('#txtinvo_amount').val(invoice_info[0]);
+				//$('#txtamount_paid').val(invoice_info[1]);
+				$('#txtbal_amount').val(invoice_info[2]);
+				
+				if($('#chkfirstout').attr('checked')) {
+					$('#txtamount').val(invoice_info[2]);					
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+	})
+}
+</script>
+
+<div class="content with-actions min_height_10">
+
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100 ">
+		<label class="_20_1 margin_top_12 label_text_align"><?php echo $this->translate->_('Doc Date').''.$this->colan;?></label>
+		<div class="_20_1 margin_left_1 margin_top_10"><?php echo $date;?></div>
+	</div>
+	    <div class="_100">
+			<label class="_20_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Route').''.$this->required;?>
+			</label>
+			<div class="_25_1 margin_left_1">
+				<select id="ddlroute" name="ddlroute" class="required">
+				<option value="">--- Select ---</option>
+				<?php
+					for($i=0;$i<count($this->route);$i++)
+					{
+				?>
+					<option <?php echo ($this->formdata['routecode']==$this->route[$i]['id']) ? 'selected' : '';?> value="<?php echo $this->route[$i]['id'];?>" ><?php echo $this->route[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<label class="_15_1 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input class="margin_top_5 padding_right_10" name="txtsalesman" id="txtsalesman" type="text" value="" readonly="readonly" >
+			</div>
+		</div>
+	<div class="_100">		
+		<label class="_20_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Document No').''.$this->colan;?>
+			</label>
+		<div class="_25_1 margin_left_1">
+			<input type="text" id="txtdoc_no" name="txtdoc_no" value="<?php echo $this->formdata['documentnumber'];?>" readonly="readonly" class="padding_right_10" >
+		</div>
+		<label class="_15_1 margin_top_10 label_text_align">
+			<?php echo $this->translate->_('Customer').''.$this->required;?>
+		</label>
+		<div class="_25_1">
+			<select id="ddlcustomer" name="ddlcustomer" class="required">
+				<option value="">--- Select ---</option>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Remark 1').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_left_1">
+		    <input name="txtremark1" id="txtremark1"  type="text" value="<?php echo $this->formdata['remarks1'];?>"  class="padding_right_10">
+		</div>
+		<label class="_15_1 margin_top_10 label_text_align">
+			<?php echo $this->translate->_('Remark 2').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+			<input name="txtremark2" id="txtremark2"  type="text" value="<?php echo $this->formdata['remarks2'];?>" class="padding_right_10">
+		</div>			
+	</div>
+	<div class="_100">
+		<label class="_20_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('ERP Reference No').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_left_1">
+			<input name="txterprefnum" id="txterprefnum"  type="text" value="<?php echo $this->formdata['erpreferencenumber'];?>" class="padding_right_10">
+		</div>
+		<label class="_15_1 margin_top_10 label_text_align">
+		   <?php echo $this->translate->_('First In First Out').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+			<input type="checkbox" id="chkfirstout" name="chkfirstout" value="1">
+		</div>
+	</div>		
+	<div class="_100 margin_top_10" style="height:250px;overflow-y:auto">
+		<div id="item-grid"> <!--grid load here --> </div>
+	</div>
+	<div class="_100" id="showbtn">
+		<div class="_90">&nbsp;</div>
+		<div class="_10_1">
+			<input type="button" id="btnloadtotal" name="btnloadtotal" value="<?php echo $this->translate->_('CALCULATE');?>" >
+		</div>
+	</div>
+	<div class="_100 space_20"></div>
+	<div class="_100 space_20"></div>
+<?php if(!isset($this->params["view"])) { ?>
+    <div class="_100">
+	<label class="_20 label_text_align margin_top_12">
+	   <?php echo $this->translate->_('Invoice Amount').''.$this->colan;?>
+	</label>
+	<div class="_15">
+	    <input type="text" id="txtinvo_amount" name="txtinvo_amount" value="" readonly="readonly">
+	</div>
+	
+	<label class="_15 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Balance Amount').''.$this->colan;?>
+	</label>
+	<div class="_15">
+	    <input type="text" id="txtbal_amount" name="txtbal_amount" value="" readonly="readonly">
+	</div>
+	<label class="_15 label_text_align margin_top_12">
+	    <?php echo $this->translate->_('Amount To Pay').''.$this->colan;?>
+	</label>
+	<div class="_15">
+	    <input type="text" id="txtamount_paid" name="txtamount_paid" value="" readonly="readonly">
+	</div>
+</div>
+   <div class="_100 margin_top_25">&nbsp;</div>
+
+<fieldset>
+    <div class="_100 margin_top_25">
+	<label class="_20_2 label_text_align margin_top_12">
+	   <?php echo $this->translate->_('Payment Mode').''.$this->required;?>
+	</label>
+	<div class="_25_1 margin_right_1">
+	    <select id="ddlpaymode" name="ddlpaymode" class="required">
+		 <option value="">--- Select ---</option>
+		    <?php
+			    for($i=0;$i<count($this->payment_mode);$i++)
+			    {
+			?>
+				<option value="<?php echo $this->payment_mode[$i]['id'];?>"><?php echo $this->payment_mode[$i]['val'];?></option>
+		    <?php } ?>
+	    </select>
+	</div>
+		<label class="_20_2 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Amount').''.$this->required;?>
+		</label>
+		<div class="_25_1">
+			<input type="text" id="txtamount" name="txtamount" value="" class="number required" maxlength="10">
+		</div>
+    </div>
+	<div class="_100" style="margin-top:0px !important">
+		<label class="_20_2 label_text_align margin_top_12" id="lblchkno">
+			<?php echo $this->translate->_('Cheque Number').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+			<input type="text" id="txtcheckno" class="margin_top_5" name="txtcheckno" value="" maxlength="15">
+		</div>
+		<label class="_20_2 label_text_align margin_top_12  margin_right_1" id="lblchkdt">
+			<?php echo $this->translate->_('Cheque Date').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+			<input type="text" id="txtcheckdt" name="txtcheckdt" value="" readonly="readonly">
+		</div>
+	</div>
+	<div class="_100 margin_bottom_10">
+		<label class="_20_2 label_text_align margin_top_12" id="lblbanknm">
+			<?php echo $this->translate->_('Bank Name').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlbankname" name="ddlbankname">
+			<option value="">--- Select ---</option>
+			<?php
+					for($i=0;$i<count($this->bank);$i++)
+					{
+				?>
+					<option value="<?php echo $this->bank[$i]['id'];?>" ><?php echo $this->bank[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+		<div class="_20_2">&nbsp;</div>		
+	</div>
+</fieldset>
+<?php } ?>
+<div class="_100 margin_top_10 space_50">
+	<div id="tran-grid"><!--grid load here --> </div>
+</div>
+<div class="_100">
+    <div class="clear_only space_50"></div>
+</div>
+<input type="hidden" id="hdntotalbalamt" name="hdntotalbalamt" value="">
+<input type="hidden" id="hdninvono" name="hdninvono" value="">
+<input type="hidden" id="hdninvoamt" name="hdninvoamt" value="">
+<input type="hidden" id="hdncheckinvo" name="hdncheckinvo" value="">
+<input type="hidden" id="hdntotalinvoamt" name="hdntotalinvoamt" value="">
+<input type="hidden" id="hdnsalesman" name="hdnsalesman" value="">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+<input type="hidden" id="hdnmaxid" name="hdnmaxid" value="<?php echo $this->formdata['hdnmaxid'];?>">
+<input type="hidden" id="hdntxtamount" name="hdntxtamount" value="">
+</div>
+

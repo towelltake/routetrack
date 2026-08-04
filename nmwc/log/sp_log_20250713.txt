@@ -1,0 +1,62 @@
+
+CALL sp_web_permissions()
+
+CALL sp_get_company_information()
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_decimal_places()
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%28%" OR route.routename LIKE "%28%" OR salesman.salesmancode LIKE "%28%" OR salesman.salesmanname1 LIKE "%28%" OR subarea.subareaname LIKE "%28%" OR route.device_assigned_id LIKE "%28%" OR route.activestatus LIKE "%28%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('28')
+
+CALL sp_get_not_assigned_devices('cacb98a0068c1c8c')
+
+CALL sp_get_organization_route_setting1('28')
+
+CALL sp_get_organization_route_setting2('28')
+
+CALL sp_get_organization_route_report('28')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_tablet_check_load('134','28')
+
+CALL sp_ws_syncicsdata_setting('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','28','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','28','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','28')
+
+CALL sp_ws_updatesyncdate('134','cacb98a0068c1c8c','28')
+
+CALL sp_ws_instertion_tbl_synclog('134','28','47869','0','1')

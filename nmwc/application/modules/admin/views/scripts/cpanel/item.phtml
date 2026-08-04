@@ -1,0 +1,79 @@
+<?php
+/**
+* @name       page.phtml
+* @since      23-03-2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add report setting from control panel
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+?>
+<script type="text/javascript">
+$(document).ready(function(){
+	
+    $('#chkcostprice').click(function() {
+		
+		var dx = $('#chkcostprice').is(':checked');
+		if(!dx)
+		{
+			$("#txtcost_price").val($("#hdntxtcost_price").val());
+			$("#txtcost_price").removeAttr('readonly');
+		}
+		else {
+			$("#txtcost_price").val(0);
+			$("#txtcost_price").attr('readonly','readonly');
+		}
+    });
+	<?php if($this->cpanel_data["Enable Cost Price"]['status']) { ?>
+		$("#txtcost_price").removeAttr('readonly');
+	<?php } ?>
+})
+</script>
+<div class="clean"></div>
+
+<div class="content with-actions">
+        <div class="_100">
+	    <div class="clean"></div>
+	</div>
+    <fieldset>
+	<legend><?php echo $this->translate->_('General');?></legend>
+	<div class="_100">
+	    <div class="_5_2">
+			<input type="checkbox" id="chkbatch" name="chkcpanelitem[]" <?php  echo $this->cpanel_data["Enabled Batch And Expiry"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Enabled Batch And Expiry"]['flagid']; ?>">
+	    </div>
+	    <label class="_55 margin_top_10 text_align">
+			<?php echo $this->translate->_('Enabled Batch And Expiry');?>
+	    </label>
+	    <div class="_5_2">
+			<input type="checkbox" id="chkadd_new_item_group" name="chkcpanelitem[]" <?php echo $this->cpanel_data["Add New Items To Route Item Grouping"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Add New Items To Route Item Grouping"]['flagid']; ?>">
+	    </div>
+	    <label class="_40 margin_top_10 text_align">
+			<?php echo $this->translate->_('Add New Items To Route Item Grouping');?>
+	    </label>
+	</div>
+    </fieldset>
+    <fieldset>
+	<legend><?php echo $this->translate->_('Cost Price');?></legend>
+	<div class="_100">
+	    <label class="_25_1  margin_right_1 label_text_align margin_top_15">
+		<?php echo $this->translate->_('Enable Cost Price');?>
+	    </label>
+	    <div class="_10 margin_left_right_1 margin_top_7">
+			<input type="checkbox" id="chkcostprice" name="chkcpanelitem[]" <?php  echo $this->cpanel_data["Enable Cost Price"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Enable Cost Price"]['flagid']; ?>">
+		</div>
+	</div>
+	<div class="_100" id="costprice">	    
+	    <label class="_25_1 label_text_align margin_top_15">
+            <?php echo $this->translate->_('Cost Price Calculation %');?>
+        </label>
+	    <div class="_20">
+            <input name="txtcost_price" id="txtcost_price" type="text" readonly="readonly" value="<?php  echo number_format($this->cpanel_data["Cost Price Percent"]['flagvalue'],$this->decimalplaces);?>" maxlength="5"  class="number margin_right_1" >
+			<input type="hidden" name="hdntxtcost_price" id="hdntxtcost_price" value="<?php  echo number_format($this->cpanel_data["Cost Price Percent"]['flagvalue'],$this->decimalplaces);?>">
+        </div>
+		<div class="_50_3">&nbsp;</div>
+	</div>
+	
+    </fieldset>
+</div>

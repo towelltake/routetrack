@@ -1,0 +1,565 @@
+<?php
+/**
+* @name       index.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+$url = $this->url(array("module"=>"account","controller"=>"customer","action"=>"addcustomer"),"default", true);
+?>
+<script type="text/javascript">
+$(document).ready(function() {
+	
+    $("#rdofftype").change(function()
+    { 
+	if($(this).val() == '2'){
+	    $("#ddlhead_off").attr('disabled',false);
+	    $("#ddlhead_off").addClass('required');
+	    $('select').trigger('liszt:updated');
+	}
+	else
+	{
+	    $("#ddlhead_off").val('');
+	    $("#ddlhead_off").attr('disabled',true);
+	    $("#ddlhead_off").removeClass('required');
+	    <?php echo $this->formdata['ddlhead_off'] > 0 ? '' : '$("#ddlhead_off_chzn a span").html("--- Select ---");'; ?>
+	    $('select').trigger('liszt:updated');
+	}	
+    });
+    
+    $('#btnload').click(function(){			
+	var val = $("#ddltempl").val();
+	if(val > 0) {
+	    window.location = '<?php echo $url;?>/id/'+val+'/tmpl/1';
+	}
+    });
+    
+    
+    <?php
+    if($this->formdata['rdofftype'] != 3)
+    {
+	echo '$("#ddlhead_off").attr("disabled",true);';
+	echo ' ';
+	echo '$("#ddlhead_off").removeClass("required");';
+	echo ' ';
+	echo '$("select").trigger("liszt:updated");';	
+    }
+	if($this->formdata['rdofftype'] == 2)
+	{
+		echo   '$("#ddlhead_off").attr("disabled",false);
+				$("#ddlhead_off").addClass("required");
+				$("select").trigger("liszt:updated");';
+	}
+    ?>
+    <?php echo $this->formdata['ddl_ar_cust'] == '1' ? '$("#txt_bill_to_bill").attr("readonly",false);' : '$("#txt_bill_to_bill").attr("readonly",true);' ; ?>
+    
+    $('#ddlinvo_pay').change(function() {
+	
+	if($("#ddlinvo_pay").val() == '0' || $("#ddlinvo_pay").val() == '1' )
+	{ 
+	    $("#txtcr_limit").val(0);
+	    $("#txtcr_days").val(0);
+	    $('#txt_bill_to_bill').val(0);
+	    $('#ddl_ar_cust').val(0);
+	    $('#txtcr_limit').attr('readonly',true);
+	    $('#txtcr_days').attr('readonly',true);
+	    $('#txt_bill_to_bill').attr('readonly',true);	    
+	    $('#ddl_ar_cust').attr('disabled',true);
+	}
+	else
+	{
+	    $('#txt_bill_to_bill').attr('readonly',false);
+	    $('#txtcr_limit').attr('readonly',false);
+	    $('#txtcr_days').attr('readonly',false);
+	    $('#ddl_ar_cust').attr('disabled',false);
+	}	
+	$('select').trigger('liszt:updated'); 
+    });
+    
+	$('#ddlroutename').change(function(){
+	
+		$('#txtcode').val('');
+		var routeid = $('#ddlroutename').val();
+		var  url = base_url+'/account/customer/getcustomercode/route_code/'+routeid;
+		$.ajax({
+			url:url,			
+			type:'post',		
+			success:function(data) {
+				$('#txtcode').val(data);
+				<?php if($this->params['tmpl'] == 1 ) { ?>
+				$('#txtbarcode').val(data);
+				<?php } ?>
+			}
+		})	
+	});
+	
+	$('#chkroundnetamt').click(function() {
+		
+		var dx = $('#chkroundnetamt').is(':checked');
+		if(!dx)
+		{
+			$("#txtroundingoff").val($("#hdntxtroundingoff").val());
+			$("#txtroundingoff").removeAttr('readonly');
+		}
+		else {
+			$("#txtroundingoff").val(0);
+			$("#txtroundingoff").attr('readonly','readonly');
+		}
+	});
+	<?php if($this->formdata['chkroundnetamt']) { ?>
+		$("#txtroundingoff").removeAttr('readonly');
+	<?php } ?>
+	
+    <?php if($this->formdata['ddlinvo_pay'] == '0' || $this->formdata['ddlinvo_pay'] == '1') { ?>
+	$("#txtcr_limit").val(0);
+	$("#txtcr_days").val(0);
+	$('#txt_bill_to_bill').val(0);
+	$('#ddl_ar_cust').val(0);
+	$('#txt_bill_to_bill').attr('readonly',true);
+	$('#txtcr_limit').attr('readonly',true);
+	$('#txtcr_days').attr('readonly',true);
+	$('#ddl_ar_cust').attr('disabled',true);
+	$('select').trigger('liszt:updated'); 
+    <?php } ?>
+})
+
+</script>
+<div class="clean"></div>
+    <div class="content with-actions">	
+	<fieldset>
+	    <legend><?php echo $this->translate->_('General');?></legend>
+	    <?php if($this->params['edit'] != 'yes') { ?>
+	    <div class="_100 ">
+			<label class="_25_1 margin_left_0 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Select Template').''.$this->colan;?>
+			</label>
+			<div class="_40 margin_right_1">
+			    <select id="ddltempl" name="ddltempl">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->cust_templ);$i++)
+				{
+				?>
+					<option <?php echo $this->cust_templ[$i]['id'] == $this->cust_tmplval ? 'selected' : '';?> value="<?php echo $this->cust_templ[$i]['id'];?>"><?php echo $this->cust_templ[$i]['val'];?></option>
+				<?php } ?>
+			    </select>
+			</div>
+			<div class="_10 margin_left_2">
+				<input type="button" name="btnload" class="margin_top_7" id="btnload" value="<?php echo $this->translate->_('Load');?>" >
+			</div>
+	    </div>
+	    <?php } ?>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Route Name').''.$this->required;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlroutename" name="ddlroutename" class="required" >
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->route_data);$i++)
+				{
+				?>
+					<option <?php echo $this->route_data[$i]['id'] == $this->formdata['ddlroutename'] ? 'selected' : '';?> value="<?php echo $this->route_data[$i]['id'];?>"><?php echo $this->route_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Barcode').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<input type="text" id="txtbarcode" name="txtbarcode"  maxlength="20"  class="" value="<?php echo $this->formdata['txtbarcode'];?>">
+			</div> 
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Code').''.$this->required;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" class="required margin_top_5" id="txtcode" name="txtcode" <?php if($this->formdata['txtalt_code']!="") { ?> readonly= "true" <?php } ?> value="<?php if($this->params['tmpl'] !=1 ) { echo $this->formdata['txtcode']; } ?>">
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Alternate Code').''.$this->required;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<input type="text" id="txtalt_code"  maxlength="50" name="txtalt_code" class="required margin_top_5" value="<?php echo $this->formdata['txtalt_code'];?>">
+			</div>
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Name').''.$this->required;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txtname"  maxlength="50" name="txtname" value="<?php echo $this->formdata['txtname'];?>" class="required margin_top_5" >
+			</div>		
+		<label class="_20_2 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Telephone Number').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<input type="text" id="txttel_num" class="margin_top_5" maxlength="30"  name="txttel_num" value="<?php echo $this->formdata['txttel_num'];?>">
+		</div>
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Address1').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+			<input type="text" id="txtaddress" class="margin_top_5" name="txtaddress" maxlength="50" value="<?php echo $this->formdata['txtaddress'];?>">
+		</div>		
+		<label class="_20_2 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Address2').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<input type="text" id="txtaddress2" name="txtaddress2" class="margin_top_5" value="<?php echo $this->formdata['txtaddress2'];?>">			
+		</div>
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Address3').''.$this->colan;?>				
+		</label>
+		<div class="_25_1">
+			<input type="text" id="txtaddress3" name="txtaddress3"  maxlength="50"  class="margin_top_5" value="<?php echo $this->formdata['txtaddress3'];?>">			
+		</div>			
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('P.O.BOX').''.$this->colan;?>				
+			</label>
+			<div class="_25_1 margin_right_1">
+			    <input type="text" id="txtpobox" name="txtpobox" maxlength="50"  class="margin_top_5" value="<?php echo $this->formdata['txtpobox'];?>">
+			</div>
+	    </div>
+	    <div class="_100 " id="divroute" >
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Customer Type').''.$this->required;?>
+			</label>
+			<div class="_25_1">
+				<select id="rdofftype" name="rdofftype" class="required">
+					<option value="">--- Select ---</option>
+					<option <?php echo $this->formdata['rdofftype'] == '1' ? 'selected' : '';?> value="1"><?php echo $this->translate->_('Normal');?></option>
+					<option <?php echo $this->formdata['rdofftype'] == '2' ? 'selected' : '';?> value="2"><?php echo $this->translate->_('Branch');?></option>
+					<option <?php echo $this->formdata['rdofftype'] == '3' ? 'selected' : '';?> value="3"><?php echo $this->translate->_('Head Office');?></option>
+			    </select>				
+			</div>
+			<input type="hidden" name="hdnrouteid" id="hdnrouteid" value="<?php echo $this->formdata['ddlroutename'];?>" >
+			<input type="hidden" name="hdnchangeroutestatus" id="hdnchangeroutestatus" value="0">
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Head Office').''.$this->required;?>
+			</label>		
+			<div class="_25_1 margin_right_1">
+				<select id="ddlhead_off" name="ddlhead_off" disabled="disabled">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->headoffice_data);$i++)
+				{
+				?>
+					<option <?php echo ($this->headoffice_data[$i]['id'] == $this->formdata['ddlhead_off'] && $this->formdata['rdofftype'] > '1') ? 'selected' : '';?> value="<?php echo $this->headoffice_data[$i]['id'];?>"><?php echo $this->headoffice_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Invoice Payment Terms').''.$this->required;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlinvo_pay" name="ddlinvo_pay" class="required">
+				<option value="">--- Select ---</option>
+				<?php
+	
+				for($i=0;$i<count($this->invo_pay_term);$i++)
+				{
+				?>
+					<option <?php echo $this->invo_pay_term[$i]['id'] == $this->formdata['ddlinvo_pay'] ? 'selected' : '';?> value="<?php echo $this->invo_pay_term[$i]['id'];?>" ><?php echo $this->invo_pay_term[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>	    
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Outstanding Balance').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+			    <input type="text" readonly="readonly" id="txtcash_bal" name="txtcash_bal" class="margin_top_5 amount_text_align" value="<?php echo number_format($this->formdata['txtcash_bal'],$this->decimalplaces);?>">
+			</div>
+		<div class="_100 ">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Credit Limit').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txtcr_limit" class="margin_top_5 number amount_text_align"  maxlength="23" name="txtcr_limit" value="<?php echo number_format($this->formdata['txtcr_limit'],$this->decimalplaces);?>">
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Credit Days').''.$this->colan;?>
+			</label>
+			<div class="_25_1  margin_right_1">
+				<input type="text" id="txtcr_days" class="number margin_top_3"  maxlength="4" name="txtcr_days" value="<?php echo $this->formdata['txtcr_days'];?>">
+			</div>
+	    </div>
+		<div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('AR Customer Type').''.$this->colan;?>
+			</label>
+			<div class="_25_1">				
+			    <select id="ddl_ar_cust" name="ddl_ar_cust">
+				<option value="0" <?php echo $this->formdata['ddl_ar_cust'] == '0' ? 'selected' : '' ; ?> ><?php echo $this->translate->_('Normal');?></option>
+				<option value="1" <?php echo $this->formdata['ddl_ar_cust'] == '1' ? 'selected' : '' ; ?> ><?php echo $this->translate->_('Bill to Bill');?></option>
+			    </select>
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Bill To Bill').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+			    <input type="text" id="txt_bill_to_bill" readonly="readonly" maxlength="50" class="margin_top_3 number" name="txt_bill_to_bill" value="<?php echo $this->formdata['ddl_ar_cust'] == '1' ? $this->formdata['txt_bill_to_bill'] : '';?>">
+			</div>
+		</div>
+		<div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Authorized Item Group').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlauthorise_grp" name="ddlauthorise_grp">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->authorise_grp_data);$i++)
+				{
+				?>
+					<option <?php echo $this->authorise_grp_data[$i]['id'] == $this->formdata['ddlauthorise_grp'] ? 'selected' : '';?> value="<?php echo $this->authorise_grp_data[$i]['id'];?>" ><?php echo $this->authorise_grp_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Special Price').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddlprice_key" name="ddlprice_key">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->price_key_data);$i++)
+				{
+				?>
+					<option <?php echo $this->price_key_data[$i]['id'] == $this->formdata['ddlprice_key'] ? 'selected' : '';?> value="<?php echo $this->price_key_data[$i]['id'];?>"><?php echo $this->price_key_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+	    </div>
+		<div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Outlet Product Codes').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddloutlet_pro" name="ddloutlet_pro">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->outletproduct_data);$i++)
+				{
+				?>
+					<option <?php echo $this->outletproduct_data[$i]['id'] == $this->formdata['ddloutlet_pro'] ? 'selected' : '';?> value="<?php echo $this->outletproduct_data[$i]['id'];?>"><?php echo $this->outletproduct_data[$i]['val'];?></option>
+				<?php } ?> 
+				</select>
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Promotions').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddlpromo_key" name="ddlpromo_key" class="">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->promo_key_data);$i++)
+				{
+				?>
+					<option <?php echo $this->promo_key_data[$i]['id'] == $this->formdata['ddlpromo_key'] ? 'selected' : '';?> value="<?php echo $this->promo_key_data[$i]['id'];?>"><?php echo $this->promo_key_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+		</div>
+		<div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Customer Category').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<select id="ddlcust_cat" name="ddlcust_cat">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->customer_category);$i++)
+				{
+				?>
+					<option <?php echo $this->customer_category[$i]['id'] == $this->formdata['ddlcust_cat'] ? 'selected' : '';?> value="<?php echo $this->customer_category[$i]['id'];?>"><?php echo $this->customer_category[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<label class="_20_2 margin_right_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Survey').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddlsurvey_key" name="ddlsurvey_key">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->survey_key_data);$i++)
+				{
+				?>
+					<option <?php echo $this->survey_key_data[$i]['id'] == $this->formdata['ddlsurvey_key'] ? 'selected' : '';?> value="<?php echo $this->survey_key_data[$i]['id'];?>"><?php echo $this->survey_key_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+		</div>
+		<div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Spot Sales Amount').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txtspot_limit" name="txtspot_limit" maxlength="8" class="number margin_top_5 amount_text_align" value="<?php echo $this->formdata['txtspot_limit'];?>">
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Loyality Key').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddlloyality_key" name="ddlloyality_key">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->loyalitydata);$i++)
+				{
+				?>
+					<option <?php echo $this->loyalitydata[$i]['id'] == $this->formdata['ddlloyality_key'] ? 'selected' : '';?> value="<?php echo $this->loyalitydata[$i]['id'];?>"><?php echo $this->loyalitydata[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			
+		</div>
+		<div class="_100">
+			<!--<label class="_25_1 margin_top_12 label_text_align">
+				 <?php echo $this->translate->_('Expiry Running Value').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" id="txtexp_run_val" readonly="readonly" maxlength="8" name="txtexp_run_val" class="margin_top_5" value="<?php echo $this->formdata['txtexp_run_val'];?>">
+			</div>-->
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Status').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+			    <select id="ddlstatus" name="ddlstatus">
+				<option <?php if($this->formdata['ddlstatus'] == "1" )  { echo 'selected'; } ?> value="1"><?php echo $this->translate->_('Active');?></option>
+				<option <?php if($this->formdata['ddlstatus'] == "0" )  { echo 'selected'; } ?> value="0"><?php echo $this->translate->_('Inactive');?></option>
+			    </select>
+			</div>
+			<?php if($this->status[5]['status'] == 1) { ?>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Channel').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddlchannel" name="ddlchannel">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->channel_data);$i++)
+				{
+				?>
+					<option <?php echo $this->channel_data[$i]['id'] == $this->formdata['ddlchannel'] ? 'selected' : '';?> value="<?php echo $this->channel_data[$i]['id'];?>"><?php echo $this->channel_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<?php } ?>
+	    </div>
+		<div class="_100">
+			
+			<?php if($this->status[0]['status'] == 1) { ?>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Discount Key').''.$this->colan;?>
+			</label>
+			<div class="_25_1 margin_right_1">
+				<select id="ddldis_key" name="ddldis_key">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->discount_key_data);$i++)
+				{
+				?>
+					<option <?php echo $this->discount_key_data[$i]['id'] == $this->formdata['ddldis_key'] ? 'selected' : '';?> value="<?php echo $this->discount_key_data[$i]['id'];?>"><?php echo $this->discount_key_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<?php } ?>	    
+			
+		</div>	    		
+		<?php if($this->params["edit"]=="yes") { ?>
+			<div class="_100">
+				<label class="_25_1 margin_top_12 label_text_align"> 
+					<?php echo $this->translate->_('Created Date').''.$this->colan;?>
+				</label>
+				<div class="_25_1 margin_top_12 date_color">
+					<?php echo $this->formdata['createddate'];?>
+				</div>
+				
+			
+			</div>	
+		<?php } ?>	 
+			<?php if($this->status[3]['status'] == 1) { ?>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Item Must List').''.$this->colan;?>
+			</label>			
+			<div class="_25_1 margin_right_1">
+				<select id="ddlitemmustkey" name="ddlitemmustkey">
+				<option value="">--- Select ---</option>
+				<?php
+				for($i=0;$i<count($this->itemmust_key_data);$i++)
+				{
+				?>
+					<option <?php echo $this->itemmust_key_data[$i]['id'] == $this->formdata['ddlitemmustkey'] ? 'selected' : '';?> value="<?php echo $this->itemmust_key_data[$i]['id'];?>"><?php echo $this->itemmust_key_data[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+			<?php } ?>
+		</div>
+	</fieldset>
+	<fieldset>
+	    <legend><?php echo $this->translate->_('2nd Language Settings').$this->colan?></legend>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Name').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" class="margin_top_5" id="txtlangname" name="txtlangname" maxlength="50" value="<?php echo $this->formdata['txtlangname'];?>">
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Customer State').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" class="margin_top_5" id="txtcustomer_state"  maxlength="50" name="txtcustomer_state" value="<?php echo $this->formdata['txtcustomer_state'];?>">
+			</div>
+	    </div>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Contact Name').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" class="margin_top_5" id="txtcont_name" name="txtcont_name" maxlength="50"  value="<?php echo $this->formdata['txtcont_name'];?>">
+			</div>
+			<label class="_20_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Customer City').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input type="text" class="margin_top_5" id="txtcustoemr_city" name="txtcustoemr_city"  maxlength="50" value="<?php echo $this->formdata['txtcustoemr_city'];?>">
+			</div>
+		</div>
+		 <div class="_100" >
+		    <label class="_25_1 margin_top_12 label_text_align">
+			    <?php echo $this->translate->_('Address1').''.$this->colan;?>
+		    </label>
+		    <div class="_25_1">
+			<input type="text" class="margin_top_5" id="txtlangaddress" name="txtlangaddress"  maxlength="50" value="<?php echo $this->formdata['txtlangaddress'];?>">
+		    </div>
+		    <label class="_20_2 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Address2').''.$this->colan;?>
+		    </label>
+		    <div class="_25_1">
+			<input type="text" class="margin_top_5" id="txtlangaddress2" name="txtlangaddress2" maxlength="50"  value="<?php echo $this->formdata['txtlangaddress2'];?>">
+		    </div>
+	    </div>
+	    <div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Address3').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <input type="text" class="margin_top_5" id="txtremark" name="txtremark" maxlength="50"  value="<?php echo $this->formdata['txtremark'];?>" >
+		</div>			
+	    </div>
+	</fieldset>
+</div>

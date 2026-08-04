@@ -1,0 +1,84 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/dataitemdistribution/itemdis/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Customer Category');?>','<?php echo $this->translate->_('Major Category');?>','<?php echo $this->translate->_('Customer');?>','<?php echo $this->translate->_('Item Code');?>','<?php echo $this->translate->_('Item Description');?>','<?php echo $this->translate->_('Sales Qty');?>','<?php echo $this->translate->_('Return Qty');?>','<?php echo $this->translate->_('Damaged Qty');?>','<?php echo $this->translate->_('Expired Qty');?>','<?php echo $this->translate->_('Free Qty');?>','<?php echo $this->translate->_('Sales Value');?>','<?php echo $this->translate->_('Return Value');?>','<?php echo $this->translate->_('Damage Value');?>','<?php echo $this->translate->_('Expired Value');?>','<?php echo $this->translate->_('Free Value');?>','<?php echo $this->translate->_('Item Discount');?>','<?php echo $this->translate->_('Invoice Discounts');?>','<?php echo $this->translate->_('Net Value');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:100},
+		{name:'customercategory',index:'customercategory', width:200},
+        {name:'majorcategorycode',index:'majorcategorycode', width:120},
+		{name:'customercode',index:'customercode', width:120},
+		{name:'itemcode',index:'itemcode', width:90},
+        {name:'itemdescription',index:'itemdescription', width:250},
+        {name:'salesqty',index:'salesqty', width:50,summaryType:'sum',align:'right'},
+        {name:'returnqty',index:'returnqty', width:50,summaryType:'sum',align:'right'},
+        {name:'damagedqty',index:'damagedqty', width:50,summaryType:'sum',align:'right'},
+        {name:'expiryqty',index:'expiryqty', width:50,summaryType:'sum',align:'right'},
+        {name:'freesampleqty',index:'freesampleqty', width:50,summaryType:'sum',align:'right'},
+        {name:'salesvalue',index:'salesvalue', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'},
+        {name:'returnvalue',index:'returnvalue', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'},
+        {name:'damagevalue',index:'damagevalue', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'},
+		{name:'expiredvalue',index:'expiredvalue', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' },align:'right'},
+		{name:'freevalue',index:'freevalue', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'},
+		{name:'itempromodiscount',index:'itempromodiscount', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'},
+        {name:'invdiscountbreakup',index:'invdiscountbreakup', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'},
+        {name:'netvalue',index:'netvalue', width:90,summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00'},align:'right'}
+   	],
+    <?php if($this->css == 'ar_') { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+    rowList:eval(RP_ROWLISTSHOW),
+    pager: '#pagersr',
+   	sortname: 'routecode,customername',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,        
+	groupingView :
+    {
+        groupField : ['routecode','customercategory','majorcategorycode','customercode'],
+        groupColumnShow : [false,false,false,false],
+        groupCollapse : true,
+        groupOrder: ['asc','asc','asc','asc'] ,
+        groupSummary : [false,false,false,true],
+        showSummaryOnHide: false
+    }
+});
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+</script>

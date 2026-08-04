@@ -1,0 +1,103 @@
+<?php
+/**
+* @name       addcompanygroup.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Comopany Group
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $("#txtaltcode").focus();
+});
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="inventory_index_addcompanygroup">
+<form class="validate" method="post" action="" novalidate="novalidate">      
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+	<h3><?php echo $this->translate->_('Route Start Of Day');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"routeendday","action"=>"routeendday"),"default", true);?>')">
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+	<li class="current">
+	    <ul style="display: block;">
+		<li>
+		    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"routeendday","action"=>"routeendday"),"default", true);?>"><?php echo $this->overview;?></a>
+		</li>
+		
+	    </ul>
+	</li>
+    </ul>
+</div>
+</div>
+<div class="content no-padding with-actions">
+            <div class="_100">
+                <div class="clean"></div>
+            </div>
+            <div class="_100">
+                <label class="_36 margin_top_12 label_text_align">
+                    <?php echo $this->translate->_('Route').''.$this->required;?>
+                </label>
+                <div class="_50 margin_right_1">
+                     <input name="txt_route_name" id="txt_route_name" maxlength="50" type="text"  readonly="readonly" value="<?php echo  $this->result['routename'];?>" >
+                </div>
+            </div>
+	    <div class="_100">
+                <label class="_36 margin_top_12 label_text_align">
+                    <?php echo $this->translate->_('Salesman').''.$this->colan;?>
+                </label>
+                <div class="_50 margin_right_1">
+                    <input name="txt_salesman" id="txt_salesman" maxlength="50" type="text"
+                          value="<?php echo  $this->result['salesman'];?>"  >
+                </div>
+            </div>
+            <div class="_100">
+                <label class="_36 margin_top_12 label_text_align">
+                    <?php echo $this->translate->_('Start Date').''.$this->required;?>
+                </label>
+                <div class="_50 margin_right_1">
+                    <input name="start_txtdate" id="start_txtdate" maxlength="50" type="text" readonly="readonly"
+			    value="<?php echo  $this->result['routestartdate'];?>"  >
+                </div>
+            </div>
+             <div class="_100">
+                <label class="_36 margin_top_12 label_text_align">
+                    <?php echo $this->translate->_('End Date').''.$this->required;?>
+                </label>
+                <div class="_50 margin_right_1">
+                    <input name="txtdate" id="txtdate" maxlength="50" type="text" class="required"  readonly="readonly" >
+                </div>
+            </div>
+	    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+	    <input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>">
+        </form>      
+      </div>
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+	$( "#txtdate" ).datepicker({	    
+		dateFormat: 'dd-mm-yy',
+            changeYear:true,
+            yearRange: '-10:+0'
+	});
+    });
+   
+});
+
+</script>

@@ -1,0 +1,305 @@
+<?php
+/**
+* @name       page.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Cash Description
+*/
+	    $this->translate = Zend_Registry::get('Zend_Translate');
+
+?>
+<style>
+.table1{ border:1px solid #EEEEEE}
+.table1 th{ color:#164A7E;padding:6px; background:#EEEEEE}
+.table1 td{ border:1px solid #EEEEEE; padding:6px; vertical-align:middle}
+</style>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="merchandize_index_addlookupindex">
+<form id="frmbatch" name="frmbatch" class="validate" method="post" action="" novalidate="novalidate" >
+	<input type="hidden" id="hdnid1" name="hdnid1" value="<?php echo $this->params["edit"]=="yes"?$this->params["trankey"]:0; ?>">
+	<input type="hidden" id="type" name="type" value="<?php echo $this->type; ?>">
+    <input type="hidden" id="type_val" name="type_val" value="<?php echo $this->params["type"]; ?>">
+    <input type="hidden" id="units" name="units" value="<?php echo $this->result1[0]['unit']; ?>">
+     <input type="hidden" id="item_code" name="item_code" value="<?php echo $this->result1[0]['itemcode'];?>">
+    <div class="header">
+	<div class="_50_3 back_btn">
+	    <img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+	    <h3><?php echo $this->translate->_($this->trans_type_val[$this->params["type"]].' Batch Detail');?></h3>
+	</div>
+	
+    </div>    
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_50">
+	     <label class="_40_1 label_text_align margin_top_12" style="margin-right: 8% !important;  width: 36% !important;">
+		<?php echo $this->translate->_('Item code').''.$this->colan;?>
+	    </label>
+	    <div class="_55 margin_right_1" >
+		<input type="text" id="txt_item_code" name="txt_item_code" readonly="readonly" value="<?php echo $this->result1[0]['new_item_code'];?>">
+	    </div>
+	</div>
+    <div class="_50">
+        <label class="_40_1 label_text_align margin_top_12"  style="margin-right: 7% !important;  width: 35% !important;">
+            <?php echo $this->translate->_('UPC').''.$this->colan;?>
+        </label>
+        <div class="_55 margin_right_1">
+            <input type="text" id="txt_upc" name="txt_upc" readonly="readonly" value="<?php echo $this->result1[0]['unit'];?>" >
+        </div>
+    </div>
+    <div class="_100">
+        <label class="_17_1 label_text_align margin_top_12">
+            <?php echo $this->translate->_('Item Name').''.$this->colan;?>
+        </label>
+        <div class="_75 margin_right_1">
+            <input type="text" id="txt_item_name" name="txt_item_name" readonly="readonly" value="<?php echo $this->result1[0]['item_name'];?>">
+        </div>
+	</div>
+    
+    
+        
+	
+         <div class="clear space_20"></div>
+     
+            <div id="error_message" style="color:red">
+           
+                
+            </div>
+     <input type="hidden" name="allow_qty" value="0" id="allow_qty" />
+        <div>
+            <table id="myTable" class="table1" width="100%" cellpadding="2">
+                    <thead>
+                            <tr>
+                                    <th>Batch Number</th>
+                                    <th>Expiry Date</th>
+                                    <th>Case</th>
+                                    <th>PCS</th>
+                                    <!--<th>Unit</th>-->
+                                    <th>QTY</th>
+                                   
+                                   
+                            </tr>
+                    </thead>
+                    <tbody class="gradeY">
+			<?php
+			if(!empty($this->result))
+			{
+                             $final_amount = $this->params['salesqty'];
+				foreach($this->result as $value)
+				{
+                                   
+                                    if($value['available_qnt'] < 0)
+				    $value['available_qnt'] = 0;
+                                ?>
+				
+				 <tr class="gradeX">
+                                    <td><?php  echo $value['batchnumber']; ?>
+                                    <input type="hidden" name="batchnumber[]" value="<?php echo $value['batchnumber'];?>" />
+                                    <input type="hidden" name="batchdetailkey[]" value="<?php echo $value['batchdetailkey'];?>" />
+                                     <input type="hidden" name="itemcode[]" value="<?php echo $value['itemcode'];?>" />
+                                    </td>
+                                    <td><?php echo $value['expirydate'];?>
+                                    <input type="hidden" name="expirydate[]" value="<?php echo $value['expirydate'];?>" />
+                                    <input type="hidden" name="expirydate1[]" value="<?php echo $value['expirydate1'];?>" />
+                                    </td>
+                                    <?php
+                                        $availablecase = $value['batch_qnt']/$value['upc'];
+                                        $availablepcs = $value['batch_qnt']%$value['upc'];
+                                    ?>
+                                    <td><input type="text" class="clas invoice_qty_width_67"  name="case[]" value="<?php echo (int)$availablecase;?>" /></td>
+                                    <td><input type="text" class="clas invoice_qty_width_67"  name="pcs[]" value="<?php echo (int)$availablepcs;?>" /></td>
+                                    <!--<td><?php echo $value['upc'];?></td>-->
+                                    <?php
+                                        $maincase = $value['available_qnt']/$value['upc'];
+                                        $mainpcs = $value['available_qnt']%$value['upc'];
+                                    ?>
+                                    <td><?php echo (int)$maincase."/".(int)$mainpcs;?>
+                                    <input type="hidden" name="quantity[]" value="<?php echo $value['available_qnt'];?>" />
+                                    </td>
+                                    
+                                    
+				</tr>	
+				<?php
+				}
+				
+			}
+			
+			?>
+                           
+                           
+                            
+                    </tbody>
+            </table>
+            
+        </div>
+        
+        <?php if(($this->params["type"] == "return" || $this->params["type"] == "buyback" || $this->params["type"] == "damage" || $this->params["type"] == "expirey") && $this->allowbatchentry == '1') { ?>
+       <div><a href="#" id="add_new_batch">Add New Batch</a></div>
+        <?php } ?>
+	<div class="_100 space_20">&nbsp;</div>
+        <div class="_100">
+	  
+           <div style="float:right"><input type="button" name="btn_cancel" id="btn_cancel" value="Cancel" /></div>
+            <div style="float:right">&nbsp;&nbsp;</div>
+            <div style="float:right"><input type="button"  name="btn_save"  id="btn_save" value="Save" /></div>
+            
+	   
+	   
+	   
+	</div>
+        <div class="_100 space_20">&nbsp;</div>
+
+    </div>
+	
+         
+	 </form>
+
+</div>
+</div> <!-- End of .box -->
+<script type="text/javascript">
+var ajax_page_URL = base_url+"/hhctransaction/ajaxdata/";
+$(window).load(function()
+{
+	
+    parent.eval('$(".pp_close").attr("href","<?php echo $url; ?>")');
+    $( "#txt_delivery_date1" ).datepicker({	    
+		dateFormat: 'dd-mm-yy',
+            changeYear:true,
+            yearRange: '-10:+15'
+	});
+    $("#btn_cancel").click(function(){
+        $.post(ajax_page_URL+"returnaddbatchcancel/", $("#frmbatch").serialize(), function(data) {
+           parent.eval('$.prettyPhoto.close()');
+         });    
+    });
+    
+     $("#btn_save").click(function(){
+        var upc = $('#txt_upc').val();
+        var flag = false;
+        var totalqnt = 0;
+        var cases,pcs,qnt,newqnt;
+        var type = $('#type').val();
+        <?php if(!($this->params["type"] == "return" || $this->params["type"] == "buyback" || $this->params["type"] == "damage" || $this->params["type"] == "expirey")) { ?>
+        $('.gradeX').each(function(){
+            qnt = 0;
+            cases = $(this).find('input[name="case[]"]').val();
+            pcs = $(this).find('input[name="pcs[]"]').val();
+            newqnt= parseInt(parseInt(cases*upc)+parseInt(pcs));
+            totalqnt += newqnt;
+            
+            if($(this).find('input[name="quantity[]"]').length > 0) {
+                qnt = $(this).find('input[name="quantity[]"]').val();
+                if(newqnt > qnt) {
+                    flag = true;
+                }
+            }
+        });
+        <?php } else { ?>
+        $('.gradeX').each(function(){
+            qnt = 0;
+            cases = $(this).find('input[name^="case"]').val();
+            pcs = $(this).find('input[name^="pcs"]').val();
+            newqnt= parseInt(parseInt(cases*upc)+parseInt(pcs));
+            totalqnt += newqnt;
+        });
+        <?php } ?>
+        if(flag) {
+            jAlert("Entered Qty Exceeds Batch Qty");
+            return false;
+        } else {
+            var newvbatcharr = new Array();
+            $('input[name="batchnumber1[]"]').each(function(){
+                newvbatcharr.push($(this).val());
+            });
+            
+            if(newvbatcharr.length > 0)
+            {
+                $.ajax({
+                    type:"post",
+                    url:ajax_page_URL+"checkbatch/",
+                    data:{newvbatcharr:newvbatcharr},
+                    success:function(res){
+                        if(res == "exist")
+                        {
+                            jAlert("Batch Already Exist.");
+                            return false;
+                        }
+                        else
+                        {
+                            $.post(ajax_page_URL+"returnaddbatch/", $("#frmbatch").serialize(), function(data) {
+                                parent.eval('fillvalue("<?php echo $this->params["type"]?>",'+totalqnt+')');
+                                parent.eval('$.prettyPhoto.close()');
+                            });
+                        }
+                        
+                    }
+                });
+            }
+            else
+            {
+                $.post(ajax_page_URL+"returnaddbatch/", $("#frmbatch").serialize(), function(data) {
+                    parent.eval('fillvalue("<?php echo $this->params["type"]?>",'+totalqnt+')');
+                    parent.eval('$.prettyPhoto.close()');
+                });
+            }
+        }
+    });
+     $("#add_new_batch").click(function(){
+	
+	var html_data =' <tr class="gradeX">'+
+                                    '<td><input type="text" name="batchnumber1[]" maxlength="20" value="" />'+
+                                    '</td>'+
+                                    '<td><input name="txt_delivery_date1[]" id="" maxlength="50" type="text" class="txt_delivery_date1"  readonly="readonly"  value="<?php echo date('d-m-Y');?>">'+
+                                    '</td>'+
+                                    '<td><input type="text" class="clas invoice_qty_width_67"  name="case1[]" value="0" /></td>'+
+                                    '<td><input type="text" class="clas invoice_qty_width_67"  name="pcs1[]" value="0" /></td>'+
+                                    '<td>&nbsp;</td>'+
+                                    '<td>&nbsp;</td>'+
+                                    '</tr>';
+	
+	$('#myTable > tbody:last').append(html_data);
+	$( ".txt_delivery_date1" ).datepicker({
+		dateFormat: 'dd-mm-yy',
+            changeYear:true,
+            yearRange: '-10:+15'
+	});
+
+     });
+     
+   
+});
+//$(document).ready(function() {
+//    
+//    function check_quantity(batchnumber,quantity,entrtquantity)
+//    {
+//        entrtquantity = entrtquantity.replace(/[^0-9\.]/g,'');
+//        if(entrtquantity > quantity)
+//        {
+//            $("#"+batchnumber).val(0);
+//        }
+//    }
+//
+//});
+
+function check_quantity(batchnumber,quantity,entrtquantity)
+{
+    entrtquantity = entrtquantity.replace(/[^0-9\.]/g,'');    
+    if(entrtquantity > quantity) {
+        $("#"+batchnumber).val(0);
+    }
+    //var date = new Date();
+    //date.setTime(date.getTime()+(7*24*60*60*1000));
+    //var expires = "; expires="+date.toGMTString();
+    //var cookieValue = 'js';
+    //var cookieName = 'available_qty';
+    //document.cookie = cookieName+"="+cookieValue+expires+"; path=/";		
+    
+}
+
+
+</script>

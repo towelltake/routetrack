@@ -1,0 +1,386 @@
+<?php
+/**
+* @name       addpdc.phtml
+* @since      26 jan, 2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function(){
+	
+	$('#btnbounce').click(function(){
+		
+		var ids = '';
+		var i 	= 0;
+		$('#hdntrancode').val('');
+		$('#hdncnttrancode').val('');
+		
+		$('#table-example input:checkbox.sel_checkbox_all').each( function() {
+			if(this.checked) {
+				//ids += this.value+'--'+$(this).parent().siblings(":first").text()+'$';
+				ids += this.value+'$';
+				i++;
+			}
+		})
+		if(ids)
+		{
+			$('#hdntrancode').val(ids);
+			$('#hdncnttrancode').val(i);
+		
+			var url = base_url+'/account/settlement/pdcgrid';
+			var values = $('#frmdetsec').serialize();
+			$.ajax({
+				url:url,
+				data :values+'&bounce=yes',
+				type:'post',
+				success:function(returndata) {					
+					$("#ddlbank").val("");
+					$("#txterprefno").val("");
+					$("#txtremark").val("");
+					$('#txtbankrefno').val("");
+					$("#txtslip_no").val("");
+					$("#txtdate_below").val("");
+					$('#ddlbank').trigger('liszt:updated');
+					$('#item-grid').html(returndata);
+					$("a[rel^='prettyPhoto']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allow_resize: false});
+				}
+			})
+		}
+		else
+		{
+			jAlert('Please Select A Record For Bounce.')
+		}
+	})
+	
+	$('#btnpopulate').click(function(){
+		
+		if($("#frmdetsec").valid())
+		{
+			var rid = $('#ddlroute').val();
+			var sid = $('#hdnsalesmancode').val();
+			var cid = $('#ddlcustomer').val();
+			var dt 	= $('#txtdate').val();
+			
+			var route_st = 0;
+			var url_st = base_url+'/account/settlement/getrotuestatus/routeid/'+rid+'/routedate/'+dt;
+			$.ajax({
+				url:url_st,				
+				type:'post',
+				success:function(data) {
+					if(data > 0) {
+						route_st = data;						
+						jAlert("Route Is Live, Can't Generate Cashier Receipt.");
+						return false;
+					}
+					else {
+						getdata(rid,sid,cid,dt);
+					}
+				}
+			})
+		}		
+	})
+	
+	$('#btnclear').click(function() {
+		
+		var ids = '';
+		var i   = 0;
+		var rid = $('#ddlroute').val();
+		var sid = $('#hdnsalesmancode').val();
+		
+		$('#hdntrancode').val('');
+		$('#hdncnttrancode').val('');
+		
+		$('#table-example input:checkbox.sel_checkbox_all').each( function() {
+			if(this.checked) {
+				//ids += this.value+'--'+$(this).parent().siblings(":first").text()+'$';
+				ids += this.value+'$';
+				i++;
+			}
+		})		
+		if(ids)
+		{
+			$('#hdntrancode').val(ids);
+			$('#hdncnttrancode').val(i);
+			
+			var url = base_url+'/account/settlement/pdcgrid';
+			var values = $('#frmdetsec').serialize();
+			$.ajax({
+				url:url,
+				data :values+'&add=yes',
+				type:'post',
+				success:function(returndata) {
+					
+					winloc(base_url+'/account/settlement/pdc/clr/1');					
+					$("#ddlbank").val("");
+					$("#txterprefno").val("");
+					$("#txtremark").val("");
+					$('#txtbankrefno').val("");
+					$("#txtslip_no").val("");
+					$("#txtdate_below").val("");
+					$('#ddlbank').trigger('liszt:updated');
+					//$('#item-grid').html(returndata);
+				}
+			})
+		}
+		else
+		{
+			jAlert('Please Select A Record For Clear.');
+		}
+	})
+	
+	$('#ddlroute').change(function(){
+		$.blockUI();		
+		getsalesman($('#ddlroute').val());
+		$.unblockUI();
+	})
+	$("a[class^='ico edit']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});
+})
+function getdata(rid,sid,cid,dt)
+{
+	//alert(dt.replace('/:-/g', "-"));
+	var  url = '<?php echo $this->itemgrid; ?>/key/'+rid+'/key1/'+sid+'/key2/'+dt+'/key3/'+cid;
+	
+	var values = $('#frmdetsec').serialize();
+	$.ajax({
+		url:url,
+		data :values,
+		type:'post',
+		beforeSend: function() {
+			$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+		},
+		success:function(returndata) {					
+			$('#item-grid').html(returndata);
+			$("#loader").html("");
+			$("a[rel^='prettyPhoto']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allow_resize: false});
+		}
+	})
+}
+function clearcontrol()
+{
+	$("#ddlroute").val("");
+	$("#ddlcustomer").val("");
+	$("#hdnsalesmancode").val("");
+	$("#txtsalesman").val("");
+	$('#txtbankrefno').val("");
+	$("#txtdate").val("");	
+	$("#txtslipno").val("");
+	$("#ddlbank").val("");
+	$("select").trigger("liszt:updated");	
+}
+    
+function getsalesman(routeid)
+{
+	$('#txtsalesman').val('');
+	$('#hdnsalesmancode').val('');
+	$('#ddlcustomer').html('');
+	
+	if(routeid == ''){
+		return false;
+	}
+	var  url = base_url+'/home/index/getsalesmanfromroutecode/routeid/'+routeid;
+	$.ajax({
+		url:url,
+		data:$("#frmdetsec").serialize(),
+		type:'post',		
+		success:function(data) {
+			var salesman_info = JSON.parse(data);
+			if (salesman_info == '')
+			{
+				return false;
+			}
+			$('#txtsalesman').val(salesman_info[0][0]['salesmanname1']);
+			$('#hdnsalesmancode').val(salesman_info[0][0]['salesmancode']);
+			
+			if(typeof(salesman_info[1]) == 'object')
+			{
+				$('<option/>').val('0').html('--- ALL ---').appendTo('#ddlcustomer');
+				for (i=0;i<salesman_info[1].length;i++) {
+					$('<option/>').val(salesman_info[1][i]['id']).html(salesman_info[1][i]['val']).appendTo('#ddlcustomer');					
+				}
+			}
+			$('#ddlcustomer').trigger('liszt:updated');
+		}
+	})
+}
+</script>
+<style>
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<form id="frmdetsec" name="frmdetsec" class="validate" novalidate action="" method="post">
+<div class="box" id="account_settlement_addpdc">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+        <h3><?php echo $this->translate->_('PDC Clearance')?></h3>
+    </div>
+    <div class="_50_3">
+		<div class="_10 save_btn">
+			<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"settlement","action"=>"pdc"), "default", true);?>')" >
+		</div>
+		<div class="_10 save_btn">
+				<!--<input class="border_none" type="submit" value="" name="btnsave" id="btnsave"> -->
+				&nbsp;
+		</div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"account","controller"=>"settlement","action"=>"pdc"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"account","controller"=>"settlement","action"=>"addpdc"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+
+<div class="content with-actions min_height_10">
+    <div class="_100">
+		<div class="clear"></div>
+    </div>
+    <div class="_100">
+		<div class="clear"></div>
+    </div>
+    <div class="_100">
+		<label class="_10 label_text_align margin_top_12">
+		   <?php echo $this->translate->_('Route').''.$this->required;?>
+		</label>
+		<div class="_30 margin_left_right_1">
+			<select id="ddlroute" name="ddlroute" class="required">
+				<option value="">--- Select ---</option>
+				<?php
+					for($i=0;$i<count($this->routeinfo);$i++)
+					{
+				?>
+					<option value="<?php echo $this->routeinfo[$i]['id'];?>"><?php echo $this->routeinfo[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+		<label class="_10 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+		</label>
+		<div class="_20 margin_right_2_2">
+			<input type="text" id="txtsalesman" name="txtsalesman" value="" readonly="readonly">
+		</div>
+		<label class="_10 label_text_align margin_top_12">
+		   <?php echo $this->translate->_('Date').''.$this->required;?>
+		</label>
+		<div class="_20 margin_right_2_2">
+			<input type="text" id="txtdate" name="txtdate" value="<?php echo $this->date;?>" readonly="readonly" class="required">
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_10 label_text_align margin_top_12">
+		   <?php echo $this->translate->_('Customer').''.$this->colan;?>
+		</label>
+		<div class="_30 margin_left_right_1">
+			<select id="ddlcustomer" name="ddlcustomer">
+				<option value="0">--- ALL ---</option>				
+			</select>
+		</div>
+		<div class="_10">&nbsp;</div>
+		<div class="_15"><input type="button" id="btnpopulate" name="btnpopulate" value="<?php echo $this->translate->_('POPULATE');?>" /></div>
+	</div>
+     <div class="clear space_50"></div>
+    <div class="_100">
+	<div id="loader"></div>
+	<div class="_100 margin_top_10" style="height:300px;overflow-y:auto">
+		<div id="item-grid"> <!--grid load here --> </div>
+	</div>
+    </div>	
+    <fieldset>
+    <div class="_100">
+		<label class="_15_3 margin_left_01 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Slip No').''.$this->colan;?>
+		</label>
+		<div class="_15">
+			<input type="text" id="txtslip_no" name="txtslip_no" value="" class="number">
+		</div>
+		<label class="_20 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Bank').''.$this->colan;?>
+		</label>
+		<div class="_20">
+			<select id="ddlbank" name="ddlbank">
+			<option value="">--- Select ---</option>
+			<?php
+				for($i=0;$i<count($this->bankinfo);$i++)
+				{
+			?>
+				<option value="<?php echo $this->bankinfo[$i]['id'];?>"><?php echo $this->bankinfo[$i]['val'];?></option>
+			<?php } ?>
+			</select>
+		</div>    
+		<label class="_10_1 margin_left_01 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Date').''.$this->colan;?>
+		</label>
+		<div class="_15">
+			<input type="text" id="txtdate_below" name="txtdate_below" value="" readonly="readonly">
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_15_3 label_text_align margin_top_12">
+			<?php echo $this->translate->_('ERP Reference No.').''.$this->colan;?>
+		</label>
+		<div class="_15 margin_right_2_2">
+			<input type="text" id="txterprefno" name="txterprefno" value="">
+		</div>
+		<label class="_20 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Bank Reference No.').''.$this->colan;?>
+		</label>
+		<div class="_20_1 margin_right_1">
+			<input type="text" id="txtbankrefno" name="txtbankrefno" value="">
+		</div>
+		<label class="_10_2 label_text_align margin_top_12">
+			<?php echo $this->translate->_('Remark').''.$this->colan;?>
+		</label>
+		<div class="_15 margin_right_2_2">
+			<input type="text" id="txtremark" name="txtremark" value="">
+		</div>
+	</div>
+	<div class="_100 space_20">&nbsp;</div>
+	<div class="_100">
+		<div class="_40">&nbsp;</div>
+		<div class="_10_2">
+			<input type="button" id="btnclear" name="btnclear" value="<?php echo $this->translate->_('CLEAR');?>"/>
+		</div>
+		<div class="_10_2">
+			<input type="button" name="btnbounce" id="btnbounce" value="<?php echo $this->translate->_('BOUNCE');?>">
+		</div>
+    </div>
+    </fieldset>
+    <div class="clear space_50"></div>
+</div>
+<input type="hidden" id="hdntrancode" name="hdntrancode" value="">
+<input type="hidden" id="hdncnttrancode" name="hdncnttrancode" value="">
+<input type="hidden" id="hdnsalesmancode" name="hdnsalesmancode" value="">
+<input type="hidden" id="hdninvono" name="hdninvono" value="">
+<input type="hidden" id="hdncntinvo" name="hdncntinvo" value="">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</div> <!-- End of .box -->
+</form>
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+	$( "#txtdate_below" ).datepicker({
+	    dateFormat: 'dd-mm-yy'
+	});
+
+    });
+});
+</script>

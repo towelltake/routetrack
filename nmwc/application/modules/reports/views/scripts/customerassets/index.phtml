@@ -1,0 +1,94 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({
+   	url:base_url+"/reports/customerassets/customerassetsdata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Visit Date');?>','<?php echo $this->translate->_('Visit Time');?>','<?php echo $this->translate->_( 'Customer Code');?>','<?php echo $this->translate->_('Customer Name');?>','<?php echo $this->translate->_('Pos Code');?>','<?php echo $this->translate->_('POS');?>','<?php echo $this->translate->_('SerialNo');?>','<?php echo $this->translate->_('POSStatus');?>','<?php echo $this->translate->_('Remarks');?>'],
+   	colModel:[
+		{name:'routecode',index:'routecode', width:75},
+		{name:'VisitDate',index:'VisitDate', width:75},
+        {name:'VisitTime',index:'VisitTime', width:75,align:'center'},
+   		{name:'CustomerCode',index:'CustomerCode', width:80},
+        {name:'Customer',index:'Customer', width:80},
+        {name:'POSCode',index:'POSCode', width:90},
+		{name:'POS',index:'POS', width:150},
+        {name:'SerialNo',index:'SerialNo', width:90},
+        {name:'POSStatus',index:'POSStatus', width:90},
+	{name:'Remarks',index:'Remarks', width:90}
+	],
+    <?php if($this->css == 'ar_') { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'VisitDate',
+	viewrecords:true,
+	sortorder: "asc",
+   	altRows : false,
+	grouping:true,  
+   groupingView :
+        {
+            groupField : ['routecode'],
+            groupColumnShow : [false],
+            groupCollapse : true,
+            groupOrder: ['asc'],
+            groupSummary : [true],
+            groupDataSorted : true,
+            showSummaryOnHide: true,
+	    groupText : ['','','<b style="text-transform: uppercase;">{0}</b>']
+        },
+    multiselect: false,
+	subGrid : false,
+	subGridUrl: base_url+"/reports/wastagestock/wastagestocksubgriddata/",
+    subGridModel: [{ name  : ['<?php echo $this->translate->_('Item Code');?>','<?php echo $this->translate->_('Item Description');?>','<?php echo $this->translate->_('Sales Qty');?>','<?php echo $this->translate->_('Sales Case Price');?>','<?php echo $this->translate->_('Sales Price');?>','<?php echo $this->translate->_('Std Sales Case Price');?>','<?php echo $this->translate->_('Std Sales Price');?>'], 
+                    width : [75,250,60,85,60,85,85],
+                    params: ['VisitDate','VisitTime','POSCode'],
+                    formatter: ['','','','number','number','number','number'],
+                    formatoptions: { decimalPlaces: decimalplaces }
+                   } 
+                  ]
+    /*grouping:true,
+    groupingView :
+    {
+        groupField : ['transactiondate'],
+        groupColumnShow : [true],
+        groupCollapse : true,
+        groupOrder: ['asc']
+    }*/
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+
+</script>

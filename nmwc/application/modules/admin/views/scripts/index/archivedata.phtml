@@ -1,0 +1,95 @@
+<?php
+/**
+* @name       index.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of website
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+?>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box">
+<form method="post" action="">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_4"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_administration.png">
+        <h3><?php echo $this->translate->_('Load Archive Data');?></h3>
+    </div>    
+</div>
+    <div class="content no-padding with-actions" style="min-height:400px;" id="lbl_left_margin_0" >
+	        <div class="_100">
+	    <div class="clean"></div>
+	</div>
+        <div class="_100">
+	    <label class="_20_1 margin_top_10 margin_left_zero label_text_align">
+		<?php echo $this->translate->_('Select Table').''.$this->colan;?>
+	    </label>	   
+            <div class="_30_1">
+                <select id="ddlselect_table" name="ddlselect_table">
+		    <option value="">--- Select ---</option>
+		    <?php		    
+			for($i=0;$i<count($this->table_data);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->table_data[$i]['id'];?>"><?php echo $this->table_data[$i]['value'];?></option>
+		    <?php } ?>
+		</select>
+            </div>	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 margin_top_10 margin_left_zero label_text_align">
+		<?php echo $this->translate->_('User').''.$this->colan;?>
+	    </label>	   
+            <div class="_30_1">
+                <select id="ddluser" name="ddluser">
+		    <option value="">--- Select ---</option>
+		    <?php		    
+			for($i=0;$i<count($this->user_data);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->user_data[$i]['id'];?>"><?php echo $this->user_data[$i]['value'];?></option>
+		    <?php } ?>
+		</select>
+            </div>	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 margin_top_15 label_text_align">
+		<?php echo $this->translate->_('From Date').''.$this->colan;?>
+	    </label>	   
+            <div class="_30_1">
+                <input name="txtstartdate" id="txtstartdate" class="text_align margin_top_5"  value="" type="text" >
+            </div>	    
+        </div>
+	<div class="_100">
+	    <label class="_20_1 margin_top_15 label_text_align">
+		<?php echo $this->translate->_('To Date').''.$this->colan;?>
+	    </label>	   
+            <div class="_30_1">
+                <input name="txtenddate" id="txtenddate" class="text_align"  type="text" value="" >
+            </div>	    
+        </div>
+	<div class="_100 margin_top_3 margin_bottom_10">
+	    <div style="width: 18%;" class="back_btn">&nbsp;</div>
+	    <div class="_5 label_text_align margin_0">&nbsp;</div>	   
+            <label class="_3 margin_left_3">
+                <input type="submit" id="btnload" class="back_btn" name="btnload" value="<?php echo $this->translate->_('Load');?>">
+            </label>	    
+        </div>	
+    </div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+</div> <!-- End of .box -->
+</div>
+
+<script>
+$(window).load(function() {
+    var d = new Date();
+    $('#txtstartdate').val(d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear());
+    $('#txtenddate').val(d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear());
+});
+</script>

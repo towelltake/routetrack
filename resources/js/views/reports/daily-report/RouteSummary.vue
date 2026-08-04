@@ -1,0 +1,534 @@
+<script setup>
+import { computed, ref, watch } from "vue";
+import { Head, router, usePage } from "@inertiajs/vue3";
+import VueSelect from "vue-select";
+import { useAmountFormatter } from "@/composables/useAmountFormatter";
+
+const props = defineProps({
+  filters: { type: Object, required: true },
+  sort: { type: Object, required: true },
+  scope: { type: Object, required: true },
+  filterScopeRows: { type: Array, required: true },
+  companyOptions: { type: Array, required: true },
+  regionOptions: { type: Array, required: true },
+  depotOptions: { type: Array, required: true },
+  areaOptions: { type: Array, required: true },
+  subAreaOptions: { type: Array, required: true },
+  routeOptions: { type: Array, required: true },
+  rows: { type: Array, required: true },
+  totals: { type: Object, required: true },
+  pagination: { type: Object, required: true },
+});
+
+const routeEndDate = ref(props.filters.route_end_date ?? "");
+const companyCode = ref(props.filters.cmpycode ? String(props.filters.cmpycode) : "");
+const regionCode = ref(props.filters.regionmstcode ? String(props.filters.regionmstcode) : "");
+const depotCode = ref(props.filters.depotcode ? String(props.filters.depotcode) : "");
+const areaCode = ref(props.filters.areacode ? String(props.filters.areacode) : "");
+const subAreaCode = ref(props.filters.subareacode ? String(props.filters.subareacode) : "");
+const routeCode = ref(props.filters.routecode ? String(props.filters.routecode) : "");
+const perPage = ref(props.pagination.per_page ?? props.filters.per_page ?? 25);
+const sortBy = ref(props.sort.by ?? "routecode");
+const sortDir = ref(props.sort.dir ?? "asc");
+const { amountDecimalPlaces } = useAmountFormatter();
+const t = usePage().props.translations.ui;
+
+const columnCount = 19;
+const amountColumns = new Set([
+  "totalcashsales",
+  "totalgcsales",
+  "totaltcsales",
+  "totalinvoiceamount",
+  "totalacctsreceivable",
+  "totalcash",
+  "totalchecks",
+  "totalorderamount",
+  "totalexpenses",
+  "inventoryvariance",
+  "cashvariance",
+]);
+
+const paginationLabel = computed(() => {
+  if (!props.pagination.total) {
+    return t.no_records_found;
+  }
+
+  return `${t.showing} ${props.pagination.from ?? 0} ${t.to} ${props.pagination.to ?? 0} ${t.of} ${props.pagination.total}`;
+});
+
+const scopedRows = computed(() => props.filterScopeRows ?? []);
+
+function optionListFor(targetKey, labelKey) {
+  const rows = scopedRows.value.filter((row) => {
+    if (targetKey !== "cmpycode" && companyCode.value && String(row.cmpycode) !== companyCode.value) return false;
+    if (targetKey !== "regionmstcode" && regionCode.value && String(row.regionmstcode) !== regionCode.value) return false;
+    if (targetKey !== "depotcode" && depotCode.value && String(row.depotcode) !== depotCode.value) return false;
+    if (targetKey !== "areacode" && areaCode.value && String(row.areacode) !== areaCode.value) return false;
+    if (targetKey !== "subareacode" && subAreaCode.value && String(row.subareacode) !== subAreaCode.value) return false;
+    if (targetKey !== "routecode" && routeCode.value && String(row.routecode) !== routeCode.value) return false;
+    return true;
+  });
+
+  return rows
+    .filter((row) => Number(row[targetKey] || 0) > 0 && row[labelKey])
+    .reduce((carry, row) => {
+      const id = Number(row[targetKey]);
+
+      if (!carry.some((option) => option.id === id)) {
+        carry.push({
+          id,
+          label: row[labelKey],
+        });
+      }
+
+      return carry;
+    }, [])
+    .sort((left, right) => left.id - right.id);
+}
+
+const filteredCompanyOptions = computed(() => optionListFor("cmpycode", "company_label"));
+const filteredRegionOptions = computed(() => optionListFor("regionmstcode", "region_label"));
+const filteredDepotOptions = computed(() => optionListFor("depotcode", "depot_label"));
+const filteredAreaOptions = computed(() => optionListFor("areacode", "area_label"));
+const filteredSubAreaOptions = computed(() => optionListFor("subareacode", "subarea_label"));
+const filteredRouteOptions = computed(() => optionListFor("routecode", "route_label"));
+
+const companyValue = computed({
+  get: () => findOption(filteredCompanyOptions.value, companyCode.value),
+  set: (option) => {
+    companyCode.value = option ? String(option.id) : "";
+  },
+});
+
+const regionValue = computed({
+  get: () => findOption(filteredRegionOptions.value, regionCode.value),
+  set: (option) => {
+    regionCode.value = option ? String(option.id) : "";
+  },
+});
+
+const depotValue = computed({
+  get: () => findOption(filteredDepotOptions.value, depotCode.value),
+  set: (option) => {
+    depotCode.value = option ? String(option.id) : "";
+  },
+});
+
+const areaValue = computed({
+  get: () => findOption(filteredAreaOptions.value, areaCode.value),
+  set: (option) => {
+    areaCode.value = option ? String(option.id) : "";
+  },
+});
+
+const subAreaValue = computed({
+  get: () => findOption(filteredSubAreaOptions.value, subAreaCode.value),
+  set: (option) => {
+    subAreaCode.value = option ? String(option.id) : "";
+  },
+});
+
+const routeValue = computed({
+  get: () => findOption(filteredRouteOptions.value, routeCode.value),
+  set: (option) => {
+    routeCode.value = option ? String(option.id) : "";
+  },
+});
+
+watch(filteredCompanyOptions, (options) => ensureValidSelection(companyCode, options));
+watch(filteredRegionOptions, (options) => ensureValidSelection(regionCode, options));
+watch(filteredDepotOptions, (options) => ensureValidSelection(depotCode, options));
+watch(filteredAreaOptions, (options) => ensureValidSelection(areaCode, options));
+watch(filteredSubAreaOptions, (options) => ensureValidSelection(subAreaCode, options));
+watch(filteredRouteOptions, (options) => ensureValidSelection(routeCode, options));
+
+function currentParams(page = 1) {
+  return {
+    route_end_date: routeEndDate.value || undefined,
+    cmpycode: companyCode.value || undefined,
+    regionmstcode: regionCode.value || undefined,
+    depotcode: depotCode.value || undefined,
+    areacode: areaCode.value || undefined,
+    subareacode: subAreaCode.value || undefined,
+    routecode: routeCode.value || undefined,
+    per_page: perPage.value,
+    sort_by: sortBy.value,
+    sort_dir: sortDir.value,
+    page,
+  };
+}
+
+function exportUrl(type) {
+  const params = new URLSearchParams();
+  const payload = currentParams();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
+  });
+
+  return `/reports/daily-report/route-summary/export/${type}?${params.toString()}`;
+}
+
+function openPdfExport() {
+  window.open(exportUrl("pdf"), "_blank", "noopener");
+}
+
+function exportExcel() {
+  window.location.href = exportUrl("excel");
+}
+
+function reload(page = 1) {
+  router.get(
+    "/reports/daily-report/route-summary",
+    currentParams(page),
+    {
+      preserveScroll: true,
+      preserveState: true,
+      replace: true,
+      only: ["filters", "sort", "companyOptions", "regionOptions", "depotOptions", "areaOptions", "subAreaOptions", "routeOptions", "rows", "totals", "pagination"],
+    }
+  );
+}
+
+function sort(column) {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = column;
+    sortDir.value = column === "routecode" ? "asc" : "desc";
+  }
+
+  reload();
+}
+
+function sortIcon(column) {
+  if (sortBy.value !== column) return "fa-sort text-muted";
+  return sortDir.value === "asc" ? "fa-sort-up" : "fa-sort-down";
+}
+
+function resetFilters() {
+  routeEndDate.value = new Date().toISOString().slice(0, 10);
+  companyCode.value = "";
+  regionCode.value = "";
+  depotCode.value = "";
+  areaCode.value = "";
+  subAreaCode.value = "";
+  routeCode.value = "";
+  perPage.value = 25;
+  sortBy.value = "routecode";
+  sortDir.value = "asc";
+  reload();
+}
+
+function formatAmount(value, digits = amountDecimalPlaces.value) {
+  return Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+function formatValue(column, value) {
+  if (amountColumns.has(column)) {
+    return formatAmount(value);
+  }
+
+  return Number(value || 0).toLocaleString();
+}
+
+function findOption(options, value) {
+  if (!value) {
+    return null;
+  }
+
+  return options.find((option) => String(option.id) === String(value)) ?? null;
+}
+
+function ensureValidSelection(model, options) {
+  if (!model.value) {
+    return;
+  }
+
+  if (!options.some((option) => String(option.id) === String(model.value))) {
+    model.value = "";
+  }
+}
+</script>
+
+<template>
+  <Head :title="t.route_summary" />
+
+  <BasePageHeading
+    :title="t.route_summary"
+    :subtitle="t.route_summary_report_note"
+  />
+
+  <div class="content">
+    <BaseBlock :title="t.global_report_filters ?? 'Global Report Filters'">
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-md-3">
+          <label class="form-label">{{ t.company }}</label>
+          <VueSelect
+            v-model="companyValue"
+            class="report-filter-select"
+            :options="filteredCompanyOptions"
+            label="label"
+            :placeholder="t.all_companies"
+            :clearable="true"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ t.region }}</label>
+          <VueSelect
+            v-model="regionValue"
+            class="report-filter-select"
+            :options="filteredRegionOptions"
+            label="label"
+            :placeholder="t.all_regions"
+            :clearable="true"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ t.branch_depot }}</label>
+          <VueSelect
+            v-model="depotValue"
+            class="report-filter-select"
+            :options="filteredDepotOptions"
+            label="label"
+            :placeholder="t.all_branches_depots"
+            :clearable="true"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ t.area }}</label>
+          <VueSelect
+            v-model="areaValue"
+            class="report-filter-select"
+            :options="filteredAreaOptions"
+            label="label"
+            :placeholder="t.all_areas"
+            :clearable="true"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ t.sub_area }}</label>
+          <VueSelect
+            v-model="subAreaValue"
+            class="report-filter-select"
+            :options="filteredSubAreaOptions"
+            label="label"
+            :placeholder="t.all_sub_areas"
+            :clearable="true"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ t.route }}</label>
+          <VueSelect
+            v-model="routeValue"
+            class="report-filter-select"
+            :options="filteredRouteOptions"
+            label="label"
+            :placeholder="t.all_routes"
+            :clearable="true"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ t.route_end_date }}</label>
+          <input v-model="routeEndDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2 d-grid gap-2">
+          <button class="btn btn-primary" @click="reload()">
+            <i class="fa fa-magnifying-glass me-1"></i> {{ t.load_report }}
+          </button>
+          <button class="btn btn-alt-secondary" @click="resetFilters">
+            <i class="fa fa-rotate-left me-1"></i> {{ t.reset }}
+          </button>
+        </div>
+      </div>
+    </BaseBlock>
+
+    <BaseBlock :title="t.route_summary">
+      <template #options>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-alt-success" @click="exportExcel">
+            <i class="fa fa-file-excel me-1"></i> {{ t.excel }}
+          </button>
+          <button type="button" class="btn btn-sm btn-alt-danger" @click="openPdfExport">
+            <i class="fa fa-file-pdf me-1"></i> {{ t.pdf }}
+          </button>
+          <div class="text-muted fs-sm">{{ paginationLabel }}</div>
+        </div>
+      </template>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-vcenter fs-sm">
+          <thead>
+            <tr>
+              <th class="cursor-pointer text-nowrap" @click="sort('routecode')">
+                {{ t.route }} ({{ t.salesman }}) <i class="fa ms-1" :class="sortIcon('routecode')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap" @click="sort('routestartdate')">
+                {{ t.route_start_date }} <i class="fa ms-1" :class="sortIcon('routestartdate')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap" @click="sort('routestarttime')">
+                {{ t.route_start_time }} <i class="fa ms-1" :class="sortIcon('routestarttime')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap" @click="sort('routeenddate')">
+                {{ t.route_end_date }} <i class="fa ms-1" :class="sortIcon('routeenddate')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap" @click="sort('routeendtime')">
+                {{ t.route_end_time }} <i class="fa ms-1" :class="sortIcon('routeendtime')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalinvdocuments')">
+                {{ t.total_sales_documents }} <i class="fa ms-1" :class="sortIcon('totalinvdocuments')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalinvretdocuments')">
+                {{ t.total_return_documents }} <i class="fa ms-1" :class="sortIcon('totalinvretdocuments')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalcashsales')">
+                {{ t.total_cash_sales }} <i class="fa ms-1" :class="sortIcon('totalcashsales')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalgcsales')">
+                {{ t.total_gc_sales }} <i class="fa ms-1" :class="sortIcon('totalgcsales')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totaltcsales')">
+                {{ t.total_tc_sales }} <i class="fa ms-1" :class="sortIcon('totaltcsales')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalinvoiceamount')">
+                {{ t.total_invoiced_amount }} <i class="fa ms-1" :class="sortIcon('totalinvoiceamount')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalardocuments')">
+                {{ t.total_receipt_documents }} <i class="fa ms-1" :class="sortIcon('totalardocuments')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalacctsreceivable')">
+                {{ t.total_receipt_amount }} <i class="fa ms-1" :class="sortIcon('totalacctsreceivable')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalcash')">
+                {{ t.total_cash }} <i class="fa ms-1" :class="sortIcon('totalcash')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalchecks')">
+                {{ t.total_cheques }} <i class="fa ms-1" :class="sortIcon('totalchecks')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalorderamount')">
+                {{ t.total_order_amount }} <i class="fa ms-1" :class="sortIcon('totalorderamount')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('totalexpenses')">
+                {{ t.total_expenses }} <i class="fa ms-1" :class="sortIcon('totalexpenses')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('inventoryvariance')">
+                {{ t.inventory_variance }} <i class="fa ms-1" :class="sortIcon('inventoryvariance')"></i>
+              </th>
+              <th class="cursor-pointer text-nowrap text-end" @click="sort('cashvariance')">
+                {{ t.cash_variance }} <i class="fa ms-1" :class="sortIcon('cashvariance')"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!rows.length">
+              <td :colspan="columnCount" class="text-center text-muted py-4">{{ t.no_records_found }}</td>
+            </tr>
+            <tr v-for="row in rows" :key="row.routekey">
+              <td class="fw-semibold">{{ row.route_label || "-" }}</td>
+              <td>{{ row.routestartdate || "-" }}</td>
+              <td>{{ row.routestarttime || "-" }}</td>
+              <td>{{ row.routeenddate || "-" }}</td>
+              <td>{{ row.routeendtime || "-" }}</td>
+              <td class="text-end">{{ formatValue("totalinvdocuments", row.totalinvdocuments) }}</td>
+              <td class="text-end">{{ formatValue("totalinvretdocuments", row.totalinvretdocuments) }}</td>
+              <td class="text-end">{{ formatValue("totalcashsales", row.totalcashsales) }}</td>
+              <td class="text-end">{{ formatValue("totalgcsales", row.totalgcsales) }}</td>
+              <td class="text-end">{{ formatValue("totaltcsales", row.totaltcsales) }}</td>
+              <td class="text-end">{{ formatValue("totalinvoiceamount", row.totalinvoiceamount) }}</td>
+              <td class="text-end">{{ formatValue("totalardocuments", row.totalardocuments) }}</td>
+              <td class="text-end">{{ formatValue("totalacctsreceivable", row.totalacctsreceivable) }}</td>
+              <td class="text-end">{{ formatValue("totalcash", row.totalcash) }}</td>
+              <td class="text-end">{{ formatValue("totalchecks", row.totalchecks) }}</td>
+              <td class="text-end">{{ formatValue("totalorderamount", row.totalorderamount) }}</td>
+              <td class="text-end">{{ formatValue("totalexpenses", row.totalexpenses) }}</td>
+              <td class="text-end">{{ formatValue("inventoryvariance", row.inventoryvariance) }}</td>
+              <td class="text-end">{{ formatValue("cashvariance", row.cashvariance) }}</td>
+            </tr>
+          </tbody>
+          <tfoot v-if="rows.length">
+            <tr class="table-light fw-semibold">
+              <td>{{ t.total }}</td>
+              <td colspan="4"></td>
+              <td class="text-end">{{ formatValue("totalinvdocuments", totals.totalinvdocuments) }}</td>
+              <td class="text-end">{{ formatValue("totalinvretdocuments", totals.totalinvretdocuments) }}</td>
+              <td class="text-end">{{ formatValue("totalcashsales", totals.totalcashsales) }}</td>
+              <td class="text-end">{{ formatValue("totalgcsales", totals.totalgcsales) }}</td>
+              <td class="text-end">{{ formatValue("totaltcsales", totals.totaltcsales) }}</td>
+              <td class="text-end">{{ formatValue("totalinvoiceamount", totals.totalinvoiceamount) }}</td>
+              <td class="text-end">{{ formatValue("totalardocuments", totals.totalardocuments) }}</td>
+              <td class="text-end">{{ formatValue("totalacctsreceivable", totals.totalacctsreceivable) }}</td>
+              <td class="text-end">{{ formatValue("totalcash", totals.totalcash) }}</td>
+              <td class="text-end">{{ formatValue("totalchecks", totals.totalchecks) }}</td>
+              <td class="text-end">{{ formatValue("totalorderamount", totals.totalorderamount) }}</td>
+              <td class="text-end">{{ formatValue("totalexpenses", totals.totalexpenses) }}</td>
+              <td class="text-end">{{ formatValue("inventoryvariance", totals.inventoryvariance) }}</td>
+              <td class="text-end">{{ formatValue("cashvariance", totals.cashvariance) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center pt-3">
+        <div class="text-muted fs-sm">{{ paginationLabel }}</div>
+        <div class="btn-group">
+          <button
+            class="btn btn-sm btn-alt-secondary"
+            :disabled="pagination.current_page <= 1"
+            @click="reload(pagination.current_page - 1)"
+          >
+            {{ t.previous }}
+          </button>
+          <button class="btn btn-sm btn-alt-secondary" disabled>
+            {{ pagination.current_page || 1 }} / {{ pagination.last_page || 1 }}
+          </button>
+          <button
+            class="btn btn-sm btn-alt-secondary"
+            :disabled="pagination.current_page >= pagination.last_page"
+            @click="reload(pagination.current_page + 1)"
+          >
+            {{ t.next }}
+          </button>
+        </div>
+      </div>
+    </BaseBlock>
+  </div>
+</template>
+
+<style lang="scss">
+@import "vue-select/dist/vue-select.css";
+@import "@scss/vendor/vue-select";
+</style>
+
+<style lang="scss" scoped>
+.report-filter-select {
+  :deep(.vs__dropdown-toggle) {
+    min-height: 38px;
+    height: 38px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  :deep(.vs__selected-options) {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  :deep(.vs__selected) {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0;
+  }
+
+  :deep(.vs__search) {
+    min-width: 0;
+  }
+}
+</style>

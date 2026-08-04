@@ -1,0 +1,66 @@
+
+<?php
+/**
+* @name       deletetrxndata.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<style>
+.margin_zero {margin-top:0px !important;}
+</style>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="grid_12">
+    <div class="box" id="datamanagement_index_deletetrxndata">
+          <div class="header">
+            <div class="_50_3 back_btn">
+				<img src="<?php echo $this->baseUrl()?>/public/images/icon_datamanagement.png" class="margin_top_4">
+				<h3><?php echo $this->translate->_('Delete Transaction By Route');?></h3>
+			</div>
+        </div>
+	<div class="clear"></div>
+	<div class="clear"></div>
+        <form id="frmsearch" name="frmsearch" class="validate" novalidate action="" method="post">
+            <div class="content with-actions">
+                <div class="_100 margin_top_50">
+                    <label class="_36 label_text_align margin_top_12">
+						<?php echo $this->translate->_('Route')." ".$this->required;?>
+					</label>
+					<div class="_30 margin_left_right_1">
+						<select id="ddldeletetrxn" name="ddldeletetrxn" class="required">
+							<option value="">--- Select ---</option>
+								<?php
+								for($i=0;$i<count($this->route_data);$i++){
+								?>
+								<option value="<?php echo $this->route_data[$i]['id'];?>"><?php echo $this->route_data[$i]['val'];?></option>
+								<?php
+							}
+							?>
+						</select>
+					</div>
+                </div>
+				<div class="_100">
+                    <label class="_36 label_text_align margin_top_12">
+						<?php echo $this->translate->_('Select Date')." ".$this->required;?>
+					</label>
+                    <div class="_30 margin_left_right_1">
+						<input type="text" id="txtstartdate" name="txtstartdate" value="" class="margin_top_5 required" readonly="readonly" >
+					</div>
+					<div class="_10">&nbsp;</div>
+					<div class="_30"><input type="submit" id="btndlt" name="btndlt" class="margin_top_5" value="<?php echo $this->translate->_('DELETE');?>"></div>					
+                </div>
+            </div>
+        </form>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->

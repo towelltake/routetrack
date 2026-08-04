@@ -1,0 +1,147 @@
+<?php
+/**
+* @name       index.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of website
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+
+if($this->cpanel_data['Customer Code With Route']['status'] == '1')
+{
+	$disabled 	= ' disabled="disabled';
+	$custcode	= $this->cpanel_data['Customer Code With Route']['flagid'];
+}
+elseif($this->cpanel_data['Customer Code With Depot']['status'] == '1')
+{
+	$disabled = ' disabled="disabled';
+	$custcode	= $this->cpanel_data['Customer Code With Depot']['flagid'];
+}
+elseif($this->cpanel_data['Customer Code With Route and Depot']['status'])
+{
+	$disabled = ' disabled="disabled';
+	$custcode	= $this->cpanel_data['Customer Code With Route and Depot']['flagid'];
+}
+elseif($this->cpanel_data['Normal Sequence Number']['status'] == '1')
+{
+	$disabled = ' disabled="disabled';
+	$custcode	= $this->cpanel_data['Normal Sequence Number']['flagid'];
+}
+else
+{
+	$disabled = '';
+}
+
+?>
+<script type="text/javascript">
+$(document).ready(function(){
+	<?php if($custcode) { ?>
+		$('#hdncustcode').val('<?php echo $custcode; ?>')
+	<?php } ?>
+});
+</script>
+<div class="clean"></div>
+
+    <div class="content with-actions">
+        <div class="_100">
+	    <div class="clean"></div>
+	</div>
+    <fieldset>
+	<legend><?php echo $this->translate->_('Customer');?></legend>
+	<div class="_100">
+	    <div class="_5_2">
+		<input type="checkbox" id="chkgrace_period" name="chkcpanelcustomer[]" <?php  echo $this->cpanel_data['Use Grace Period']['status'] == '1' ? 'checked' : '' ;?> value="<?php echo $this->cpanel_data['Use Grace Period']['flagid']?>">
+	    </div>
+	    <label class="_55 margin_top_10 text_align">
+		<?php echo $this->translate->_('Use Grace Period (For Credit Limit Days)');?>
+	    </label>
+	    <div class="_5_2">
+		<input type="checkbox" id="chkcust_route_seq" name="chkcpanel[]" <?php echo $this->cpanel_data["Customer Sequence"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Customer Sequence"]['flagid']; ?>">
+	    </div>
+	    <label class="_40 margin_top_10 text_align">
+		<?php echo $this->translate->_('Create Route Sequence For New Customers');?>
+	    </label>	    
+	</div>
+	<div class="_100">
+	    <div class="_5_2">
+		<input type="checkbox" id="chkjourneyplanlimit" name="chkcpanel[]" <?php echo $this->cpanel_data["Journey Plan Credit Limit"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Journey Plan Credit Limit"]['flagid']; ?>">
+	    </div>
+	    <label class="_55 margin_top_10 text_align">
+		<?php echo $this->translate->_('Use Journey Plan Credit Limit (Route Wise Limit For Customer)');?>
+	    </label>	
+	    <div class="_5_2">
+		<input type="checkbox" id="chkcust_details" name="chkcpanel[]" <?php echo $this->cpanel_data["Show Additional Customer Details"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Show Additional Customer Details"]['flagid']; ?>">
+	    </div>
+	    <label class="_40 margin_top_10 text_align">
+		<?php echo $this->translate->_('Show Additional Customer Details During Creation');?>
+	    </label>	    
+	</div>
+	<div class="_100">
+	    <div class="_5_2">
+		<input type="checkbox" id="chkcredit_execption" name="chkcpanel[]" <?php echo $this->cpanel_data["Use Credit Check Exception"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Use Credit Check Exception"]['flagid']; ?>">
+	    </div>
+	    <label class="_55 margin_top_10 text_align">
+		<?php echo $this->translate->_('Use Credit Check Exception');?>
+	    </label>	
+	    <div class="_5_2">
+		<input type="checkbox" id="chkchannel_master" name="chkcpanel[]" <?php echo $this->cpanel_data["Enabled Channel Master"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Enabled Channel Master"]['flagid']; ?>">
+	    </div>
+	    <label class="_40 margin_top_10 text_align">
+		<?php echo $this->translate->_('Enabled Channel Master');?>
+	    </label>	    
+	</div>	
+	
+    </fieldset>
+	
+	<!--
+    <fieldset>
+	<legend><?php echo $this->translate->_('GPS Data');?></legend>
+	<div class="_100">
+	    <div class="_5_2">
+		<input type="checkbox" id="chkupdate_gps" name="chkcpanel[]" <?php echo $this->cpanel_data["Update GPS Coordinates"]['status'] == '1' ? 'checked' : '' ;?> value="<?php  echo $this->cpanel_data["Update GPS Coordinates"]['flagid']; ?>">
+	    </div>
+	    <label class="_55 margin_top_10 text_align">
+		<?php echo $this->translate->_('Update Customer GPS Coordinates');?>
+	    </label>
+	    <div class="_5_2">
+		<input type="checkbox" id="chkgps_data" name="chkcpanelcustomer[]" <?php echo $this->cpanel_data['GPS Data']['status'] == '1' ? 'checked' : '' ;?> value="<?php echo $this->cpanel_data['GPS Data']['flagid']?>" >
+	    </div>
+	    <label class="_40 margin_top_10 text_align">
+		<?php echo $this->translate->_('Enforce Customer GPS Coordinates Check');?>
+	    </label>
+	</div>
+    </fieldset>
+	-->
+	
+    <fieldset>
+        <legend><?php echo $this->translate->_('Code Generation');?></legend>
+		<input type="hidden" name="hdncustcode" id="hdncustcode" value="" >
+	<div class="_100 margin_top_5">
+	    <div class="_5_2">
+		<input type="radio"  id="rdcodegen" name="rdbtncpanelcustomer[]" <?php echo $this->cpanel_data['Customer Code With Route']['status'] == '1' ? 'checked'.$disabled : $disabled ;?> value="<?php echo $this->cpanel_data['Customer Code With Route']['flagid']?>"  >
+	    </div>
+	    <label class="_55 margin_top_3">
+		<?php echo $this->translate->_('With Route Code');?>
+	    </label>
+	    <div class="_5_2"><input type="radio" id="rdcodegen" name="rdbtncpanelcustomer[]" <?php  echo $this->cpanel_data['Customer Code With Depot']['status'] == '1' ? 'checked'.$disabled : $disabled ;?> value="<?php echo $this->cpanel_data['Customer Code With Depot']['flagid']?>"></div>
+	    <label class="_40 text_align margin_top_3"><?php echo $this->translate->_('With Depot Code');?></label>
+	</div>
+	<div class="_100 margin_top_5">
+	    <div class="_5_2">
+			<input type="radio" id="rdcodegen" name="rdbtncpanelcustomer[]" <?php echo $this->cpanel_data['Customer Code With Route and Depot']['status'] == '1' ? 'checked'.$disabled : $disabled ;?> value="<?php echo $this->cpanel_data['Customer Code With Route and Depot']['flagid']?>" >
+	    </div>
+	    <label class="_55 text_align margin_top_3">
+		<?php echo $this->translate->_('With Route And Depot Code');?>
+	    </label>
+	    <div class="_5_2">
+			<input type="radio" id="rdcodegen" name="rdbtncpanelcustomer[]"  <?php echo $this->cpanel_data['Normal Sequence Number']['status'] == '1' ? 'checked'.$disabled : $disabled ;?> value="<?php echo $this->cpanel_data['Normal Sequence Number']['flagid']?>"  >
+		</div>
+	    <label class="_40 text_align margin_top_3">
+		<?php echo $this->translate->_('With Depot And Route Code');?>
+	    </label>
+	</div>
+    </fieldset>
+    </div>    

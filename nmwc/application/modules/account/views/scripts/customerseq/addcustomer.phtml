@@ -1,0 +1,110 @@
+<?php
+/**
+* @name       addcustomer.phtml
+* @since      17 Feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+$arrange_customer_url = $this->url(array("module"=>"account","controller"=>"customerseq","action"=>"arrangecustomer","week"=>$this->params['week'],"route"=>$this->main_route_id), "default", true);
+?>
+ 
+<script type="text/javascript">
+$(document).ready(function() {
+    
+	<?php if($this->more_salesman == 0) { ?>
+		$('#ddl_custseq_route').attr('disabled',true);
+		$('#ddl_custseq_route').trigger('liszt:updated');
+	<?php } ?>
+	
+    $('#ddl_custseq_route_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+    $('#ddl_custseq_route_chzn').addClass('chzn-container-active');
+    
+    $('#add').click(function() {	
+		if($('.sel_checkbox_all:checked').size()=='0') {
+			jAlert('Please Select Customer To Add.');
+			return false;
+		}	
+    })
+});
+
+function cust_seq()
+{
+    var route_id 	= document.getElementById("ddl_custseq_route").value;
+    var main_route_id 	= document.getElementById("main_route_id").value;
+    str =  document.URL;
+    
+    if(str.search("main_route_id") == '-1')
+	var strrep = str.replace(/route\/\d+/gi, "route\/"+route_id+"/main_route_id/"+main_route_id);
+    else
+	var strrep = str.replace(/route\/\d+/gi, "route\/"+route_id);    
+    
+    window.location =  strrep;
+}
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="account_transaction_addcustomer">
+<form name="frmoverview" id="frmoverview" class="validate" action="" method="post">
+<input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	<h3><?php echo $this->translate->_('Add Customer');?></h3>
+    </div>
+    <div class="_50_3">
+	&nbsp;
+    </div>
+</div>
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_100">
+	    <label class="_10 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Route').''.$this->colan;?>
+	    </label>
+	    <div class="_25">
+		<select name="ddl_custseq_route" id="ddl_custseq_route" onchange="cust_seq();">
+		    <option value="">--- Select ---</option>
+		    <?php for($i=0;$i<count($this->route_info);$i++) { ?>
+			<option <?php if($this->route_val == $this->route_info[$i]['id']) { echo 'selected';}?> value="<?php echo $this->route_info[$i]['id'];?>"><?php echo $this->route_info[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	</div>
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_100">
+            <?php echo  $this->partial('datagrid.phtml', $this); ?>
+        </div>
+
+        <div class="_100 margin_top_10 margin_bottom_10" align="center">
+            <div class="_25">
+                &nbsp;
+            </div>
+	    <input type="hidden" id="hdnroute_code" name="hdnroute_code" value="<?php echo $this->main_route_id;?>" >
+	    <input type="hidden" id="hdnweek_no" name="hdnweek_no" value="<?php echo $this->params["week"];?>" >
+            <div class="_25">
+		<?php if($this->show_add_button > 0) { ?>
+                 <input type="submit" name="add" id="add" value="<?php echo $this->translate->_('ADD');?>"/>
+		 <?php } else { echo '&nbsp;'; }?>
+            </div>
+            <div class="_25">
+                 <input type="button" name="back" id="back" value="<?php echo $this->translate->_('BACK');?>" onclick="winloc('<?php  echo $arrange_customer_url; ?>')"/>
+            </div>
+            <div class="_25">
+                &nbsp;
+            </div>
+        </div>
+    </div>
+    <div class="clear"></div>
+    <div class="clear"></div>
+    <input type="hidden" id="main_route_id" name="main_route_id" value="<?php echo $this->main_route_id; ?>">
+</form>
+ </div><!-- End of .box -->
+</div>

@@ -1,0 +1,427 @@
+<?php
+/**
+* @name       addsurvay.phtml
+* @since      30-01-12
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+if($this->params["edit"]=="yes")
+{
+    $lookupindex_url	= $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"addlookupindex","defkey"=>$this->params["id"]), "default", true);
+}
+else
+{
+    $lookupindex_url	= $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"addlookupindex"), "default", true);
+}
+//SFA_Comman::pre($this->formdata);
+?>
+<script type="text/javascript">
+    $(document).ready(function(){
+	
+	$("#txtservay_orderindex").focus();
+	
+	$('#btnsave').click(function(){
+	    if($('#frmdet').valid()){
+		if($("#txtres_decimal").val() != '' && ($("#txtres_decimal").val() < 1 || $("#txtres_decimal").val() > 3) && $('#ddlsurvey_type').val() == 1) {
+		    jAlert("Response Decimal Must Be Minimum 0 And Maximum 3.");
+		    return false;
+		}
+		if(($("#txtres_length").val() != '' && (parseFloat($("#txtres_length").val()) < 1 || parseFloat($("#txtres_length").val()) > 5))  && $('#ddlsurvey_type').val() == 1) {
+		    
+		    if(parseInt($("#txtres_length").val()) > 5) {
+			$("#txtres_length").val(5)
+		    }
+		    jAlert("Response Length Must Be Minimum 1 And Maximum 5.");	    
+		    return false;
+		}
+	    }
+	});	
+	
+	<?php if($this->params['id']) { ?>
+	    if($('#ddlsurvey_type').val() == 1 || $('#ddlsurvey_type').val() == 2)
+	    {
+		$("#txtres_length").attr("readonly",false);
+	    }
+	
+	<?php } ?>
+	$("#buttonedit").click(function() {
+	    
+	    var order_index 	= $("#txtservay_orderindex").val();
+	    var survey_prompt 	= encodeURIComponent($("#txtservay_prompt").val());
+	    var prompt_arbic	= encodeURIComponent($("#txtarbservay_prompt").val());
+	    var survey_type 	= 7;
+	    var lookup_type 	= 0;
+	    var lookup_index 	= $("#ddllook_index").val();
+	    var status 		= $("#ddlstatus").val();
+	    
+	    if($("#ddllook_index").val() > 0 && $("#ddllook_type").val() == 0 )
+	    {
+		var val = $("#ddllook_index").val();
+		var tmp = ('<?php echo $lookupindex_url; ?>/oi/'+order_index+'/sp/'+survey_prompt+'/spa/'+prompt_arbic+'/st/'+survey_type+'/lt/'+lookup_type+'/li/'+lookup_index+'/status/'+status+'/edit/yes/trankey/'+val);
+		popup(tmp,800,600);
+	    }
+	    else if($("#ddllook_type").val() != '1')
+	    {
+		jAlert('Please Select Lookup Index.');
+	    }
+	})
+	
+	$("#buttonadd").click(function() {
+	    
+	    var order_index 	= $("#txtservay_orderindex").val();
+	    var survey_prompt 	= encodeURIComponent($("#txtservay_prompt").val());
+	    var prompt_arbic	= encodeURIComponent($("#txtarbservay_prompt").val());
+	    var survey_type 	= 7;
+	    var lookup_type 	= 0;
+	    var lookup_index 	= $("#ddllook_index").val();
+	    var status 		= $("#ddlstatus").val();
+	    
+	    if($("#ddllook_type").val() == '0')
+	    {
+		var tmp = ('<?php echo $lookupindex_url; ?>/oi/'+order_index+'/sp/'+survey_prompt+'/spa/'+prompt_arbic+'/st/'+survey_type+'/lt/'+lookup_type+'/li/'+lookup_index+'/status/'+status);
+		popup(tmp,800,600);		
+	    }
+	    else if($("#ddllook_type").val() != '1')
+	    {
+		jAlert('Please Select Lookup Type.');
+	    }
+	})
+	
+	
+	$("#ddlsurvey_type").change(function(){
+	   
+	   var val = this.value;
+	   
+	    if(val == 1)
+	    {
+		$("#txtres_decimal").attr("readonly",false);
+		$("#txtres_length").attr("readonly",false);
+		$("#ddllook_type").attr("disabled",true);
+		$("#ddllook_index").attr("disabled",true);
+		
+		$("#txtres_decimal").addClass("required");
+		$("#txtres_decimal").addClass("number");
+		$("#txtres_length").addClass("number");
+		$("#txtres_length").addClass("required");
+		$("#ddllook_type").removeClass("required");
+		$("#ddllook_index").removeClass("required");
+		
+		$("#ddllook_type").val('');
+		$("#ddllook_index").val('');
+		
+		$("#txtres_decimal").val('2')
+		
+		$('select').trigger('liszt:updated');		
+	    }
+	    else if(val == 2)
+	    {
+		$("#txtres_length").attr("readonly",false);
+		$("#txtres_decimal").attr("readonly",true);
+		$("#ddllook_type").attr("disabled",true);
+		$("#ddllook_index").attr("disabled",true);
+		
+		$("#txtres_length").addClass("required");
+		$("#txtres_decimal").addClass("number");
+		$("#txtres_length").addClass("number");
+		$("#txtres_decimal").removeClass("required");		
+		$("#ddllook_type").removeClass("required");
+		$("#ddllook_index").removeClass("required");		
+		
+		$("#txtres_decimal").val('');
+		$("#ddllook_type").val('');
+		$("#ddllook_index").val('');
+		
+		$('select').trigger('liszt:updated');
+	    }
+	    else if(val == 7)
+	    {
+		$("#ddllook_type").attr("disabled",false);
+		$("#txtres_decimal").attr("readonly",true);		
+		$("#ddllook_index").attr("disabled",true);
+		$("#txtres_length").attr("readonly",true);
+		
+		$("#txtres_decimal").removeClass("required");
+		$("#txtres_decimal").removeClass("number");
+		$("#ddllook_index").removeClass("required");		
+		$("#ddllook_type").addClass("required");
+		$("#txtres_length").removeClass("required");
+		$("#txtres_length").removeClass("number");
+		
+		$("#txtres_decimal").val('');
+		//if ($.fn.chosen) {
+		//    $("select").chosen();
+		//}
+		
+		$("#txtres_length").val('');
+		
+		$('select').trigger('liszt:updated');
+	    }
+	    else
+	    {
+		$("#ddllook_type").attr("disabled",true);
+		$("#ddllook_index").attr("disabled",true);
+		$("#txtres_decimal").attr("readonly",true);
+		$("#txtres_length").attr("readonly",true);
+		
+		$("#ddllook_type").removeClass("required");
+		$("#ddllook_index").removeClass("required");
+		$("#txtres_decimal").removeClass("required");
+		$("#txtres_decimal").removeClass("number");
+		$("#txtres_length").removeClass("required");
+		$("#txtres_length").removeClass("number");
+		
+		$("#txtres_length").val('');		
+		$("#txtres_decimal").val('');
+		
+		$("#ddllook_type").val('');
+		$("#ddllook_index").val('');
+		
+		$('select').trigger('liszt:updated');
+	    }
+	    
+	});
+	
+	$("#ddllook_type").change(function() {
+	    
+	    var id = this.value;
+	    
+	    //$("#look_index").show();
+	    var  url = base_url+"/merchandize/index/getlookindex/id/"+id;
+	    var result;
+	    $.ajax({
+		    url:url,
+		    data:$("#frmdet").serialize(),
+		    type:'post',
+		    success:function(data){
+			$("#look_index").html(data);
+		    }
+	    })	    
+	});
+	<?php if($this->formdata['lookupindex'] > 0 && $this->formdata['lookuptype'] == 0) { ?>
+	
+	    //$("#look_index").show();
+	    var id 	= '<?php echo $this->formdata['lookuptype']; ?>';
+	    var lid	= '<?php echo $this->formdata['lookupindex']; ?>';
+	    
+	    var  url = base_url+"/merchandize/index/getlookindex/id/"+id+"/lid/"+lid;
+	    var result;
+	    $.ajax({
+		    url:url,
+		    data:$("#frmdet").serialize(),
+		    type:'post',		    
+		    success:function(data){						
+			$("#look_index").html(data);
+		    }
+		})
+	    
+	    $("#txtres_length").removeClass("required");
+	    $("#txtres_length").removeClass("number");
+	    
+	<?php } ?>
+	
+	
+	<?php if($this->formdata['surveyrectype'] == '1') { ?>
+	    
+	    var posval 		= '<?php echo $this->formdata['responsedecimalpos']; ?>';
+	    var surveyval 	= '<?php echo $this->formdata['surveyrectype']; ?>';
+	    
+	    $("#ddlsurvey_type").val(surveyval);	    
+	    $("#txtres_decimal").val(posval);
+	    $("#txtres_decimal").attr("readonly",false);
+	    $("#txtres_decimal").addClass("required");
+	    $("#txtres_decimal").addClass("number");
+	    
+	    $('select').trigger('liszt:updated');
+	    
+	<?php } ?>	
+    });
+// Below function is for checking response decimal value must be less then the response length
+function checkresponseval()
+{
+    if($("#txtres_decimal").val() != '' && ($("#txtres_decimal").val() < 1 || $("#txtres_decimal").val() > 3) && $('#ddlsurvey_type').val() == 1) {
+	jAlert("Response Decimal Must Be Minimum 0 And Maximum 3.");
+	return false;
+    }	
+    if(($("#txtres_length").val() != '' && (parseFloat($("#txtres_length").val()) < 1 || parseFloat($("#txtres_length").val()) > 5))  && $('#ddlsurvey_type').val() == 1) {
+	
+	if(parseInt($("#txtres_length").val()) > 5) {	    
+	    $("#txtres_length").val(5)
+	}
+	jAlert("Response Length Must Be Minimum 1 And Maximum 5.");	    
+	return false;
+    }
+}
+</script>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+    <div class="box" id="merchandize_index_addsurvey">
+	<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post" >
+	      <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+	    <div class="header">
+		<div class="_50_3 back_btn">
+		    <img src="<?php echo $this->baseUrl()?>/public/images/icon_merchandizing.png" class="margin_top_7">
+		    <h3><?php echo $this->translate->_('Survey Definition')?></h3>
+		</div>
+		<div class="_50_3">
+		    <div class="_10 save_btn">			    
+			<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"survey"),"default", true);?>')">
+		    </div>
+		    <div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+		</div>
+	    </div>
+	    <div id="nav_sub" class="ie_nav_sub">
+	    <div class="container_12">
+		<ul id="nav_main">
+		    <li class="current">
+			<ul style="display: block;">
+			    <li>
+				<a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"survey"),"default", true);?>"><?php echo $this->overview?></a>
+			    </li>
+			    <li class="last-child">
+				<a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"addsurvey"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+			    </li>
+			</ul>
+		    </li>
+		</ul>
+	    </div>
+	    </div>
+
+	    <div class="content with-actions ie_grid">
+		<div class="_100">
+		    <div class="clear"></div>
+		</div>
+		<div class="_100">
+		    <div class="clear"></div>
+		</div>
+		<div class="_100">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Code').''.$this->required;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<input type="text" id="txtcode" name="txtcode" value="<?php echo $this->formdata['surveydefkey']; ?>" readonly="readonly" class="required">
+		    </div>
+		</div>
+		<div class="_100">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Survey Order Index').''.$this->required;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<input type="text" maxlength="11" id="txtservay_orderindex" name="txtservay_orderindex" value="<?php echo $this->formdata['surveyindex']; ?>" class="required number">
+		    </div>
+		</div>
+		<div class="_100">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Survey Prompt').''.$this->required;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<input type="text" maxlength="50" id="txtservay_prompt" name="txtservay_prompt" value="<?php echo $this->formdata['surveyprompt']; ?>" class="required">
+		    </div>
+
+		</div>
+		<div class="_100">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Survey Prompt Arabic').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<input type="text" maxlength="50" id="txtarbservay_prompt" name="txtarbservay_prompt" value="<?php echo $this->formdata['arbsurveyprompt']; ?>" class="arb_text_align">
+		    </div>
+
+		</div>
+		<div class="_100 ">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Survey Type').''.$this->required;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<select id="ddlsurvey_type" name="ddlsurvey_type" class="required">
+			    <option value="">--- Select ---</option>
+			    <?php for($i=0;$i<count($this->record_type);$i++) { ?>
+				<option <?php if(isset($this->formdata['surveyrectype']) && $this->formdata['surveyrectype'] == $this->record_type[$i]['id'] ) { echo  'selected'; } ?> value="<?php echo $this->record_type[$i]['id'];?>"><?php echo $this->record_type[$i]['val'];?></option>
+			    <?php } ?>
+			</select>			
+		    </div>
+		</div>
+		<div class="_100">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Response Length').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<input type="text" id="txtres_length" name="txtres_length" readonly="readonly"  onblur="checkresponseval();" maxlength="2" value="<?php echo ($this->formdata['responselength'] == '0') ? '' : $this->formdata['responselength']; ?>" class="margin_top_5">
+		    </div>
+
+		</div>
+		<div class="_100 ">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Response Decimal').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<input type="text" class="number"  maxlength="10" id="txtres_decimal" name="txtres_decimal" onblur="checkresponseval();" readonly="readonly" maxlength="1" value="" <?php if($this->formdata['responsedecimalpos'] == '0' ||  $this->formdata['responsedecimalpos'] == '' ) { echo 'readonly="readonly"'; }   ?> >
+		    </div>
+		</div>
+		<div class="_100" id="add_edit">
+		    <label class="_36 margin_top_12 label_text_align" >
+			<?php echo $this->translate->_('Lookup Type').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<select id="ddllook_type" name="ddllook_type" <?php if($this->formdata['lookuptype'] == '' || $this->formdata['lookuptype'] == '1000') { echo 'disabled="disabled"'; }  ?> >
+			    <option value="">--- Select ---</option>
+			    <?php for($i=0;$i<count($this->looktype_data);$i++) { ?>
+				<option <?php if($this->formdata['lookuptype'] == $this->looktype_data[$i]['id'] )  { echo 'selected'; } ?> value='<?php echo $this->looktype_data[$i]['id'];?>' ><?php echo $this->looktype_data[$i]['val'];?></option>
+			    <?php } ?>
+			</select>
+		    </div>
+		    <div class="_10 margin_right_1">
+			<input class="margin_top_7" type="button" name="buttonadd" id="buttonadd" onclick="" value="<?php echo $this->translate->_('ADD') ?>" >
+		    </div>
+		    <div class="_10 margin_right_1">
+			<input class="margin_top_7" type="button" name="buttonedit" id="buttonedit" onclick="" value="<?php echo $this->translate->_('EDIT') ?>" >
+		    </div>
+		    
+		</div>
+		<div class="_100" id="look_index">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Lookup Index').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<select id="ddllook_index" name="ddllook_index" <?php if($this->formdata['lookuptype'] == '1000' || $this->formdata['lookuptype'] == 1) { echo 'disabled="disabled"'; }  ?> >
+			    <option value="">--- Select ---</option>			    
+			</select>
+		    </div>
+		</div>
+		<div class="_100" id="look_index">
+		    <label class="_36 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('Status').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_1">
+			<select id="ddlstatus" name="ddlstatus">
+			    <option <?php if($this->formdata['activestatus'] == "1" )  { echo 'selected'; } ?> value="1"><?php echo $this->translate->_('Active');?></option>
+			    <option <?php if($this->formdata['activestatus'] == "0" )  { echo 'selected'; } ?> value="0"><?php echo $this->translate->_('Inactive');?></option>
+			</select>
+		    </div>
+		</div>		
+		<div class="space_100">&nbsp;</div>
+	    </div>
+	    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+	    <input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>">
+	</form>
+    </div> <!-- End of .box -->
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $("a[class^='ico edit']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});
+});
+</script>

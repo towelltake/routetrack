@@ -1,0 +1,231 @@
+<?php
+/**
+* @name       index.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add currency
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+?>
+<script>
+
+    var def_curr_code 	= '<?php echo $this->formdata['curr_code'];?>';
+    var def_curr_name 	= '<?php echo $this->formdata['curr_name'];?>';
+    var def_curr_symbol = '<?php echo $this->formdata['curr_symbol'];?>';
+    var current_code	= '<?php echo $this->params["id"];?>';
+	
+    $(document).ready(function(){
+	
+	$("#txtaltcode").focus();
+	
+	$('#sbtnadd').click(function() {
+	   
+	   if($("#frmdetsec").valid())
+	    {
+	        var  url = base_url+'/basic/index/addcurrencydetail/';
+	        $.ajax({
+	    	url:url,
+	    	data:$("#frmdetsec").serialize(),
+	    	type:'post',
+	    	beforeSend: function() {
+	    	    $("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+	    	},
+	    	success:function(data){
+	    	    loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+	    	    $("#loader").html("");
+		    $('#ddlexchcode').val('');
+		    $('#txtexcrate').val('');
+		    
+		    $('select').trigger('liszt:updated');
+	    	}
+	        })
+	    }
+	});
+	
+	loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+	 
+    });
+   
+     function timeout_trigger() {
+	
+	  $('#chkdefault').attr('checked',false);
+       
+	}
+   
+    function CurrencyChecked(status)
+    {//net send dsk40 	$('#chkdefault').each(function(){    this.checked = true; });
+	
+	if(status == true)
+	    status = false;
+	else
+	    status = true;
+	
+	if(status && def_curr_code != current_code && def_curr_code > 0) {
+	    
+	    var str = def_curr_name;
+	
+	    jAlert('Default Currency Already Set For : '+str,'',function(){
+		setTimeout('timeout_trigger()', 100);
+		});	    
+	   
+	    
+	   // $('#div_check').removeClass('checkbox-checked');	    
+	}
+	else if(status && current_code =='' && def_curr_code > 0) {
+	    
+	    var str = def_curr_name;
+	
+	    jAlert('Default Currency Is Already Set : '+str,'',function (){
+		 setTimeout('timeout_trigger()', 100); 
+		});	    
+	   
+	   // $('#chkdefault').attr('checked',true);
+	  //  $('#div_check').removeClass('checkbox-checked');	    
+	}
+    }
+  
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="basic_index_currency">
+<form id="frmdetail" name="frmdetail" class="validate" novalidate action="" method="post">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_4"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_basics.png">
+        <h3><?php echo $this->translate->_('Currency')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"currency"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"currency"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"basic","controller"=>"index","action"=>"addcurrency"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+    <div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Details');?></legend>
+	    <div class="_100">
+		<label class="_25 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Currency Code').''.$this->required;?>
+		</label>
+		<div class="_25">
+		    <input type="text" class="required" readonly="readonly" id="txtcurrcode" name="txtcurrcode" value="<?php echo $this->formdata['txtcurrcode'];?>" >
+		</div>		
+			<label class="_25 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Alternate Code').''.$this->colan;?>
+			</label>
+			<div class="_25">
+				<input type="text" id="txtaltcode" maxlength="50" name="txtaltcode"  value="<?php echo $this->formdata['txtaltcode'];?>" >
+			</div>
+	    </div>		
+	    <div class="_100">
+			<label class="_25 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Currency Name').''.$this->required;?>
+			</label>
+			<div class="_25">
+				<input type="text" id="txtcurrname" class="required" maxlength="50" name="txtcurrname"  value="<?php echo $this->formdata['txtcurrname'];?>" >
+			</div>
+			<label class="_25 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Currency Name ('.$this->sec_lang.')').''.$this->colan;?>
+			</label>
+			<div class="_25">
+				<input type="text" id="txtarbcurname" name="txtarbcurname" maxlength="50" class="arb_text_align" value="<?php echo $this->formdata['txtarbcurname'];?>" >
+			</div>
+	    </div>
+		<div class="_100">
+			<label class="_25 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Currency Symbol').''.$this->colan;?>
+			</label>
+			<div class="_25">
+				<input type="text" id="txtcurrsymbol" name="txtcurrsymbol"  maxlength="10" value="<?php echo $this->formdata['txtcurrsymbol'];?>" >
+			</div>
+			<label class="_25 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Currency Symbol ('.$this->sec_lang.')').''.$this->colan;?>
+			</label>
+			<div class="_25">
+				<input type="text" id="txtarbcurrsymbol" name="txtarbcurrsymbol" maxlength="10" class="arb_text_align" value="<?php echo $this->formdata['txtarbcurrsymbol'];?>" >
+			</div>
+	    </div>	    
+	    <div class="_100">
+		<?php if($this->params["edit"]=="yes") { ?>			
+		    <label class="_25 margin_top_10 label_text_align ar_left_1">
+			<?php echo $this->translate->_('Created Date').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_top_10 date_color margin_right_1 ar_right_0"><?php echo $this->formdata['createddate']; ?></div>			
+		<?php } ?>
+		    <label class="_25 margin_top_7 label_text_align ar_left_0">
+			<?php echo $this->translate->_('Default Currency').''.$this->colan;?>
+		    </label>
+		    <div class="_25 margin_right_2_2"  id="div_check">
+			<input type="checkbox" id="chkdefault" name="chkdefault" <?php if($this->formdata['chkdefault'] == '1') {echo 'checked';} ?> value="1" onclick="CurrencyChecked(this.checked);" >
+		    </div>		
+	    </div>
+	     <div class="_100">
+		<label class="_25 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Currency Decimal Place').''.$this->required;?>
+		</label>
+		<div class="_25">
+		    <input name="txtdecplace" class="required number" maxlength="4" id="txtdecplace" type="text" value="<?php echo $this->formdata['txtdecplace'];?>">
+		</div>		
+	    </div>
+	</fieldset>
+    </div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+<?php if($this->params['id'] > 0) { ?>
+<div class="content with-actions min_height_10">
+<form id="frmdetsec" name="frmdetsec" class="validate" novalidate action="" method="post">
+    <fieldset>
+	<legend><?php echo $this->translate->_('Exchange Details');?></legend>
+	<div class="_100 margin_top_10">
+	    <input type="hidden" id="hidnCurrencyCode" name="hidnCurrencyCode" value="<?php echo $this->params['id']?>" >
+	    <label class="_20 label_text_align margin_top_12"><?php echo $this->translate->_('Exchange Currency').''.$this->required;?></label>
+	    <div class="_20">
+		<select id="ddlexchcode" name="ddlexchcode" class="required">
+		    <option value="">--- Select ---</option>
+		    <?php for($i=0;$i<count($this->currency_data);$i++) {?>
+			<option value='<?php echo $this->currency_data[$i]['id']; ?>' ><?php echo $this->currency_data[$i]['val']; ?></option>
+		    <?php } ?>		    
+		</select>		
+	    </div>
+	    <label class="_25 label_text_align margin_top_12"><?php echo $this->translate->_('Exchange Rate').''.$this->required;?></label>
+	    <div class="_20"><input class="required number amount_text_align" type="text" id="txtexcrate" name="txtexcrate" value=""></div>
+	    <div class="_10 save_btn"><input type="button" name="sbtnadd" id="sbtnadd" onclick="" value="<?php echo $this->add; ?>"></div>
+	</div>
+    </fieldset>
+    <?php //echo $this->partial('datagrid.phtml', $this); ?>
+    <div id="loader"></div>    
+    <div id="item-grid" class="content"> <!--grid load here --> </div>
+    <div class="clear"></div>
+</form>
+ </div>
+<?php } ?>
+</div> <!-- End of .box -->
+</div>

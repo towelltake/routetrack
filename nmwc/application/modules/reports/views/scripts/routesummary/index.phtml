@@ -1,0 +1,83 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({
+   	url:base_url+"/reports/routesummary/routesummarydata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route (Salesman)');?>','<?php echo $this->translate->_('Route Start Date');?>','<?php echo $this->translate->_('Route Start Time');?>','<?php echo $this->translate->_('Route End Date');?>','<?php echo $this->translate->_('Route End Time');?>','<?php echo $this->translate->_('Total Sales Documents');?>','<?php echo $this->translate->_('Total Return Documents');?>','<?php echo $this->translate->_('Total Cash Sales');?>','<?php echo $this->translate->_('Total GC Sales');?>','<?php echo $this->translate->_('Total TC Sales');?>','<?php echo $this->translate->_('Total Invoiced Amount');?>','<?php echo $this->translate->_('Total Receipt Documents');?>','<?php echo $this->translate->_('Total Receipt Amount');?>','<?php echo $this->translate->_('Total Cash');?>','<?php echo $this->translate->_('Total Cheques');?>','<?php echo $this->translate->_('Total Order Amount');?>','<?php echo $this->translate->_('Total Expenses');?>','<?php echo $this->translate->_('Inventory Variance');?>','<?php echo $this->translate->_('Cash Variance');?>'],
+   	colModel:[
+		{name:'routes',index:'routes', width:250},
+        {name:'routestartdate',index:'routestartdate', width:70},
+   		{name:'routestarttime',index:'routestarttime', width:70,align:'center'},
+        {name:'routeenddate',index:'routeenddate', width:70},
+        {name:'routeendtime',index:'routeendtime', width:70,align:'center'},
+		{name:'totalinvdocuments',index:'totalinvdocuments', width:70,align:'center'},
+        {name:'totalinvretdocuments',index:'totalinvretdocuments', width:70,align:'center'},
+        {name:'totalcashsales',index:'totalcashsales', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'totalgcsales',index:'totalgcsales', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'totaltcsales',index:'totaltcsales', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'totalinvoiceamount',index:'totalinvoiceamount', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'totalardocuments',index:'totalardocuments', width:70,align:'right'},
+        {name:'totalacctsreceivable',index:'totalacctsreceivable', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'totalcash',index:'totalcash', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'totalchecks',index:'totalchecks', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'totalorderamount',index:'totalorderamount', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'totalexpenses',index:'totalexpenses', width:70,align:'right',formatter: 'number'},
+        {name:'inventoryvariance',index:'inventoryvariance', width:70,align:'right',formatter: 'number'},
+		{name:'cashvariance',index:'cashvariance', width:70,align:'right',formatter: 'number'}
+	],
+    <?php if($this->session->lang == "ar_AR") { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+    footerrow : true,
+	userDataOnFooter : true,
+   	altRows : false,
+    grouping:false,
+    groupingView :
+    {
+        groupField : ['routecode'],
+        groupColumnShow : [true],
+        groupCollapse : true,
+        groupOrder: ['asc']
+    }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+
+</script>

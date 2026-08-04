@@ -1,0 +1,109 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trac-gps-routing-php
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - trac-gps-routing-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:latest
+    container_name: trac-gps-routing-nginx
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    volumes:
+      - ./:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - trac-gps-routing-network
+    depends_on:
+      - php
+
+  mysql:
+    image: mysql:8.0.36
+    container_name: trac-gps-routing-mysql
+    restart: unless-stopped
+    ports:
+      - "3311:3306"
+    environment:
+      MYSQL_DATABASE: trac_gps_routing
+      MYSQL_USER: trac_gps_user
+      MYSQL_PASSWORD: trac_gps_pass
+      MYSQL_ROOT_PASSWORD: ChangeThisRootPassword123
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - trac-gps-routing-mysql-data:/var/lib/mysql
+    networks:
+      - trac-gps-routing-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  postgres:
+    image: postgres:16
+    container_name: trac-gps-routing-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: trac_pg
+      POSTGRES_USER: trac
+      POSTGRES_PASSWORD: trac123
+    volumes:
+      - trac-gps-routing-postgres-data:/var/lib/postgresql/data
+    networks:
+      - trac-gps-routing-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U trac -d trac_pg
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: trac-gps-routing-osrm
+    restart: unless-stopped
+    command:
+      - osrm-routed
+      - --algorithm
+      - mld
+      - /data/gcc-states-latest.osrm
+    ports:
+      - "5001:5000"
+    volumes:
+      - ../osrm/data:/data:ro
+    networks:
+      - trac-gps-routing-network
+networks:
+  trac-gps-routing-network:
+    name: trac-gps-routing-network
+    driver: bridge
+
+volumes:
+  trac-gps-routing-mysql-data:
+    name: trac-gps-routing-mysql-data
+
+  trac-gps-routing-postgres-data:
+    name: trac-gps-routing-postgres-data

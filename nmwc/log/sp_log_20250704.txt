@@ -1,0 +1,84 @@
+
+CALL sp_ws_transactiondata('47699')
+
+CALL sp_ws_from_tablet_endday('47699','2025-07-04','13:26:13','1',0,'129.000','112.488','1231.29','0.000','0.000','0.000','241.488',0,'0.000','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('14','47699','450','43','50','0','2025-07-03','13:19','2025-07-03','13:21','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_routemaster('43','undefined','12758','1','1','1','22682','0','undefined','0','9922','1','','')
+
+CALL sp_ws_getdata_from_ardetail('47699','1','','578944','2025-05-10','64.711','0','20.0','44.711','0','0','0','0','0','250502458','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','3','','582964','2025-05-15','119.802','0','30.0','89.802','0','0','0','0','0','250504380','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','4','','578945','2025-05-10','22.365','0','20.0','2.365','0','0','0','0','0','250502459','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','5','','594838','2025-06-02','133.18','0','10.0','123.18','0','0','0','0','0','250600137','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','6','','589927','2025-05-27','92.79','0','24.0','68.79','0','0','0','0','0','250508174','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','7','','574102','2025-05-01','112.488','0','112.488','0.0','0','0','0','0','0','250500016','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','8','','580292','2025-05-12','134.208','0','10.0','124.208','0','0','0','0','0','250503160','50')
+
+CALL sp_ws_getdata_from_ardetail('47699','9','','574428','2025-05-03','36.799','0','15.0','21.799','0','0','0','0','0','250500201','50')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','4','43','995','0','1','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','4','43','1013','0','1','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','4','43','4276','0','0','1','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','488','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','992','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','993','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','994','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','996','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','997','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','999','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1000','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1002','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1003','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1004','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1008','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1009','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1011','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1013','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1015','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','1017','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','4320','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','4650','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','5475','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','5620','0','1','0','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('47699','9','5','43','6576','0','1','0','0')
+
+CALL sp_ws_getfrom_table_enddaydetail('47699','1','1','129','0')
+
+CALL sp_ws_instertion_tbl_synclog('50','43','47699','0','2')
+
+CALL sp_check_isroute_closed("47699")
+
+CALL recallpostsuggestedsalesinvoiceafterroutefilter("43")
+
+CALL sp_cron_average_sales_quantity("43")

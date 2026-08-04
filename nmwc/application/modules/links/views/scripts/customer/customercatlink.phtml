@@ -1,0 +1,245 @@
+<?php
+/**
+* @name       customercatlink.phtml
+* @since      07 feb, 2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+
+    $('#ddlcategory_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+    $('#ddlcategory_chzn').addClass('chzn-container-active');
+    
+    
+    $('#ddlselectedcustomer').dblclick(function() {
+	
+	var val = this.value;	
+	$("#ddlselectedcustomer option[value='"+val+"']").remove();	
+	$("#ddlcustomer option[value='"+val+"']").show();	
+    });
+    
+    
+    $("#ddlcustomer").dblclick(function() {
+	
+	$("#lblddlselectedcustomer").hide();
+	
+    });
+    
+    $("#btnsave").click(function() {
+	
+		if($("#frmdet").valid())
+		{
+			$("#lblddlselectedcustomer").hide();
+			
+			var i 	= 0;
+			var str 	= '';
+			$("#ddlselectedcustomer option").each(function()
+			{
+			str += $(this).val()+',';
+			i++;
+			});
+			
+			$("#hdnselectedcustomer").val(str);
+			$("#hdncount_customer").val(i);
+		}
+    });
+	
+	$("#btnloaddata").click(function() {
+	
+		if($("#frmdet").valid())
+		{
+			var catid 		= $('#ddlcategory').val();
+			var routeid 	= $('#ddlroute').val();
+			
+			if(routeid != '')
+			{
+				$('#ddlcustomer').html('');
+				$('#ddlselectedcustomer').html('');
+				
+				var  url = base_url+"/links/customer/getcustomerfromroute/catid/"+catid+"/routeid/"+routeid;
+				var result;
+				$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',		
+				success:function(data) {		    
+					var customer_list = JSON.parse(data);
+					if (customer_list == '')
+					{
+						return false;
+					}
+					// Below foe loop for the selected customer are stored in array for checking with all route customer.
+					if(typeof(customer_list[2]) == 'object') {
+					var arr = new Array();
+						for (i=0;i<customer_list[2].length;i++) {
+							arr[i] = customer_list[2][i]['customercode'];
+						}
+					}		    
+					
+					//<option value="<?php echo $this->selected_questions[$i]['id'];?>" selected="selected" class="movedElement1"><?php echo $this->selected_questions[$i]['val'];?></option>
+					
+					// For Select customer
+					var select_cust = customer_list[0];
+					for (i=0;i<select_cust.length;i++) {
+						if(typeof(customer_list[2]) == 'object'){			    
+							if($.inArray(select_cust[i]['id'],arr) != '-1')
+							{
+								$('<option class="movedElement1" selected="selected" style="display: none;"/>').val(select_cust[i]['id']).html(select_cust[i]['val']).appendTo('#ddlcustomer');
+							}
+							else
+							{
+								$('<option/>').val(select_cust[i]['id']).html(select_cust[i]['val']).appendTo('#ddlcustomer');
+							}
+						}
+						else
+						{
+							$('<option />').val(select_cust[i]['id']).html(select_cust[i]['val']).appendTo('#ddlcustomer');			    
+						}		       
+					}
+					
+					// For Selected customer		    
+					if(typeof(customer_list[1]) == 'object')
+					{
+						var selected_cust = customer_list[1];		    
+						for (i=0;i<selected_cust.length;i++) {
+						   $('<option class="movedElement1" selected="selected" />').val(selected_cust[i]['id']).html(selected_cust[i]['val']).appendTo('#ddlselectedcustomer');
+						}
+					}
+					
+						$('#ddlcustomer').transfer({	
+							to:'#ddlselectedcustomer',		//selector of second multiple select box
+							dblClick:true,				//true or false, activates double click transfer
+							addId:'#btn_move_cust',			//add buttong id
+							addAllId:'#btn_move_cust_all', 		// add all button id
+							removeId:'#btn_remove_cust', 		// remove button id
+							removeAllId:'#btn_remove_cust_all',	// remove all button id
+							tClass:'movedElement1'			//class to be added when option tranfered to another select.
+						});
+					}
+				})
+			}
+		}
+    });
+})
+</script>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="links_customer_customercatlink">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_links.png">
+        <h3><?php echo $this->translate->_('Category Key')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"links","controller"=>"customer","action"=>"customercatlink"), "default", true);?>')" >
+	</div>
+    <?php if($this->checkaccess("update")) { ?>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    <?php } ?>
+
+    </div>
+</div>
+<div class="clear"></div>
+<div class="clear"></div>
+
+
+<div class="content with-actions min_height_10">
+    <div class="_100">
+	<div class="clear"></div>
+    </div>
+    <div class="_100">
+	<div class="clear"></div>
+    </div>
+    <div class="_100">
+		<div class="_45 left">
+			<label class="_35 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Category Key').''.$this->required;?>
+			</label>
+			<div class="_50 margin_right_1">
+				<select id="ddlcategory" name="ddlcategory" class="required">
+				<option value="">--- Select ---</option>
+				<?php
+					for($i=0;$i<count($this->customercat_info);$i++)
+					{
+				?>
+					<option value="<?php echo $this->customercat_info[$i]['id'];?>"><?php echo $this->customercat_info[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+		</div>
+		<div class="_8">&nbsp;</div>
+		<div class="_45 left">
+			<label class="_20 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Route').''.$this->required;?>
+			</label>
+			<div class="_50 margin_right_1 margin_left_1">
+				<select id="ddlroute" name="ddlroute" class="required">
+				<option value="">--- Select ---</option>
+				<option value="0">--- ALL ---</option>
+				<?php
+					for($i=0;$i<count($this->route_info);$i++)
+					{
+				?>
+					<option value="<?php echo $this->route_info[$i]['id'];?>"><?php echo $this->route_info[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+			</div>
+		</div>
+    </div>
+	<div class="space_20 clear">&nbsp;</div>
+	<div class="_100">
+		<div class="_30_1">&nbsp;</div>
+		<div class="_70">
+			<input type="button" id="btnloaddata" name="btnloaddata" value="<?php echo $this->translate->_('LOAD DATA');?>" class="right" >
+		</div>		
+    </div>
+    <div class="space_20 clear">&nbsp;</div>
+    <div class="_100">	 
+	    <div class="_45 left">
+		<div style="width:75px;clear:both">
+		    <?php echo $this->translate->_('Customer').''.$this->colan;?>
+		</div>
+		<div class="simple_dropdown margin_top_10">
+		    <select id="ddlcustomer" name="ddlcustomer" multiple="multiple" size="15" style="height:200px">
+		    </select>
+		</div>
+	    </div>
+	    <div class="left">&nbsp;&nbsp;</div>
+	    <div class="left navigation_button">
+	       <input type="button" name="btn_move_cust" id="btn_move_cust" value="<?php echo $this->translate->_('moveone'); ?>" class="margin_top_50" >
+	       <input type="button" name="btn_move_cust_all" id="btn_move_cust_all" value="<?php echo $this->translate->_('moveall'); ?>" class="navigation_button margin_top_15" >
+	       <input type="button" name="btn_remove_cust" id="btn_remove_cust" value="<?php echo $this->translate->_('removeone'); ?>" class="navigation_button margin_top_15" >
+	       <input type="button" name="btn_remove_cust_all" id="btn_remove_cust_all" value="<?php echo $this->translate->_('removeall'); ?>" class="navigation_button margin_top_15" >
+	    </div>
+	    <div class="_45 left">		
+		<div style="width:135px;clear:both;">
+		    <?php echo $this->translate->_('Selected Customer').''.$this->colan;?>
+		</div>
+		<div class="simple_dropdown  margin_top_10">
+		    <select id="ddlselectedcustomer" name="ddlselectedcustomer[]" multiple="multiple" size="15" style="height:200px">
+		    </select>
+		    <label for="ddlselectedcustomer" id="lblddlselectedcustomer" name="lblddlselectedcustomer" generated="true" class="error" style="display: none;">This field is required.</label>
+		</div>
+	    </div>
+    </div>
+    <div class="space_300">&nbsp;</div>
+</div>
+<input type="hidden" id="hdncount_customer" name="hdncount_customer" value="" />
+<input type="hidden" id="hdnselectedcustomer" name="hdnselectedcustomer" value="" />
+</form>
+</div> <!-- End of .box -->
+</div>

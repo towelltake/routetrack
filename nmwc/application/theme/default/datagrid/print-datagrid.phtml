@@ -1,0 +1,181 @@
+<?php
+/**
+ 
+ * @since      Class available since Pagignation
+ * @version    Release: @1.0@
+ * @author     HC [harsh@elantechnologies.com]
+ * @author     MB [mayur.b@elantechnologies.com]
+ * @copyright  Elan technologies
+ *
+ * Short description : Inserted pagignation with multi search and sort functionalities.
+ *
+ *
+ */
+
+$this->paginator = $this->pagegridshow['paginator'];
+
+$grid_js_settings =  $this->pagegridshow['datagrid']['settings'];
+
+$grid_js_settings[] = $this->url();
+
+$this->showdatagrid = $this->pagegridshow['datagrid'];
+
+/*
+ * Added stylesheet for paging
+ */
+$this->headLink()->appendStylesheet($this->baseUrl().'/public/css/pagegrid_style.css');
+$datashowgrid = $this->showdatagrid['data'];
+
+?>
+
+
+
+
+	<!-- Content -->
+	
+	<div id="paging_grid">
+				
+					
+					
+<div class="grid_12">
+<div class="box">
+
+
+<div class="content" >
+		
+
+  <div class="top">
+  <?php
+  	// Check the data for the data grid display
+	
+	
+	if(isset($grid_js_settings['total_data']) && $grid_js_settings['total_data'] > 0)
+	{
+	?>
+	<table id="table-example" class="table">
+		<thead>
+		<tr>
+			
+			<?php
+		    /*
+		     * Display checkbox if is set to true
+		     */
+		    if($grid_js_settings['configuration_params']['show_selectbox'] == true) { 
+			echo '<th width="13"><input type="checkbox" onclick="toggleChecked(this.checked);" class="checkbox" /></th>';
+		    }
+		    
+		    $colsname_int = 0;
+			
+			/*
+			* Set default sort order images
+			*/
+			$grid_js_settings['order_imagetype'] = "sorting";
+			
+			
+			
+			
+			/*
+			* Set sorting images
+			*/
+			if(!is_null($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="asc")
+			{
+				$grid_js_settings['order_imagetype'] = "sorting_desc";
+			}
+			else if(!is_null($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="desc")
+			{
+				$grid_js_settings['order_imagetype'] = "sorting_asc";
+			}
+			
+			
+			
+			
+			
+			
+		    
+			$data_display_collection = "";
+			
+			//print_r($this->showdatagrid['columns']); die();
+			
+			foreach($this->showdatagrid['columns'] as $key => $val)
+			{
+				$colnameshow = "";
+				if(is_integer($key))
+				{
+					$colnameshow = $val;
+				}
+				else
+				{
+					$colnameshow = $key;
+				}
+				$colnameshow = $val;
+				
+				
+				/*
+				* Prepare data grid columns heading with sorting parameters
+				*/
+				if(!is_null($grid_js_settings['order_columns_number']) && $grid_js_settings['order_columns_number']==$colsname_int)
+				{
+					$data_display_collection.= "<th class='".$grid_js_settings['order_imagetype']."'>";
+				
+				    $data_display_collection.= "<a href='".$this->url(array('order'=> $colsname_int.'_'.$grid_js_settings['order_type']))."'>".ucfirst($colnameshow)." </a>";
+				}
+				else
+				{
+					$data_display_collection.= "<th class='sorting'>";
+					
+				$data_display_collection.= "<a href='".$this->url(array('order'=> $colsname_int.'_asc'))."'>"
+						.ucfirst($colnameshow)."</a>";
+
+				}
+				$data_display_collection.= "</th>";
+				
+				
+				$colsname_int++;
+			}
+			echo $data_display_collection;
+		  
+		    ?>
+										</tr>
+									</thead>
+									<tbody>
+			<?php
+			/*
+			 * fill data array in table body
+			 */
+			
+			for($k=0;$k<count($datashowgrid);$k++)
+			{
+				
+				echo "<tr class='gradeA' >";
+				foreach($datashowgrid[$k] as $key => $val)
+				{
+					echo "<td>";
+					if($val) {					
+						echo $val;					
+					}
+					else
+					{
+						echo "&nbsp;";
+					}
+					echo "</td>";
+				}
+				echo "</tr>";
+			}
+			?>
+			</tbody>
+		</table>
+                
+		</div> <!-- End of .content -->
+		<?php
+	}else{
+		echo '<div class="clear_only nodata_message"><b>'.$grid_js_settings['configuration_params']['nodata_message']."</b></div>";
+	}
+	?>
+						</div>
+							<div class="clear"></div>
+						</div> <!-- End of .box -->
+					</div> <!-- End of .grid_12 --><!-- End of .grid_12 -->
+					
+		  <div class="clean"></div>
+					
+	</div>

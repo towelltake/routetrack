@@ -1,0 +1,159 @@
+<?php
+/**
+* @name       addpayment.phtml
+* @since      06-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* 
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+
+?> 
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+<div class="header">    
+    <div class="_50_3 back_btn">
+	<img class="margin_top_10"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+        <h3><?php echo $this->translate->_('Add Payment Detail')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"index","action"=>"invoice"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>    
+<div id="ie_spacer" ></div>
+    
+<div class="content with-actions ie_grid">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	
+	<div class="_100">
+	    <label class="_20_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('HHC Invoice No').''.$this->colan;?>
+	    </label>
+	    <div class="_20">
+		<input type="text" id="txt_hhc_invoice_no" name="txt_hhc_invoice_no" value="100098">
+	    </div>
+	    <label class="_20_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('Doc Date').''.$this->colan;?>
+	    </label>
+	    <label class="_20" left ">
+		<input type="text" id="txt_doc_date" name="txt_doc_date" value="01/09/2011">
+	    </label>
+	    
+	    
+	    <label class="_20_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('Invoice Amount').''.$this->colan;?>
+	    </label>
+	    <div class="_20">
+		<input type="text" id="txt_invoice_amount" name="txt_total_amount_paid" value="1200">
+	    </div>
+	    <label class="_20_1 label_text_align margin_top_20">
+		<?php echo $this->translate->_('Total Amount Paid').''.$this->colan;?>
+	    </label>
+	    <label class="_20" left ">
+		<input type="text" id="txt_total_amount_paid" name="txt_total_amount_paid" value="1000">
+	    </label>
+	    
+	</div>
+	
+	<div class="clear_only space_20"></div>
+	<fieldset>
+	    
+	    
+	    <div class="_100 margin_top_20">
+		<label class="_20_1 margin_top_20 label_text_align">
+		    <?php echo $this->translate->_('Paymente Mode').''.$this->colan;?>
+		</label>
+		<div class="_20 margin_top_7">
+		    <select id="ddlpaymentmode" name="ddlpaymentmode" >
+		    <option value="">--- Select ---</option>
+		    <?php		    
+			for($i=0;$i<count($this->paymentmode);$i++)
+			{
+		    ?>
+			    <option value="<?php echo $this->paymentmode[$i]['id'];?>"><?php echo $this->paymentmode[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+		</div>
+		
+		<label class="_20_1 margin_top_20 label_text_align">
+		    <?php echo $this->translate->_('Amount').''.$this->colan;?>
+		</label>
+		<div class="_20">
+		   <input type="text" id="txt_amount" name="txt_amount" value="120">
+		</div>
+	    </div>
+	    
+	    <div class="_100">
+		<label class="_20_1 margin_top_20 label_text_align">
+		    <?php echo $this->translate->_('Cheque Number').''.$this->colan;?>
+		</label>
+		<div class="_20">
+		   <input type="text" id="txt_cheque_number" name="txt_cheque_number" value="6500987">
+		</div>
+		
+		<label class="_20_1 margin_top_20 label_text_align">
+		    <?php echo $this->translate->_('Cheque Date').''.$this->colan;?>
+		</label>
+		<div class="_20">
+		   <input type="text" id="txt_check_date" name="txt_check_date" value="12/12/2011">
+		</div>
+		
+	    </div>
+	    
+	    <div class="_100">
+		<label class="_20_1 margin_top_20 label_text_align">
+		    <?php echo $this->translate->_('Drawer Name').''.$this->colan;?>
+		</label>
+		<div class="_20 margin_top_7">
+		    <select id="ddldrawername" name="ddldrawername" >
+		    <option value="">--- Select ---</option>
+		    <?php		    
+			for($i=0;$i<count($this->drawername);$i++)
+			{
+		    ?>
+			    <option value="<?php echo $this->drawername[$i]['id'];?>"><?php echo $this->drawername[$i]['val'];?></option>
+		    <?php } ?>
+		    </select>
+		</div>
+	    </div>
+	    
+	</fieldset>
+	
+	<div class="clear"></div>
+	<div class="_100">
+		<?php echo $this->partial('datagrid.phtml', $this); ?>
+	</div>
+	
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+	$( "#txt_check_date" ).datepicker({
+	    dateFormat: 'dd-mm-yy'
+	});
+    });
+});
+</script>

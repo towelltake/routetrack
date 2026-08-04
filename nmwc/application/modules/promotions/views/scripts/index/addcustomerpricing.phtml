@@ -1,0 +1,119 @@
+<?php
+/**
+* @name       page.phtml
+* @since      31-01-2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add prmotion pricing
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+$promo_plan_url = $this->url(array("module"=>"promotions","controller"=>"index","action"=>"customerpriceplan"), "default", true);
+?>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="promotion_index_addcustomerpricing">
+<?php if(SFA_Message::isSetMsg()) {  ?>
+<div class="alert success">
+    <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+</div>
+<?php } ?>
+<form class="validate" method="post" action="" novalidate="novalidate">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_promotions.png">
+	<h3><?php echo $this->title;?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+		<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"promotions","controller"=>"index","action"=>"customerpricing"),"default", true);?>')">
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"index","action"=>"customerpricing"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"index","action"=>"addcustomerpricing"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content with-actions ie_grid min_height_10">
+
+    <div class="_100">
+	 <label class="_40 margin_top_17 label_text_align">
+	    <?php echo $this->translate->_('Pricing Plan Key').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <input name="txtpricing_key" id="txtpricing_key" type="text" value="1" >
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_40 margin_top_17 label_text_align">
+	    <?php echo $this->translate->_('Description').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <input name="txtdesc" id="txtdesc" type="text" class="required" value="BIEN-ETRE 1/2L WHITE">
+	</div>
+    </div>
+    <div class="_100 margin_bottom_5">&nbsp;</div>
+    <div class="_100 margin_bottom_5">
+	 <label class="_40 margin_top_17 label_text_align">
+	    <?php echo $this->translate->_('Description ('.$this->sec_lang.')').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <input name="txtdesc" id="txtdesc" type="text" class="required"  value="BIEN-ETRE 1/2L WHITE">
+	</div>
+    </div>
+    <div class="_100">
+	<label class="_40 margin_top_12 label_text_align">
+	   <?php echo $this->translate->_('Status').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <select id="ddlstatus" name="ddlstatus">
+		<option value="<?php echo $this->translate->_('Active');?>"><?php echo $this->translate->_('Active');?></option>
+		<option value="<?php echo $this->translate->_('Inactive');?>"><?php echo $this->translate->_('Inactive');?></option>
+	    </select>
+	</div>
+    </div>
+    <div class="_100 margin_bottom_10">&nbsp;</div>
+    <fieldset class="fieldset_effect">
+	<legend class="ttl" ><?php echo $this->translate->_('Customer Promotion Plan');?></legend>
+	<hr id="ie_hr" >
+	<div class="_5 clear_only">
+	    <input class="border_none" type="button" value="" id="btnadd" onclick="popup('<?php echo $promo_plan_url;?>',800,500);">
+	</div>
+	<div class="_100">
+	    <?php echo $this->partial('datagrid.phtml', $this); ?>
+	</div>
+	</fieldset>
+
+</div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+</div>
+</div> <!-- End of .box -->
+
+<script type="text/javascript">
+$(window).load(function() {
+    $("a[class^='ico edit']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});
+    $("#btncancel").click(function() {
+	parent.eval('$.prettyPhoto.close()');
+    });
+});
+</script>

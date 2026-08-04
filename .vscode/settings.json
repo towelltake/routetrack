@@ -1,0 +1,36 @@
+{
+  "editor.formatOnSave": true,
+
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  /* ---------- PHP ---------- */
+  "[php]": {
+    "editor.defaultFormatter": "lkrms.pretty-php"
+  },
+
+  /* ---------- Intelephense (Laravel friendly) ---------- */
+  "intelephense.environment.includePaths": [
+    "vendor/laravel/framework/src"
+  ],
+
+  "intelephense.diagnostics.undefinedMethods": false
+}

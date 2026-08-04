@@ -1,0 +1,86 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+    var column = <?php echo json_encode($this->column); ?>;
+    //console.log(column);
+    var header = <?php echo json_encode($this->header); ?>;
+    //console.log(header);
+    var display_header_config = [];
+    for(var i=0; i < header.length; i++)
+    {
+        display_header_config.push({startColumnName:header[i]["column"],titleText:'<b>'+header[i]["title"]+'</b>', numberOfColumns:12});
+    }
+    //console.log(display_header_config);
+    var column_config = <?php echo json_encode($this->column_config); ?>;
+    //console.log(column_config);
+    var display_column_config = [];
+    for(var i=0; i < column_config.length; i++)
+    {
+        if(column_config[i] != "itemcode" && column_config[i] != "itemdescription") {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:75, summaryType:'sum',sortable:false});
+        } else if(column_config[i] == "itemcode") {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:70});
+        } else if(column_config[i] == "itemdescription") {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:250});
+        } else {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:120});
+        }
+    }
+    // console.log(display_column_config);
+    
+    jQuery("#search").jqGrid({        
+        url:base_url+"/reports/dataitemdistributionmonthly/itemdis/",
+        datatype: "json",
+        colNames:column,
+        colModel:display_column_config,
+        <?php if($this->css == 'ar_') { ?>
+            direction :"rtl", 
+        <?php } ?>
+        height: 'auto',
+        width: 'auto',
+        rowNum:eval(RP_NOOFRECORDSHOW),
+        rowList:eval(RP_ROWLISTSHOW),
+        //  loadonce:true,
+        pager: '#pagersr',
+        sortname: 'routecode',
+        viewrecords:true,
+        sortorder: "asc",
+        footerrow : true,
+        userDataOnFooter : true,
+        altRows : false,
+        //recordtext: 'Bill(s) {0} - {1} ',
+        grouping:true,        
+        groupingView :
+        {
+            groupField : ['routecode','customercategory','majorcategorycode','customercode'],
+            groupColumnShow : [false,false,false,false],
+            groupCollapse : true,
+            groupOrder: ['asc','asc','asc','asc'] ,
+            groupSummary : [false,false,false,true],
+            groupDataSorted : true,
+            showSummaryOnHide: false
+        }
+    });
+    jQuery("#search").jqGrid('navGrid','#pagersr',
+    {
+        edit:false,add:false,del:false,search:false,refresh:false
+    },
+    {}, // edit options
+    {}, // add options
+    {}, //del options
+    {multipleSearch:false,showQuery: false} // search options,
+     
+    
+    );
+    jQuery("#search").jqGrid('setGroupHeaders', {
+      useColSpanStyle: true, 
+      groupHeaders:display_header_config
+    });
+
+
+
+</script>

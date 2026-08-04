@@ -1,0 +1,248 @@
+<?php
+/**
+* @name       reports.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add report setting for route
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $('#ddldeposit_rpt_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+    $('#ddldeposit_rpt_chzn').addClass('chzn-container-active');
+});
+</script>
+<div id="organization_route_report">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('EOD Deposit Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddldeposit_rpt" name="ddldeposit_rpt">
+			<?php
+				for($i=0;$i<count($this->print_option);$i++)
+				{
+				?>
+					<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddldeposit_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+			<?php } ?>
+			</select>
+		</div>        
+		<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD Sales Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddldeodsales_rpt" name="ddldeodsales_rpt">
+			<?php
+				for($i=0;$i<count($this->print_option);$i++)
+				{
+				?>
+					<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddldeodsales_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+			<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('Route Review Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlroutereview_rpt" name="ddlroutereview_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlroutereview_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+				</select>
+		</div>        
+		<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD Rtn/Exch Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlrtnexch_rpt" name="ddlrtnexch_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlrtnexch_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('Route Activity Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlrouteact_apt" name="ddlrouteact_apt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlrouteact_apt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>        
+		<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD Placements Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlplacements_rpt" name="ddlplacements_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+						?>
+							<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlplacements_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('EOD Settlement Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlsettlements_rpt" name="ddlsettlements_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlsettlements_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>        
+		<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD No Sale Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlnosale_rpt" name="ddlnosale_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlnosale_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('EOD Balance Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlbalance_rpt" name="ddlbalance_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlbalance_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+		<label class="_25_1 margin_top_12 label_text_align">
+		   <?php echo $this->translate->_('EOD ROA Summary').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddleodroa_rpt" name="ddleodroa_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddleodroa_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('Non Dell Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlnondell_rpt" name="ddlnondell_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlnondell_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>        
+		 <label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD Exception Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+		  <select id="ddleodexcp_rpt" name="ddleodexcp_rpt">
+				<?php
+					for($i=0;$i<count($this->print_option);$i++)
+					{
+					?>
+						<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddleodexcp_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+					<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('EOD Price Change Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlpricechng_rpt" name="ddlpricechng_rpt">
+				<?php
+				for($i=0;$i<count($this->print_option);$i++)
+				{
+				?>
+					<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlpricechng_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+		<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD Promotions Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlpromotion_rpt" name="ddlpromotion_rpt">
+				<?php
+				for($i=0;$i<count($this->print_option);$i++)
+				{
+				?>
+					<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlpromotion_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+	</div>
+	<div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align ">
+			<?php echo $this->translate->_('EOD Non Scanned Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlnonscanned_rpt" name="ddlnonscanned_rpt">
+				<?php
+				for($i=0;$i<count($this->print_option);$i++)
+				{
+				?>
+					<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlnonscanned_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>        
+		<label class="_25_1 margin_top_12 label_text_align">
+			<?php echo $this->translate->_('EOD OdomLog Report').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+			<select id="ddlodomlog_rpt" name="ddlodomlog_rpt">
+				<?php
+				for($i=0;$i<count($this->print_option);$i++)
+				{
+				?>
+					<option <?php echo $this->print_option[$i]['id'] == $this->formdata_report['ddlodomlog_rpt'] ? 'selected' : '' ?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+				<?php } ?>
+			</select>
+		</div>
+	</div>
+</div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">

@@ -1,0 +1,273 @@
+
+<?php
+/**
+* @name       addrouteitemgroup.phtml
+* @since      6 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* This page is for the add item in route groue.
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<style>
+.margin_zero {margin-top:0px !important;}
+</style>
+
+<script type="text/javascript">
+var loop = 0;
+$(document).ready(function() {
+
+    $("#txtdescription").focus();
+	
+	<?php if($this->params["id"] > 0) { ?>
+		fillitemcombo('<?php echo $this->formdata['itemgroupcode'];?>','<?php echo $this->params["id"]; ?>');
+	<?php } ?>
+    
+	<?php if($this->params["edit"]=="yes") { ?>    
+	$('#ddlselecteditems').dblclick(function() {
+	    
+	    var val = this.value;	
+	    $("#ddlselecteditems option[value='"+val+"']").remove();	
+	    $("#ddlitems option[value='"+val+"']").show();
+	});
+    <?php } ?>
+	
+	$('#ddlitem_group').change(function(){
+		
+		var item_grp = $('#ddlitem_group').val();
+		
+		//$('#ddlselecteditems').html('');
+		$('#ddlitems').html('');
+		
+		//$('#ddlselecteditems').val('');
+		$('#ddlitems').val('');
+		
+		if(item_grp)
+		{
+			fillitemcombo(item_grp,'<?php echo $this->params["id"]; ?>');
+		}
+	})
+    
+    
+    $("#btnsave").click(function() {
+	
+		if($("#frmdet").valid())
+		{			
+			var i 	= 0;
+			var str 	= '';
+			$("#ddlselecteditems option").each(function()
+			{
+				str += $(this).val()+',';
+				i++;
+			});
+			
+			$("#hdnselecteditem").val(str);
+			$("#hdncount_items").val(i);
+		}
+    });
+})
+
+function fillitemcombo(item_grp,routegrpcode)
+{
+	var old_val = '';
+	var  url = base_url+"/inventory/transaction/getitemfromitemgrp/item_grp/"+item_grp+"/route_grp/"+routegrpcode;
+	var result;
+	$.ajax({
+		url:url,
+		data:$("#frmdet").serialize(),
+		type:'post',		
+		success:function(data)
+		{
+			var item_combo = JSON.parse(data);		    
+			if (item_combo == '')
+			{
+				return false;
+			}
+			
+			// Below foe loop for the selected item are stored in array for checking with all route customer.
+			if(typeof(item_combo[2]) == 'object') {
+				var arr = new Array();
+				for (i=0;i<item_combo[2].length;i++) {
+					arr[i]  = item_combo[2][i]['id'];
+					old_val += item_combo[2][i]['id']+',';
+				}
+			}
+			var strLen = old_val.length;
+			old_val = old_val.slice(0,strLen-1);
+			$('#hdnoldselecteditem').val(old_val);
+			
+			if(typeof(item_combo[0]) == 'object') 
+			{
+				// For Select Item
+				var select_item = item_combo[0];			
+				for (i=0;i<select_item.length;i++) {			
+					if(typeof(item_combo[2]) == 'object') {
+						
+						if($.inArray(select_item[i]['id'],arr) != '-1')
+						{
+							$('<option class="movedElement1" selected="selected" style="display: none;"/>').val(select_item[i]['id']).html(select_item[i]['val']).appendTo('#ddlitems');
+						}
+						else
+						{
+							$('<option/>').val(select_item[i]['id']).html(select_item[i]['val']).appendTo('#ddlitems');
+						}
+					}
+					else
+					{
+						$('<option />').val(select_item[i]['id']).html(select_item[i]['val']).appendTo('#ddlitems');			    
+					}
+				}
+			}
+			if(loop == 0)
+			{
+				// For Selected customer		    
+				if(typeof(item_combo[1]) == 'object')
+				{
+					var selected_item = item_combo[1];
+					for (i=0;i<selected_item.length;i++) {
+					   $('<option class="movedElement1" selected="selected" />').val(selected_item[i]['id']).html(selected_item[i]['val']).appendTo('#ddlselecteditems');
+					}
+				}
+				loop =1;
+			}
+		
+			$('#ddlitems').transfer({
+				to:'#ddlselecteditems',//selector of second multiple select box
+				dblClick:true,//true or false, activates double click transfer
+				addId:'#btn_move_item',//add buttong id
+				addAllId:'#btn_move_item_all', // add all button id
+				removeId:'#btn_remove_item', // remove button id
+				removeAllId:'#btn_remove_item_all',// remove all button id
+				tClass:'movedElement1'//class to be added when option tranfered to another select.
+			});
+		}
+	})
+}
+</script>
+
+<div class="grid_12">
+    <div class="box" id="inventory_transaction_addrouteitemgroup">
+        <form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+        <div class="header">
+            <div class="_50_3 back_btn">
+		<img src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png" class="margin_top_7">
+		<h3><?php echo $this->translate->_('Route Item Group');?></h3>
+	    </div>
+	    <div class="_50_3">
+		<div class="_10 save_btn">
+                    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"routeitemgroup"), "default", true);?>')" >
+                </div>
+                <div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+	    </div>
+        </div>
+
+	<div class="clear"></div>
+	<div class="clear"></div>
+        <div id="nav_sub" class="ie_nav_sub">
+	<div class="container_12">
+	    <ul id="nav_main">
+		<li class="current">
+		    <ul style="display: block;">
+			<li>
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"routeitemgroup"),"default", true);?>"><?php echo $this->translate->_('Overview'); ?></a>
+			</li>
+			<li class="last-child">
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"addrouteitemgroup"),"default", true);?>"><b><?php echo $this->translate->_('Details'); ?></b></a>
+			</li>
+		    </ul>
+		</li>
+	    </ul>
+	</div>
+        </div>
+        <div class="clear"></div>
+       <div class="content with-actions">
+            <div class="_100">
+                <div class="clear"></div>
+            </div>
+            <div class="_100">
+                <div class="clear"></div>
+            </div>
+            <div class="_100">
+				<label class="_15 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Code')." ".$this->required;?>
+				</label>
+				<div class="_25">
+					<input type="text" name="txtrouteitmgrpcode" id="txtrouteitmgrpcode" class="required" readonly="readonly" value="<?php echo $this->formdata["routeitemgrpcode"]; ?>"/>
+				</div>
+				<div class="_3">&nbsp;</div>
+				<label class="_25_1 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Description')." ".$this->required;?>
+				</label>
+				<div class="_25_1 margin_right_1">
+					<input type="text" name="txtdescription" id="txtdescription" class="required" value="<?php echo $this->formdata["description"]; ?>" />
+				</div>
+            </div>
+			<div class="_100">
+				<label class="_15 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Item Group')." ".$this->colan;?>
+				</label>
+				<div class="_25 margin_right_1">
+					<select id="ddlitem_group" name="ddlitem_group">					
+					<option value="0">--- ALL Items ---</option>
+						<?php
+							for($i=0;$i<count($this->item_group_data);$i++)
+							{
+						?>
+								<option value="<?php echo $this->item_group_data[$i]['id'];?>" <?php echo ($this->formdata['itemgroupcode'] == $this->item_group_data[$i]['id']) ? 'selected': ''; ?> ><?php echo $this->item_group_data[$i]['val'];?></option>
+						<?php } ?>
+					</select>
+				</div>
+				<div class="_3">&nbsp;</div>
+				<label class="_25_1 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Status')." ".$this->colan;?>
+				</label>
+				<div class="_25_1 margin_right_1">
+					<select id="ddlstatus" name="ddlstatus">
+					<option <?php echo ($this->formdata['transferstatus'] == '1') ? 'selected' : '';?> value="1"><?php echo $this->translate->_('Active');?></option>
+					<option <?php echo ($this->formdata['transferstatus'] == '0') ? 'selected' : '';?> value="0"><?php echo $this->translate->_('Inactive');?></option>
+					</select>
+				</div>
+            </div>
+			<div class="_100 space_20">&nbsp;</div>
+            <div class="_100">
+				<div class="_5">&nbsp;</div>
+					<div class="_45 left">		
+						<div style="width:50px;clear:both">
+							<?php echo $this->translate->_('Items').''.$this->colan;?>
+						</div>
+						<div class="simple_dropdown clear_only margin_top_10">
+							<select id="ddlitems" name="ddlitems" multiple="multiple" size="15" style="height:225px;">							
+							
+							</select>
+						</div>
+					</div>
+					<div class="left">&nbsp;&nbsp;</div>
+					<div class="left navigation_button">                
+						<input type="button" name="btn_move_item" id="btn_move_item" value="<?php echo $this->translate->_('moveone'); ?>"  class="margin_top_50" >
+						<input type="button" name="btn_move_item_all" id="btn_move_item_all" value="<?php echo $this->translate->_('moveall'); ?>" class="navigation_button margin_top_15" >
+						<input type="button" name="btn_remove_item" id="btn_remove_item" value="<?php echo $this->translate->_('removeone'); ?>" class="navigation_button margin_top_15" >
+						<input type="button" name="btn_remove_item_all" id="btn_remove_item_all" value="<?php echo $this->translate->_('removeall'); ?>" class="navigation_button margin_top_15">
+					</div>
+				<div class="_45 left">
+					<div style="width:105px;clear:both">
+						<?php echo $this->translate->_('Selected Items').''.$this->colan;?>
+					</div>
+					<div class="simple_dropdown clear_only margin_top_10">
+						<select id="ddlselecteditems" name="ddlselecteditems[]" multiple="multiple" size="15"  style="height:225px;">						
+						</select>
+					</div>
+				</div>
+			</div>
+        </div>
+        <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+		<input type="hidden" id="hdncount_items" name="hdncount_items" value="" />
+		<input type="hidden" id="hdnselecteditem" name="hdnselecteditem" value="" />
+		<input type="hidden" id="hdnoldselecteditem" name="hdnoldselecteditem" value="" />
+</form>
+
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->

@@ -1,0 +1,170 @@
+<?php
+/**
+* @name       index.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of customer
+*/
+$this->translate 	= Zend_Registry::get('Zend_Translate');
+?>
+<script type="text/javascript">
+
+$(document).ready(function() {
+	
+	
+	
+	$(".tab_content").hide();
+	$("#tab1").show();
+	$("ul.tabs li").click(function() {
+	    $("ul.tabs li a").removeClass("admin_active"); //Remove any "active" class
+	    $(this).find("a").addClass("admin_active");
+	    $(".tab_content").hide(); //Hide all tab content
+	    var activeTab = $(this).find("a").attr("href"); //Find the rel attribute value to identify the active tab + content
+	    $(activeTab).fadeIn(); //Fade in the active content
+	    return false;
+	});
+	$('#btnsave').click(function() {
+		
+		if($("#frmdetail").valid())
+		{
+			if($("#ddlroutename").val() != $("#hdnrouteid").val() && $("#hdnid").val() > 0)
+			{
+				jConfirm('Are You Sure To Change The Route?', 'Message', function(resp)
+				{
+					if(resp)
+					{
+						$("#hdnchangeroutestatus").val('1');
+						$("#frmdetail").submit();
+					}
+					else
+					{	
+						$("#ddlroutename").val($("#hdnrouteid").val());
+						$("#hdnchangeroutestatus").val('0');
+						$("#frmdetail").submit();
+					}
+				})
+			}
+			else
+			{
+				$("#hdnchangeroutestatus").val('0');
+				$("#frmdetail").submit();
+			}
+		}		
+	});
+	$('.tablink').click(function()
+	{
+		if(this.id == 't1')
+		{
+			$('#ddlroutename_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+			$('#ddlroutename_chzn').addClass('chzn-container-active');
+		}
+		else if(this.id == 't2')
+		{
+			$('#ddldis_msg_key1_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+			$('#ddldis_msg_key1_chzn').addClass('chzn-container-active');
+		}
+		else if(this.id == 't3')
+		{
+			$('#ddlsales_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+			$('#ddlsales_chzn').addClass('chzn-container-active');
+		}
+		else if(this.id == 't4')
+		{
+			$("#txtshop_tel").focus();
+			$("#txtshop_tel input[type='text']:focus").focus();			
+		}
+	});
+	
+	$('#ddlroutename_chzn .chzn-drop .chzn-search input[type="text"]').focus();
+	$('#ddlroutename_chzn').addClass('chzn-container-active');
+	
+	$('#ddl_ar_cust').change(function() {
+		
+		var val = $('#ddl_ar_cust').val();
+		if(val == '1')
+		{
+			$('#txt_bill_to_bill').attr('readonly',false);
+		}
+		else
+		{
+			$('#txt_bill_to_bill').attr('readonly',true);
+			$('#txt_bill_to_bill').val('0');
+		}
+	});
+});
+
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="account_customer_addcustomer">
+<form id="frmdetail" name="frmdetail" class="validate" novalidate action="" method="post">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	<h3><?php echo $this->translate->_('Customer');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"customer"),"default", true);?>')"></div>
+	<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+	<li class="current">
+	    <ul>
+	    	<li>
+		    <a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"customer"),"default", true);?>"><?php echo $this->overview?></a>
+		</li>
+	    </ul>
+	    <ul style="display: block; margin-left:75px;" class="tabs">
+		<li> 
+		    <a href="#tab1" id="t1" class="admin_active tablink"><?php echo $this->translate->_('General');?></a>
+		</li>
+		<li>
+		    <a href="#tab2" id="t2" class="tablink"><?php echo $this->translate->_('Settings 1');?></a>
+		</li>
+		<li>
+		    <a href="#tab3" id="t3" class="tablink"><?php echo $this->translate->_('Settings 2');?></a>
+		</li>
+		<?php if($this->show_contact_tab) { ?>
+			<li class="last-child">
+				<a href="#tab4" id="t4" class="tablink"><?php echo $this->translate->_('Contact');?></a>
+			</li>
+		<?php } ?>
+	    </ul>
+	</li>
+    </ul>
+</div>
+</div>
+
+    <div class="content with-actions  min_height_10">
+	<div id="tab1" class="tab_content">
+	    <?php include('general.phtml');?>
+	</div>
+	<div id="tab2" class="tab_content">
+	    <?php include('setting1.phtml');?>
+	</div>
+	<div id="tab3" class="tab_content">
+	    <?php include('setting2.phtml');?>
+	</div>
+	<?php if($this->show_contact_tab) { ?>
+		<div id="tab4" class="tab_content">
+			<?php include('contact.phtml');?>
+		</div>
+	<?php } ?>
+    </div>
+    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+</form>
+</div> <!-- End of .box -->
+</div>
+<script>
+    $(window).unload(function(){
+		$("#tab2").hide();
+		$("#tab3").hide();
+		$("#tab4").hide(); 
+    });
+</script>

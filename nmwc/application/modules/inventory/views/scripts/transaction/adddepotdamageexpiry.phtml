@@ -1,0 +1,390 @@
+<?php
+/**
+* @name       adddailysalesmanload.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+?>
+<script type="text/javascript">
+	$(document).ready(function() {
+		
+		<?php if($this->params['id'] > 0) { ?>
+			loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+			
+			//$("#frmdet").find('input,select').attr('disabled','disabled');
+			//$('select').trigger('liszt:updated');
+		<?php } ?>
+		
+		
+		$('#btnpost').click(function() {
+			$("#txtbatchno").removeClass('required');
+			$("#ddlitem").removeClass('required');
+			$('#ddlitem').trigger('liszt:updated');
+		})
+		
+		$('#sbtnadd').click(function() {
+			
+			if($("#frmdet").valid())
+			{
+				if($("#hdngetcases").val() == '')
+				{
+					jAlert('Please Select Batch.');
+					return false;
+				}
+				if(parseFloat($("#txtcases").val()) > parseFloat($("#hdngetcases").val())) {
+					jAlert('Cases Must Be Less Then Available Quantity.');
+					return false;
+				}
+				if(parseFloat($("#txtpieces").val()) > parseFloat($("#hdngetpieces").val())) {
+					jAlert('Pieces Must Be Less Then Available Quantity.');
+					return false;
+				}
+			
+				var url 	= base_url+'/inventory/transaction/adddepotdamageexpirygrid/';
+				var values = $('#frmdet').serialize();
+				
+				$.ajax({
+					url:url,
+					data :values+'&add=yes',
+					type:'post',
+					beforeSend: function() {
+						$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+					},
+					success:function(data) {
+						$("#loader").html('');
+						$("#txtcases").val('');
+						$("#txtpieces").val('');
+						$("#txtupc").val('');
+						$("#txtbatchno").val('');
+						$("#txtexpdate").val('');
+						$("#ddlitem").val('');
+						$("#ddlreason").val('');						
+						
+						//$("#txttransactiondate").val('');
+						//$("#ddlfromdepot").val('');
+						//$("#ddltodepot").val('');
+						$('select').trigger('liszt:updated');						
+						$("#hdnid").val(data);
+						<?php if(strstr($this->itemgrid,'/key/')) { ?>
+							loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+						<?php } else { ?>
+							loaddata('<?php echo $this->itemgrid; ?>/key/'+data,'item-grid');
+						<?php } ?>
+					}
+				})
+			}
+		})			
+		
+		$('.batchinfo').change(function() {
+			var item_val 	= $('#ddlitem').val();
+			var depot_val	= $('#ddldepot').val();
+			
+			if(item_val) {
+				if(depot_val == '' ) {
+					jAlert('Please Select Depot.');
+					return false;
+				}
+				getiteminfo(item_val);
+				
+				$('#batchlink').attr('href',base_url+'/inventory/transaction/viewbatchinfo/invtype/14/itemid/'+item_val+'/depotcode/'+depot_val+'?q=prettyPhoto&iframe=true&width=1000&height=400');
+				$("a[id^='batchlink']").prettyPhoto({animation_speed:'fast',theme:'light_rounded', allowresize: false});				
+			} else {
+				var abc = $('#batchlink').parent();
+				$('#batchlink').remove();
+				$(abc).html('<a id="batchlink" href="Javascript:void(0)"><?php echo $this->translate->_('Batch');?></a>');
+			}			
+		})
+	})
+	
+	function getiteminfo(item_id)
+	{
+		$("#txtupc").val('');		
+		
+		if(item_id > 0 )
+		{
+			var url 		= base_url+'/home/index/getiteminfo/itemid/'+item_id;
+			var allow_entry = 0;
+			$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+				},
+				success:function(data)
+				{	
+					var item_info = JSON.parse(data);
+					if (item_info == '') {
+						return false;
+					}					
+					if(typeof(item_info[0]) == 'object')
+					{
+						$("#txtupc").val(item_info[0][0]['unitspercase']);						
+						$("#loader").html("");
+					}
+				}
+			})
+		}
+	}
+	function batchinfo(depotinvkey)
+	{
+		$("#hdngetcases").val('');
+		$("#hdngetpieces").val('');
+		$("#txtbatchno").val('');
+		$("#txtexpdate").val('');
+		$('#txtcases').val('');
+		$('#txtpieces').val('');
+		
+		if(depotinvkey > 0 ) {
+			var url 		= base_url+'/home/index/getiteminfobatchexp/depotinvkey/'+depotinvkey;
+			var allow_entry = 0;
+			$.ajax({
+				url:url,
+				data:$("#frmdet").serialize(),
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+				},
+				success:function(data)
+				{
+					var item_info = JSON.parse(data);
+					if (item_info == '') {
+						return false;
+					}
+					if(typeof(item_info[0]) == 'object') {
+						$("#hdngetcases").val(item_info[0][0]['cases']);
+						$("#hdngetpieces").val(item_info[0][0]['pieces']);
+						$('#txtcases').val(item_info[0][0]['cases']);
+						$('#txtpieces').val(item_info[0][0]['pieces']);
+						$('#txtbatchno').val(item_info[0][0]['batchno']);
+						$('#txtexpdate').val(item_info[0][0]['expirydate']);
+						
+						$('#txtbatchno').attr('readonly',true);
+						$('#txtexpdate').attr('readonly',true);
+						$("#txtexpdate").datepicker("disable");
+						$('#txtexpdate').attr('disabled',false);						
+					}
+					$("#loader").html("");
+				}
+			})
+		}
+	}
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+ <form id="frmdet" name="frmdet" class="validate" novalidate action="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"adddepotdamageexpiry"), "default", true);?>" method="post">
+<div class="box"id="inventory_transaction_adddepotdamageexpiry">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png">
+        <h3><?php echo $this->translate->_('Depot Damage/Expiry')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"depotdamageexpiry"), "default", true);?>')" >
+	</div>
+	<!--<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>-->
+    </div>
+</div>
+<div class="_100" style="text-align:center">
+
+	<div class="_20 label_text_align margin_top_7">&nbsp;</div>
+	<div class="_20 label_text_align margin_top_7"><label class="advance_search_css"><?php echo $this->translate->_('Selected Date').''.$this->colan;?></label></div>
+	<div class="_20 label_text_align margin_right_1"><input type="text" id="txtdate" name="txtdate" value="<?php echo date('d-m-Y');?>" class="margin_zero"></div>
+	<div class="_10">&nbsp;</div>
+	<div class="_30">
+            &nbsp;
+        </div>
+</div>
+
+<div class="clear space_20"></div>
+<div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+               <li>
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"depotdamageexpiry"),"default", true);?>"><?php echo $this->translate->_('Overview'); ?></a>
+			</li>
+			<li class="last-child">
+			    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"transaction","action"=>"adddepotdamageexpiry"),"default", true);?>"><b><?php echo $this->translate->_('Details'); ?></b></a>
+			</li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+
+<div class="content with-actions min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	    <div class="_100">
+			<div class="_25">&nbsp;</div>
+			<div class="_25">&nbsp;</div>
+			<label class="_25 label_text_align">
+				<?php echo $this->translate->_('Sales Date').''.$this->colan;?>		    
+			</label>
+			<div class="_10 margin_left_right_1">				
+				<?php echo date('d-m-Y');?>
+			</div>
+        </div>
+	    <div class="_100 margin_top_3">
+			<label class="_25 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Tran.No.').''.$this->colan;?>
+			</label>
+			<div class="_25 ">
+				<input type="text" name="txttransno" id="txttransno" readonly="readonly" value="<?php echo $this->formdata['headerid'];?>"/>
+			</div>
+			<label class="_25 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Referance No.').''.$this->colan;?>
+			</label>
+			<div class="_25 ">
+				<input type="text" name="txtreferanceno" id="txtreferanceno"  value="<?php echo $this->formdata['referenceno']; ?>"/>
+			</div>
+        </div>
+        <div class="_100">
+			<label class="_25 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('From Date')." ".$this->required;?>
+			</label>
+			<div class="_25 ">
+				<input type="text"  name="txtstartdate" id="txtstartdate" class="required" value="<?php echo $this->formdata['fromdate']; ?>"/>
+			</div>
+			<label class="_25 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('To Date')." ".$this->required;?>
+			</label>
+			<div class="_25">
+				<input  name="txtenddate" id="txtenddate" type="text" class="required" value="<?php echo $this->formdata['todate']; ?>"/>
+			</div>
+        </div>
+        <div class="_100">
+            <label class="_25 margin_top_12 label_text_align">
+                <?php echo $this->translate->_('Depot')." ".$this->required;?>
+            </label>
+			<div class="_25">
+				<select id="ddldepot" name="ddldepot" class="required batchinfo">
+						<option value="">--- Select ---</option>
+						<?php
+							for($i=0;$i<count($this->depot);$i++)
+							{
+						?>
+							<option value="<?php echo $this->depot[$i]['id'];?>" <?php echo ($this->depot[$i]['id'] ==  $this->formdata['depotcode'] )? 'selected': ''; ?> ><?php echo $this->depot[$i]['val'];?></option>
+						<?php } ?>
+				</select>
+			</div>			
+        </div>
+    </div>
+
+<div class="content with-actions min_height_10">
+    <div class="_100 margin_top_25">		
+		<fieldset>
+			<legend><?php echo $this->translate->_('Add Item');?>:</legend>
+			<div class="_100">
+				<label class="_20 margin_top_12 label_text_align">
+				 <?php echo $this->translate->_('Item')." ".$this->required;?>
+				</label>
+				<div class="_25">
+					<select id="ddlitem" name="ddlitem" class="required batchinfo">
+						<option value="">--- Select ---</option>
+							<?php
+								for($i=0;$i<count($this->item);$i++)
+								{
+							?>
+								<option value="<?php echo $this->item[$i]['id'];?>" <?php echo ($this->item[$i]['id'] ==  1 )? 'selected': ''; ?> ><?php echo $this->item[$i]['val'];?></option>
+							<?php } ?>
+					</select>
+				</div>
+				<div class="_10 margin_top_12 label_text_align">
+					<a id="batchlink" href="Javascript:void(0)">Batch</a>				
+				</div>
+				<label class="_15 margin_top_12 label_text_align margin_right_1">
+					<?php echo $this->translate->_('UPC').''.$this->colan;?>
+				</label>
+				<div class="_15 margin_right_1">
+					<input type="text" value="" name="txtupc" id="txtupc" readonly="readonly">
+				</div>
+			</div>
+			<div class="_100">
+				<label class="_20 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Cases')." ".$this->colan;?>
+				</label>
+				<div class="_10_2 margin_right_1">
+					<input type="text" value="" name="txtcases" id="txtcases" class="number margin_top_5">
+				</div>
+				<div class="margin_left_right_2_2 _10_2">
+					<input type="text" value="" name="txtpieces" id="txtpieces" class="number margin_top_5">
+				</div>
+				<div class="_12 margin_right_2_2">&nbsp;</div>
+				<label class="_15 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Reason Code')." ".$this->required;?>
+				</label>
+				<div class="_25 margin_right_1">
+					<select id="ddlreason" name="ddlreason" class="required">
+						<option value="">--- Select ---</option>
+						<option value="1" ><?php echo $this->translate->_('Damaged Qty.');?></option>
+						<option value="2" ><?php echo $this->translate->_('Expiry Qty.');?></option>
+					</select>
+				</div>
+			</div>
+			<div class="_100">
+				<label class="_20 margin_top_10 label_text_align">
+					 <?php echo $this->translate->_('Batch No').''.$this->required;?>
+				</label>
+				<div class="_25 margin_right_1">
+					<input type="text" value="" name="txtbatchno" id="txtbatchno" class="required margin_top_3">
+				</div>
+				<div class="_10 margin_right_2_2">&nbsp;</div>				
+				<label class="_15 margin_top_12 label_text_align margin_right_1">
+					<?php echo $this->translate->_('Expiry Date')." ".$this->colan;?>
+				</label>				
+				<div class="_20 margin_right_1">
+					<input type="text" value="" name="txtexpdate" id="txtexpdate" readonly="readonly">
+				</div>
+				<div class="_5 margin_right_1">&nbsp;</div>
+				<div class="_5 margin_right_1"><input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd" name="sbtnadd"></div>
+			</div>			
+		</fieldset>
+        <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+		<input type="hidden" id="hdngetcases" name="hdngetcases" value="">
+		<input type="hidden" id="hdngetpieces" name="hdngetpieces" value="">
+		<input type="hidden" id="txttransactiondate" name="txttransactiondate" value="<?php echo date('d-m-Y');?>">
+		<div id="loader"></div>
+		<div id="item-grid"> <!--grid load here --> </div>
+    </div>
+</div>
+</div>
+</form><!-- End of .box -->
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+		$( "#txtexpdate" ).datepicker({
+			dateFormat: 'dd-mm-yy'
+		});        
+    });
+});
+
+</script>

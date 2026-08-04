@@ -1,0 +1,102 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+
+<script>
+    $(document).ready(function() {
+	
+	$(".tab_content").hide();
+	$("#tab1").show();
+	$("ul.tabs li").click(function() {
+	    $("ul.tabs li a").removeClass("admin_active"); //Remove any "active" class
+	    $(this).find("a").addClass("admin_active");
+	    $(".tab_content").hide(); //Hide all tab content
+	    var activeTab = $(this).find("a").attr("href"); //Find the rel attribute value to identify the active tab + content
+	    $(activeTab).fadeIn(); //Fade in the active content
+	    return false;
+	});	
+    })
+</script>
+
+<div class="grid_12">
+    <div class="box" id="account_customer_customerimages">
+		<div class="header">
+			<div class="_50_3 back_btn">
+				<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+				<h3><?php echo $this->title;?></h3>
+			</div>
+			<div class="_50_3">
+				<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"customerimages"), "default", true);?>')" ></div>				
+			</div>
+		</div>
+		
+		<div id="nav_sub" class="ie_nav_sub" >
+		    <div class="container_12">
+			<ul id="nav_main">
+			   <li class="current">
+				<ul style="display: block;">
+				    <li>
+					<a href="<?php echo $this->url(array("module"=>"merchandize","controller"=>"index","action"=>"customerimages"),"default", true);?>"><?php echo $this->overview?></a>
+				    </li>
+				    <ul style="display: block; margin-left:75px;" class="tabs">
+					<li> 
+					    <a href="#tab1" id="t1" class="admin_active"><?php echo $this->translate->_('Customer Images');?></a>
+					</li>
+					<li >
+					    <a href="#tab2" id="t2"><?php echo $this->translate->_('Planogram');?></a>
+					</li>
+					<li class="last-child">
+					    <a href="#tab3" id="t3"><?php echo $this->translate->_('POS');?></a>
+					</li>
+					<li class="last-child">
+					    <a href="#tab4" id="t4"><?php echo $this->translate->_('Survey');?></a>
+					</li>
+				    </ul>
+				</ul>
+			    </li>
+			</ul>
+		    </div>
+		    </div>
+		    <div class="content with-actions ie_grid">
+			    <div id="tab1" class="tab_content">
+				<?php include('viewcustomerimagestab.phtml');?>
+			    </div>
+			    <div id="tab2" class="tab_content">
+				<?php include('viewplanogramimagestab.phtml');?>
+			    </div>
+			    <div id="tab3" class="tab_content">
+				<?php include('viewposimagestab.phtml');?>
+			    </div>
+			    <div id="tab4" class="tab_content">
+				<?php include('viewsurveyimagestab.phtml');?>
+			    </div>
+			    <div class="clear space_20">&nbsp;</div>
+		    </div>
+		
+		<?php
+		/*$i=0;
+			if(count($this->images) > 0) {
+			?>
+			<div class="content with-actions padding_zero clear_only" id="customerimages">
+				<table border="1" cellpadding="10px" >
+					<tr> 
+					<?php
+						$i=0;						
+							foreach($this->images as $curimg) {
+								if(file_exists($this->path.$curimg['imagename']) && $curimg['imagename'] != '.' && $curimg['imagename'] != '..') { ?>		
+									<td align="center" class="padding_top_10"><?php echo '<img height="200" width="200" src="' . $this->path1.$curimg['imagename'] . '" /><br>'.$curimg['imagename'].'&nbsp;'; ?></td>
+								<?php } ?>
+								<?php if(++$i%4 == 0) echo '</tr><tr>'; ?>
+						<?php } ?>
+					</tr>
+				</table>
+			</div>
+			<?php } else { ?>				
+				<div class="content with-actions min_height_10 margin_top_10">
+					<div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b><?php echo $this->message;?></b></div>
+				</div>
+			<?php
+			}*/
+		?>	
+	</div>
+</div>

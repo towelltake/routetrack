@@ -1,0 +1,125 @@
+<?php
+/**
+* @name       additemgrp.phtml
+* @since      13 Oct, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Item Group
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(document).ready(function() {
+    $("#txtaltcode").focus();
+});
+</script>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="inventory_index_additemgrp">
+<form class="validate" method="post" action="" novalidate="novalidate">
+    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes" ? $this->params["id"] : 0 ; ?>" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png">
+	<h3><?php echo $this->translate->_('Item Group');?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"itemgrp"),"default", true);?>')">
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+	<li class="current">
+	    <ul style="display: block;">
+		<li>
+		    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"itemgrp"),"default", true);?>"><?php echo $this->overview;?></a>
+		</li>
+		<li class="last-child">
+		    <a href="<?php echo $this->url(array("module"=>"inventory","controller"=>"index","action"=>"additemgrp"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+		</li>
+	    </ul>
+	</li>
+    </ul>
+</div>
+</div>
+<div class="content no-padding with-actions">
+    <div class="_100">
+	<div class="clean"></div>
+    </div>   
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Code').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1">
+            <input name="txtcode" id="txtcode" type="text" class="required number" value="<?php echo $this->formdata['txtcode'];  ?>" readonly="true">
+	</div>
+    </div>   
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Alternate Code').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <input name="txtaltcode" id="txtaltcode" class="margin_top_5" maxlength="50" type="text" value="<?php echo $this->formdata['txtaltcode']; ?>">
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Name').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <input name="txtname" id="txtname" type="text" maxlength="50" value="<?php echo $this->formdata['txtname']; ?>" class="required margin_top_5"/>
+	</div>
+    </div>
+    <div class="_100 ">
+	<label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Name').'('.$this->translate->_('Arabic').')'.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <input name="txtnamearb" id="txtnamearb" type="text" maxlength="50" class="margin_top_5 arb_text_align" value="<?php echo $this->formdata['txtnamearb']; ?>"/>
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Sub Major Category').''.$this->required;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <select id="ddlsubmajcat" name="ddlsubmajcat" class="required">
+	    <option value="">--- Select ---</option>
+		<?php
+		for($i=0;$i<count($this->sub_major_cat);$i++)
+		{
+	    ?>
+		<option value="<?php echo $this->sub_major_cat[$i]['id'];?>" <?php echo ($this->sub_major_cat[$i]['id'] ==  $this->formdata['ddlsubmajcat'] )? 'selected': ''; ?> ><?php echo $this->sub_major_cat[$i]['val'];?></option>
+	    <?php } ?>
+	    </select>
+	</div>
+    </div>
+    <div class="_100">
+	<label class="_36 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Status').''.$this->colan;?>
+	</label>
+	<div class="_50 margin_right_1">
+	    <select id="ddlstatus" name="ddlstatus">
+		<option value="1" <?php echo $this->formdata['ddlstatus'] == '1' ? 'selected' : ''; ?> ><?php echo $this->translate->_('Active');?></option>
+		<option value="0" <?php echo $this->formdata['ddlstatus'] == '0' ? 'selected' : ''; ?> ><?php echo $this->translate->_('Inactive');?></option>
+            </select>
+	</div>
+	<?php if($this->params["edit"]=="yes") { ?>
+	<div class="_100">
+	    <label class="_36 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Created Date').''.$this->colan;?>
+	    </label>
+	    <div class="_50 margin_top_12 date_color margin_right_1"><?php echo $this->formdata['createddate']; ?></div>
+	</div>
+	<?php } ?>
+</div>
+<input type="hidden" name="backUrl" id="backUrl" value="<?php echo $this->backUrl; ?>" />
+</form>
+</div>
+</div> <!-- End of .box -->

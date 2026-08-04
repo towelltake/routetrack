@@ -1,0 +1,1366 @@
+<?php
+/**
+* @name       IndexController
+* @since
+* @version    Release: 1
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  Elan Technologies
+* @param
+*
+* This controller is manage merchandize module.
+*/
+class Merchandize_IndexController extends Merchandize_Library_Controller_Action_Abstract
+{
+    public $sec_lang;
+    /**
+    * @name       init
+    * @since      30-12-2012
+    * @version    Release: 1
+    * @author     M@M <miral@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This is the default function for all Actions.
+    *
+    */
+
+    public function init()
+    {
+		$this->translate = Zend_Registry::get('Zend_Translate');
+		$this->currentUser = SFA_Loginauth::getIdentity();
+		if(!isset($this->currentUser) || empty($this->currentUser)) {
+			SFA_Message::setMsg($this->translate->_('Do Login'));
+			//$this->_helper->redirector("index", "index", "home");
+			$url = $this->view->baseUrl();
+			echo '<script type="text/javascript">window.location="'.$url.'";</script>';
+			exit;
+		}
+		$this->css 				= $this->translate->_('CSS');
+		$this->view->css 		= $this->css;
+		$this->view->overview	= $this->translate->_('Overview');
+		$this->view->details	= $this->translate->_('Details');
+		$this->view->required	= $this->translate->_('Required');
+		$this->view->colan		= $this->translate->_('Colan');
+		$this->SFA_Comman 		= new SFA_Comman();
+		$this->view->sec_lang	= $this->SFA_Comman->getsecondlanguage();
+		$this->sec_lang 		= $this->view->sec_lang;
+    }    
+     
+    /**
+    * @name       preDispatch
+    * @since      26- sep-2012
+    * @version    Release: 1
+    * @author     PT <pankil@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This is the default function for all Actions.
+    *
+    */
+    
+    public function preDispatch()
+    {
+        parent::preDispatch();
+        
+        /**
+         *      Acl Code start
+         */
+        $getparams_init = $this->getRequest()->getParams();
+        $getpost_init = $this->_request->getPost();
+        
+        if(in_array($getparams_init['action'],$this->current_read_delete_arr))
+        {
+            if($getpost_init["hdDelete"]==1 && !$this->checkaccess("delete")) {
+            
+                $this->_forward('noaccess','aclaccess','home', array("actiontype"=>"delete","modulename"=>$this->currentmodulename));
+            
+            } elseif(!$this->checkaccess("read")) {
+                
+                $this->_forward('noaccess','aclaccess','home', array("actiontype"=>"read","modulename"=>$this->currentmodulename));
+                
+            } else {
+                
+            }
+        }
+        elseif(in_array($getparams_init['action'],$this->current_insert_update_arr))
+        {
+            if($params['id'] > 0 && !$this->checkaccess("update")) {
+            
+                $this->_forward('noaccess','aclaccess','home', array("actiontype"=>"update","modulename"=>$this->currentmodulename));
+                
+            } elseif(!$this->checkaccess("insert")) {
+                
+                $this->_forward('noaccess','aclaccess','home', array("actiontype"=>"insert","modulename"=>$this->currentmodulename));
+                
+            } else {
+                
+            }
+        }
+        /**
+         *      Acl Code end
+         */
+    }
+    
+
+
+     /**
+    * @name       servayAction
+    * @since      30-12-2012
+    * @version    Release: 1
+    * @author     M@M <miral@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is for display survey list
+    *
+    */
+    public function surveyAction()
+    {
+		$this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+
+		if($formdata["hdDelete"]==1)
+		{
+			$ids = implode(',',$formdata['chk']);
+			$param_array 	= array();
+			$param_array[1]	= $ids;
+			$param_array[2]	= $this->currentUser->username;
+			
+			$result 	= $this->SFA_Comman->executequery('CALL sp_delete_merchandize_index_survey(?,?)',$param_array,'');
+			
+			if($result[0][0]['deleted_id'] =='')
+			{
+			
+				$ids		= explode(',',$ids);
+				$checked 	= $ids;
+				
+				SFA_Message::setErrorMsg($this->translate->_('Record Already In use'));
+			}
+			else
+			{
+				$deleted_id 	= explode(',',$result[0][0]['deleted_id']);
+				$ids		= explode(',',$ids);
+				$checked 	= array_diff($ids,$deleted_id);
+				
+				if(count($ids) != count($deleted_id)){
+					SFA_Message::setErrorMsg($this->translate->_('Record Already In use'));
+				}
+				
+				SFA_Message::setMsg($this->translate->_('Delete Record'));
+			}
+		}
+
+		$this->view->title	= $this->translate->_('Survey Defination');
+	
+		$cols_array 	= array('surveyprompt','surveyindex','getsurveytype(surveyrectype) AS surveyrectype','survey_lookup_type(lookuptype)','activestatus','surveydefkey as edit_del_primary_id');
+		$columns_show 	= array($this->translate->_('Survey Description'),$this->translate->_('Survey Index'),$this->translate->_('Survey Type'),$this->translate->_('Lookup Type'),$this->translate->_('Status'));
+		
+		if($this->css == 'ar_') {
+			$cols_array[0]	= 'arbsurveyprompt AS surveyprompt';
+		}
+	
+		
+		$not_in_search 		= array();
+		$not_in_search[] 	= 'activestatus';
+		$not_in_search[] 	= 'survey_lookup_type(lookuptype)';
+	
+		// prepare the configuration for grid
+		$pagingparams = array(
+				"show_grid_heading" => true,
+				"grid_heading_message" => $this->translate->_('Overview'),
+				"pagename" => $this->translate->_('Survey Defination'),
+				"show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+				"show_searchbox" => true,
+				"searchbox_value" => isset($formdata["grid_search_text"])?$formdata["grid_search_text"]:"",
+				"show_selectbox" => true,
+				"selected_list" => $checked,
+				"show_editlink" => true,
+				"show_deletelink" => false,
+				"no_search_fields" => $not_in_search,
+				"show_deleteall" => false,
+				"status_cols" => array(
+							array (
+								"cols_name" => "activestatus",
+								"status_change" => array("0"=>"Inactive","1"=>"Active")
+							)
+							),
+				"primaryid" => "surveydefkey",
+				"editlink" => array("/merchandize/index/addsurvey/id/#pattern#/edit/yes/","#pattern#"),
+				"nodata_message" => $this->translate->_('No Record(s) Found'),
+				"fetch_columns_inquery" => $cols_array,
+				"show_columns" => $columns_show
+				);
+        
+        if(!$this->checkaccess("update"))
+        {
+            $pagingparams["show_editlink"] = false;
+        }
+        
+		// create grid class object
+		$pagingshow = new SFA_Paging($pagingparams);
+		
+		// call common function of grid class
+		$get_return_vals = $pagingshow->commnfunc();
+		
+		//print_r($get_return_vals['where_condition']);
+		
+		// call the stored procedure for fetch the data
+		$param_array 	= array();
+		$param_array[1] = '1';
+		$param_array[2] = '';
+		$param_array[3] = $get_return_vals['order_columns_name'];
+		$param_array[4] = $get_return_vals['order_type'];
+		$param_array[5] = $get_return_vals['offset'];
+		$param_array[6] = (int)$get_return_vals['show_records_per_page'];
+		$param_array[7] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+		$param_array[8] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';
+		
+		$downloadCSV = (isset($formdata['downloadcsv'])) ? $formdata['downloadcsv'] : $params['downloadcsv'];
+    
+		// Hiren Dave on 19 Nov, 2012 - START - to check if need to print data
+		$printData = (isset($formdata['printData'])) ? $formdata['printData'] : $params['printData'];
+		
+		// called stored procedure for counter
+		$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_survey(?,?,?,?,?,?,?,?)',$param_array,'',$downloadCSV,$printData,2,$pagingparams);
+	
+		$data_arr["count"]	= $result[0][0]['counter'];		
+		$data_arr["data"][0]= $result[1];
+		
+		// pass the data in summary_showdatagrid() function & create a final variable for view
+		$this->view->pagegridshow =  $pagingshow->summary_showdatagrid($data_arr);
+		
+		$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/");
+    }
+
+    /**
+    * @name       addsurveyAction
+    * @since      30-01-2012
+    * @version    Release: 1
+    * @author     M@M <miral@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for the add survey
+    */
+    public function addsurveyAction()
+    {
+        $this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+		
+		
+		
+		
+		$this->view->css 		= $this->translate->_('CSS');
+		$this->view->select 		= $this->translate->_('Select');
+		$this->view->missonefld		= $this->translate->_('Missed One Field');
+		$this->view->youmissed		= $this->translate->_('You Missed');
+		$this->view->highlated		= $this->translate->_('Fields. They have been highlighted.');
+		
+		// CREATE DROP DOWN FOR RECORD TYPE
+		$record_type = array();
+		$record_type[0]['id']  = 0;
+		$record_type[0]['val'] = 'Title';
+		$record_type[1]['id']  = 1;
+		$record_type[1]['val'] = 'Numeric Input';
+		$record_type[2]['id']  = 2;
+		$record_type[2]['val'] = 'Alpha-Num Input Response';
+		$record_type[3]['id']  = 3;
+		$record_type[3]['val'] = 'Date Input';	
+		$record_type[4]['id']  = 4;
+		$record_type[4]['val'] = 'Time Input';	
+		$record_type[5]['id']  = 5;
+		$record_type[5]['val'] = 'Yes/No Option';	
+		$record_type[6]['id']  = 6;
+		$record_type[6]['val'] = 'Check Box';	
+		$record_type[7]['id']  = 7;
+		$record_type[7]['val'] = 'Lookup Field';	
+		$record_type[8]['id']  = 8;
+		$record_type[8]['val'] = 'Subtitle';
+		$this->view->record_type = $record_type;
+		
+		$fill_combo					= array();
+		$fill_combo[0]['id'] 		= '0';
+		$fill_combo[0]['val'] 		= 'Normal Lookup';
+		$fill_combo[1]['id'] 		= '1';
+		$fill_combo[1]['val'] 		= 'Item Lookup';
+		$this->view->looktype_data	= $fill_combo;
+		
+		
+		
+	
+		if(count($formdata) > 0)
+		{
+			
+			if($formdata['ddlsurvey_type'] == '7')
+			{
+				$formdata['ddllook_type'] = $formdata['ddllook_type'];
+			}
+			else
+			{
+				/*set 1000 while value would not be selected*/
+				$formdata['ddllook_type'] = 1000;
+			}
+			
+			if($formdata['ddlsurvey_type'] != '1' && $formdata['ddlsurvey_type'] != '2')
+			{
+				$formdata['txtres_length'] = '';
+			}
+			if($formdata['ddlsurvey_type'] != '1')
+			{
+				$formdata['txtres_decimal'] = '';
+			}
+			
+			$param_array	= array();
+			$param_array[1]	= $formdata['txtservay_orderindex'];
+			$param_array[2]	= $formdata['txtservay_prompt'];
+			$param_array[3]	= $formdata['txtarbservay_prompt'];
+			$param_array[4]	= $formdata['ddlsurvey_type'];
+			$param_array[5]	= $formdata['txtres_length'];
+			$param_array[6]	= $formdata['txtres_decimal'];
+			$param_array[7]	= $formdata['ddllook_type'];
+			$param_array[8]	= $formdata['ddllook_index'];
+			$param_array[9]	= $formdata['ddlstatus'];
+			$param_array[10]	= $this->currentUser->username;
+			
+			//SFA_Comman::pre($formdata);
+			
+			if($formdata['hdnid'] > 0)
+			{
+				$param_array[11]	= $formdata['hdnid'];		
+				$result = $this->SFA_Comman->executequery('CALL sp_edit_merchandize_index_addsurvey(?,?,?,?,?,?,?,?,?,?,?)',$param_array,'');
+				SFA_Message::setMsg($this->translate->_('Update Record'));
+			}
+			else
+			{
+				$result = $this->SFA_Comman->executequery('CALL sp_add_merchandize_index_addsurvey(?,?,?,?,?,?,?,?,?,?)',$param_array,'');		
+				SFA_Message::setMsg($this->translate->_('New Record'));
+			}
+			
+			$this->_helper->redirector('survey', 'index', 'merchandize');
+		}
+		elseif($params['id'] > 0)
+		{
+			$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_addsurvey(?)',$params['id'],'');
+			$this->view->formdata 	= $result[0][0];			
+			$this->view->lookindex_data	= $result[1];	    
+		}
+		else
+		{
+			$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_addsurvey(?)','0','');
+			$this->view->formdata['surveydefkey'] = $result[0][0]['Auto_increment'];			
+			$this->view->lookindex_data		= $result[1];
+		}
+		
+		if($params['addlookupindex'] == true) {
+			
+			$this->view->formdata['surveyindex'] = $params['oi'];
+			$this->view->formdata['surveyprompt'] = $params['sp'];
+			$this->view->formdata['arbsurveyprompt'] = $params['spa'];
+			$this->view->formdata['surveyrectype'] = $params['st'];
+			$this->view->formdata['lookuptype'] = $params['lt'];
+			$this->view->formdata['lookupindex'] = $params['li'];
+			$this->view->formdata['activestatus'] = $params['status'];
+		}
+
+    }
+    /**
+    * @name       getlookindex
+    * @since      18-05-2012
+    * @version    Release: 2
+    * @author     HD <hiren.d@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for getting value of the look index on the basis of the lookup Type
+    */
+       
+    public function getlookindexAction()
+    {
+	
+		$params = $this->getRequest()->getParams();
+		
+		if($params['id'] == 0)
+		{
+			$result = $this->SFA_Comman->executequery('CALL sp_combo_survey_lookupindex()','','');
+			
+			$str = '';	
+			for($i=0;$i<count($result[0]);$i++) {
+				
+				$selected = '';
+				if($params["lid"] == $result[0][$i]["id"]) { $selected = 'selected'; }
+				
+				$str .= '<option '. $selected .' value="'.$result[0][$i]['id'].'">'.$result[0][$i]['val'].'</option>';
+			}
+			
+			$option =   '<label class="_36 margin_top_12 label_text_align">'.$this->translate->_('Lookup Index').''.$this->view->colan.'</label>
+					<div class="_25 margin_right_1">
+					<select id="ddllook_index" name="ddllook_index" class="required">
+						<option value="">--- Select ---</option>
+						'.$str.'
+					</select>
+					</div>
+					<script type="text/javascript">
+					if ($.fn.chosen) {
+						$("select").chosen();
+					}
+					</script>';
+				
+			//'. if($this->formdata['lookupindex'] == $result[0][$i]['id'] )  { echo 'selected'; } '.
+			echo $option;
+			exit;
+		}
+		else
+		{
+			$option =   '<label class="_36 margin_top_12 label_text_align">'.$this->translate->_('Lookup Index').''.$this->view->colan.'</label>
+					<div class="_25 margin_right_1">
+					<select id="ddllook_index" name="ddllook_index" disabled="disabled">
+						<option value="">--- Select ---</option>
+					</select>
+					</div>
+					<script type="text/javascript">
+					if ($.fn.chosen) {
+						$("select").chosen();
+					}
+					</script>';
+				
+			//'. if($this->formdata['lookupindex'] == $result[0][$i]['id'] )  { echo 'selected'; } '.
+			echo $option;
+			exit;
+		}
+    }
+	/**
+    * @name       addlookupindex
+    * @since      23-05-2012
+    * @version    Release: 2
+    * @author     HD
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for add information of the look up index
+    * 
+    */
+    public function addlookupindexAction()
+    {
+		$this->_helper->layout->setLayout('popup');
+		
+		$this->view->params   = $params   = $this->getRequest()->getParams();        
+		$this->view->formdata = $formdata = $this->_request->getPost();
+		
+		$this->view->defkey = (isset($params['defkey']) && $params['defkey'] !='') ? $params['defkey'] : $formdata['defkey'];
+		
+		$this->view->oi 	= (isset($params['oi']) && $params['oi'] !='') ? $params['oi'] : $formdata['hdnoi'];
+		$this->view->sp 	= (isset($params['sp']) && $params['sp'] !='') ? $params['sp'] : $formdata['hdnsp'];		
+		$this->view->st 	= (isset($params['st']) && $params['st'] !='') ? $params['st'] : $formdata['hdnst'];
+		$this->view->lt		= (isset($params['lt']) && $params['lt'] !='') ? $params['lt'] : $formdata['hdnlt'];
+		$this->view->li		= (isset($params['li']) && $params['li'] !='') ? $params['li'] : $formdata['hdnli'];
+		$this->view->spa 	= (isset($params['spa']) && $params['spa'] !='') ? $params['spa'] : $formdata['hdnspa'];
+		$this->view->status = (isset($params['status']) && $params['status'] !='') ? $params['status'] : $formdata['hdnstatus'];
+		
+		if($formdata['txtlk_desc'] !='' && $formdata['txtcode'] !='' )
+		{
+			
+			$param_array 	= array();
+			$param_array[1]	= $formdata['txtlk_desc'];
+			$param_array[2]	= $formdata['txtarblk_desc'];
+			$param_array[3]	= $this->currentUser->username;			
+			
+			if($formdata['hdnid1'] > 0)
+			{
+				$param_array[4] = $formdata['hdnid1'];				
+				$last_id = $this->SFA_Comman->executequery('CALL sp_edit_merchandize_index_addlookupindex(?,?,?,?)',$param_array,'');
+			}
+			else
+			{
+				$last_id = $this->SFA_Comman->executequery('CALL sp_add_merchandize_index_addlookupindex(?,?,?)',$param_array,'');
+			}
+			
+			$last_id = $last_id[0][0]['last_id'];
+			$this->_helper->redirector('addlookupindex', 'index', 'merchandize',array('defkey'=>$this->view->defkey,'edit'=>'yes','trankey'=>$last_id,"addlookupindex"=>true,"oi"=>$this->view->oi,"sp"=>$this->view->sp,"st"=>$this->view->st,"lt"=>$this->view->lt,"li"=>$this->view->li,"spa"=>$this->view->spa,"status"=>$this->view->status));
+		}
+		elseif($params['trankey'] > 0)
+		{
+			$this->view->itemgrid   = $this->view->BaseUrl("/merchandize/index/lookupindexgrid/trankey/".$params['trankey']);
+			$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_addlookupindex(?)',$params['trankey'],'');
+			$this->view->formdata = $result[0][0];
+		}
+		else
+		{
+			$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_addlookupindex(?)','0','');
+			$this->view->formdata['transactionkey'] = ($result[0][0]['Auto_increment'] == '') ? '1' : $result[0][0]['Auto_increment'];;			
+		}
+	}
+	/**
+    * @name       lookupindexgridAction
+    * @since      23-05-2012
+    * @version    Release: 2
+    * @author     HD
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for display information of the look up index
+    * 
+    */
+    public function lookupindexgridAction()
+    {
+		$this->view->params = $params = $this->getRequest()->getParams();
+
+		// column to be fetched
+		$columns_array 	=  array('description','arbdescription','primary_key as edit_del_primary_id');
+		
+		// column header to be displayed
+		$columns_show  = array($this->translate->_('Description'),$this->translate->_('Description ('.$this->sec_lang.')'));
+		
+		
+		// DELETE THE RECORD
+		if($params["delete"]=="yes"){
+			
+			$param_array 	= array();
+			$param_array[1]	= $params["id"];
+			$param_array[2]	= $this->currentUser->username;
+			
+			// sp for delete outletproductitem
+			$r_delete = $this->SFA_Comman->executequery('CALL sp_delete_merchandize_index_lookupindexgrid(?,?)',$param_array,'');
+				SFA_Message::setMsg($this->translate->_('Delete Record'));
+		}
+	
+		// UPDATE THE RECORD
+		if($params["update"]=="yes")
+		{
+			
+			if($params["description"] !='' && $params["arbdescription"] !='')
+			{
+				
+				
+				$updateData["1"] = trim($params["description"]);
+				$updateData["2"] = trim($params["arbdescription"]);
+				$updateData["3"] = $params["id"];
+				
+				// call sp for edit outletproductitem
+				$r_edit = $this->SFA_Comman->executequery('CALL sp_edit_merchandize_index_lookupindexgrid(?,?,?)',$updateData,'');			
+				SFA_Message::setMsg($this->translate->_('Update Record'));				
+			}
+			else
+			{
+				SFA_Message::setErrorMsg($this->translate->_('Missing Field'));
+			}
+		}
+		
+	
+		// IF EXTRA PARAMS ARE REQUIRED
+		$ex_param = "";
+		if(isset($params["trankey"]) && $params["trankey"]>0)  {
+			$additional_where_condition = array();
+			$ex_param = "/trankey/".$params["id"];
+				$additional_where_condition[] = ' ( transactionkey = "'.$params["trankey"].'" ) ';
+		}
+	
+			// ARRAY FOR GRID PAGINATION
+			$pagingparams = array(
+						"show_grid_heading" => false,
+						"grid_heading_message" => $this->translate->_('Overview'),
+						"show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+						"show_searchbox" => false,
+						"show_selectbox" => false,
+						"show_editlink" => true,
+						"show_deletelink" => true,
+						"show_deleteall" => false,
+						"primaryid" => "primary_key",
+						"currentlink" => array("/".$params['module']."/".$params['controller']."/".$params['action'].$ex_param),
+						"deletelink" => array("/id/#pattern#/delete/yes","#pattern#"),
+						"editlink" => array("/id/#pattern#/edit/yes","#pattern#"),
+						"nodata_message" => $this->translate->_('No Record(s) Found'),
+						"fetch_columns_inquery" => $columns_array,
+						"show_columns" => $columns_show,
+						"additional_where" => $additional_where_condition
+						);
+	
+		// WHEN GRID IS IN EDIT MODE
+		if($params["edit"]=="yes"){
+	
+			$pagingparams["editmode"] = true;
+			$pagingparams["editmodeid"] = $params["id"];
+			$pagingparams["editmodevalue"] = "primary_key";  // put table's prymary key here
+		}
+	
+		//$pagingshow = new SFA_Pagingquery($pagingparams);
+		$pagingshow = new SFA_Ajaxpaging($pagingparams);
+		
+		// call common function of grid class
+		$get_return_vals = $pagingshow->commnfunc();
+		
+		// call the stored procedure for fetch the data
+		$param_array 	= array();
+		$param_array[1] = '1';
+		$param_array[2] = $get_return_vals['order_columns_name'];
+		$param_array[3] = $get_return_vals['order_type'];
+		$param_array[4] = $get_return_vals['offset'];
+		$param_array[5] = (int)$get_return_vals['show_records_per_page'];
+		$param_array[6] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+		$param_array[7] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';		
+	
+		$result			= $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_lookupindexgrid(?,?,?,?,?,?,?)',$param_array,'');
+		
+		$data_arr["count"] 		= $result[0][0]['counter'];
+		$data_arr["data"][0] 	= $result[1];
+	
+		
+		#echo "<pre>"; print_r($data_arr); exit;
+		$this->view->pagegridshow =  $pagingshow->summary_showdatagrid($data_arr);
+		$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/");
+		
+		$this->render("ajaxgrid");
+	}
+	/**
+    * @name       addlookupindexgridAction
+    * @since      23-05-2012
+    * @version    Release: 2
+    * @author     HD
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for add information of the look up index detail
+    * 
+    */
+    public function addlookupindexgridAction()
+    {
+		$formdata = $this->_request->getPost();
+	
+		$param_array 	= array();
+		$param_array[1] = trim($formdata["hdnid"]);
+		$param_array[2] = trim($formdata["txtdesc"]);
+		$param_array[3] = trim($formdata["txtarbdesc"]);
+		$param_array[4] = $this->currentUser->username;
+		
+		$last_id = $this->SFA_Comman->executequery('CALL sp_add_merchandize_index_addlookupindexdetail(?,?,?,?)',$param_array,'');
+		
+		if($last_id[0][0]['result'] == 'insert')
+			SFA_Message::setMsg($this->translate->_('New Record'));
+		else
+			SFA_Message::setMsg($this->translate->_('Update Record'));
+		exit;
+	}
+
+    /**
+    * @name       surveyplanAction
+    * @since      16-05-2012
+    * @version    Release: 2
+    * @author     VB <vinay@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for the view surveyplandetail
+    */
+       
+    public function surveyplanAction()
+    {
+	$this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+
+        if($formdata["hdDelete"]==1)
+	{
+	    $ids = implode(',',$formdata['chk']);
+	    $param_array 	= array();
+	    $param_array[1]	= $ids;
+	    $param_array[2]	= $this->currentUser->username;
+	    
+	    $result 	= $this->SFA_Comman->executequery('CALL sp_delete_merchandize_index_surveyplan(?,?)',$param_array,'');
+	    
+	    if($result[0][0]['deleted_id'] =='')
+	    {
+		$ids		= explode(',',$ids);
+		$checked 	= $ids;
+		
+		SFA_Message::setErrorMsg($this->translate->_('Record Already In use'));
+	    }
+	    else
+	    {
+		$deleted_id 	= explode(',',$result[0][0]['deleted_id']);
+		$ids		= explode(',',$ids);
+		$checked 	= array_diff($ids,$deleted_id);
+		
+		if(count($ids) != count($deleted_id)){
+		    SFA_Message::setErrorMsg($this->translate->_('Record Already In use'));
+		}
+		
+		SFA_Message::setMsg($this->translate->_('Delete Record'));
+	    }
+	}
+
+        $survey_description = $this->translate->_('Survey Description');
+        $status = $this->translate->_('Status');
+	
+	$cols_array 	= array('surveydescription','surveymandatory','surveyplankey as edit_del_primary_id');
+	$columns_show 	=  array($this->translate->_('Survey Description'),$this->translate->_('Survey Mandatory'));
+	
+	if($this->css == 'ar_') {
+		$cols_array[0]	= 'arbsurveydescription AS surveydescription';
+	}
+	
+	// prepare the configuration for grid
+	$pagingparams = array(
+			"show_grid_heading" => true,
+			"grid_heading_message" => $this->translate->_('Overview'),
+			"pagename" => $this->translate->_('Survey Plan'),
+			"show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+			"show_searchbox" => true,
+			"searchbox_value" => isset($formdata["grid_search_text"])?$formdata["grid_search_text"]:"",
+			"show_selectbox" => true,
+			"selected_list" => $checked,
+			"show_editlink" => true,
+			"show_deletelink" => false,
+			"show_deleteall" => false,
+			"status_cols" => array(
+						array (
+						    "cols_name" => "surveymandatory",
+						    "status_change" => array("0"=>"No","1"=>"Yes")
+						)
+					    ),
+			"primaryid" => "surveyplankey",
+			"editlink" => array("/merchandize/index/addsurveyplan/id/#pattern#/edit/yes/","#pattern#"),
+			"nodata_message" => $this->translate->_('No Record(s) Found'),
+			"fetch_columns_inquery" => $cols_array,
+			"show_columns" => $columns_show
+			);
+    
+    if(!$this->checkaccess("update"))
+    {
+        $pagingparams["show_editlink"] = false;
+    }
+    
+	// create grid class object
+	$pagingshow = new SFA_Paging($pagingparams);
+	
+	// call common function of grid class
+	$get_return_vals = $pagingshow->commnfunc();
+	
+	//print_r($get_return_vals['where_condition']);
+	
+	// call the stored procedure for fetch the data
+	$param_array	= array();
+	$param_array[1] = '1';
+	$param_array[2] = '';
+	$param_array[3] = $get_return_vals['order_columns_name'];
+	$param_array[4] = $get_return_vals['order_type'];
+	$param_array[5] = $get_return_vals['offset'];
+	$param_array[6] = (int)$get_return_vals['show_records_per_page'];
+	$param_array[7] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+	$param_array[8] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';
+	
+	$downloadCSV = (isset($formdata['downloadcsv'])) ? $formdata['downloadcsv'] : $params['downloadcsv'];
+    
+    // Hiren Dave on 19 Nov, 2012 - START - to check if need to print data
+	$printData = (isset($formdata['printData'])) ? $formdata['printData'] : $params['printData'];	
+	// called stored procedure for counter
+	$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_surveyplan(?,?,?,?,?,?,?,?)',$param_array,'',$downloadCSV,$printData,2,$pagingparams);
+
+	$data_arr["count"]	= $result[0][0]['counter'];		
+	$data_arr["data"][0]= $result[1];
+	
+	// pass the data in summary_showdatagrid() function & create a final variable for view
+	$this->view->pagegridshow =  $pagingshow->summary_showdatagrid($data_arr);
+	
+	$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/");
+    }
+  /**
+    * @name       addsurveyplanAction
+    * @since      16-05-2012
+    * @version    Release: 2
+    * @author     VB <vinay@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for the add surveyplan
+    */
+   public function addsurveyplanAction()
+    {
+        $this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+
+		$this->view->css 		= $this->translate->_('CSS');
+		
+		$this->view->returnUrl = $_SERVER["HTTP_REFERER"];
+		
+		
+	
+		if(count($formdata) > 0)
+		{
+			$param_array	= array();
+			$param_array[1]	= $formdata['txt_surveyplan'];
+			$param_array[2]	= $formdata['txt_arbsurveyplan'];
+			$param_array[3]	= $formdata['txt_surveyindex'];
+			$param_array[4]	= (isset($formdata['chk_mandatory'])) ? $formdata['chk_mandatory'] : 0 ;
+			$param_array[5]	= substr($formdata['hdnselectedquestion'], 0, -1);		//selected question
+			$param_array[6]	= $formdata['hdncount_question'];	// get count for add record in child table
+			$param_array[7]	= $this->currentUser->username;
+			
+			if($formdata['hdnid'] > 0)
+			{
+			    $param_array[8]	= $formdata['hdnid'];
+		    
+			    $result = $this->SFA_Comman->executequery('CALL sp_edit_merchandize_index_addsurveyplan(?,?,?,?,?,?,?,?)',$param_array,'');
+			    SFA_Message::setMsg($this->translate->_('Update Record'));
+			}
+			else
+			{
+			    $result = $this->SFA_Comman->executequery('CALL sp_add_merchandize_index_addsurveyplan(?,?,?,?,?,?,?)',$param_array,'');
+			    SFA_Message::setMsg($this->translate->_('New Record'));
+			}
+			if($formdata['returnUrl'])
+			    $this->_redirect($formdata["returnUrl"]);
+			else
+			    $this->_helper->redirector('surveyplan', 'index', 'merchandize');
+		}
+		elseif($params['id'] > 0)
+		{
+			$result = $this->SFA_Comman->executequery("CALL sp_get_merchandize_index_addsurveyplan(?)",$params['id'],'');
+			$this->view->questions		= $result[0];
+			$this->view->formdata		= $result[1][0];
+			$this->view->selected_questions	= $result[2];
+		}
+		else
+		{
+			$result = $this->SFA_Comman->executequery("CALL sp_get_merchandize_index_addsurveyplan(?)",'0','');
+			$this->view->questions			= $result[0];
+			$this->view->formdata['surveyplankey'] 	= $result[1][0]['Auto_increment'];
+			
+		}
+    }
+	
+     /**
+    * @name       surveykeyAction
+    * @since      16-05-2012
+    * @version    Release: 2
+    * @author     VB <vinay@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for the show surveykey detail
+    * 
+    */
+    public function surveykeyAction()
+    {
+		$this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+	
+	if($formdata["hdDelete"]==1)
+	{
+	    $ids = implode(',',$formdata['chk']);
+	    $param_array 	= array();
+	    $param_array[1]	= $ids;
+	    $param_array[2]	= $this->currentUser->username;
+	    
+	    $result 	= $this->SFA_Comman->executequery('CALL sp_delete_merchandize_index_surveyplankey(?,?)',$param_array,'');
+	    
+	    if($result[0][0]['deleted_id'] =='')
+	    {
+		$ids		= explode(',',$ids);
+		$checked 	= $ids;
+		
+		SFA_Message::setErrorMsg($this->translate->_('Record Already In use'));
+	    }
+	    else
+	    {
+		$deleted_id 	= explode(',',$result[0][0]['deleted_id']);
+		$ids		= explode(',',$ids);
+		$checked 	= array_diff($ids,$deleted_id);
+		
+		if(count($ids) != count($deleted_id)){
+		    SFA_Message::setErrorMsg($this->translate->_('Record Already In use'));
+		}
+		
+		SFA_Message::setMsg($this->translate->_('Delete Record'));
+	    }
+	}
+
+	$cols_array 	= array('surveydescription','activestatus','surveykey as edit_del_primary_id');
+	$columns_show 	=  array($this->translate->_('Survey Description'),$this->translate->_('Status'));
+	
+	if($this->css == 'ar_') {
+		$cols_array[0]	= 'arbsurveydescription AS surveydescription';
+	}
+	
+
+	// prepare the configuration for grid
+	$pagingparams = array(
+			"show_grid_heading" => true,
+			"grid_heading_message" => $this->translate->_('Overview'),
+			"pagename" => $this->translate->_('Survey Key'),
+			"show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+			"show_searchbox" => true,
+			"searchbox_value" => isset($formdata["grid_search_text"])?$formdata["grid_search_text"]:"",
+			"show_selectbox" => true,
+			"selected_list" => $checked,
+			"show_editlink" => true,
+			"show_deletelink" => false,
+			"show_deleteall" => false,
+			"status_cols" => array(
+						array (
+						    "cols_name" => "activestatus",
+						    "status_change" => array("0"=>"Inactive","1"=>"Active")
+						)
+					    ),
+			"primaryid" => "surveykey",
+			"editlink" => array("/merchandize/index/addsurveykey/id/#pattern#/edit/yes/","#pattern#"),
+			"nodata_message" => $this->translate->_('No Record(s) Found'),
+			"fetch_columns_inquery" => $cols_array,
+			"show_columns" => $columns_show
+			);
+    
+    if(!$this->checkaccess("update"))
+    {
+        $pagingparams["show_editlink"] = false;
+    }
+    
+	// create grid class object
+	$pagingshow = new SFA_Paging($pagingparams);
+	
+	// call common function of grid class
+	$get_return_vals = $pagingshow->commnfunc();
+	
+	//print_r($get_return_vals['where_condition']);
+	
+	// call the stored procedure for fetch the data
+	$param_array	= array();
+	$param_array[1] = '1';
+	$param_array[2] = '';
+	$param_array[3] = $get_return_vals['order_columns_name'];
+	$param_array[4] = $get_return_vals['order_type'];
+	$param_array[5] = $get_return_vals['offset'];
+	$param_array[6] = (int)$get_return_vals['show_records_per_page'];
+	$param_array[7] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+	$param_array[8] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';
+	
+	$downloadCSV = (isset($formdata['downloadcsv'])) ? $formdata['downloadcsv'] : $params['downloadcsv'];
+    
+    // Hiren Dave on 19 Nov, 2012 - START - to check if need to print data
+	$printData = (isset($formdata['printData'])) ? $formdata['printData'] : $params['printData'];
+	// called stored procedure for counter
+	$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_surveykey(?,?,?,?,?,?,?,?)',$param_array,'',$downloadCSV,$printData,2,$pagingparams);
+
+	$data_arr["count"]	= $result[0][0]['counter'];		
+	$data_arr["data"][0]= $result[1];
+	
+	// pass the data in summary_showdatagrid() function & create a final variable for view
+	$this->view->pagegridshow =  $pagingshow->summary_showdatagrid($data_arr);
+	
+	$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/");        
+    }
+     /**
+    * @name       addsurveykeyAction
+    * @since      16-05-2012
+    * @version    Release: 2
+    * @author     VB <vinay@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for the show add surveykey detail
+    * 
+    */
+    public function addsurveykeyAction()
+    {
+        $this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+
+		$this->view->css 		= $this->translate->_('CSS');
+		$this->view->select 		= $this->translate->_('Select');
+		$this->view->missonefld		= $this->translate->_('Missed One Field');
+		$this->view->youmissed		= $this->translate->_('You Missed');
+		$this->view->highlated		= $this->translate->_('Fields. They have been highlighted.');
+		
+		if(count($formdata) > 0)
+		{
+			$param_array	= array();
+			$param_array[1]	= $formdata['txt_surveydesc'];
+			$param_array[2]	= $formdata['txt_arbsurveydesc'];
+			$param_array[3]	= $formdata['ddl_status'];	    
+			$param_array[4]	= $this->currentUser->username;	    
+			
+			if($formdata['hdnid'] > 0)
+			{
+				$param_array[5]	= $formdata['hdnid'];
+			
+				$result = $this->SFA_Comman->executequery('CALL sp_edit_merchandize_index_addsurveykey(?,?,?,?,?)',$param_array,'');
+				SFA_Message::setMsg($this->translate->_('Update Record'));
+				
+				if($formdata['returnUrl'])
+					$this->_redirect($formdata["returnUrl"]);
+				else
+					$this->_helper->redirector('surveykey', 'index', 'merchandize');
+			}
+			else
+			{
+				$result 	= $this->SFA_Comman->executequery('CALL sp_add_merchandize_index_addsurveykey(?,?,?,?)',$param_array,'');
+				SFA_Message::setMsg($this->translate->_('New Record'));
+				
+				$last_id = $result[0][0]['last_id'];
+				
+				if($formdata['returnUrl'])
+					$this->_redirect($formdata["returnUrl"]);
+				else
+					$this->_helper->redirector('addsurveykey', 'index', 'merchandize',array('edit'=>'yes','id'=>$last_id));
+			}	    
+		}
+		elseif($params['id'] > 0)
+		{   
+			$this->view->itemgrid   = $this->view->BaseUrl("/merchandize/index/addselectedsurveyplan");
+			$this->view->itemgrid2   = $this->view->BaseUrl("/merchandize/index/surveyplangrid");
+			
+			$result = $this->SFA_Comman->executequery("CALL sp_get_merchandize_index_addsurveykey(?)",$params['id'],'');
+			$this->view->formdata	= $result[0][0];			
+			$this->view->conter 	= $result[1][0]['counter'];	
+		}
+		else
+		{
+			$result = $this->SFA_Comman->executequery("CALL sp_get_merchandize_index_addsurveykey(?)",'0','');
+			$this->view->formdata['surveykey'] 	= $result[0][0]['Auto_increment'];	    
+		}	
+    }
+    /**
+    * @name       surveycontrolgridAction
+    * @since      21-02-2012
+    * @version    Release: 1
+    * @author     M@M <miral@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for the show survey control
+    */
+    public function surveyplangridAction()
+    {
+        $this->view->params = $params = $this->getRequest()->getParams();
+	
+		// column to be fetched
+		$columns_array	= array('plan.surveysequencenumber','IF(plan.surveymandatory > 0,"Yes","No")','plan.surveydescription','plan.arbsurveydescription','plan.surveyplankey as edit_del_primary_id');
+		$columns_show	= array($this->translate->_('Sequence No'),$this->translate->_('Survey Mandatory'),$this->translate->_('Survey Description'),$this->translate->_('Survey Description ('.$this->sec_lang.')'));
+		
+		
+		// gettting the already having the plan number into plan key detail
+		$selected_plan_list = $this->SFA_Comman->executequery('CALL sp_getplankey_merchandize_index_selectedsurveyplangrid',$params["key"],'');
+		
+		// plan numbers array
+		$plan_array = explode(",",$selected_plan_list[0][0]["plans"]);
+		
+		// ARRAY FOR GRID PAGINATION
+		$pagingparams = array(
+					 "show_grid_heading" => false,
+					 "grid_heading_message" => $this->translate->_('Overview'),
+					 "show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+					 "show_searchbox" => false,
+					 "show_selectbox" => true,
+					 "selected_list" => $plan_array,
+					 "show_editlink" => false,
+					 "show_deletelink" => false,
+					 "show_deleteall" => false,
+					 "primaryid" => "surveyplankey",
+					 "currentlink" => array("/merchandize/index/surveyplangrid".$ex_param),
+					 "deletelink" => array("/id/#pattern#/delete/yes","#pattern#"),
+					 "editlink" => array("/id/#pattern#/edit/yes","#pattern#"),
+					 "nodata_message" => $this->translate->_('No Record(s) Found'),
+					 "fetch_columns_inquery" => $columns_array,
+					 "show_columns" => $columns_show
+					 );
+	
+		// WHEN GRID IS IN EDIT MODE
+		if($params["edit"]=="yes")
+		{
+			$pagingparams["editmode"] = true;
+			$pagingparams["editmodeid"] = $params["id"];
+			$pagingparams["editmodevalue"] = "surveyplankey";  // put table's prymary key here
+		}
+	
+		
+		$pagingshow = new SFA_Ajaxpaging($pagingparams);
+		
+		// call common function of grid class
+		$get_return_vals = $pagingshow->commnfunc();
+		
+		// call the stored procedure for fetch the data
+		$param_array 	= array();
+		$param_array[1] = '1';
+		$param_array[2] = $get_return_vals['order_columns_name'];
+		$param_array[3] = $get_return_vals['order_type'];
+		$param_array[4] = $get_return_vals['offset'];
+		$param_array[5] = (int)$get_return_vals['show_records_per_page'];
+		$param_array[6] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+		$param_array[7] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';
+	
+		
+		// called stored procedure for counter
+		$result		= $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_surveyplangrid(?,?,?,?,?,?,?)',$param_array,'');    
+		$data_arr["count"] 		= $result[0][0]['counter'];
+		$data_arr["data"][0] 	= $result[1];
+		
+		$this->view->pagegridshow_4 =  $pagingshow->summary_showdatagrid($data_arr);
+		$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/");
+    }
+    /**
+    * @name       addselectedsurveyplan
+    * @since      16-04-2012
+    * @version    Release: 2
+    * @author     HD
+    * @copyright  Elan Technologies
+    * @param
+    *
+    * This action is use for add page of promotion key 
+    */
+    public function addselectedsurveyplanAction()
+    {
+		$this->view->params = $params = $this->getRequest()->getParams();
+		$this->view->formdata = $formdata = $this->_request->getPost();
+		
+		// column to be fetched
+		$columns_array	= array('plan.surveysequencenumber',' IF(plan.surveymandatory > 0,"Yes","No")','plan.surveydescription','plan.arbsurveydescription','primary_key as edit_del_primary_id');
+		$columns_show	= array($this->translate->_('Sequence No'),$this->translate->_('Survey Mandatory'),$this->translate->_('Survey Description'),$this->translate->_('Survey Description ('.$this->sec_lang.')'));
+		
+		// ADDING THE RECORD
+		if($formdata["add"]=="yes")	{
+		
+			$paramarry = array();
+		  
+			if($formdata['chk']) {
+			
+				$planarray = array(0);
+			
+				if(isset($formdata['chk']) && is_array($formdata['chk']) && count($formdata['chk']))
+				{
+					$plan_list = implode(",",$formdata["chk"]);
+					
+					$paramarry[1] = $params["key"];
+					$paramarry[2] = $plan_list;
+					$paramarry[3] = count($formdata['chk']);
+					$paramarry[4] = $this->currentUser->username;
+					
+					
+					$r_add = $this->SFA_Comman->executequery('CALL sp_add_merchandize_index_addsurveykeyplan(?,?,?,?)',$paramarry,'');
+					if($r_add[0][0]['Insert']) {
+						SFA_Message::setMsg($this->translate->_('New Record'));
+					}
+				}
+			}
+		}
+		
+		// DELETE THE RECORD
+		if($params["delete"]=="yes"){
+			
+			$param_array 	= array();
+			$param_array[1]	= $params["id"];
+			$param_array[2]	= $this->currentUser->username;
+			
+			$r_delete = $this->SFA_Comman->executequery('CALL sp_delete_merchandize_index_surveykeyplan(?,?)',$param_array,'');
+				SFA_Message::setMsg($this->translate->_('Delete Record'));
+		}
+		
+		// IF EXTRA PARAMS ARE REQUIRED
+		$ex_param = "";
+		if(isset($params["key"]) && $params["key"]>0)  {
+			$additional_where_condition = array();
+			$ex_param = "/key/".$params["key"];
+				$additional_where_condition[] = ' (kplan.surveykey = "'.$params["key"].'" ) ';
+		}
+	
+		$pagingparams = array(
+					 "show_grid_heading" => false,
+					 "grid_heading_message" => $this->translate->_('Overview'),
+					 "show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+					 "show_searchbox" => false,
+					 "show_selectbox" => false,
+					 "show_editlink" => false,
+					 "show_deletelink" => true,
+					 "show_deleteall" => false,
+					 "primaryid" => "primary_key",			     
+					 "currentlink" => array("/merchandize/index/addselectedsurveyplan".$ex_param),
+					 "deletelink" => array("/id/#pattern#/delete/yes","#pattern#"),					 
+					 "nodata_message" => $this->translate->_('No Record(s) Found'),					
+					 "fetch_columns_inquery" => $columns_array,
+					 "show_columns" => $columns_show,
+					 "additional_where" => $additional_where_condition
+					 );
+		
+        if(!$this->checkaccess("delete"))
+        {
+            $pagingparams["show_deletelink"] = false;
+        }
+		// WHEN GRID IS IN EDIT MODE
+		if($params["edit"]=="yes"){
+	
+			$pagingparams["editmode"] = true;
+			$pagingparams["editmodeid"] = $params["id"];
+			$pagingparams["editmodevalue"] = "primary_key";  // put table's prymary key here
+		}
+		
+		$pagingshow = new SFA_Ajaxpaging($pagingparams);
+		
+		// call common function of grid class
+		$get_return_vals = $pagingshow->commnfunc();
+		
+		// call the stored procedure for fetch the data
+		$param_array 	= array();
+		$param_array[1] = '1';
+		$param_array[2] = $get_return_vals['order_columns_name'];
+		$param_array[3] = $get_return_vals['order_type'];
+		$param_array[4] = $get_return_vals['offset'];
+		$param_array[5] = (int)$get_return_vals['show_records_per_page'];
+		$param_array[6] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+		$param_array[7] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';
+	
+		
+		// called stored procedure for counter
+		$result		= $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_selectedsurveyplangrid(?,?,?,?,?,?,?)',$param_array,'');    
+		$data_arr["count"] 		= $result[0][0]['counter'];
+		$data_arr["data"][0] 	= $result[1];
+		
+		
+		
+		$this->view->pagegridshow =  $pagingshow->summary_showdatagrid($data_arr);
+		$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/");
+
+    }
+	/**
+    * @name       viewcustomerimages
+    * @since      22-02-2012
+    * @version    Release: 1
+    * @author     HD <hiren.d@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    * This action is use for display customer images from public/customer folder
+    */
+    public function customerimagesAction()
+    {
+        $this->view->params = $params = $this->getRequest()->getParams();
+        $this->view->formdata = $formdata = $this->_request->getPost();
+	
+		$cols_array 	= array('DISTINCT ci.customercode','c.customername','c.customercode as edit_del_primary_id');
+		$columns_show 	=  array($this->translate->_('Customer Code'),$this->translate->_('Customer Name'));
+		
+		if($this->css == 'ar_') {
+			$cols_array[0]	= 'alternatecod AS customercode';
+		}
+		
+		$Common_NameSpace = new Zend_Session_Namespace('CustomerImages');
+		$Common_NameSpace->date		= '';
+		$Common_NameSpace->route	= '';
+		if($formdata['btnreset'] == 'RESET')
+		{
+			$formdata["txtdate"] 		= '';
+			$formdata["ddlroutecode"] 	= '';
+			$Common_NameSpace->date		= '';
+			$Common_NameSpace->route	= '';
+			$this->_helper->redirector("customerimages", "index", "merchandize");
+		}
+		$last_url = htmlspecialchars($_SERVER['HTTP_REFERER']);
+		if(strpos($last_url,'customerimages')) {			
+			$sel_date 	= ($formdata["txtdate"] != '') ? $formdata["txtdate"] : $Common_NameSpace->date;
+			$sel_route 	= ($formdata["ddlroutecode"] != '') ? $formdata["ddlroutecode"] : $Common_NameSpace->route;
+		}
+		
+		// ADD DATE VALUE IN SESSION
+		if($sel_date != '' || $sel_route != '') {
+			$Common_NameSpace->date 	= $sel_date;
+			$Common_NameSpace->route 	= $sel_route;
+			$this->view->date			= $sel_date;
+			$this->view->route			= $sel_route;			
+		} 
+		
+		if($Common_NameSpace->date)
+			$additional_where_condition[] = ' DATE(transactiondate) =  STR_TO_DATE("'.$Common_NameSpace->date.'","%d-%m-%Y")';
+			
+		if($Common_NameSpace->route)
+			$additional_where_condition[] = " ci.routecode =  ". $Common_NameSpace->route;
+	
+		// prepare the configuration for grid
+		$pagingparams = array(
+				"show_grid_heading" => true,
+				"grid_heading_message" => $this->translate->_('Overview'),
+				"pagename" => $this->translate->_('Customer Images'),
+				"show_records_per_page" => isset($formdata["show_records_per_page"])?$formdata["show_records_per_page"]:10,
+				"show_searchbox" => false,
+				"searchbox_value" => isset($formdata["grid_search_text"])?$formdata["grid_search_text"]:"",
+				"show_selectbox" => false,
+				"selected_list" => $checked,
+				"show_editlink" => true,
+				"show_deletelink" => false,
+				"show_deleteall" => false,				
+				"primaryid" => "surveykey",
+				"editlink" => array("/merchandize/index/viewcustomerimages/id/#pattern#","#pattern#"),
+				"nodata_message" => $this->translate->_('No Record(s) Found'),
+				"fetch_columns_inquery" => $cols_array,
+				"show_columns" => $columns_show,
+				"additional_where" => $additional_where_condition
+				);
+		
+		if(!$this->checkaccess("update")) {
+			$pagingparams["show_editlink"] = false;
+		}
+		
+		// create grid class object
+		$pagingshow = new SFA_Paging($pagingparams);
+		
+		// call common function of grid class
+		$get_return_vals = $pagingshow->commnfunc();
+		
+		//print_r($get_return_vals['where_condition']);
+		
+		// call the stored procedure for fetch the data
+		$param_array	= array();
+		$param_array[1] = '1';
+		$param_array[2] = '';
+		$param_array[3] = $get_return_vals['order_columns_name'];
+		$param_array[4] = $get_return_vals['order_type'];
+		$param_array[5] = $get_return_vals['offset'];
+		$param_array[6] = (int)$get_return_vals['show_records_per_page'];
+		$param_array[7] = implode(", ",$pagingparams["fetch_columns_inquery"]);
+		$param_array[8] = strlen($get_return_vals['where_condition'])>0?$get_return_vals['where_condition']:'';
+		$param_array[9] = $Common_NameSpace->route;
+		
+		// called stored procedure for counter
+		$result = $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_customerimages(?,?,?,?,?,?,?,?)',$param_array,'','','',2,$pagingparams);
+	
+		$data_arr["count"]		= $result[0][0]['counter'];		
+		$data_arr["data"][0]	= $result[1];
+		
+		$this->view->routeinfo	= $result[2];		
+		
+		// pass the data in summary_showdatagrid() function & create a final variable for view
+		$this->view->pagegridshow =  $pagingshow->summary_showdatagrid($data_arr);
+		
+		$this->view->addScriptPath(APPLICATION_PATH."/theme/default/datagrid/"); 
+    }
+	/**
+    * @name       viewcustomerimages
+    * @since      22-02-2012
+    * @version    Release: 1
+    * @author     HD <hiren.d@elantechnologies.com>
+    * @copyright  Elan Technologies
+    * @param
+    * This action is use for display customer images from public/customer folder
+    */
+    public function viewcustomerimagesAction() {
+		
+		$params = $this->getRequest()->getParams();
+		
+		if($params['id'] > 0) {
+			
+			$baseUrl            = Zend_Controller_Front::getInstance()->getBaseUrl();
+			$this->view->path   = str_replace('//','/',$_SERVER['DOCUMENT_ROOT'].$baseUrl.'/public/customerimage/');
+			$this->view->path1 	= str_replace('//','/',$baseUrl.'/public/customerimage/');
+			$dirname 	        = $this->view->path;
+			
+			$Common_NameSpace = new Zend_Session_Namespace('CustomerImages');
+			if($Common_NameSpace->date)
+				$date = ' DATE(transactiondate) =  STR_TO_DATE("'.$Common_NameSpace->date.'","%d-%m-%Y")';
+			
+			$conditions[] = $params['id'];
+			$conditions[] = $date;
+			
+			
+			$images 			= $this->SFA_Comman->executequery('CALL sp_get_merchandize_index_customerimagesdatabyid(?)',$conditions);
+			$this->view->images = $images[0];
+			$this->view->title  = $this->translate->_('Customer Images');
+			$this->view->message= $this->translate->_('No Record(s) Found');
+			
+		} else {
+			$this->view->title  = $this->translate->_('Customer Images');
+			$this->view->message= $this->translate->_('No Record(s) Found');
+		}
+    }
+}

@@ -1,0 +1,81 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({
+   	url:base_url+"/reports/nmwcdailyrouteactivity/dailyrouteactivitydata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Transaction Date');?>','<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Customer');?>','<?php echo $this->translate->_( 'Address');?>','<?php echo $this->translate->_('Standard GPS');?>','<?php echo $this->translate->_('Actual GPS');?>','<?php echo $this->translate->_('Difference (Meter)');?>','<?php echo $this->translate->_('Visit Start Time');?>','<?php echo $this->translate->_('Visit End Time');?>','<?php echo $this->translate->_('Duration hh:mm');?>','<?php echo $this->translate->_('Visit Interval Time');?>','<?php echo $this->translate->_('Transaction');?>','<?php echo $this->translate->_('Order Collected');?>','<?php echo $this->translate->_('Receipt Collected');?>'],
+   	colModel:[
+		
+        {name:'trandate',index:'trandate', width:70},
+		{name:'routecode',index:'routecode', width:100},
+        {name:'customercode',index:'customercode', width:200},
+        {name:'customeraddress1',index:'customeraddress1', width:200},
+		{name:'visitstarttime',index:'visitstarttime', width:100},
+		{name:'standardgps',index:'standardgps', width:120},
+		{name:'actualgps',index:'actualgps', width:70},
+        {name:'distance',index:'distance', width:70},
+        {name:'visitendtime',index:'visitendtime', width:70},
+        {name:'duration',index:'duration', width:70},
+		 {name:'intrvltime',index:'intrvltime', width:70},
+		{name:'trantype',index:'trantype', width:100},
+		{name:'salePaid',index:'salePaid', width:80,align:"right",formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+		{name:'receiptPaid',index:'receiptPaid', width:100,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+	],
+    <?php if($this->session->lang == "ar_AR") { ?>
+        direction :"rtl",
+    <?php } ?>
+	    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+   	altRows : false,
+    grouping:true,
+    footerrow : true,
+	userDataOnFooter : true,
+	groupingView :
+    {
+        groupField : ['trandate','routecode'],
+        groupColumnShow : [false,false],
+        groupCollapse : true,
+        groupOrder: ['asc','asc'],
+        groupSummary : [false,true],
+    }
+
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+
+</script>

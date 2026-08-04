@@ -1,0 +1,144 @@
+<form id="frmcashcheck" name="frmcashcheck" class="validate" novalidate action="" method="post">
+<div class="content with-actions">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100 margin_bottom_10">
+		<label class="_25_1 label_text_align margin_top_12">
+		    <?php echo $this->translate->_('Customer Name').$this->colan;?>
+		</label>
+		<label class="_40 margin_right_1  margin_top_12">
+		    <div id="detail_6_customer"></div>
+		</label>
+		
+      </div>
+	<div class="_100">
+	    
+	    
+        
+        
+        <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Minimum Due').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_min_amount_pay_cash" name="txt_min_amount_pay_cash" value="" class="number amount_text_align" readonly="readonly">
+	    </div>
+        <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Amount Paid').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		 <input type="text" id="txt_user_amount_due" name="txt_user_amount_due" value="0" class="required number amount_text_align">
+	    </div>
+	</div>
+	
+	<div class="_100">
+        <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Allowed Tc').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_allowed_tc_cc" name="txt_allowed_tc_cc" value="" readonly="readonly" class="number amount_text_align">
+	    </div>
+        
+	    <label class="_25_1 label_text_align margin_top_12">
+		   <?php echo $this->translate->_('Payment Mode').''.$this->required;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		 <select id="ddl_payment_mode" name="ddl_payment_mode">
+			<option value="0">CASH</option>
+			<option value="1">CHEQUE</option>
+		 </select>
+	    </div>
+	    
+	
+	</div>
+	<div class="_100 ">
+        <label class="_25_1 label_text_align margin_top_12">
+		<?php echo $this->translate->_('Amount Due').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="txt_amount_due_cash" name="txt_amount_due_cash" value="" readonly="readonly" class="number amount_text_align">
+	    </div>
+        
+	    <label class="_25_1 label_text_align margin_top_12 only_cheque_detial">
+		    <?php echo $this->translate->_('Cheque Date').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1 only_cheque_detial">
+		   <input type="text" id="txt_date" name="txt_date" value="" readonly="readonly" >
+		</div>
+	
+	 </div>
+	
+    <div class="_100 only_cheque_detial">
+		
+        <label class="_25_1 label_text_align margin_top_12">
+		   &nbsp;
+		</label>
+		<div class="_25_1 margin_right_1">
+		   &nbsp;
+		</div>
+        
+    
+		<label class="_25_1 label_text_align margin_top_12">
+		    <?php echo $this->translate->_('Cheque #').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+		   <input type="text" id="txt_cheques" name="txt_cheques" value="" maxlength="15" >
+		</div>
+    </div>
+        
+	<div class="_100 only_cheque_detial">
+		
+        <label class="_25_1 label_text_align margin_top_12">
+		   &nbsp;
+		</label>
+		<div class="_25_1 margin_right_1">
+		   &nbsp;
+		</div>
+        
+        <label class="_25_1 label_text_align margin_top_12">
+		    <?php echo $this->translate->_('Bank Name').''.$this->colan;?>
+		</label>
+		<div class="_25_1 margin_right_1">
+		   <select name="ddl_bank" id="ddl_bank" >
+			<option value="">--- Select ---</option>
+		       <?php
+			   for($i=0;$i<count($this->bank_list);$i++)
+			   {
+		       ?>
+			       <option  value="<?php echo $this->bank_list[$i]['id'];?>"><?php echo $this->bank_list[$i]['val'];?></option>
+		       <?php } ?>
+		      </select>
+		</div>
+	    
+	
+	 </div>
+	
+	  <div class="_100 margin_top_5">
+		 <input type="button" id="btn_save_cash_collection_data" name="btn_save_cash_collection_data" value="Save" style="float:right;margin:5px;"  />
+	  </div>
+	<div id="cash_payment_grid" style="display:none">  
+	   <div class="_100 margin_top_5">
+		<div id="load_payment_data" class="gridclass">
+			
+		</div>
+	   </div>
+	   <div class="_100">
+	  
+		<div id="btn_next_calss" class="next2">&nbsp;</div>
+		<div style="float:right">&nbsp;&nbsp;</div>
+		
+		<div style="float:right">
+		<input type="button" name="btn_finish_cashcollection" id="btn_finish_cashcollection" value="Finish" class="float_right invoice_margin_right_5" />
+		<input type="button" name="btn_prev_cashcollection" id="btn_prev_cashcollection" value="Previous"  class="float_right invoice_margin_right_5"/>
+		</div>
+	   </div>
+	</div>
+</div>
+</form>
+
+	
+	
+	

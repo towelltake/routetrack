@@ -1,0 +1,66 @@
+<?php
+/**
+* @name       invoice.phtml
+* @since      06-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$date = $this->date != '' ? $this->date : date('d-m-Y');
+$ddloption_val = $this->ddloptions != '' ? $this->ddloptions : "";
+?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<form name="frmoverview" id="frmoverview" action="" method="post">
+<input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="grid_12">
+    <div class="box">
+        <div class="header">
+            <div class="_50_3 back_btn">
+		<img src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png" class="margin_top_10">
+		<h3><?php echo $this->translate->_('Process Load')?></h3>
+	    </div>
+	     <div class="_50_3">
+		<div class="_10 save_btn"><input class="border_none" type="button" value="" id="btnadd" name="btnadd" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"addprocessload"), "default", true);?>')"></div>	
+	    </div>
+        </div>
+	<div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+	<div class="container_12">
+	    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"processload"),"default", true);?>"><b><?php echo $this->overview?></b></a>
+                </li>
+				<li>
+					<a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"cloudtran","action"=>"addprocessload"),"default", true);?>"><?php echo $this->translate->_('Detail')?></a>
+				</li>
+              
+            </ul>
+        </li>
+    </ul>
+	</div>
+	</div>
+	<?php echo $this->partial('datagrid.phtml', $this); ?>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->
+</form>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+	$( "#txtdate" ).datepicker({
+	    dateFormat: 'dd-mm-yy'
+	});
+    });
+});
+
+</script>

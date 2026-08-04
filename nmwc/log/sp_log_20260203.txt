@@ -1,0 +1,52 @@
+
+CALL sp_ws_syncicsdata_setting('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','97','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','97')
+
+CALL sp_ws_syncicsdata_setting('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','97','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','97','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','97')

@@ -1,0 +1,73 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/returnorbuybacksummary/returnorbuybacksummarydata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route Code');?>','<?php echo $this->translate->_('ItemCode');?>','<?php echo $this->translate->_('Description');?>','<?php echo $this->translate->_('Qty (InPcs)');?>','<?php echo $this->translate->_('Value');?>','<?php echo $this->translate->_('Reason Description');?>'],
+   	colModel:[
+		{name:'routecode',index:'routecode', width:120},
+        {name:'itemcode',index:'itemcode', width:90},
+   		{name:'itemdescription',index:'itemdescription', width:250},
+        {name:'quantity',index:'quantity', width:70,align:"right",summaryType:'sum'},
+		{name:'value',index:'value', width:90, align:"right",summaryType:'sum',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+        {name:'description',index:'description', width:250}
+	],
+	<?php if($this->css == 'ar_') { ?>
+		direction :"rtl",
+	<?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+    pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "desc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,
+	groupingView :
+    {
+        groupField : ['routecode'],
+        groupColumnShow : [false],
+        groupCollapse : false,
+        groupOrder: ['asc'] ,
+        groupSummary : [true],
+        groupDataSorted : true,
+    }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+
+);
+
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+</script>

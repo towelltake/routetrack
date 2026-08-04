@@ -1,0 +1,69 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/tabletsalessummary/salessum/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Mop');?>','<?php echo $this->translate->_('Document No');?>','<?php echo $this->translate->_('Customer Code');?>','<?php echo $this->translate->_( 'Customer Name');?>','<?php echo $this->translate->_( 'Sales');?>','<?php echo $this->translate->_('Bad Rtrns');?>','<?php echo $this->translate->_('Good Rtrns');?>','<?php echo $this->translate->_('Discount');?>','<?php echo $this->translate->_('Net Sales');?>','<?php echo $this->translate->_('Amount Paid');?>','<?php echo $this->translate->_('Balance');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:100},
+                {name:'mop',index:'mop', width:200},
+                {name:'documentnumber',index:'documentnumber', width:120},
+                {name:'customercode',index:'customercode', width:120},                
+		{name:'customername',index:'customername', width:120,summaryType:'count',summaryTpl : 'Total'},
+		{name:'salesamount',index:'salesamount', width:120, align:"right",summaryType:'sum'},
+                {name:'totaldamagedamount',index:'totaldamagedamount', width:120, align:"right",summaryType:'sum'},
+		{name:'goodreturnamount',index:'goodreturnamount', width:120, align:"right",summaryType:'sum'},
+		{name:'discountamount',index:'discountamount', width:120, align:"right",summaryType:'sum'},
+		{name:'invoiceamount',index:'invoiceamount', width:120, align:"right",summaryType:'sum'},
+   		{name:'amountpaid',index:'amountpaid', width:120, align:"right",summaryType:'sum'},
+		{name:'invoicebalance',index:'invoicebalance', width:120, align:"right",summaryType:'sum'},
+		
+   	],
+	<?php if($this->css == 'ar_') { ?>
+		direction :"rtl",
+	<?php } ?>	
+	height: 'auto',
+	width: eval(reportwidth),
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "desc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,
+	groupingView :
+        {
+            groupField : ['routecode','mop'],
+            groupColumnShow : [false,false],
+            groupCollapse : true,
+            groupOrder: ['asc','asc'] ,
+            groupSummary : [true,true],
+            groupDataSorted : true,
+	groupText : ['','<b style="text-transform: uppercase;">{0} Customer Invoices</b>'],
+           showSummaryOnHide: true
+        },
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+
+
+</script>

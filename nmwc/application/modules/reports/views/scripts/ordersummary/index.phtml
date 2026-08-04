@@ -1,0 +1,76 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/ordersummary/ordersummarydata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route Code');?>','<?php echo $this->translate->_('Tran. Date');?>','<?php echo $this->translate->_('Tran. Time');?>','<?php echo $this->translate->_('Order Number');?>','<?php echo $this->translate->_('Received Time');?>','<?php echo $this->translate->_('Salesman Code');?>','<?php echo $this->translate->_('Customer Code');?>','<?php echo $this->translate->_('Customer Name');?>','<?php echo $this->translate->_('Order Net Amount');?>' ],
+   	colModel:[
+        {name:'routecode',index:'routecode', width:100},
+        {name:'transactiondate',index:'transactiondate', width:100},
+        {name:'transactiontime',index:'transactiontime', width:100},
+        {name:'invoicenumber',index:'invoicenumber', width:100},
+        {name:'receivedtime',index:'receivedtime', width:100},
+        {name:'salesmancode',index:'salesmancode', width:100},
+        {name:'customercode',index:'customercode', width:100},
+        {name:'customername',index:'customername', width:250},
+        {name:'invoiceamount',index:'invoiceamount',align:'right', width:120,formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'}
+	],
+    <?php if($this->session->lang == "ar_AR") { ?>
+        direction :"rtl",
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+   	altRows : false,
+    grouping:true,
+    footerrow : true,
+	userDataOnFooter : true,
+	groupingView :
+    {
+        groupField : ['routecode','transactiondate'],
+        groupColumnShow : [false,false],
+        groupCollapse : true,
+        groupOrder: ['asc','asc'],
+        groupSummary : [false,true],
+    }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+</script>

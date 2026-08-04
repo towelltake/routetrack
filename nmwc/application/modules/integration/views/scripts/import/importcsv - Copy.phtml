@@ -1,0 +1,78 @@
+<script type="text/javascript">
+    function changeformaction(exportAction)
+    {
+        if(exportAction == 1)
+        {
+            var exporturl = '<?php echo $this->url(array("module"=>"integration", "controller"=>"import", "action"=>"exportxls"), null, true);?>';
+            $('#importexport').attr("action", exporturl);
+        }
+        else
+        {
+            var split_path = $("#importcsv").val().split(".").reverse();
+			ext_array = new Array('csv', 'xls', 'xlsx');
+			
+			if($.inArray(split_path[0].toLowerCase(), ext_array) == -1)
+			{
+                /* Checking file type */
+                alert("Invalid file extension");
+                return false;
+            }
+            $('#file_extension').val(split_path[0].toUpperCase());
+            var importurl = '<?php echo $this->url(array("module"=>"integration", "controller"=>"import", "action"=>"importcsv"), null, true);?>';
+            $('#importexport').attr("action", importurl);
+        }
+        $('#importexport').submit();
+        return true;
+    }
+</script>
+<div class="grid_12">
+    <div class="box" id="integration_index">
+        
+        <div class="clear"></div>
+        <?php
+        //echo $this->errormessage;
+        if($this->errormessage != "")
+        {
+        ?>
+        <div><?php echo $this->errormessage; ?></div>
+        <?php
+        }
+        ?>
+        
+        <div class="clear"></div>
+        
+        <form name="" method="post" enctype="multipart/form-data" id="importexport" action="">
+            <select name="tablename" id="tablename">
+                <option value="">Please Select</option>
+                <?php
+                if(count($this->tables))
+                {
+                    foreach($this->tables AS $key => $val)
+                    {
+                        foreach($val AS $k => $v)
+                        {
+                            if (strpos($v, 'master') !== false) {                            
+                                echo '<option value="'.$v.'">'.$v.'</option>';
+                            }
+                        }
+                    }
+                }
+                ?>
+            </select>
+            
+            <input type="file" name="importcsv" id="importcsv" />
+            <input type="hidden" name="file_extension" id="file_extension" value="" />
+            <input type="submit" name="verify" id="verify" value="Verify" />
+            <input type="submit" name="submit_file" id="submit_file" value="Import" onclick="return changeformaction(0);" />
+            <input type="button" name="export_file_csv" id="export_file_csv" value="Export CSV" onclick="$('#file_extension').val('CSV'); return changeformaction(1);" />
+            <input type="button" name="export_file_xls" id="export_file_xls" value="Export XLS" onclick="$('#file_extension').val('XLS'); return changeformaction(1);" />
+        </form>
+        
+        <div class="clear"></div>
+        
+        <?php
+        if($this->showgrid == true)
+        echo $this->partial('datagrid.phtml', $this);
+        ?>
+    </div>
+</div>

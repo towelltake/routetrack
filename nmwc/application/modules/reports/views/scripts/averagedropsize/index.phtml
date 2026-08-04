@@ -1,0 +1,77 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/averagedropsize/averagedropsizedata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Salesman');?>','<?php echo $this->translate->_('No Of Invoices');?>','<?php echo $this->translate->_('Sales Qty');?>','<?php echo $this->translate->_('Free Qty');?>','<?php echo $this->translate->_('Promo Qty');?>','<?php echo $this->translate->_('Return Qty');?>','<?php echo $this->translate->_('BuyBack Qty');?>','<?php echo $this->translate->_('Net Sales');?>','<?php echo $this->translate->_('Quantity Drop Size');?>','<?php echo $this->translate->_('Value Drop Size');?>'],
+   	colModel:[
+		{name:'salesmancode',index:'salesmancode', width:250},
+        {name:'no_of_invoice',index:'no_of_invoice', width:70,summaryType:'sum', align:"right"},
+   		{name:'sale_qty',index:'sale_qty', width:70,summaryType:'sum', align:"right"},
+        {name:'free_qty',index:'free_qty', width:70,summaryType:'sum', align:"right"},
+		{name:'promo_qty',index:'promo_qty', width:70, align:"right",summaryType:'sum'},
+        {name:'return_qty',index:'return_qty', width:70, align:"right",summaryType:'sum'},
+        {name:'buyback_qty',index:'buyback_qty', width:70, align:"right",summaryType:'sum'},
+		{name:'net_sales',index:'net_sales', width:90, align:"right",summaryType:'sum',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'qty_drop_size',index:'qty_drop_size', width:90, align:"right",formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+		{name:'value_drop_size',index:'value_drop_size', width:90, align:"right",formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }}
+	],
+	<?php if($this->css == 'ar_') { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+    pager: '#pagersr',
+   	sortname: 'salesman',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:false,
+	groupingView :
+    {
+        groupField : ['salesman'],
+        groupColumnShow : [false],
+        groupCollapse : false,
+        groupOrder: ['asc'] ,
+        groupSummary : [false],
+        groupDataSorted : false,
+    }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+
+);
+
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+</script>

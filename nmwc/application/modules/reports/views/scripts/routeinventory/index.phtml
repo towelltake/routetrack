@@ -1,0 +1,94 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({
+   	url:base_url+"/reports/routeinventory/routeinventorydata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Group');?>','<?php echo $this->translate->_('Item Code');?>','<?php echo $this->translate->_('Item Description');?>','<?php echo $this->translate->_('Opening Case/Pcs');?>','<?php echo $this->translate->_('Load Case/Pcs');?>','<?php echo $this->translate->_('Tran.IN Case/Pcs');?>','<?php echo $this->translate->_('Tran.OUT Case/Pcs');?>','<?php echo $this->translate->_('Sales Case/Pcs');?>','<?php echo $this->translate->_('Good Return Case/Pcs');?>','<?php echo $this->translate->_('Bad Return Case/Pcs');?>','<?php echo $this->translate->_('Free Case/Pcs');?>','<?php echo $this->translate->_('Damage Varience Qty./Pcs');?>','<?php echo $this->translate->_('Damage Varience Value');?>','<?php echo $this->translate->_('Closing Case/Pcs');?>','<?php echo $this->translate->_('Load Value');?>','<?php echo $this->translate->_('Closing Value');?>'],
+   	colModel:[
+		{name:'routecode',index:'routecode', width:100},
+        {name:'majorcategorycode',index:'majorcategorycode', width:120},
+   		{name:'actualitemcode',index:'actualitemcode', width:75,align:'center'},
+        {name:'itemdescription',index:'itemdescription', width:250},
+        {name:'beginqtycase',index:'beginqtycase', width:70,align:'center',},
+		{name:'loadqtypcs',index:'loadqtypcs', width:70,align:'center', },
+		{name:'loadaddqtypcs',index:'loadaddqtypcs', width:70,align:'center'},
+		{name:'loadcutqtypcs',index:'loadcutqtypcs', width:70,align:'center'},
+      
+		{name:'salesqtypcs',index:'salesqtypcs', width:70,align:'center' },
+       
+		{name:'returnqtypcs',index:'returnqtypcs', width:75,align:'center'},
+		
+        
+		{name:'damagedqtypcs',index:'damagedqtypcs', width:75,align:'center'},
+		
+       
+		{name:'freesampleqtypcs',index:'freesampleqtypcs', width:70,align:'center'},
+		
+        {name:'damagevarianceqty',index:'damagevarianceqty', width:82,align:'center'},
+		
+        {name:'damagevariance',index:'damagevariance', width:82,align:'right', summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }, align:"right"},
+		
+		
+		
+        {name:'endqtypcs',index:'endqtypcs', width:70,align:'center'},
+		
+		{name:'truckstockvalue',index:'truckstockvalue', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'},
+        {name:'endstockvalue',index:'endstockvalue', width:70,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces },summaryType:'sum'}
+	],
+    <?php if($this->session->lang == "ar_AR") { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'routecode,majorcategorycode',
+	viewrecords:true,
+	sortorder: "asc",
+    footerrow : true,
+	userDataOnFooter : true,
+   	altRows : false,
+    grouping:true,
+    groupingView :
+    {
+        groupField : ['routecode','majorcategorycode'],
+        groupColumnShow : [false,false],
+        groupCollapse : true,
+        groupOrder: ['asc','asc'],
+         groupSummary : [false,true],
+    }
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+
+</script>

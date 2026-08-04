@@ -1,0 +1,28 @@
+<?php
+/**
+* @name       ajaxgrid.phtml
+* @since      21-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  Elan Technologies
+*
+* 
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$Common_NameSpace = new Zend_Session_Namespace('Common');
+
+?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+  <div class="clear"></div>
+	<?php echo $this->partial('datagrid_ajax.phtml', $this); ?>
+    <div class="clear"></div>

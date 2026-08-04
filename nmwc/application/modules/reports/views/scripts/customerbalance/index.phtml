@@ -1,0 +1,86 @@
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+    var column = <?php echo json_encode($this->column); ?>;
+    //console.log(column);
+    var header = <?php echo json_encode($this->header); ?>;
+    //console.log(header);
+    var display_header_config = [];
+    for(var i=0; i < header.length; i++)
+    {
+        display_header_config.push({startColumnName:header[i]["column"],titleText:'<b>'+header[i]["title"]+'</b>', numberOfColumns:<?php echo $this->count_col; ?>});
+    }
+    //console.log(display_header_config);
+    var column_config = <?php echo json_encode($this->column_config); ?>;
+    //console.log(column_config);
+    var display_column_config = [];
+    var decimalplaces = <?php echo $this->decimalplaces; ?>;
+    for(var i=0; i < column_config.length; i++)
+    {
+        if(column_config[i] != "hocode" && column_config[i] != "customercode" && column_config[i] != "transactiondate" && column_config[i] != "salesmancode" && column_config[i] != "invoicenumber" && column_config[i] != "comments") {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:90, summaryType:'sum',sortable:false,formatter: 'number',align:'right', formatoptions: { decimalPlaces: decimalplaces }});
+        } else if(column_config[i] == "comments") {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:200});
+        } else {
+            display_column_config.push({name:column_config[i],index:column_config[i], width:90});
+        }
+    }
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/customerbalance/custpendingbal/",
+	datatype: "json",
+   	colNames:column,
+   	colModel:display_column_config,
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'hocode',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,
+	groupingView :
+    {
+        groupField : ['hocode','customercode'],
+        groupColumnShow : [false,false],
+        groupCollapse : true,
+        groupOrder: ['asc','asc'] ,
+        groupSummary : [false,true]
+    },
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+jQuery("#search").jqGrid('setGroupHeaders', {
+    useColSpanStyle: true, 
+    groupHeaders:display_header_config
+});
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+
+</script>

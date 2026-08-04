@@ -1,0 +1,110 @@
+
+<?php
+/**
+* @name       salesmantarget.phtml
+* @since      8 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+$(window).load(function() {
+    $(function() {		
+	$( "#txtdate" ).datepicker({
+	    dateFormat:'dd-mm-yy'
+	});
+	$("#txtdate").datepicker('setDate', new Date());
+    });
+});
+
+$(document).ready(function () {        
+    $("#btnprint1").click(function(event) {
+		var targ_date = $("#txtdate").val();
+		var dataString = 'tgtype=' + targ_date;
+		var url = base_url+"/reports/targetandcommission/sessionval/ddate/"+targ_date;
+		 $.ajax({
+            type: "POST",
+            url: url,
+            data: dataString,
+            dataType: 'json',
+            cache: false,
+            success: function(response) {
+                   // alert(response.message);
+                }
+        });
+		window.open("<?php echo $this->url(array("module"=>"reports","controller"=>"targetandcommission","action"=>"index",'targdate'=>""),"default", true);?>",'','width=1000,height=700,scrollbars=yes');       
+        return false;
+    });
+});
+</script>
+<style>
+#btnprint1:active, #btnprint1:hover, #btnprint1   { background-image: url("../../public/images/colors/blue/print.png") !important; background-repeat: no-repeat; background-color: transparent;}
+.margin_zero {margin-top:0px !important;}
+</style>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="grid_12">
+    <form name="frmoverview" id="frmoverview" action="" method="post">
+    <input type="hidden" id="hdDelete" name="hdDelete" value="" />
+    <div class="box">
+        <div class="header">
+            <div class="_50_3 back_btn">
+		<img src="<?php echo $this->baseUrl()?>/public/images/icon_inventory_mag.png" class="margin_top_7">
+		<h3><?php echo $this->translate->_('Target & Commission');?></h3>
+	    </div>
+	    <div class="_50_3">
+		<!--<div class="_10 save_btn"><input class="border_none" type="button" value="" name="btnexport" id="btnexport"></div>-->
+		<div class="_10 save_btn"><input class="border_none" type="button" value=""  id="btnprint1"></div>
+		<?php if($this->checkaccess("delete")) { ?><div class="_10 save_btn"><input class="border_none" type="button" value="" name="btndelete" id="btndelete"></div><?php } ?>
+		<?php if($this->checkaccess("update")) { ?><div class="_10 save_btn"><input class="border_none" type="button" value="" id="btnedit" name="btnedit"></div><?php } ?>
+		<?php if($this->checkaccess("insert")) { ?><div class="_10 save_btn"><input class="border_none" type="button" value="" id="btnadd" name="btnadd" onclick="winloc('<?php echo $this->url(array("module"=>"inventory","controller"=>"target","action"=>"addsalesmantarget"), "default", true);?>')"></div><?php } ?>
+	    </div>
+        </div>
+<!-- following code commented by nilesh for additional filter on 6Mar2016
+	<div class="_100" style="text-align:center">
+
+		<div class="_20 label_text_align margin_top_7">&nbsp;</div>
+		<div class="_20 label_text_align margin_top_12"><label class="advance_search_css"><?php //echo $this->translate->_('Select Year').''.$this->colan;?></label></div>
+		<div class="_10_2 label_text_align">
+            <select id="txtdate" name="txtdate" class="margin_zero">
+            <?php
+           /* $startYear = date('Y',strtotime(date("Y", time()) . " -10 year"));
+            $endYear = date('Y');
+            if(!isset($this->date) && $this->date == '') { $this->date = date('Y'); }
+            for($p=$startYear; $p<=$endYear; $p++)
+            {                
+                $selected = ($this->date == $p) ? 'selected="selected"' : '';
+                echo '<option value="'.$p.'" '.$selected.'>'.$p.'</option>';
+            }*/
+            ?>
+            </select>
+            <input type="text" id="txtdate" name="txtdate" value="<?php //echo date('Y');?>" class="margin_zero">
+        </div>
+		<div class="_10 margin_top_7"><input type="submit" name="btnload" id="btnload" value="<?php //echo $this->translate->_('OK'); ?>" class="margin_zero"></div>
+        <div class="_30">
+            &nbsp;
+        </div>
+
+	</div>
+	<div class="clear space_20"></div>
+	<div class="clear"></div>-->
+		<div class="_100">
+	    <div class="_10">&nbsp;</div>	    
+	    <div class="_35 label_text_align margin_top_12"><label class="advance_search_css"><?php echo $this->translate->_('Target For (Print)').''.$this->colan;?></label></div>
+	    <div class="_20 label_text_align margin_right_1"><input type="text" id="txtdate" name="txtdate" value="<?php echo $this->date; ?>"></div>	   
+		
+	</div>
+	  <div class="_10">&nbsp;</div>	
+	<?php echo $this->partial('datagrid.phtml', $this); ?>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+    </form>
+</div> <!-- End of .grid_12 -->

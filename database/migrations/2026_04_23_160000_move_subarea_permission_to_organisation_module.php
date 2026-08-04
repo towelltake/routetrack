@@ -1,0 +1,93 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $organisationModuleId = DB::table('moduleheader')
+            ->whereRaw('LOWER(TRIM(modulename)) = ?', ['organisation'])
+            ->value('moduleid');
+
+        if (!$organisationModuleId) {
+            return;
+        }
+
+        $formId = DB::table('moduledetail')
+            ->whereRaw('LOWER(TRIM(formname)) = ?', ['sub area'])
+            ->value('formid');
+
+        if (!$formId) {
+            return;
+        }
+
+        DB::table('moduledetail')
+            ->where('formid', $formId)
+            ->update([
+                'formname' => 'Sub Area',
+                'formdescription' => 'Sub Area',
+                'moduleid' => $organisationModuleId,
+            ]);
+
+        DB::table('userdetail')
+            ->where('formid', $formId)
+            ->update([
+                'moduleid' => $organisationModuleId,
+                'formname' => 'Sub Area',
+                'formdescription' => 'Sub Area',
+            ]);
+
+        DB::table('usertypedetail')
+            ->where('formid', $formId)
+            ->update([
+                'moduleid' => $organisationModuleId,
+                'formname' => 'Sub Area',
+                'formdescription' => 'Sub Area',
+            ]);
+    }
+
+    public function down(): void
+    {
+        $operationModuleId = DB::table('moduleheader')
+            ->whereRaw('LOWER(TRIM(modulename)) = ?', ['operation'])
+            ->value('moduleid');
+
+        if (!$operationModuleId) {
+            return;
+        }
+
+        $formId = DB::table('moduledetail')
+            ->whereRaw('LOWER(TRIM(formname)) = ?', ['sub area'])
+            ->value('formid');
+
+        if (!$formId) {
+            return;
+        }
+
+        DB::table('moduledetail')
+            ->where('formid', $formId)
+            ->update([
+                'moduleid' => $operationModuleId,
+                'formname' => 'Sub Area',
+                'formdescription' => 'Sub Area',
+            ]);
+
+        DB::table('userdetail')
+            ->where('formid', $formId)
+            ->update([
+                'moduleid' => $operationModuleId,
+                'formname' => 'Sub Area',
+                'formdescription' => 'Sub Area',
+            ]);
+
+        DB::table('usertypedetail')
+            ->where('formid', $formId)
+            ->update([
+                'moduleid' => $operationModuleId,
+                'formname' => 'Sub Area',
+                'formdescription' => 'Sub Area',
+            ]);
+    }
+};

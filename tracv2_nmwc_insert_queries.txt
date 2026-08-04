@@ -1,0 +1,700 @@
+-- Generated from nmwc/nmwc_aswin_structure.sql against database tracv2_nmwc
+-- Source database for data copy: sfa_nmwc
+-- Covers all live tables with prefix trac_
+--
+-- trac_ardetail
+INSERT INTO `trac_ardetail` (`primary_key`, `routekey`, `visitkey`, `transactionkey`, `invoicenumber`, `salesmancode`, `invoicedate`, `totalinvoiceamount`, `onacctreasoncode`, `amountpaid`, `invoicebalance`, `arcollectiontype`, `chequestatusindicator`, `referenceno`, `currencycode`, `pdcbalance`, `alternateinvoicenumber`, `receivedtime`)
+SELECT `primary_key`, `routekey`, `visitkey`, `transactionkey`, `invoicenumber`, `salesmancode`, `invoicedate`, `totalinvoiceamount`, `onacctreasoncode`, `amountpaid`, `invoicebalance`, `arcollectiontype`, `chequestatusindicator`, `referenceno`, `currencycode`, `pdcbalance`, `alternateinvoicenumber`, `receivedtime`
+FROM `sfa_nmwc`.`ardetail`;
+
+-- trac_areamanager
+INSERT INTO `trac_areamanager` (`areamanagercode`, `parentcompany`, `areamanagername`, `arbareamanagername`, `alternateareamanagercode`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `areamanagercode`, `parentcompany`, `areamanagername`, `arbareamanagername`, `alternateareamanagercode`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`areamanager`;
+
+-- trac_areamaster
+INSERT INTO `trac_areamaster` (`areacode`, `areaname`, `arbareaname`, `depotcode`, `areamanagercode`, `areaprefix`, `created`, `cdat`, `modified`, `mdat`, `alternateareacode`, `activestatus`)
+SELECT `areacode`, `areaname`, `arbareaname`, `depotcode`, `areamanagercode`, `areaprefix`, `created`, `cdat`, `modified`, `mdat`, `alternateareacode`, `activestatus`
+FROM `sfa_nmwc`.`areamaster`;
+
+-- trac_arheader
+INSERT INTO `trac_arheader` (`transactionkey`, `routekey`, `visitkey`, `documentnumber`, `transactiondate`, `transactiontime`, `customercode`, `routecode`, `salesmancode`, `voidflag`, `splittransaction`, `transmitindicator`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `invoicenumber`, `hhcdocumentnumber`, `hhcinvoicenumber`, `voidreasoncode`, `chequecollection`, `currencycode`, `hhctransactionkey`, `data`, `comments`, `advancepaymentflag`, `excesspayment`, `comments2`, `record_flag`, `actualtransactiondate`, `receivedtime`)
+SELECT `transactionkey`, `routekey`, `visitkey`, `documentnumber`, `transactiondate`, `transactiontime`, `customercode`, `routecode`, `salesmancode`, `voidflag`, `splittransaction`, `transmitindicator`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `invoicenumber`, `hhcdocumentnumber`, `hhcinvoicenumber`, `voidreasoncode`, `chequecollection`, `currencycode`, `hhctransactionkey`, `data`, `comments`, `advancepaymentflag`, `excesspayment`, `comments2`, `record_flag`, `actualtransactiondate`, `receivedtime`
+FROM `sfa_nmwc`.`arheader`;
+
+-- trac_bankmaster
+INSERT INTO `trac_bankmaster` (`bankcode`, `bankname`, `arbbankname`, `bankbalance`, `created`, `cdat`, `modified`, `mdat`, `activestatus`, `alternatecode`, `type`, `acnumber`)
+SELECT `bankcode`, `bankname`, `arbbankname`, `bankbalance`, `created`, `cdat`, `modified`, `mdat`, `activestatus`, `alternatecode`, `type`, `acnumber`
+FROM `sfa_nmwc`.`bankmaster`;
+
+-- trac_batchexpirydetail
+INSERT INTO `trac_batchexpirydetail` (`routekey`, `batchdetailkey`, `batchnumber`, `itemcode`, `quantity`, `transactiontypecode`, `expirydate`, `visitkey`)
+SELECT `routekey`, `batchdetailkey`, `batchnumber`, `itemcode`, `quantity`, `transactiontypecode`, `expirydate`, `visitkey`
+FROM `sfa_nmwc`.`batchexpirydetail`;
+
+-- trac_beardetail
+INSERT INTO `trac_beardetail` (`primary_key`, `transactionkey`, `customercode`, `invoicenumber`, `invoicedate`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `paymentmode`, `currencycode`)
+SELECT `primary_key`, `transactionkey`, `customercode`, `invoicenumber`, `invoicedate`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `paymentmode`, `currencycode`
+FROM `sfa_nmwc`.`beardetail`;
+
+-- trac_bearheader
+INSERT INTO `trac_bearheader` (`transactionkey`, `routecode`, `salesmancode`, `customercode`, `transactiondate`, `transactiontime`, `documentnumber`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `voidflag`, `erpreferencenumber`, `trantype`, `mdat`, `currencycode`, `created`, `modified`, `cdat`, `pdcstatus`)
+SELECT `transactionkey`, `routecode`, `salesmancode`, `customercode`, `transactiondate`, `transactiontime`, `documentnumber`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `voidflag`, `erpreferencenumber`, `trantype`, `mdat`, `currencycode`, `created`, `modified`, `cdat`, `pdcstatus`
+FROM `sfa_nmwc`.`bearheader`;
+
+-- trac_branchmanager
+INSERT INTO `trac_branchmanager` (`branchmanagercode`, `parentcompany`, `branchmanagername`, `arbbranchmanagername`, `alternatebranchmanagercode`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `branchmanagercode`, `parentcompany`, `branchmanagername`, `arbbranchmanagername`, `alternatebranchmanagercode`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`branchmanager`;
+
+-- trac_cache
+-- SKIP: no legacy source table `cache` found in nmwc_aswin_structure.sql
+
+-- trac_cache_locks
+-- SKIP: no legacy source table `cache_locks` found in nmwc_aswin_structure.sql
+
+-- trac_cashcheckdetail
+INSERT INTO `trac_cashcheckdetail` (`visitkey`, `routekey`, `typecode`, `paymenttype`, `checknumber`, `amount`, `updateindicator`, `checkdate`, `bankcode`, `checkstatus`, `branchcode`, `drawercode`, `chequestatusindicator`, `sapchequestatusindicator`, `currencycode`, `hhctransactionkey`, `transactiontype`, `checktype`, `manualinvoice`)
+SELECT `visitkey`, `routekey`, `typecode`, `paymenttype`, `checknumber`, `amount`, `updateindicator`, `checkdate`, `bankcode`, `checkstatus`, `branchcode`, `drawercode`, `chequestatusindicator`, `sapchequestatusindicator`, `currencycode`, `hhctransactionkey`, `transactiontype`, `checktype`, `manualinvoice`
+FROM `sfa_nmwc`.`cashcheckdetail`;
+
+-- trac_cashdesc
+INSERT INTO `trac_cashdesc` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`cashdesc`;
+
+-- trac_cashierreceiptdetails
+INSERT INTO `trac_cashierreceiptdetails` (`transactionno`, `transactiondate`, `type`, `recordno`, `checkno`, `checkdate`, `bankcode`, `invoiceamount`, `paid`, `balance`, `status`, `routecode`, `salesmancode`, `date`, `slipno`, `pdcbalance`, `checkamount`, `checkstatus`, `paymenttype`, `routekey`, `visitkey`, `transactionkey`, `documentnumber`, `customercode`)
+SELECT `transactionno`, `transactiondate`, `type`, `recordno`, `checkno`, `checkdate`, `bankcode`, `invoiceamount`, `paid`, `balance`, `status`, `routecode`, `salesmancode`, `date`, `slipno`, `pdcbalance`, `checkamount`, `checkstatus`, `paymenttype`, `routekey`, `visitkey`, `transactionkey`, `documentnumber`, `customercode`
+FROM `sfa_nmwc`.`cashierreceiptdetails`;
+
+-- trac_cashierreceiptheader
+INSERT INTO `trac_cashierreceiptheader` (`primary_key`, `slipno`, `tobankcode`, `paymentdate`, `routecode`, `salesmancode`, `date`, `cashamount`, `receiptamount`, `checkamount`, `total`, `documentnumber`)
+SELECT `primary_key`, `slipno`, `tobankcode`, `paymentdate`, `routecode`, `salesmancode`, `date`, `cashamount`, `receiptamount`, `checkamount`, `total`, `documentnumber`
+FROM `sfa_nmwc`.`cashierreceiptheader`;
+
+-- trac_categorymaster
+INSERT INTO `trac_categorymaster` (`categoryid`, `alternatecode`, `categoryname`, `arbcategoryname`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `categoryid`, `alternatecode`, `categoryname`, `arbcategoryname`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`categorymaster`;
+
+-- trac_channelmaster
+INSERT INTO `trac_channelmaster` (`channelcode`, `alternatecode`, `channelname`, `arbchannelname`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `channelcode`, `alternatecode`, `channelname`, `arbchannelname`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`channelmaster`;
+
+-- trac_company
+INSERT INTO `trac_company` (`cmpycode`, `name`, `address`, `telephone`, `fax`, `nationalsalesmanagercode`, `contactname`, `city`, `arbcompanyname`, `alternatecmpycode`, `created`, `cdat`, `modified`, `mdat`, `zipcode`, `countrycode`, `countryname`, `arbcountryname`, `taxregistrationnumber`, `distributorcode`, `activestatus`, `parentcompany`)
+SELECT `cmpycode`, `name`, `address`, `telephone`, `fax`, `nationalsalesmanagercode`, `contactname`, `city`, `arbcompanyname`, `alternatecmpycode`, `created`, `cdat`, `modified`, `mdat`, `zipcode`, `countrycode`, `countryname`, `arbcountryname`, `taxregistrationnumber`, `distributorcode`, `activestatus`, `parentcompany`
+FROM `sfa_nmwc`.`company`;
+
+-- trac_companygroup
+INSERT INTO `trac_companygroup` (`companygroupcode`, `alternatecode`, `parentcompany`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `companygroupcode`, `alternatecode`, `parentcompany`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`companygroup`;
+
+-- trac_controlpanel
+INSERT INTO `trac_controlpanel` (`flagid`, `formid`, `flagname`, `status`, `modifieddate`, `flagvalue`)
+SELECT `flagid`, `formid`, `flagname`, `status`, `modifieddate`, `flagvalue`
+FROM `sfa_nmwc`.`controlpanel`;
+
+-- trac_country
+INSERT INTO `trac_country` (`countrycode`, `alternatecode`, `countryname`, `arbcountryname`, `currencycode`, `cmpycode`, `pricechangevariance`, `nationalsalesmanagercode`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `countrycode`, `alternatecode`, `countryname`, `arbcountryname`, `currencycode`, `cmpycode`, `pricechangevariance`, `nationalsalesmanagercode`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`country`;
+
+-- trac_currencymaster
+INSERT INTO `trac_currencymaster` (`currencycode`, `alternatecode`, `currencyname`, `arbcurrencyname`, `currencysymbol`, `arbcurrencysymbol`, `decimalplaces`, `startdate`, `enddate`, `created`, `cdat`, `modified`, `mdat`, `defaultcurrency`)
+SELECT `currencycode`, `alternatecode`, `currencyname`, `arbcurrencyname`, `currencysymbol`, `arbcurrencysymbol`, `decimalplaces`, `startdate`, `enddate`, `created`, `cdat`, `modified`, `mdat`, `defaultcurrency`
+FROM `sfa_nmwc`.`currencymaster`;
+
+-- trac_customerimages
+INSERT INTO `trac_customerimages` (`table_id`, `imagename`, `customercode`, `imageno`, `imagepath`, `routecode`, `routekey`, `transactiondate`, `transactiontime`, `visitkey`, `remarks`)
+SELECT `table_id`, `imagename`, `customercode`, `imageno`, `imagepath`, `routecode`, `routekey`, `transactiondate`, `transactiontime`, `visitkey`, `remarks`
+FROM `sfa_nmwc`.`customerimages`;
+
+-- trac_customerinventorydetail
+INSERT INTO `trac_customerinventorydetail` (`visitkey`, `routekey`, `itemcode`, `weighted`, `qtyloc1case`, `catchweightqtyloc1`, `qtyloc1each`, `qtyloc2case`, `catchweightqtyloc2`, `qtyloc2each`, `qtyloc3case`, `catchweightqtyloc3`, `qtyloc3each`, `shelfstockcase`, `shelfstockcatchweightqty`, `shelfstockeach`, `oldestcode`)
+SELECT `visitkey`, `routekey`, `itemcode`, `weighted`, `qtyloc1case`, `catchweightqtyloc1`, `qtyloc1each`, `qtyloc2case`, `catchweightqtyloc2`, `qtyloc2each`, `qtyloc3case`, `catchweightqtyloc3`, `qtyloc3each`, `shelfstockcase`, `shelfstockcatchweightqty`, `shelfstockeach`, `oldestcode`
+FROM `sfa_nmwc`.`customerinventorydetail`;
+
+-- trac_customerinvoice
+INSERT INTO `trac_customerinvoice` (`transactionkey`, `transactiontype`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `duedate`, `customercode`, `routecode`, `salesmancode`, `totalinvoiceamount`, `totalsalesamount`, `totalreturnamount`, `totaldamagedamount`, `totalfreesampleamount`, `immediatepaid`, `amountpaid`, `dnamountpaid`, `cnamountpaid`, `invoicebalance`, `paymenttype`, `voidflag`, `paymentstatus`, `hhcinvoicenumber`, `remarks1`, `remarks2`, `routestartdate`, `erpreferencenumber`, `mdat`, `totalpromoamount`, `gcpaymenttype`, `totaltaxesamount`, `itemlinetaxamount`, `totaldiscountamount`, `pdcindicator`, `chequecollection`, `totalexpiryamount`, `currencycode`, `pdcbalance`, `totalmanualfree`, `totallimitedfree`, `totalrebaterent`, `totalfixedrent`, `data`, `totaldiscdistributionamount`, `totalreplacementamount`, `pdcdate`, `totalbuybackfreeamount`)
+SELECT `transactionkey`, `transactiontype`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `duedate`, `customercode`, `routecode`, `salesmancode`, `totalinvoiceamount`, `totalsalesamount`, `totalreturnamount`, `totaldamagedamount`, `totalfreesampleamount`, `immediatepaid`, `amountpaid`, `dnamountpaid`, `cnamountpaid`, `invoicebalance`, `paymenttype`, `voidflag`, `paymentstatus`, `hhcinvoicenumber`, `remarks1`, `remarks2`, `routestartdate`, `erpreferencenumber`, `mdat`, `totalpromoamount`, `gcpaymenttype`, `totaltaxesamount`, `itemlinetaxamount`, `totaldiscountamount`, `pdcindicator`, `chequecollection`, `totalexpiryamount`, `currencycode`, `pdcbalance`, `totalmanualfree`, `totallimitedfree`, `totalrebaterent`, `totalfixedrent`, `data`, `totaldiscdistributionamount`, `totalreplacementamount`, `pdcdate`, `totalbuybackfreeamount`
+FROM `sfa_nmwc`.`customerinvoice`;
+
+-- trac_customermaster
+INSERT INTO `trac_customermaster` (`customercode`, `type`, `headofficecode`, `routecode`, `streetcode`, `districtcode`, `locationcode`, `customersequence`, `customername`, `customeraddress1`, `customeraddress2`, `customerphone`, `balance`, `channelcode`, `customercategory`, `pricingkey`, `promotionkey`, `authorizeditemgrpkey`, `messagekey1`, `messagekey2`, `invoicepaymentterms`, `invoiceretailoption`, `invoicepriceoverride`, `invoiceretailoverride`, `invoiceformatoption`, `invoiceextensionopt`, `invoicedsdpromptopt`, `invoicecopies`, `salesinputoprion`, `returnsinputoption`, `invoiceinputstyle`, `onhandspromptopt`, `inventoryselectopt`, `invencontaineropt`, `queuedreportoption`, `loyalitykey`, `surveykey`, `itemmustkey`, `contactname`, `customertype`, `callfrequency`, `routenumber`, `arbcustomernameshort`, `arbcustomername`, `arbcustomeraddress1`, `arbcustomeraddress2`, `hhccustomernameshort`, `hhccustomername`, `hhccustomeraddress1`, `hhccustomeraddress2`, `allowbeyondlimit`, `tclimit`, `activecustomer`, `creditlimitdays`, `created`, `cdat`, `modified`, `mdat`, `forcehand`, `renteddisplay`, `installedchiller`, `monthlydepreciation`, `typeofgiveaway`, `giveawayflag`, `lastvisiteddate`, `memo1`, `memo2`, `tcsubtype`, `rentperc`, `customeraddress3`, `customercity`, `customerstate`, `customerzip`, `authorizeditemlistctl`, `invoicepriceprint`, `messagekey3`, `messagekey4`, `messagekey5`, `messagekey6`, `orderformat`, `enableupcprint`, `enabledelayprint`, `printsequence`, `enablepriceeditinvs`, `enablesellprevious`, `enablesuggestsales`, `enableautofillreturns`, `enableautofilldamaged`, `enablesigcapture`, `enablereturnstrxn`, `enableexchangetrxn`, `enabledamagedreturns`, `enablearcollection`, `enablesurveyaudit`, `enabledelivinstruct`, `enableinvoicecomment`, `invoicedetailentry`, `orderdetailentry`, `forcestockcapture`, `enablepromotrxn`, `alternatecode`, `creditlimit`, `allowcashoncreditexceed`, `arbcustomeraddress3`, `templateindicator`, `templatename`, `arbcontactname`, `printlanguageflag`, `quantumno`, `lostplacementdelivs`, `newplacementdelivs`, `currencycode`, `histmaxdeliveries`, `arcustomertype`, `custtaxkey1`, `custtaxkey2`, `custtaxkey3`, `customertaxid`, `customertaxidoptions`, `outletsubtype`, `volume`, `enablegovtaxnote`, `forwardcoverfactor`, `enablepromoeditinvs`, `enableaddlpromoinvs`, `badcreditcustomer`, `enableduplicateprinting`, `numoutstandinginv`, `enablefocprinting`, `promooptions`, `groupcode`, `forceposcheck`, `ancustomercode`, `printoutletitemcode`, `reportprintcontrol`, `invoicelimiter`, `exclusiveopmode`, `returnpromotionkey`, `invoiceformat`, `liquorlicprint`, `enablepromoeditords`, `enableaddlpromoords`, `enableaddlpromoinvoices`, `enableposequipment`, `enablesalestrxn`, `enableadvancepayment`, `printcheckdetails`, `tcspecialdiscount`, `spldiscountdays`, `arabiccustomercity`, `threshholdlimit`, `discountkey`, `enforcepromotion`, `gpcustcode`, `cashonlypromo`, `roundnetamount`, `roundingoffvalue`, `partialcollection`, `transactiontype`, `enabledraftcopy`, `enablebuybackfree`, `enablecpd`, `enablepaymentsel`, `gpsdata`, `fixedlatitude`, `fixedlongitude`, `rentkey`, `startdate`, `enddate`, `definitionvalue`, `runningvalue`, `rentcontrol`, `disablebalanceupdate`, `enablecreditlimit`, `autosettlecollection`, `enableinvoicecopy`, `pobox`, `shoptelephonenumber`, `shopfaxnumber`, `ownername`, `ownerlandlinenumber`, `ownermobilenumber`, `contactpersonlandlinenumber`, `contactpersonmobilenumber`, `contactpersonemail`, `purchasemanagername`, `purchasemanagerlandlinenumber`, `purchasemanagermobilenumber`, `purchasemanageremail`, `warehousemanagername`, `warehousemanagerlandlinenumber`, `warehousemanagermobilenumber`, `warehousemanageremail`, `expirylimit`, `exprunningvalue`, `distributionkey`, `gpssavecount`, `graceperiod`, `reportcustcode`, `enablerental`, `enableautofillsales`, `enablebatchselection`, `barcode`, `division`, `gracelimit`, `visualcode`, `distribution_check_id`, `price_survey_id`, `advertisecode`, `enablereturnpassword`, `statementdays`, `applytax`, `taxregistrationnumber`, `traname`, `tranamearabic`, `deliveryflag`, `duedateflag`, `statementcust`, `taxcardno`, `crno`, `email`, `deliverycustomer`, `enforcedeliverynumber`)
+SELECT `customercode`, `type`, `headofficecode`, `routecode`, `streetcode`, `districtcode`, `locationcode`, `customersequence`, `customername`, `customeraddress1`, `customeraddress2`, `customerphone`, `balance`, `channelcode`, `customercategory`, `pricingkey`, `promotionkey`, `authorizeditemgrpkey`, `messagekey1`, `messagekey2`, `invoicepaymentterms`, `invoiceretailoption`, `invoicepriceoverride`, `invoiceretailoverride`, `invoiceformatoption`, `invoiceextensionopt`, `invoicedsdpromptopt`, `invoicecopies`, `salesinputoprion`, `returnsinputoption`, `invoiceinputstyle`, `onhandspromptopt`, `inventoryselectopt`, `invencontaineropt`, `queuedreportoption`, `loyalitykey`, `surveykey`, `itemmustkey`, `contactname`, `customertype`, `callfrequency`, `routenumber`, `arbcustomernameshort`, `arbcustomername`, `arbcustomeraddress1`, `arbcustomeraddress2`, `hhccustomernameshort`, `hhccustomername`, `hhccustomeraddress1`, `hhccustomeraddress2`, `allowbeyondlimit`, `tclimit`, `activecustomer`, `creditlimitdays`, `created`, `cdat`, `modified`, `mdat`, `forcehand`, `renteddisplay`, `installedchiller`, `monthlydepreciation`, `typeofgiveaway`, `giveawayflag`, `lastvisiteddate`, `memo1`, `memo2`, `tcsubtype`, `rentperc`, `customeraddress3`, `customercity`, `customerstate`, `customerzip`, `authorizeditemlistctl`, `invoicepriceprint`, `messagekey3`, `messagekey4`, `messagekey5`, `messagekey6`, `orderformat`, `enableupcprint`, `enabledelayprint`, `printsequence`, `enablepriceeditinvs`, `enablesellprevious`, `enablesuggestsales`, `enableautofillreturns`, `enableautofilldamaged`, `enablesigcapture`, `enablereturnstrxn`, `enableexchangetrxn`, `enabledamagedreturns`, `enablearcollection`, `enablesurveyaudit`, `enabledelivinstruct`, `enableinvoicecomment`, `invoicedetailentry`, `orderdetailentry`, `forcestockcapture`, `enablepromotrxn`, `alternatecode`, `creditlimit`, `allowcashoncreditexceed`, `arbcustomeraddress3`, `templateindicator`, `templatename`, `arbcontactname`, `printlanguageflag`, `quantumno`, `lostplacementdelivs`, `newplacementdelivs`, `currencycode`, `histmaxdeliveries`, `arcustomertype`, `custtaxkey1`, `custtaxkey2`, `custtaxkey3`, `customertaxid`, `customertaxidoptions`, `outletsubtype`, `volume`, `enablegovtaxnote`, `forwardcoverfactor`, `enablepromoeditinvs`, `enableaddlpromoinvs`, `badcreditcustomer`, `enableduplicateprinting`, `numoutstandinginv`, `enablefocprinting`, `promooptions`, `groupcode`, `forceposcheck`, `ancustomercode`, `printoutletitemcode`, `reportprintcontrol`, `invoicelimiter`, `exclusiveopmode`, `returnpromotionkey`, `invoiceformat`, `liquorlicprint`, `enablepromoeditords`, `enableaddlpromoords`, `enableaddlpromoinvoices`, `enableposequipment`, `enablesalestrxn`, `enableadvancepayment`, `printcheckdetails`, `tcspecialdiscount`, `spldiscountdays`, `arabiccustomercity`, `threshholdlimit`, `discountkey`, `enforcepromotion`, `gpcustcode`, `cashonlypromo`, `roundnetamount`, `roundingoffvalue`, `partialcollection`, `transactiontype`, `enabledraftcopy`, `enablebuybackfree`, `enablecpd`, `enablepaymentsel`, `gpsdata`, `fixedlatitude`, `fixedlongitude`, `rentkey`, `startdate`, `enddate`, `definitionvalue`, `runningvalue`, `rentcontrol`, `disablebalanceupdate`, `enablecreditlimit`, `autosettlecollection`, `enableinvoicecopy`, `pobox`, `shoptelephonenumber`, `shopfaxnumber`, `ownername`, `ownerlandlinenumber`, `ownermobilenumber`, `contactpersonlandlinenumber`, `contactpersonmobilenumber`, `contactpersonemail`, `purchasemanagername`, `purchasemanagerlandlinenumber`, `purchasemanagermobilenumber`, `purchasemanageremail`, `warehousemanagername`, `warehousemanagerlandlinenumber`, `warehousemanagermobilenumber`, `warehousemanageremail`, `expirylimit`, `exprunningvalue`, `distributionkey`, `gpssavecount`, `graceperiod`, `reportcustcode`, `enablerental`, `enableautofillsales`, `enablebatchselection`, `barcode`, `division`, `gracelimit`, `visualcode`, `distribution_check_id`, `price_survey_id`, `advertisecode`, `enablereturnpassword`, `statementdays`, `applytax`, `taxregistrationnumber`, `traname`, `tranamearabic`, `deliveryflag`, `duedateflag`, `statementcust`, `taxcardno`, `crno`, `email`, `deliverycustomer`, `enforcedeliverynumber`
+FROM `sfa_nmwc`.`customermaster`;
+
+-- trac_customermessages
+INSERT INTO `trac_customermessages` (`messagekey`, `alternatecode`, `messagedescription`, `messageline1`, `messageline2`, `messageline3`, `messageline4`, `arbmessageline1`, `arbmessageline2`, `arbmessageline3`, `arbmessageline4`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `messagekey`, `alternatecode`, `messagedescription`, `messageline1`, `messageline2`, `messageline3`, `messageline4`, `arbmessageline1`, `arbmessageline2`, `arbmessageline3`, `arbmessageline4`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`customermessages`;
+
+-- trac_customeroperationscontrol
+INSERT INTO `trac_customeroperationscontrol` (`primary_id`, `visitkey`, `routekey`, `customercode`, `routecode`, `salesmancode`, `odometerreading`, `visitstartdate`, `visitstarttime`, `visitenddate`, `visitendtime`, `totaltransactions`, `addedcustomer`, `voidflag`, `scannerindicator`, `reasoncode`, `latitude`, `longitude`, `radius`, `sapseq`)
+SELECT `primary_id`, `visitkey`, `routekey`, `customercode`, `routecode`, `salesmancode`, `odometerreading`, `visitstartdate`, `visitstarttime`, `visitenddate`, `visitendtime`, `totaltransactions`, `addedcustomer`, `voidflag`, `scannerindicator`, `reasoncode`, `latitude`, `longitude`, `radius`, `sapseq`
+FROM `sfa_nmwc`.`customeroperationscontrol`;
+
+-- trac_customerposinventory
+INSERT INTO `trac_customerposinventory` (`table_pk`, `customercode`, `itemcode`, `quantity`, `serialnumber`, `created`, `cdat`, `modified`, `mdat`, `installeddate`)
+SELECT `table_pk`, `customercode`, `itemcode`, `quantity`, `serialnumber`, `created`, `cdat`, `modified`, `mdat`, `installeddate`
+FROM `sfa_nmwc`.`customerposinventory`;
+
+-- trac_customerposlimit
+INSERT INTO `trac_customerposlimit` (`primary_key`, `customercode`, `poslimit`, `posbalance`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `primary_key`, `customercode`, `poslimit`, `posbalance`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`customerposlimit`;
+
+-- trac_customerpricing
+INSERT INTO `trac_customerpricing` (`pricingkey`, `description`, `startdate`, `enddate`, `choice`, `arbdescription`, `f_price_list_code`, `f_brand_code`, `f_to_brand_code`, `f_category_code`, `f_to_category_code`)
+SELECT `pricingkey`, `description`, `startdate`, `enddate`, `choice`, `arbdescription`, `f_price_list_code`, `f_brand_code`, `f_to_brand_code`, `f_category_code`, `f_to_category_code`
+FROM `sfa_nmwc`.`customerpricing`;
+
+-- trac_customerpricing1
+INSERT INTO `trac_customerpricing1` (`primary_key`, `pricingplankey`, `customerpricingkey`, `description`, `startdate`, `enddate`, `arbdescription`, `contractno`, `active`, `sequencecode`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `division`)
+SELECT `primary_key`, `pricingplankey`, `customerpricingkey`, `description`, `startdate`, `enddate`, `arbdescription`, `contractno`, `active`, `sequencecode`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `division`
+FROM `sfa_nmwc`.`customerpricing1`;
+
+-- trac_customerpricingplanheader1
+INSERT INTO `trac_customerpricingplanheader1` (`pricingplankey`, `description`, `arbdescription`, `activeindicator`, `alternatecode`)
+SELECT `pricingplankey`, `description`, `arbdescription`, `activeindicator`, `alternatecode`
+FROM `sfa_nmwc`.`customerpricingplanheader1`;
+
+-- trac_customerpromotionplandetail
+INSERT INTO `trac_customerpromotionplandetail` (`routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `promotionplannumber`, `activeindicator`)
+SELECT `routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `promotionplannumber`, `activeindicator`
+FROM `sfa_nmwc`.`customerpromotionplandetail`;
+
+-- trac_customersurveycontrol
+INSERT INTO `trac_customersurveycontrol` (`SurveyIndex`, `SurveyKey`, `SurveySequenceNumber`, `SurveyMandatory`, `SurveyDescription`, `ArbSurveyDescription`)
+SELECT `SurveyIndex`, `SurveyKey`, `SurveySequenceNumber`, `SurveyMandatory`, `SurveyDescription`, `ArbSurveyDescription`
+FROM `sfa_nmwc`.`customersurveycontrol`;
+
+-- trac_customersurveycontrolheader
+INSERT INTO `trac_customersurveycontrolheader` (`SurveyKey`, `SurveyDescription`, `ArbSurveyDescription`, `Created`, `CDat`, `Modified`, `MDat`, `activestatus`)
+SELECT `SurveyKey`, `SurveyDescription`, `ArbSurveyDescription`, `Created`, `CDat`, `Modified`, `MDat`, `activestatus`
+FROM `sfa_nmwc`.`customersurveycontrolheader`;
+
+-- trac_customersurveydefassign
+INSERT INTO `trac_customersurveydefassign` (`surveyplankey`, `surveydefkey`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `surveyplankey`, `surveydefkey`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`customersurveydefassign`;
+
+-- trac_customersurveydefinition
+INSERT INTO `trac_customersurveydefinition` (`surveydefkey`, `surveyindex`, `lineindex`, `surveyrectype`, `surveyprompt`, `arbsurveyprompt`, `responselength`, `responsedecimalpos`, `lookuptype`, `lookupindex`, `retainvalue`, `activestatus`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `surveydefkey`, `surveyindex`, `lineindex`, `surveyrectype`, `surveyprompt`, `arbsurveyprompt`, `responselength`, `responsedecimalpos`, `lookuptype`, `lookupindex`, `retainvalue`, `activestatus`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`customersurveydefinition`;
+
+-- trac_customersurveykey
+INSERT INTO `trac_customersurveykey` (`surveykey`, `surveydescription`, `arbsurveydescription`, `surveyplankey`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `surveykey`, `surveydescription`, `arbsurveydescription`, `surveyplankey`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`customersurveykey`;
+
+-- trac_customersurveykeyplan
+INSERT INTO `trac_customersurveykeyplan` (`primary_key`, `surveyplankey`, `surveykey`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `primary_key`, `surveyplankey`, `surveykey`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`customersurveykeyplan`;
+
+-- trac_customersurveyplan
+INSERT INTO `trac_customersurveyplan` (`surveyplankey`, `surveysequencenumber`, `surveymandatory`, `surveydescription`, `arbsurveydescription`, `created`, `cdat`, `modified`, `mdat`, `remarks`)
+SELECT `surveyplankey`, `surveysequencenumber`, `surveymandatory`, `surveydescription`, `arbsurveydescription`, `created`, `cdat`, `modified`, `mdat`, `remarks`
+FROM `sfa_nmwc`.`customersurveyplan`;
+
+-- trac_dcardetail
+INSERT INTO `trac_dcardetail` (`transactionkey`, `customercode`, `invoicenumber`, `invoicedate`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `paymentmode`, `currencycode`)
+SELECT `transactionkey`, `customercode`, `invoicenumber`, `invoicedate`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `paymentmode`, `currencycode`
+FROM `sfa_nmwc`.`dcardetail`;
+
+-- trac_dcarheader
+INSERT INTO `trac_dcarheader` (`transactionkey`, `transactiontype`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `customercode`, `routecode`, `salesmancode`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `voidflag`, `remarks1`, `remarks2`, `erpreferencenumber`, `mdat`, `paymenttype`, `currencycode`, `created`, `cdat`, `modified`, `pdcstatus`)
+SELECT `transactionkey`, `transactiontype`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `customercode`, `routecode`, `salesmancode`, `totalinvoiceamount`, `amountpaid`, `invoicebalance`, `voidflag`, `remarks1`, `remarks2`, `erpreferencenumber`, `mdat`, `paymenttype`, `currencycode`, `created`, `cdat`, `modified`, `pdcstatus`
+FROM `sfa_nmwc`.`dcarheader`;
+
+-- trac_deliverydetail
+INSERT INTO `trac_deliverydetail` (`deliveryindex`, `deliveryno`, `itemcode`, `caseprice`, `salesprice`, `returnprice`, `unitspercase`, `salesqty`, `returnqty`, `focqty`, `promotionamount`, `deliveredqty`, `deliveredfoc`, `receivedreturn`, `reasoncode`, `ManualFreeQty`, `processedflag`)
+SELECT `deliveryindex`, `deliveryno`, `itemcode`, `caseprice`, `salesprice`, `returnprice`, `unitspercase`, `salesqty`, `returnqty`, `focqty`, `promotionamount`, `deliveredqty`, `deliveredfoc`, `receivedreturn`, `reasoncode`, `ManualFreeQty`, `processedflag`
+FROM `sfa_nmwc`.`deliverydetail`;
+
+-- trac_deliveryheader
+INSERT INTO `trac_deliveryheader` (`deliveryno`, `orderno`, `customercode`, `deliveryroute`, `presalesroute`, `deliverydate`, `drivercode`, `helpercode`, `dispatched`, `canceled`, `dispatchdate`, `redispatch`, `loadsheetnumber`, `delivered`, `sequence`, `referenceno`, `totalamount`, `invoiced`, `ponumber`, `upddate`)
+SELECT `deliveryno`, `orderno`, `customercode`, `deliveryroute`, `presalesroute`, `deliverydate`, `drivercode`, `helpercode`, `dispatched`, `canceled`, `dispatchdate`, `redispatch`, `loadsheetnumber`, `delivered`, `sequence`, `referenceno`, `totalamount`, `invoiced`, `ponumber`, `upddate`
+FROM `sfa_nmwc`.`deliveryheader`;
+
+-- trac_depotmaster
+INSERT INTO `trac_depotmaster` (`depotcode`, `branchmanagercode`, `regionmstcode`, `pricingkey`, `cmpycode`, `depotname`, `arbdepotname`, `defaultdepotflag`, `created`, `cdat`, `modified`, `mdat`, `depotprefix`, `custseq`, `alternatedepotcode`, `activestatus`, `centralwh`, `phonenumber`, `faxnumber`)
+SELECT `depotcode`, `branchmanagercode`, `regionmstcode`, `pricingkey`, `cmpycode`, `depotname`, `arbdepotname`, `defaultdepotflag`, `created`, `cdat`, `modified`, `mdat`, `depotprefix`, `custseq`, `alternatedepotcode`, `activestatus`, `centralwh`, `phonenumber`, `faxnumber`
+FROM `sfa_nmwc`.`depotmaster`;
+
+-- trac_devicemaster
+-- SKIP: no legacy source table `devicemaster` found in nmwc_aswin_structure.sql
+
+-- trac_expiryreturnreasons
+INSERT INTO `trac_expiryreturnreasons` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`expiryreturnreasons`;
+
+-- trac_expreasons
+INSERT INTO `trac_expreasons` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `allowliterentry`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `allowliterentry`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`expreasons`;
+
+-- trac_freegoodreasons
+INSERT INTO `trac_freegoodreasons` (`reason_code`, `alternatereasoncode`, `reason_desc`, `reason_arb_desc`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `reason_code`, `alternatereasoncode`, `reason_desc`, `reason_arb_desc`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`freegoodreasons`;
+
+-- trac_groupmaster
+INSERT INTO `trac_groupmaster` (`groupcode`, `alternatecode`, `groupname`, `arbgroupname`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `groupcode`, `alternatecode`, `groupname`, `arbgroupname`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`groupmaster`;
+
+-- trac_inventorylocation
+INSERT INTO `trac_inventorylocation` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`inventorylocation`;
+
+-- trac_inventorysummarydetail
+INSERT INTO `trac_inventorysummarydetail` (`inventorykey`, `itemcode`, `routekey`, `weighted`, `beginstockqty`, `loadqty`, `loadaddqty`, `loadcutqty`, `loadreqqty`, `saleqty`, `returnqty`, `damagedaddqty`, `damagedcutqty`, `endstockqty`, `unloadqty`, `damagedunloadqty`, `freesampleqty`, `truckdamagedunloadqty`, `stdsalesprice`, `stdreturnprice`, `cashsalesqty`, `cashsalesvalue`, `tcsalesqty`, `tcsalesvalue`, `gcsalesqty`, `gcsalesvalue`, `cashdamagedqty`, `cashdamagedvalue`, `tcdamagedqty`, `tcdamagedvalue`, `gcdamagedqty`, `gcdamagedvalue`, `cashreturnqty`, `cashreturnvalue`, `tcreturnqty`, `tcreturnvalue`, `gcreturnqty`, `gcreturnvalue`, `promoqty`, `cashsalesitemexcisetax`, `cashsalesitemgsttax`, `cashreturnitemexcisetax`, `cashreturnitemgsttax`, `cashdamageditemexcisetax`, `cashdamageditemgsttax`, `cashfgitemexcisetax`, `cashfgitemgsttax`, `cashpromoitemexcisetax`, `cashpromoitemgsttax`, `tcsalesitemexcisetax`, `tcsalesitemgsttax`, `tcreturnitemexcisetax`, `tcreturnitemgsttax`, `tcdamageditemexcisetax`, `tcdamageditemgsttax`, `tcfgitemexcisetax`, `tcfgitemgsttax`, `tcpromoitemexcisetax`, `tcpromoitemgsttax`, `gcsalesitemexcisetax`, `gcsalesitemgsttax`, `gcreturnitemexcisetax`, `gcreturnitemgsttax`, `gcdamageditemexcisetax`, `gcdamageditemgsttax`, `gcfgitemexcisetax`, `gcfgitemgsttax`, `gcpromoitemexcisetax`, `gcpromoitemgsttax`, `batchdetailkey`, `stdsalescaseprice`, `stdreturncaseprice`, `expiryqty`, `stdgoodreturncaseprice`, `stdgoodreturnprice`, `currencycode`, `returnfreeqty`, `damageqty`, `expdmgfreeqty`, `expunloadqty`, `dmgunloadqty`, `expdmgfreeunloadqty`, `rentqty`, `mdat`, `record_flag`, `loadadjustqty`, `vanstock`, `vanstockvalue`, `upc`)
+SELECT `inventorykey`, `itemcode`, `routekey`, `weighted`, `beginstockqty`, `loadqty`, `loadaddqty`, `loadcutqty`, `loadreqqty`, `saleqty`, `returnqty`, `damagedaddqty`, `damagedcutqty`, `endstockqty`, `unloadqty`, `damagedunloadqty`, `freesampleqty`, `truckdamagedunloadqty`, `stdsalesprice`, `stdreturnprice`, `cashsalesqty`, `cashsalesvalue`, `tcsalesqty`, `tcsalesvalue`, `gcsalesqty`, `gcsalesvalue`, `cashdamagedqty`, `cashdamagedvalue`, `tcdamagedqty`, `tcdamagedvalue`, `gcdamagedqty`, `gcdamagedvalue`, `cashreturnqty`, `cashreturnvalue`, `tcreturnqty`, `tcreturnvalue`, `gcreturnqty`, `gcreturnvalue`, `promoqty`, `cashsalesitemexcisetax`, `cashsalesitemgsttax`, `cashreturnitemexcisetax`, `cashreturnitemgsttax`, `cashdamageditemexcisetax`, `cashdamageditemgsttax`, `cashfgitemexcisetax`, `cashfgitemgsttax`, `cashpromoitemexcisetax`, `cashpromoitemgsttax`, `tcsalesitemexcisetax`, `tcsalesitemgsttax`, `tcreturnitemexcisetax`, `tcreturnitemgsttax`, `tcdamageditemexcisetax`, `tcdamageditemgsttax`, `tcfgitemexcisetax`, `tcfgitemgsttax`, `tcpromoitemexcisetax`, `tcpromoitemgsttax`, `gcsalesitemexcisetax`, `gcsalesitemgsttax`, `gcreturnitemexcisetax`, `gcreturnitemgsttax`, `gcdamageditemexcisetax`, `gcdamageditemgsttax`, `gcfgitemexcisetax`, `gcfgitemgsttax`, `gcpromoitemexcisetax`, `gcpromoitemgsttax`, `batchdetailkey`, `stdsalescaseprice`, `stdreturncaseprice`, `expiryqty`, `stdgoodreturncaseprice`, `stdgoodreturnprice`, `currencycode`, `returnfreeqty`, `damageqty`, `expdmgfreeqty`, `expunloadqty`, `dmgunloadqty`, `expdmgfreeunloadqty`, `rentqty`, `mdat`, `record_flag`, `loadadjustqty`, `vanstock`, `vanstockvalue`, `upc`
+FROM `sfa_nmwc`.`inventorysummarydetail`;
+
+-- trac_inventorytransactiondetail
+INSERT INTO `trac_inventorytransactiondetail` (`primary_key`, `routekey`, `detailkey`, `transactiontypecode`, `itemcode`, `quantity`, `requestedqty`, `weighted`, `itemprice`, `batchdetailkey`, `itemcaseprice`, `currencycode`, `record_flag`, `expirydate`, `reasoncode`, `upc`)
+SELECT `primary_key`, `routekey`, `detailkey`, `transactiontypecode`, `itemcode`, `quantity`, `requestedqty`, `weighted`, `itemprice`, `batchdetailkey`, `itemcaseprice`, `currencycode`, `record_flag`, `expirydate`, `reasoncode`, `upc`
+FROM `sfa_nmwc`.`inventorytransactiondetail`;
+
+-- trac_inventorytransactionheader
+INSERT INTO `trac_inventorytransactionheader` (`inventorykey`, `detailkey`, `routekey`, `transactiontype`, `routecode`, `salesmancode`, `transactiondate`, `transactiontime`, `documentnumber`, `odometerreading`, `transferlocationcode`, `referencenumber`, `requestdate`, `securitycode`, `transmitindicator`, `voidflag`, `hhcdocumentnumber`, `loadnumber`, `refdocumentnumber`, `currencycode`, `actualtransactiondate`, `inventorynumber`, `data`, `record_flag`, `deliverydate`, `isurgent`, `receivedtime`, `manualinvoice`)
+SELECT `inventorykey`, `detailkey`, `routekey`, `transactiontype`, `routecode`, `salesmancode`, `transactiondate`, `transactiontime`, `documentnumber`, `odometerreading`, `transferlocationcode`, `referencenumber`, `requestdate`, `securitycode`, `transmitindicator`, `voidflag`, `hhcdocumentnumber`, `loadnumber`, `refdocumentnumber`, `currencycode`, `actualtransactiondate`, `inventorynumber`, `data`, `record_flag`, `deliverydate`, `isurgent`, `receivedtime`, `manualinvoice`
+FROM `sfa_nmwc`.`inventorytransactionheader`;
+
+-- trac_invoicedetail
+INSERT INTO `trac_invoicedetail` (`primary_key`, `routekey`, `visitkey`, `transactionkey`, `itemcode`, `salesqty`, `returnqty`, `damagedqty`, `freesampleqty`, `salesprice`, `returnprice`, `stdsalesprice`, `stdreturnprice`, `promoqty`, `salesitemexcisetax`, `salesitemgsttax`, `returnitemexcisetax`, `returnitemgsttax`, `damageditemexcisetax`, `damageditemgsttax`, `fgitemexcisetax`, `fgitemgsttax`, `promoitemexcisetax`, `promoitemgsttax`, `coopid`, `batchdetailkey`, `salescaseprice`, `returncaseprice`, `stdsalescaseprice`, `stdreturncaseprice`, `goodreturnprice`, `goodreturncaseprice`, `stdgoodreturncaseprice`, `stdgoodreturnprice`, `expiryqty`, `currencycode`, `returnfreeqty`, `manualfreeqty`, `limitedfreeqty`, `rebaterentqty`, `fixedrentqty`, `pricechgindicator`, `discountamount`, `discountpercentage`, `promoamount`, `replacementqty`, `replacementprice`, `replacementcaseprice`, `promovalue`, `mdat`, `sales_amount`, `returnpromovalue`, `returnpromoamount`, `return_amount`, `returnfreesampleqty`, `roundsalesamount`, `diffround`, `linetotal`, `receivedtime`, `upc`, `buybackexcisetax`, `buybackgsttax`, `ExcTaxAmount`, `VatAmount`, `expiryitemgsttax`, `damagepromoamount`)
+SELECT `primary_key`, `routekey`, `visitkey`, `transactionkey`, `itemcode`, `salesqty`, `returnqty`, `damagedqty`, `freesampleqty`, `salesprice`, `returnprice`, `stdsalesprice`, `stdreturnprice`, `promoqty`, `salesitemexcisetax`, `salesitemgsttax`, `returnitemexcisetax`, `returnitemgsttax`, `damageditemexcisetax`, `damageditemgsttax`, `fgitemexcisetax`, `fgitemgsttax`, `promoitemexcisetax`, `promoitemgsttax`, `coopid`, `batchdetailkey`, `salescaseprice`, `returncaseprice`, `stdsalescaseprice`, `stdreturncaseprice`, `goodreturnprice`, `goodreturncaseprice`, `stdgoodreturncaseprice`, `stdgoodreturnprice`, `expiryqty`, `currencycode`, `returnfreeqty`, `manualfreeqty`, `limitedfreeqty`, `rebaterentqty`, `fixedrentqty`, `pricechgindicator`, `discountamount`, `discountpercentage`, `promoamount`, `replacementqty`, `replacementprice`, `replacementcaseprice`, `promovalue`, `mdat`, `sales_amount`, `returnpromovalue`, `returnpromoamount`, `return_amount`, `returnfreesampleqty`, `roundsalesamount`, `diffround`, `linetotal`, `receivedtime`, `upc`, `buybackexcisetax`, `buybackgsttax`, `ExcTaxAmount`, `VatAmount`, `expiryitemgsttax`, `damagepromoamount`
+FROM `sfa_nmwc`.`invoicedetail`;
+
+-- trac_invoiceheader
+INSERT INTO `trac_invoiceheader` (`transactionkey`, `routekey`, `visitkey`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `dsdnumber`, `ponumber`, `customercode`, `routecode`, `salesmancode`, `presoldordernumber`, `presalesmancode`, `presalesroutecode`, `orderdeliverydate`, `orderdeliveryroutecode`, `totalinvoiceamount`, `totalsalesamount`, `totalreturnamount`, `totaldamagedamount`, `totalfreesampleamount`, `immediatepaid`, `amountpaid`, `invoicebalance`, `dexflag`, `dexg86signature`, `paymenttype`, `varianceflag`, `splittransaction`, `voidflag`, `transmitindicator`, `paymentstatus`, `hhcinvoicenumber`, `totalpromoamount`, `gcpaymenttype`, `hhcdocumentnumber`, `inventorykey`, `totaltaxesamount`, `itemlinetaxamount`, `totaldiscountamount`, `voidreasoncode`, `totalexpiryamount`, `currencycode`, `totalmanualfree`, `totallimitedfree`, `totalrebaterent`, `totalfixedrent`, `actualtransactiondate`, `boentry`, `hhctransactionkey`, `data`, `comments`, `totaldiscdistributionamount`, `totalreplacementamount`, `comments2`, `record_flag`, `lineitemdiscount`, `totalreturnpromoamount`, `returnlineitemdiscount`, `totalbuybackfreeamount`, `roundtotalsalesamount`, `diffround`, `receivedtime`, `manualinvoicetype`, `deliverycustomer`, `enforcedeliverynumber`)
+SELECT `transactionkey`, `routekey`, `visitkey`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `dsdnumber`, `ponumber`, `customercode`, `routecode`, `salesmancode`, `presoldordernumber`, `presalesmancode`, `presalesroutecode`, `orderdeliverydate`, `orderdeliveryroutecode`, `totalinvoiceamount`, `totalsalesamount`, `totalreturnamount`, `totaldamagedamount`, `totalfreesampleamount`, `immediatepaid`, `amountpaid`, `invoicebalance`, `dexflag`, `dexg86signature`, `paymenttype`, `varianceflag`, `splittransaction`, `voidflag`, `transmitindicator`, `paymentstatus`, `hhcinvoicenumber`, `totalpromoamount`, `gcpaymenttype`, `hhcdocumentnumber`, `inventorykey`, `totaltaxesamount`, `itemlinetaxamount`, `totaldiscountamount`, `voidreasoncode`, `totalexpiryamount`, `currencycode`, `totalmanualfree`, `totallimitedfree`, `totalrebaterent`, `totalfixedrent`, `actualtransactiondate`, `boentry`, `hhctransactionkey`, `data`, `comments`, `totaldiscdistributionamount`, `totalreplacementamount`, `comments2`, `record_flag`, `lineitemdiscount`, `totalreturnpromoamount`, `returnlineitemdiscount`, `totalbuybackfreeamount`, `roundtotalsalesamount`, `diffround`, `receivedtime`, `manualinvoicetype`, `deliverycustomer`, `enforcedeliverynumber`
+FROM `sfa_nmwc`.`invoiceheader`;
+
+-- trac_invoicerxddetail
+INSERT INTO `trac_invoicerxddetail` (`routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `itemtranstypeseq`, `reasoncode`, `quantity`, `catchweightqty`, `weighted`, `instructioncode`, `currencycode`, `record_flag`, `expirydate`, `invoiceno`, `receivedtime`, `upc`)
+SELECT `routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `itemtranstypeseq`, `reasoncode`, `quantity`, `catchweightqty`, `weighted`, `instructioncode`, `currencycode`, `record_flag`, `expirydate`, `invoiceno`, `receivedtime`, `upc`
+FROM `sfa_nmwc`.`invoicerxddetail`;
+
+-- trac_itemgroup
+INSERT INTO `trac_itemgroup` (`itemgroupcode`, `submajorcategorycode`, `itemgroupname`, `arbitemgroup`, `hhcitemgroup`, `created`, `cdat`, `modified`, `mdat`, `alternateitemgroupcode`, `activestatus`)
+SELECT `itemgroupcode`, `submajorcategorycode`, `itemgroupname`, `arbitemgroup`, `hhcitemgroup`, `created`, `cdat`, `modified`, `mdat`, `alternateitemgroupcode`, `activestatus`
+FROM `sfa_nmwc`.`itemgroup`;
+
+-- trac_itemmaster
+INSERT INTO `trac_itemmaster` (`actualitemcode`, `itemgroupcode`, `itemtype`, `itemshortdescription`, `itemdescription`, `unitspercase`, `defaultsalesprice`, `defaultreturnprice`, `defaultretailprice`, `pricingkey`, `arbitemshortdescription`, `arbitemdescription`, `hhcitemshortdescription`, `hhcitemdescription`, `activeitem`, `caseprice`, `returncaseprice`, `retailcaseprice`, `alternatecode`, `created`, `cdat`, `modified`, `mdat`, `liter`, `dataentry`, `leadtime`, `viewflag`, `case1`, `case2`, `memo1`, `memo2`, `tcallowed`, `itemgroupingcode`, `printsequenceroute`, `printsequencecust`, `upccasecode`, `captureshelfstock`, `filmbagbarcode`, `boxtraybarcode`, `cartonbarcode`, `highper`, `lowper`, `literperunit`, `commissionallowedflag`, `alternateitemgroupcode`, `fastmovingitemflag`, `codedateformat`, `itemtaxkey1`, `itemtaxkey2`, `itemtaxkey3`, `defpricetaxkey1`, `defpricetaxkey2`, `defpricetaxkey3`, `packagecode`, `anitemcode`, `averagesales`, `enablemeatpiecescapture`, `itemcompany`, `caseuom`, `warehousestock`, `itemgrpcode`, `parentitemcode`, `shelflife`, `defaultgoodreturnprice`, `defaultgoodreturncaseprice`, `maxpricechange`, `minpricechange`, `allowbatchentry`, `costcaseprice`, `defaultcostprice`, `allowinvoicepricechange`, `reportitemcode`, `offtakeparameter`, `barcode1`, `barcode2`, `barcode3`, `barcode4`, `barcode5`, `barcode6`, `barcode7`, `barcode8`, `barcode9`, `barcode10`, `division`)
+SELECT `actualitemcode`, `itemgroupcode`, `itemtype`, `itemshortdescription`, `itemdescription`, `unitspercase`, `defaultsalesprice`, `defaultreturnprice`, `defaultretailprice`, `pricingkey`, `arbitemshortdescription`, `arbitemdescription`, `hhcitemshortdescription`, `hhcitemdescription`, `activeitem`, `caseprice`, `returncaseprice`, `retailcaseprice`, `alternatecode`, `created`, `cdat`, `modified`, `mdat`, `liter`, `dataentry`, `leadtime`, `viewflag`, `case1`, `case2`, `memo1`, `memo2`, `tcallowed`, `itemgroupingcode`, `printsequenceroute`, `printsequencecust`, `upccasecode`, `captureshelfstock`, `filmbagbarcode`, `boxtraybarcode`, `cartonbarcode`, `highper`, `lowper`, `literperunit`, `commissionallowedflag`, `alternateitemgroupcode`, `fastmovingitemflag`, `codedateformat`, `itemtaxkey1`, `itemtaxkey2`, `itemtaxkey3`, `defpricetaxkey1`, `defpricetaxkey2`, `defpricetaxkey3`, `packagecode`, `anitemcode`, `averagesales`, `enablemeatpiecescapture`, `itemcompany`, `caseuom`, `warehousestock`, `itemgrpcode`, `parentitemcode`, `shelflife`, `defaultgoodreturnprice`, `defaultgoodreturncaseprice`, `maxpricechange`, `minpricechange`, `allowbatchentry`, `costcaseprice`, `defaultcostprice`, `allowinvoicepricechange`, `reportitemcode`, `offtakeparameter`, `barcode1`, `barcode2`, `barcode3`, `barcode4`, `barcode5`, `barcode6`, `barcode7`, `barcode8`, `barcode9`, `barcode10`, `division`
+FROM `sfa_nmwc`.`itemmaster`;
+
+-- trac_itemmustheader
+INSERT INTO `trac_itemmustheader` (`itemmustcode`, `itemmustdescription`, `arbitemmustdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `itemmustcode`, `itemmustdescription`, `arbitemmustdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`itemmustheader`;
+
+-- trac_itempackagemaster
+INSERT INTO `trac_itempackagemaster` (`packagecode`, `alternatecode`, `packagedescription`, `arbpackagedescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `packagecode`, `alternatecode`, `packagedescription`, `arbpackagedescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`itempackagemaster`;
+
+-- trac_lookupindexdetail
+INSERT INTO `trac_lookupindexdetail` (`primary_key`, `transactionkey`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `primary_key`, `transactionkey`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`lookupindexdetail`;
+
+-- trac_lookupindexheader
+INSERT INTO `trac_lookupindexheader` (`transactionkey`, `description`, `arbdescription`, `response`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `transactionkey`, `description`, `arbdescription`, `response`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`lookupindexheader`;
+
+-- trac_loyaltykeydetail
+INSERT INTO `trac_loyaltykeydetail` (`primarykey`, `loyaltykeyid`, `loyaltyplanid`, `startdate`, `enddate`, `memo1`)
+SELECT `primarykey`, `loyaltykeyid`, `loyaltyplanid`, `startdate`, `enddate`, `memo1`
+FROM `sfa_nmwc`.`loyaltykeydetail`;
+
+-- trac_loyaltykeyheader
+INSERT INTO `trac_loyaltykeyheader` (`loyaltykeyid`, `description`, `arabicdescription`, `active`, `remarks`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `loyaltykeyid`, `description`, `arabicdescription`, `active`, `remarks`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`loyaltykeyheader`;
+
+-- trac_loyaltyplandetail
+INSERT INTO `trac_loyaltyplandetail` (`primarykey`, `loyaltyplanid`, `qualificationgroup`, `type`, `value`, `points`, `memo1`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `primarykey`, `loyaltyplanid`, `qualificationgroup`, `type`, `value`, `points`, `memo1`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`loyaltyplandetail`;
+
+-- trac_loyaltyplanheader
+INSERT INTO `trac_loyaltyplanheader` (`loyaltyplanid`, `description`, `arbdescription`, `active`, `remarks`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `loyaltyplanid`, `description`, `arbdescription`, `active`, `remarks`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`loyaltyplanheader`;
+
+-- trac_majorcategory
+INSERT INTO `trac_majorcategory` (`majorcategorycode`, `companygroupcode`, `alternatecode`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `majorcategorycode`, `companygroupcode`, `alternatecode`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`majorcategory`;
+
+-- trac_migrations
+-- SKIP: no legacy source table `migrations` found in nmwc_aswin_structure.sql
+
+-- trac_moduledetail
+INSERT INTO `trac_moduledetail` (`formid`, `formname`, `formdescription`, `moduleid`, `order`)
+SELECT `formid`, `formname`, `formdescription`, `moduleid`, `order`
+FROM `sfa_nmwc`.`moduledetail`;
+
+-- trac_moduleheader
+INSERT INTO `trac_moduleheader` (`moduleid`, `modulename`)
+SELECT `moduleid`, `modulename`
+FROM `sfa_nmwc`.`moduleheader`;
+
+-- trac_monthlysummarizationperroute
+INSERT INTO `trac_monthlysummarizationperroute` (`routecode`, `bmonth`, `byear`, `itemcode`, `valuebegininventory`, `valueload`, `valueloadadjust`, `valuetransfer`, `valuesales`, `valuebuybacks`, `valuereturnscredited`, `valuereturnsunloaded`, `valuetruckspoilage`, `valuefreshreturntostock`, `valuefreegood`, `valuebuybackfree`, `valuereplacement`, `valuegiveaway`, `valueendinginventory`, `quantitybegininventory`, `quantityload`, `quantityloadadjust`, `quantitytransfer`, `quantitysales`, `quantitybuybacks`, `quantityreturnscredited`, `quantityreturnsunloaded`, `quantitytruckspoilage`, `quantityfreshreturntostock`, `quantityfreegood`, `quantitybuybackfree`, `quantityreplacement`, `quantitygiveaway`, `quantityendinginventory`, `upc`, `salesprice`, `returnprice`, `salescaseprice`, `returncaseprice`, `quantityrentrebate`, `quantitydamage`, `valuerentrebate`, `valuedamage`)
+SELECT `routecode`, `bmonth`, `byear`, `itemcode`, `valuebegininventory`, `valueload`, `valueloadadjust`, `valuetransfer`, `valuesales`, `valuebuybacks`, `valuereturnscredited`, `valuereturnsunloaded`, `valuetruckspoilage`, `valuefreshreturntostock`, `valuefreegood`, `valuebuybackfree`, `valuereplacement`, `valuegiveaway`, `valueendinginventory`, `quantitybegininventory`, `quantityload`, `quantityloadadjust`, `quantitytransfer`, `quantitysales`, `quantitybuybacks`, `quantityreturnscredited`, `quantityreturnsunloaded`, `quantitytruckspoilage`, `quantityfreshreturntostock`, `quantityfreegood`, `quantitybuybackfree`, `quantityreplacement`, `quantitygiveaway`, `quantityendinginventory`, `upc`, `salesprice`, `returnprice`, `salescaseprice`, `returncaseprice`, `quantityrentrebate`, `quantitydamage`, `valuerentrebate`, `valuedamage`
+FROM `sfa_nmwc`.`monthlysummarizationperroute`;
+
+-- trac_nationalsalesmanager
+INSERT INTO `trac_nationalsalesmanager` (`nationalsalesmanagercode`, `alternatecode`, `parentcompany`, `nationalsalesmanagername`, `arbnationalsalesmanagername`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `nationalsalesmanagercode`, `alternatecode`, `parentcompany`, `nationalsalesmanagername`, `arbnationalsalesmanagername`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`nationalsalesmanager`;
+
+-- trac_nonservicedcustomer
+INSERT INTO `trac_nonservicedcustomer` (`routekey`, `customercode`, `reasoncode`)
+SELECT `routekey`, `customercode`, `reasoncode`
+FROM `sfa_nmwc`.`nonservicedcustomer`;
+
+-- trac_nonservreasons
+INSERT INTO `trac_nonservreasons` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`nonservreasons`;
+
+-- trac_nosalesheader
+INSERT INTO `trac_nosalesheader` (`transactionkey`, `visitkey`, `routekey`, `documentnumber`, `invoicenumber`, `routecode`, `salesmancode`, `transactiondate`, `transactiontime`, `nosalereasoncode`, `voidflag`, `transmitindicator`, `customercode`, `hhcdocumentnumber`, `hhcinvoicenumber`, `data`)
+SELECT `transactionkey`, `visitkey`, `routekey`, `documentnumber`, `invoicenumber`, `routecode`, `salesmancode`, `transactiondate`, `transactiontime`, `nosalereasoncode`, `voidflag`, `transmitindicator`, `customercode`, `hhcdocumentnumber`, `hhcinvoicenumber`, `data`
+FROM `sfa_nmwc`.`nosalesheader`;
+
+-- trac_orderrxddetail
+INSERT INTO `trac_orderrxddetail` (`routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `itemtranstypeseq`, `reasoncode`, `quantity`, `catchweightqty`, `weighted`, `instructioncode`, `expirydate`, `receivedtime`)
+SELECT `routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `itemtranstypeseq`, `reasoncode`, `quantity`, `catchweightqty`, `weighted`, `instructioncode`, `expirydate`, `receivedtime`
+FROM `sfa_nmwc`.`orderrxddetail`;
+
+-- trac_password_reset_tokens
+-- SKIP: no legacy source table `password_reset_tokens` found in nmwc_aswin_structure.sql
+
+-- trac_pdcclearenceheader
+INSERT INTO `trac_pdcclearenceheader` (`transactionkey`, `transactiondate`, `routecode`, `salesmancode`, `customercode`, `chequeno`, `chequedate`, `bankcode`, `chequeamount`, `chequeclearedon`, `chequeclearedbank`, `bankreferenceno`, `erpreferencenumber`, `remarks`)
+SELECT `transactionkey`, `transactiondate`, `routecode`, `salesmancode`, `customercode`, `chequeno`, `chequedate`, `bankcode`, `chequeamount`, `chequeclearedon`, `chequeclearedbank`, `bankreferenceno`, `erpreferencenumber`, `remarks`
+FROM `sfa_nmwc`.`pdcclearenceheader`;
+
+-- trac_posequipmentchangedetail
+INSERT INTO `trac_posequipmentchangedetail` (`routekey`, `visitkey`, `posaction`, `itemcode`, `quantity`, `serialnumber`, `instructioncode`)
+SELECT `routekey`, `visitkey`, `posaction`, `itemcode`, `quantity`, `serialnumber`, `instructioncode`
+FROM `sfa_nmwc`.`posequipmentchangedetail`;
+
+-- trac_posinstructions
+INSERT INTO `trac_posinstructions` (`posinstructioncode`, `alternatecode`, `posinstructionname`, `arbposinstructionname`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `posinstructioncode`, `alternatecode`, `posinstructionname`, `arbposinstructionname`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`posinstructions`;
+
+-- trac_posmaster
+INSERT INTO `trac_posmaster` (`itemcode`, `alternatecode`, `itemdescription`, `arbitemdescription`, `itemvalue`, `inventorytype`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `itemcode`, `alternatecode`, `itemdescription`, `arbitemdescription`, `itemvalue`, `inventorytype`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`posmaster`;
+
+-- trac_pricingdetail1
+INSERT INTO `trac_pricingdetail1` (`primary_key`, `customerpricingkey`, `itemcode`, `salesprice`, `returnprice`, `retailprice`, `salescaseprice`, `returncaseprice`, `unitspercase`, `stdsalesunitprice`, `stdreturnunitprice`, `stdsalescaseprice`, `stdreturncaseprice`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`)
+SELECT `primary_key`, `customerpricingkey`, `itemcode`, `salesprice`, `returnprice`, `retailprice`, `salescaseprice`, `returncaseprice`, `unitspercase`, `stdsalesunitprice`, `stdreturnunitprice`, `stdsalescaseprice`, `stdreturncaseprice`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`
+FROM `sfa_nmwc`.`pricingdetail1`;
+
+-- trac_pricingplanheader1
+INSERT INTO `trac_pricingplanheader1` (`customerpricingkey`, `description`, `arbdescription`, `type`, `active`, `alternatecode`, `division`, `startday`, `endday`)
+SELECT `customerpricingkey`, `description`, `arbdescription`, `type`, `active`, `alternatecode`, `division`, `startday`, `endday`
+FROM `sfa_nmwc`.`pricingplanheader1`;
+
+-- trac_productgroupdetail
+INSERT INTO `trac_productgroupdetail` (`primary_key`, `groupnumber`, `itemcode`, `itemqty`, `promopcprice`, `promocaseprice`, `mdat`, `alternatecode`, `modified`, `divison`)
+SELECT `primary_key`, `groupnumber`, `itemcode`, `itemqty`, `promopcprice`, `promocaseprice`, `mdat`, `alternatecode`, `modified`, `divison`
+FROM `sfa_nmwc`.`productgroupdetail`;
+
+-- trac_productgroupheader
+INSERT INTO `trac_productgroupheader` (`groupnumber`, `groupdescription`, `arbgroupdescription`, `grouptype`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`)
+SELECT `groupnumber`, `groupdescription`, `arbgroupdescription`, `grouptype`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`
+FROM `sfa_nmwc`.`productgroupheader`;
+
+-- trac_promokeydetail
+INSERT INTO `trac_promokeydetail` (`primary_key`, `plannumber`, `promotionkey`, `startdate`, `enddate`, `promotiontypecode`, `qualificationgroup`, `assignmentgroup`, `assignmentnumber`, `performcriteriakey`, `rangebasis`, `amountbasis`, `exclusionoption`, `active`, `iscase`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`, `memo1`)
+SELECT `primary_key`, `plannumber`, `promotionkey`, `startdate`, `enddate`, `promotiontypecode`, `qualificationgroup`, `assignmentgroup`, `assignmentnumber`, `performcriteriakey`, `rangebasis`, `amountbasis`, `exclusionoption`, `active`, `iscase`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`, `memo1`
+FROM `sfa_nmwc`.`promokeydetail`;
+
+-- trac_promokeyheader
+INSERT INTO `trac_promokeyheader` (`promotionkey`, `description`, `arbdescription`, `activeindicator`, `type`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`)
+SELECT `promotionkey`, `description`, `arbdescription`, `activeindicator`, `type`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`
+FROM `sfa_nmwc`.`promokeyheader`;
+
+-- trac_promoplandetail
+INSERT INTO `trac_promoplandetail` (`plannumber`, `qualificationgroup`, `assignmentgroup`, `performcriteriakey`, `rangebasis`, `amountbasis`, `exclusionoption`, `assignmentnumber`, `plandescription`, `arbplandescription`, `promotiontypecode`, `rentindicator`, `iscase`, `onetimeuse`, `enforcepromotion`, `repeatrange`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `memo1`, `divison`)
+SELECT `plannumber`, `qualificationgroup`, `assignmentgroup`, `performcriteriakey`, `rangebasis`, `amountbasis`, `exclusionoption`, `assignmentnumber`, `plandescription`, `arbplandescription`, `promotiontypecode`, `rentindicator`, `iscase`, `onetimeuse`, `enforcepromotion`, `repeatrange`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `memo1`, `divison`
+FROM `sfa_nmwc`.`promoplandetail`;
+
+-- trac_promoplanheader
+INSERT INTO `trac_promoplanheader` (`plannumber`, `plandescription`, `arbplandescription`, `plantypecode`, `activeindicator`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`)
+SELECT `plannumber`, `plandescription`, `arbplandescription`, `plantypecode`, `activeindicator`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`
+FROM `sfa_nmwc`.`promoplanheader`;
+
+-- trac_promotionassignment
+INSERT INTO `trac_promotionassignment` (`assignmentnumber`, `rangelow`, `rangehigh`, `repeatingrange`, `promotionamount`)
+SELECT `assignmentnumber`, `rangelow`, `rangehigh`, `repeatingrange`, `promotionamount`
+FROM `sfa_nmwc`.`promotionassignment`;
+
+-- trac_promotionassignmentadvanced
+INSERT INTO `trac_promotionassignmentadvanced` (`range_id`, `plannumber`, `assignmentnumber`, `rangelow`, `rangehigh`, `repeatingrange`, `promotionamount`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`)
+SELECT `range_id`, `plannumber`, `assignmentnumber`, `rangelow`, `rangehigh`, `repeatingrange`, `promotionamount`, `created`, `cdat`, `modified`, `mdat`, `alternatecode`, `divison`
+FROM `sfa_nmwc`.`promotionassignmentadvanced`;
+
+-- trac_promotioncontrol
+INSERT INTO `trac_promotioncontrol` (`promotionplannumber`, `promotionkey`, `startdate`, `enddate`, `promotiondescription`, `arbpromotiondescription`, `promotiontypecode`, `qualificationgroup`, `assignmentgroup`, `assignmentnumber`, `performcriteriakey`, `rangebasis`, `amountbasis`, `exclusionoption`, `excludebalanceexists`, `paymenttypecontrol`, `inventorycaseunit`, `iscase`, `rentindicator`, `cashonlypromo`, `onetimeuse`, `status`, `enforcepromotion`)
+SELECT `promotionplannumber`, `promotionkey`, `startdate`, `enddate`, `promotiondescription`, `arbpromotiondescription`, `promotiontypecode`, `qualificationgroup`, `assignmentgroup`, `assignmentnumber`, `performcriteriakey`, `rangebasis`, `amountbasis`, `exclusionoption`, `excludebalanceexists`, `paymenttypecontrol`, `inventorycaseunit`, `iscase`, `rentindicator`, `cashonlypromo`, `onetimeuse`, `status`, `enforcepromotion`
+FROM `sfa_nmwc`.`promotioncontrol`;
+
+-- trac_promotiondetail
+INSERT INTO `trac_promotiondetail` (`routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `promotiontypecode`, `promotionamount`, `promotionquantity`, `catchweightqty`, `weighted`, `promotionplannumber`, `assignmentkey`, `exclusionoption`, `promochgindicator`, `oldpromotionamount`, `performindicator`, `performcriteriakey`, `promotioncaseprice`, `currencycode`, `record_flag`, `salesamount`, `rangelow`, `repeatingrange`, `issync`, `memo1`, `promotionpercent`)
+SELECT `routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `promotiontypecode`, `promotionamount`, `promotionquantity`, `catchweightqty`, `weighted`, `promotionplannumber`, `assignmentkey`, `exclusionoption`, `promochgindicator`, `oldpromotionamount`, `performindicator`, `performcriteriakey`, `promotioncaseprice`, `currencycode`, `record_flag`, `salesamount`, `rangelow`, `repeatingrange`, `issync`, `memo1`, `promotionpercent`
+FROM `sfa_nmwc`.`promotiondetail`;
+
+-- trac_promotiondetail_temp
+INSERT INTO `trac_promotiondetail_temp` (`routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `promotiontypecode`, `promotionamount`, `promotionquantity`, `catchweightqty`, `weighted`, `promotionplannumber`, `assignmentkey`, `exclusionoption`, `promochgindicator`, `oldpromotionamount`, `performindicator`, `performcriteriakey`, `promotioncaseprice`, `currencycode`, `record_flag`, `salesamount`, `rangelow`, `repeatingrange`, `issync`, `promotionper`)
+SELECT `routekey`, `visitkey`, `transactionkey`, `itemtransactiontype`, `itemcode`, `promotiontypecode`, `promotionamount`, `promotionquantity`, `catchweightqty`, `weighted`, `promotionplannumber`, `assignmentkey`, `exclusionoption`, `promochgindicator`, `oldpromotionamount`, `performindicator`, `performcriteriakey`, `promotioncaseprice`, `currencycode`, `record_flag`, `salesamount`, `rangelow`, `repeatingrange`, `issync`, `promotionper`
+FROM `sfa_nmwc`.`promotiondetail_temp`;
+
+-- trac_reasonmaster
+-- SKIP: no legacy source table `reasonmaster` found in nmwc_aswin_structure.sql
+
+-- trac_regionmanager
+INSERT INTO `trac_regionmanager` (`regionmanagercode`, `alternatecode`, `regionmanagername`, `arbregionmanagername`, `created`, `cdat`, `modified`, `mdat`, `activestatus`, `parentcompany`)
+SELECT `regionmanagercode`, `alternatecode`, `regionmanagername`, `arbregionmanagername`, `created`, `cdat`, `modified`, `mdat`, `activestatus`, `parentcompany`
+FROM `sfa_nmwc`.`regionmanager`;
+
+-- trac_regionmaster
+INSERT INTO `trac_regionmaster` (`regionmstcode`, `countrycode`, `regionmanagercode`, `alternatecode`, `regionmstname`, `arbregionmstname`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `regionmstcode`, `countrycode`, `regionmanagercode`, `alternatecode`, `regionmstname`, `arbregionmstname`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`regionmaster`;
+
+-- trac_retitmreasons
+INSERT INTO `trac_retitmreasons` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`retitmreasons`;
+
+-- trac_routecategory
+INSERT INTO `trac_routecategory` (`routecatcode`, `routecatname`, `arbroutecatname`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `routecatcode`, `routecatname`, `arbroutecatname`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`routecategory`;
+
+-- trac_routegoal
+INSERT INTO `trac_routegoal` (`primary_key`, `routecode`, `salesmancode`, `packagenumber`, `fromdate`, `todate`, `quantity`, `achievequantity`, `achieveamount`, `todaysgoal`, `todaysachieve`, `created`, `cdat`, `modified`, `mdat`, `targettype`, `commision`, `commisonpercent`, `insentive`, `insentivepercent`, `goaltype`, `dailytarget`, `progressivetarget`, `asontarget`, `mtdtarget`, `dailyvalue`, `progressivevalue`, `asonvalue`, `mtdvalue`)
+SELECT `primary_key`, `routecode`, `salesmancode`, `packagenumber`, `fromdate`, `todate`, `quantity`, `achievequantity`, `achieveamount`, `todaysgoal`, `todaysachieve`, `created`, `cdat`, `modified`, `mdat`, `targettype`, `commision`, `commisonpercent`, `insentive`, `insentivepercent`, `goaltype`, `dailytarget`, `progressivetarget`, `asontarget`, `mtdtarget`, `dailyvalue`, `progressivevalue`, `asonvalue`, `mtdvalue`
+FROM `sfa_nmwc`.`routegoal`;
+
+-- trac_routeitemgrp
+INSERT INTO `trac_routeitemgrp` (`routeitemgrpcode`, `itemgroupcode`, `description`, `created`, `cdat`, `modified`, `mdat`, `transferstatus`)
+SELECT `routeitemgrpcode`, `itemgroupcode`, `description`, `created`, `cdat`, `modified`, `mdat`, `transferstatus`
+FROM `sfa_nmwc`.`routeitemgrp`;
+
+-- trac_routeitemmapping
+INSERT INTO `trac_routeitemmapping` (`routeitemgrpcode`, `itemcode`, `transferstatus`)
+SELECT `routeitemgrpcode`, `itemcode`, `transferstatus`
+FROM `sfa_nmwc`.`routeitemmapping`;
+
+-- trac_routemaster
+INSERT INTO `trac_routemaster` (`routecode`, `routename`, `arbroutename`, `subareacode`, `salesmancode`, `created`, `cdat`, `modified`, `mdat`, `memo1`, `memo2`, `hhcordseq`, `hhcinvseq`, `hhccshseq`, `hhcivtseq`, `bodocseq`, `acbodocseq`, `boinvseq`, `vehiclenumber`, `vehicleodometer`, `enablescanneruse`, `routeunloadvariance`, `salesmantargetdays`, `password1`, `password2`, `password3`, `password4`, `password5`, `passwordarray01`, `passwordarray02`, `passwordarray03`, `passwordarray04`, `passwordarray05`, `passwordarray06`, `passwordarray07`, `passwordarray08`, `passwordarray09`, `passwordarray10`, `passwordarray11`, `passwordarray12`, `passwordarray13`, `passwordarray14`, `passwordarray15`, `passwordarray16`, `enabledelayprint`, `promptodominput`, `enableeodexpenses`, `enableeodadjchecks`, `enableeodaddchecks`, `reqeoddepositreport`, `reqeodsalesreport`, `reqeodrteactivreport`, `reqeodrtestlmtreport`, `reqeodroutereviewrpt`, `reqeodrtnexchreport`, `reqeodplacementsrpt`, `reqeodprcchgreport`, `reqeodpromosreport`, `reqeodnosalereport`, `reqeodnondelreport`, `reqeodexceptionrpt`, `reqeodunauthbalance`, `reqeodroasummary`, `inventorycaseinput`, `loadreqreportformat`, `includeloadrequest`, `loadoutadjustments`, `autocalculateloadin`, `requireloadin`, `loadsheetreport`, `inventoryvariance`, `invenoversell`, `enablenosale`, `enablepostvoid`, `voidoverride`, `cashbalance`, `amountdecimaldigits`, `unloadoversellmessage`, `displayinvsummary`, `alternateroutecode`, `enabledamagedtrxn`, `enableautopostingaccount`, `variancecustomercode`, `defaultdeliverydays`, `defaultrequestdays`, `defaultweeksetting`, `reqeodnonscannedreport`, `reqeododomlogreport`, `inventoryvalueprint`, `loadaccessafterunload`, `creditlimit`, `routebalance`, `depotrouteflag`, `routeinventoryvariance`, `allowpopulateload`, `allowroutestartdayflag`, `enableaddcustomer`, `allowgctocash`, `usesalesdateflag`, `enablestartdaydatetimeedit`, `newcustomerseqnumber`, `enableloadtransfer`, `loadreqmethod`, `loadreqrolluporders`, `routeprinter`, `depotprinter`, `routetype`, `enablescancustomer`, `enforcecallsequence`, `enablefoclimit`, `enablemiddaytelecom`, `printdocumentnumber`, `activestatus`, `enablecashonlydiscount`, `eodreportcontrol`, `pdcthreshold`, `itemcodedisplay`, `routeitemgrpcode`, `itemdescriptiondisplay`, `lastcustomersequence`, `loadsecurityflag`, `routecatcode`, `usealternatecodes`, `enabledraftcopy`, `boarseq`, `boordseq`, `hhcarseq`, `hhcloadseq`, `boloadseq`, `deliveryroute`, `presalesorder`, `hhcappversion`, `usesequenceflag`, `customerseq`, `routeseqno`, `allowbalcheck`, `allowedradius`, `cmpycode`, `regionmstcode`, `expirylimit`, `runningvalue`, `maximumgpsallowed`, `transactionnoseq`, `routetmpl`, `templatename`, `enablestockicon`, `generatehhcseqfromboflag`, `tlockstatus`, `enablefreereason`, `inventoryreportcontrol`, `enablestartdayrtewkdayedit`, `hhcinvretseq`, `cdcvaliditydays`, `division`, `hhcswapseq`, `device_assigned_id`, `device_fcm_assigned_id`, `forcesettlementdays`, `routecreditcheck`, `routecreditlimitdays`, `itemmustkey`, `updategps`, `enforcegps`, `enablegps`, `enableloadrequest`, `loadrequestdays`, `invdoseq`)
+SELECT `routecode`, `routename`, `arbroutename`, `subareacode`, `salesmancode`, `created`, `cdat`, `modified`, `mdat`, `memo1`, `memo2`, `hhcordseq`, `hhcinvseq`, `hhccshseq`, `hhcivtseq`, `bodocseq`, `acbodocseq`, `boinvseq`, `vehiclenumber`, `vehicleodometer`, `enablescanneruse`, `routeunloadvariance`, `salesmantargetdays`, `password1`, `password2`, `password3`, `password4`, `password5`, `passwordarray01`, `passwordarray02`, `passwordarray03`, `passwordarray04`, `passwordarray05`, `passwordarray06`, `passwordarray07`, `passwordarray08`, `passwordarray09`, `passwordarray10`, `passwordarray11`, `passwordarray12`, `passwordarray13`, `passwordarray14`, `passwordarray15`, `passwordarray16`, `enabledelayprint`, `promptodominput`, `enableeodexpenses`, `enableeodadjchecks`, `enableeodaddchecks`, `reqeoddepositreport`, `reqeodsalesreport`, `reqeodrteactivreport`, `reqeodrtestlmtreport`, `reqeodroutereviewrpt`, `reqeodrtnexchreport`, `reqeodplacementsrpt`, `reqeodprcchgreport`, `reqeodpromosreport`, `reqeodnosalereport`, `reqeodnondelreport`, `reqeodexceptionrpt`, `reqeodunauthbalance`, `reqeodroasummary`, `inventorycaseinput`, `loadreqreportformat`, `includeloadrequest`, `loadoutadjustments`, `autocalculateloadin`, `requireloadin`, `loadsheetreport`, `inventoryvariance`, `invenoversell`, `enablenosale`, `enablepostvoid`, `voidoverride`, `cashbalance`, `amountdecimaldigits`, `unloadoversellmessage`, `displayinvsummary`, `alternateroutecode`, `enabledamagedtrxn`, `enableautopostingaccount`, `variancecustomercode`, `defaultdeliverydays`, `defaultrequestdays`, `defaultweeksetting`, `reqeodnonscannedreport`, `reqeododomlogreport`, `inventoryvalueprint`, `loadaccessafterunload`, `creditlimit`, `routebalance`, `depotrouteflag`, `routeinventoryvariance`, `allowpopulateload`, `allowroutestartdayflag`, `enableaddcustomer`, `allowgctocash`, `usesalesdateflag`, `enablestartdaydatetimeedit`, `newcustomerseqnumber`, `enableloadtransfer`, `loadreqmethod`, `loadreqrolluporders`, `routeprinter`, `depotprinter`, `routetype`, `enablescancustomer`, `enforcecallsequence`, `enablefoclimit`, `enablemiddaytelecom`, `printdocumentnumber`, `activestatus`, `enablecashonlydiscount`, `eodreportcontrol`, `pdcthreshold`, `itemcodedisplay`, `routeitemgrpcode`, `itemdescriptiondisplay`, `lastcustomersequence`, `loadsecurityflag`, `routecatcode`, `usealternatecodes`, `enabledraftcopy`, `boarseq`, `boordseq`, `hhcarseq`, `hhcloadseq`, `boloadseq`, `deliveryroute`, `presalesorder`, `hhcappversion`, `usesequenceflag`, `customerseq`, `routeseqno`, `allowbalcheck`, `allowedradius`, `cmpycode`, `regionmstcode`, `expirylimit`, `runningvalue`, `maximumgpsallowed`, `transactionnoseq`, `routetmpl`, `templatename`, `enablestockicon`, `generatehhcseqfromboflag`, `tlockstatus`, `enablefreereason`, `inventoryreportcontrol`, `enablestartdayrtewkdayedit`, `hhcinvretseq`, `cdcvaliditydays`, `division`, `hhcswapseq`, `device_assigned_id`, `device_fcm_assigned_id`, `forcesettlementdays`, `routecreditcheck`, `routecreditlimitdays`, `itemmustkey`, `updategps`, `enforcegps`, `enablegps`, `enableloadrequest`, `loadrequestdays`, `invdoseq`
+FROM `sfa_nmwc`.`routemaster`;
+
+-- trac_routesequence
+INSERT INTO `trac_routesequence` (`primary_key`, `rp32weeknumber`, `routecode`, `customercode`, `callrestrictiondays1`, `callrestrictiondays2`, `callrestrictiondays3`, `callrestrictiondays4`, `callrestrictiondays5`, `callrestrictiondays6`, `callrestrictiondays7`, `monseq`, `tueseq`, `wedseq`, `thuseq`, `friseq`, `satseq`, `sunseq`, `mdat`, `referenceno`, `oldcustcode`)
+SELECT `primary_key`, `rp32weeknumber`, `routecode`, `customercode`, `callrestrictiondays1`, `callrestrictiondays2`, `callrestrictiondays3`, `callrestrictiondays4`, `callrestrictiondays5`, `callrestrictiondays6`, `callrestrictiondays7`, `monseq`, `tueseq`, `wedseq`, `thuseq`, `friseq`, `satseq`, `sunseq`, `mdat`, `referenceno`, `oldcustcode`
+FROM `sfa_nmwc`.`routesequence`;
+
+-- trac_routesequencecustomerstatus
+INSERT INTO `trac_routesequencecustomerstatus` (`routekey`, `seqweeknumber`, `seqweekday`, `routecode`, `customercode`, `sequencenumber`, `schelduledflag`, `servicedflag`, `scannedflag`)
+SELECT `routekey`, `seqweeknumber`, `seqweekday`, `routecode`, `customercode`, `sequencenumber`, `schelduledflag`, `servicedflag`, `scannedflag`
+FROM `sfa_nmwc`.`routesequencecustomerstatus`;
+
+-- trac_salescalender
+INSERT INTO `trac_salescalender` (`salesyear`, `weeknumber`, `weekstartdate`, `weekenddate`, `rp32weeknumber`, `salesperiod`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `salesyear`, `weeknumber`, `weekstartdate`, `weekenddate`, `rp32weeknumber`, `salesperiod`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`salescalender`;
+
+-- trac_salesman
+INSERT INTO `trac_salesman` (`salesmancode`, `salesmanname1`, `salesmanname2`, `arbsalesmanname1`, `messagekey`, `pricingkey`, `created`, `cdat`, `modified`, `mdat`, `memo1`, `memo2`, `alternatesalesmancode`, `type`, `activestatus`, `parentcompany`, `ansalesmancode`, `username`, `userpassword`)
+SELECT `salesmancode`, `salesmanname1`, `salesmanname2`, `arbsalesmanname1`, `messagekey`, `pricingkey`, `created`, `cdat`, `modified`, `mdat`, `memo1`, `memo2`, `alternatesalesmancode`, `type`, `activestatus`, `parentcompany`, `ansalesmancode`, `username`, `userpassword`
+FROM `sfa_nmwc`.`salesman`;
+
+-- trac_salesmanmaster
+-- SKIP: no legacy source table `salesmanmaster` found in nmwc_aswin_structure.sql
+
+-- trac_salesmanmessages
+INSERT INTO `trac_salesmanmessages` (`messagekey`, `alternatecode`, `messagedescription`, `message1`, `message2`, `message3`, `message4`, `arbmessageline1`, `arbmessageline2`, `arbmessageline3`, `arbmessageline4`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `messagekey`, `alternatecode`, `messagedescription`, `message1`, `message2`, `message3`, `message4`, `arbmessageline1`, `arbmessageline2`, `arbmessageline3`, `arbmessageline4`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`salesmanmessages`;
+
+-- trac_salesorderdetail
+INSERT INTO `trac_salesorderdetail` (`primary_key`, `routekey`, `visitkey`, `transactionkey`, `itemcode`, `salesqty`, `returnqty`, `damagedqty`, `freesampleqty`, `salesprice`, `returnprice`, `stdsalesprice`, `stdreturnprice`, `coopid`, `salescaseprice`, `returncaseprice`, `stdsalescaseprice`, `stdreturncaseprice`, `currencycode`, `allocated`, `freegoodcases`, `freegoodpcs`, `salespcs`, `allocatedcases`, `salescases`, `allocatedpcs`, `returncases`, `returnpcs`, `promoamount`, `manualfreeqty`, `sales_amount`, `promovalue`, `goodreturnprice`, `goodreturncaseprice`, `receivedtime`, `upc`, `salesordervat`, `salesorderexcisetax`, `returnvat`, `returnexcisetax`, `damagedvat`, `damagedexcisetax`, `promovat`, `promoexcisetax`, `fgvat`, `fgexcisetax`, `processedflag`)
+SELECT `primary_key`, `routekey`, `visitkey`, `transactionkey`, `itemcode`, `salesqty`, `returnqty`, `damagedqty`, `freesampleqty`, `salesprice`, `returnprice`, `stdsalesprice`, `stdreturnprice`, `coopid`, `salescaseprice`, `returncaseprice`, `stdsalescaseprice`, `stdreturncaseprice`, `currencycode`, `allocated`, `freegoodcases`, `freegoodpcs`, `salespcs`, `allocatedcases`, `salescases`, `allocatedpcs`, `returncases`, `returnpcs`, `promoamount`, `manualfreeqty`, `sales_amount`, `promovalue`, `goodreturnprice`, `goodreturncaseprice`, `receivedtime`, `upc`, `salesordervat`, `salesorderexcisetax`, `returnvat`, `returnexcisetax`, `damagedvat`, `damagedexcisetax`, `promovat`, `promoexcisetax`, `fgvat`, `fgexcisetax`, `processedflag`
+FROM `sfa_nmwc`.`salesorderdetail`;
+
+-- trac_salesorderheader
+INSERT INTO `trac_salesorderheader` (`transactionkey`, `routekey`, `visitkey`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `dsdnumber`, `ponumber`, `customercode`, `routecode`, `salesmancode`, `orderdeliveryroutecode`, `orderdeliverydate`, `totalinvoiceamount`, `totalsalesamount`, `totalreturnamount`, `totaldamagedamount`, `dexflag`, `splittransaction`, `voidflag`, `transmitindicator`, `hhcinvoicenumber`, `paymenttype`, `hhcdocumentnumber`, `voidreasoncode`, `advanceused`, `paymentstatus`, `advancebalance`, `mdat`, `advancereceived`, `currencycode`, `status`, `refnumber`, `totalfreesampleamount`, `deliverystatus`, `data`, `comments`, `actualtransactiondate`, `comments2`, `hhctransactionkey`, `totalpromoamount`, `record_flag`, `lineitemdiscount`, `receivedtime`, `totallineitemtax`, `totalexcisetax`, `totalvat`, `confirmorder`)
+SELECT `transactionkey`, `routekey`, `visitkey`, `documentnumber`, `invoicenumber`, `transactiondate`, `transactiontime`, `dsdnumber`, `ponumber`, `customercode`, `routecode`, `salesmancode`, `orderdeliveryroutecode`, `orderdeliverydate`, `totalinvoiceamount`, `totalsalesamount`, `totalreturnamount`, `totaldamagedamount`, `dexflag`, `splittransaction`, `voidflag`, `transmitindicator`, `hhcinvoicenumber`, `paymenttype`, `hhcdocumentnumber`, `voidreasoncode`, `advanceused`, `paymentstatus`, `advancebalance`, `mdat`, `advancereceived`, `currencycode`, `status`, `refnumber`, `totalfreesampleamount`, `deliverystatus`, `data`, `comments`, `actualtransactiondate`, `comments2`, `hhctransactionkey`, `totalpromoamount`, `record_flag`, `lineitemdiscount`, `receivedtime`, `totallineitemtax`, `totalexcisetax`, `totalvat`, `confirmorder`
+FROM `sfa_nmwc`.`salesorderheader`;
+
+-- trac_sessions
+-- SKIP: no legacy source table `sessions` found in nmwc_aswin_structure.sql
+
+-- trac_setup
+INSERT INTO `trac_setup` (`setupid`, `cutofdate`, `currencycode`, `currencysymbol`, `arbcurrencysymbol`, `conversionrate`, `decimalplaces`, `previousdayuploadflag`, `salesentryflag`, `returnentryflag`, `buybackentryflag`, `freegoodentryflag`, `buybackfreeentryflag`, `replacemententryflag`, `rententryflag`, `importfilespath`, `downloadfilespath`, `exportfilespath`, `backupfilespath`, `uploadfilespath`, `databasebackuppath`, `dailystdpricelistflag`, `allowcontrolonpreparefilesflag`, `allownormalgccollectionhhcflag`, `creditcontrolflag`, `allowpreparefilesafterupload`, `alloweditinvoicesequence`, `erpimportfilespath`, `erpexportfilespath`, `erpbackupfilespath`, `dataconimportfilespath`, `dataconexportfilespath`, `dataconbackupfilespath`, `isheadofficeflag`, `reopendayondepotflag`, `reopendayonrouteflag`, `datatransfereddate`, `dataconserverfilespath`, `allowtoopenfuturedayflag`, `transferinventoryflag`, `journeyplanflag`, `enableloadrequesttoloadout`, `downloadcompanyheaderflag`, `defaultsonpreparefilesflag`, `resenddatatoerpallowed`, `allowcashinvoiceoncreditcust`, `callrestrictiondaysflag`, `routesequenceplanflag`, `dataconfileformat`, `weekstartday`, `allowmorethanonesalesman`, `offtakeparameter`, `importfilepath`, `downloadoutletitemcodes`, `importprocess6920`, `versionid`, `docprefix`, `invprefix`, `cashinvprefix`, `orderprefix`, `arprefix`, `cashinvoiceseq`, `salesorderseq`, `arseq`, `cashinvoiceseqfullpay`, `nooforderdays`, `returninvoiceseq`, `cashinvoiceseqfullpaygc`, `returninvprefix`, `creditinvoiceseq`, `restrictpreparefile`, `defaultdepot`, `costpricepercentage`, `multidaypostingdate`, `modifieddate`, `synctimeinterval`, `tabletsyncmode`)
+SELECT `setupid`, `cutofdate`, `currencycode`, `currencysymbol`, `arbcurrencysymbol`, `conversionrate`, `decimalplaces`, `previousdayuploadflag`, `salesentryflag`, `returnentryflag`, `buybackentryflag`, `freegoodentryflag`, `buybackfreeentryflag`, `replacemententryflag`, `rententryflag`, `importfilespath`, `downloadfilespath`, `exportfilespath`, `backupfilespath`, `uploadfilespath`, `databasebackuppath`, `dailystdpricelistflag`, `allowcontrolonpreparefilesflag`, `allownormalgccollectionhhcflag`, `creditcontrolflag`, `allowpreparefilesafterupload`, `alloweditinvoicesequence`, `erpimportfilespath`, `erpexportfilespath`, `erpbackupfilespath`, `dataconimportfilespath`, `dataconexportfilespath`, `dataconbackupfilespath`, `isheadofficeflag`, `reopendayondepotflag`, `reopendayonrouteflag`, `datatransfereddate`, `dataconserverfilespath`, `allowtoopenfuturedayflag`, `transferinventoryflag`, `journeyplanflag`, `enableloadrequesttoloadout`, `downloadcompanyheaderflag`, `defaultsonpreparefilesflag`, `resenddatatoerpallowed`, `allowcashinvoiceoncreditcust`, `callrestrictiondaysflag`, `routesequenceplanflag`, `dataconfileformat`, `weekstartday`, `allowmorethanonesalesman`, `offtakeparameter`, `importfilepath`, `downloadoutletitemcodes`, `importprocess6920`, `versionid`, `docprefix`, `invprefix`, `cashinvprefix`, `orderprefix`, `arprefix`, `cashinvoiceseq`, `salesorderseq`, `arseq`, `cashinvoiceseqfullpay`, `nooforderdays`, `returninvoiceseq`, `cashinvoiceseqfullpaygc`, `returninvprefix`, `creditinvoiceseq`, `restrictpreparefile`, `defaultdepot`, `costpricepercentage`, `multidaypostingdate`, `modifieddate`, `synctimeinterval`, `tabletsyncmode`
+FROM `sfa_nmwc`.`setup`;
+
+-- trac_startendday
+INSERT INTO `trac_startendday` (`routekey`, `routecode`, `salesmancode`, `routestartdate`, `routestarttime`, `routeenddate`, `routeendtime`, `routestartodometer`, `routeendodometer`, `totaldocuments`, `totalcash`, `totalchecks`, `totalcheckrequests`, `totalorderamount`, `totalinvoiceamount`, `totalchargesales`, `totalcashsales`, `totalacctsreceivable`, `totalexpenses`, `inventoryvariance`, `totalfullservicesales`, `totalfullservicecash`, `routeclosed`, `cashvariance`, `modifieddate`, `modifiedtime`, `subareacode`, `supervisorcode`, `areacode`, `areamanagercode`, `depotcode`, `branchmanagercode`, `cmpycode`, `nationalsalesmanagercode`, `dataconrefnumber`, `exportedflag`, `currencycode`, `routejourneyid`, `data`, `triptype`, `versionno`, `tourid`, `ExportedLoadReqflag`)
+SELECT `routekey`, `routecode`, `salesmancode`, `routestartdate`, `routestarttime`, `routeenddate`, `routeendtime`, `routestartodometer`, `routeendodometer`, `totaldocuments`, `totalcash`, `totalchecks`, `totalcheckrequests`, `totalorderamount`, `totalinvoiceamount`, `totalchargesales`, `totalcashsales`, `totalacctsreceivable`, `totalexpenses`, `inventoryvariance`, `totalfullservicesales`, `totalfullservicecash`, `routeclosed`, `cashvariance`, `modifieddate`, `modifiedtime`, `subareacode`, `supervisorcode`, `areacode`, `areamanagercode`, `depotcode`, `branchmanagercode`, `cmpycode`, `nationalsalesmanagercode`, `dataconrefnumber`, `exportedflag`, `currencycode`, `routejourneyid`, `data`, `triptype`, `versionno`, `tourid`, `ExportedLoadReqflag`
+FROM `sfa_nmwc`.`startendday`;
+
+-- trac_startingloaddetail
+INSERT INTO `trac_startingloaddetail` (`loaddetailcode`, `itemcode`, `routecode`, `ddate`, `loadperiodnumber`, `cases`, `caseprice`, `units`, `totunits`, `suggtotunits`, `rcvdtotunits`, `upc`, `loadtime`, `salesmancode`, `salesprice`, `returnprice`, `returncaseprice`, `status`, `transactiondate`, `erpreferencenumber`, `currencycode`, `batchnumber`, `expirydate`, `warehouse`, `warehousestock`, `mdat`)
+SELECT `loaddetailcode`, `itemcode`, `routecode`, `ddate`, `loadperiodnumber`, `cases`, `caseprice`, `units`, `totunits`, `suggtotunits`, `rcvdtotunits`, `upc`, `loadtime`, `salesmancode`, `salesprice`, `returnprice`, `returncaseprice`, `status`, `transactiondate`, `erpreferencenumber`, `currencycode`, `batchnumber`, `expirydate`, `warehouse`, `warehousestock`, `mdat`
+FROM `sfa_nmwc`.`startingloaddetail`;
+
+-- trac_subareamaster
+INSERT INTO `trac_subareamaster` (`subareacode`, `subareaname`, `arbsubareaname`, `areacode`, `supervisorcode`, `created`, `cdat`, `modified`, `mdat`, `alternatesubareacode`, `activestatus`)
+SELECT `subareacode`, `subareaname`, `arbsubareaname`, `areacode`, `supervisorcode`, `created`, `cdat`, `modified`, `mdat`, `alternatesubareacode`, `activestatus`
+FROM `sfa_nmwc`.`subareamaster`;
+
+-- trac_submajorcategory
+INSERT INTO `trac_submajorcategory` (`submajorcategorycode`, `alternatecode`, `majorcategorycode`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`)
+SELECT `submajorcategorycode`, `alternatecode`, `majorcategorycode`, `description`, `arbdescription`, `created`, `cdat`, `modified`, `mdat`, `activestatus`
+FROM `sfa_nmwc`.`submajorcategory`;
+
+-- trac_suggestedsalesinvoice
+INSERT INTO `trac_suggestedsalesinvoice` (`primary_key`, `routecode`, `customercode`, `transactiondate`, `itemcode`, `transactiontype`, `lastvisitshelfstock`, `lastvisitsales`, `currentvisitshelfstock`, `currentvisitsales`, `offtakeqty`, `currentvisitgsales`, `currentvisitreturns`, `currentvisitsecondarysales`, `mdat`)
+SELECT `primary_key`, `routecode`, `customercode`, `transactiondate`, `itemcode`, `transactiontype`, `lastvisitshelfstock`, `lastvisitsales`, `currentvisitshelfstock`, `currentvisitsales`, `offtakeqty`, `currentvisitgsales`, `currentvisitreturns`, `currentvisitsecondarysales`, `mdat`
+FROM `sfa_nmwc`.`suggestedsalesinvoice`;
+
+-- trac_supervisor
+INSERT INTO `trac_supervisor` (`supervisorcode`, `parentcompany`, `supervisorname`, `arbsupervisorname`, `alternatesupervisorcode`, `created`, `cdat`, `modified`, `mdat`, `activestatus`, `type`, `contactno`)
+SELECT `supervisorcode`, `parentcompany`, `supervisorname`, `arbsupervisorname`, `alternatesupervisorcode`, `created`, `cdat`, `modified`, `mdat`, `activestatus`, `type`, `contactno`
+FROM `sfa_nmwc`.`supervisor`;
+
+-- trac_supervisor_foc
+-- SKIP: no legacy source table `supervisor_foc` found in nmwc_aswin_structure.sql
+
+-- trac_supervisor_foc_balance
+-- SKIP: no legacy source table `supervisor_foc_balance` found in nmwc_aswin_structure.sql
+
+-- trac_supervisor_foc_detail
+-- SKIP: no legacy source table `supervisor_foc_detail` found in nmwc_aswin_structure.sql
+
+-- trac_supervisorfreegoods
+-- SKIP: no legacy source table `supervisorfreegoods` found in nmwc_aswin_structure.sql
+
+-- trac_supervisorfreegoodsdetail
+-- SKIP: no legacy source table `supervisorfreegoodsdetail` found in nmwc_aswin_structure.sql
+
+-- trac_surveyauditdetail
+INSERT INTO `trac_surveyauditdetail` (`routekey`, `visitkey`, `surveydefkey`, `surveypage`, `surveyindex`, `surveyrectype`, `lookuptype`, `surveyresponse`)
+SELECT `routekey`, `visitkey`, `surveydefkey`, `surveypage`, `surveyindex`, `surveyrectype`, `lookuptype`, `surveyresponse`
+FROM `sfa_nmwc`.`surveyauditdetail`;
+
+-- trac_t_access_override_log
+INSERT INTO `trac_t_access_override_log` (`routekey`, `visitkey`, `type`, `routecode`, `customercode`, `salesmancode`, `featureid`, `accesskey`, `accesstime`, `voidflag`, `validflag`)
+SELECT `routekey`, `visitkey`, `type`, `routecode`, `customercode`, `salesmancode`, `featureid`, `accesskey`, `accesstime`, `voidflag`, `validflag`
+FROM `sfa_nmwc`.`t_access_override_log`;
+
+-- trac_taxmaster
+INSERT INTO `trac_taxmaster` (`taxcode`, `taxdescription`, `arbtaxdescription`, `pricecomponent`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `taxcode`, `taxdescription`, `arbtaxdescription`, `pricecomponent`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`taxmaster`;
+
+-- trac_tbl_device
+INSERT INTO `trac_tbl_device` (`primary_key`, `company_id`, `device_id`, `remarks`)
+SELECT `primary_key`, `company_id`, `device_id`, `remarks`
+FROM `sfa_nmwc`.`tbl_device`;
+
+-- trac_tbl_syncservice
+INSERT INTO `trac_tbl_syncservice` (`userid`, `deviceid`, `syncdate`, `routecode`, `synctime`, `synctype`, `routeclosed`, `routekey`)
+SELECT `userid`, `deviceid`, `syncdate`, `routecode`, `synctime`, `synctype`, `routeclosed`, `routekey`
+FROM `sfa_nmwc`.`tbl_syncservice`;
+
+-- trac_tbl_version
+INSERT INTO `trac_tbl_version` (`url`, `verno`)
+SELECT `url`, `verno`
+FROM `sfa_nmwc`.`tbl_version`;
+
+-- trac_tbltaxmaster
+INSERT INTO `trac_tbltaxmaster` (`taxcode`, `taxdescription`, `arbtaxdescription`, `taxtype`, `taxpercentage`, `taxbase`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `taxcode`, `taxdescription`, `arbtaxdescription`, `taxtype`, `taxpercentage`, `taxbase`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`tbltaxmaster`;
+
+-- trac_useraccesscodes
+INSERT INTO `trac_useraccesscodes` (`username`, `cmpycode`, `depotcode`, `areacode`, `subareacode`, `regionmstcode`, `countrycode`)
+SELECT `username`, `cmpycode`, `depotcode`, `areacode`, `subareacode`, `regionmstcode`, `countrycode`
+FROM `sfa_nmwc`.`useraccesscodes`;
+
+-- trac_userdetail
+INSERT INTO `trac_userdetail` (`username`, `formname`, `formdescription`, `readdata`, `updatedata`, `insertdata`, `deletedata`, `allpermissions`, `userid`, `moduleid`, `formid`)
+SELECT `username`, `formname`, `formdescription`, `readdata`, `updatedata`, `insertdata`, `deletedata`, `allpermissions`, `userid`, `moduleid`, `formid`
+FROM `sfa_nmwc`.`userdetail`;
+
+-- trac_usermaster
+INSERT INTO `trac_usermaster` (`username`, `password`, `usertypeid`, `accesstypeid`, `userid`)
+SELECT `username`, `password`, `usertypeid`, `accesstypeid`, `userid`
+FROM `sfa_nmwc`.`usermaster`;
+
+-- trac_usertype
+INSERT INTO `trac_usertype` (`usertypeid`, `usertypename`)
+SELECT `usertypeid`, `usertypename`
+FROM `sfa_nmwc`.`usertype`;
+
+-- trac_usertypedetail
+INSERT INTO `trac_usertypedetail` (`usertypeid`, `formname`, `formdescription`, `readdata`, `updatedata`, `insertdata`, `deletedata`, `allpermissions`, `moduleid`, `formid`)
+SELECT `usertypeid`, `formname`, `formdescription`, `readdata`, `updatedata`, `insertdata`, `deletedata`, `allpermissions`, `moduleid`, `formid`
+FROM `sfa_nmwc`.`usertypedetail`;
+
+-- trac_vanmaster
+INSERT INTO `trac_vanmaster` (`vancode`, `alternatecode`, `vandescription`, `arbvandescription`, `activestatus`, `vanregno`, `vanmodel`, `vantype`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `vancode`, `alternatecode`, `vandescription`, `arbvandescription`, `activestatus`, `vanregno`, `vanmodel`, `vantype`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`vanmaster`;
+
+-- trac_vehiclemaster
+-- SKIP: no legacy source table `vehiclemaster` found in nmwc_aswin_structure.sql
+
+-- trac_visualdetail
+INSERT INTO `trac_visualdetail` (`visualdetail_id`, `visualcode`, `imagename`, `imagepath`, `imagedescription`)
+SELECT `visualdetail_id`, `visualcode`, `imagename`, `imagepath`, `imagedescription`
+FROM `sfa_nmwc`.`visualdetail`;
+
+-- trac_visualdetail_temp
+INSERT INTO `trac_visualdetail_temp` (`visualdetail_id`, `visualcode`, `imagename`, `imagepath`, `imagedescription`)
+SELECT `visualdetail_id`, `visualcode`, `imagename`, `imagepath`, `imagedescription`
+FROM `sfa_nmwc`.`visualdetail_temp`;
+
+-- trac_visualheader
+INSERT INTO `trac_visualheader` (`visualcode`, `visualdescription`, `remarks`, `arbvisualdescription`)
+SELECT `visualcode`, `visualdescription`, `remarks`, `arbvisualdescription`
+FROM `sfa_nmwc`.`visualheader`;
+
+-- trac_voidreasons
+INSERT INTO `trac_voidreasons` (`code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`)
+SELECT `code`, `alternatecode`, `description`, `arbdescription`, `hhcdescription`, `created`, `cdat`, `modified`, `mdat`
+FROM `sfa_nmwc`.`voidreasons`;
+
+-- trac_warehousestock
+INSERT INTO `trac_warehousestock` (`warehousecode`, `trandate`, `itemcode`, `cases`, `units`, `totunits`, `upc`, `caseprice`, `eachprice`, `balanceqty`)
+SELECT `warehousecode`, `trandate`, `itemcode`, `cases`, `units`, `totunits`, `upc`, `caseprice`, `eachprice`, `balanceqty`
+FROM `sfa_nmwc`.`warehousestock`;

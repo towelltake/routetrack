@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "onecentlin.laravel-blade",
+    "vue.volar"
+  ]
+}

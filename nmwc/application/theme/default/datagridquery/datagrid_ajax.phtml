@@ -1,0 +1,711 @@
+<?php
+/**
+ 
+ * @since      Class available since Pagignation
+ * @version    Release: @1.0@
+ * @author     HC [harsh@elantechnologies.com]
+ * @author     MB [mayur.b@elantechnologies.com]
+ * @copyright  Elan technologies
+ *
+ * Short description : this data grid is for ajax grid - it uses paging3.php class
+ *
+ *
+ */
+
+$this->paginator = $this->pagegridshow['paginator'];
+
+$grid_js_settings =  $this->pagegridshow['datagrid']['settings'];
+
+$grid_js_settings[] = $this->url();
+
+$this->showdatagrid = $this->pagegridshow['datagrid'];
+
+/*
+ * Added stylesheet for paging
+ */
+$this->headLink()->appendStylesheet($this->baseUrl().'/public/css/pagegrid_style.css');
+
+
+$datashowgrid = $this->showdatagrid['data'];
+
+
+/*
+ * Retrieve search parameters form values
+ */
+$this->searchvalues = $grid_js_settings['search_values'];
+
+$Paginator_SearchDetails = new Zend_Session_Namespace('Paginator_SearchDetails');
+$Paginator_Paging = new Zend_Session_Namespace('Paginator_Paging');
+
+
+
+?>
+<style>
+#paging_grid{
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* commented by hiren dave*/
+  /*max-width: 875px;*/
+  
+}
+</style>
+<script type="text/javascript">
+	var base_url = '<?php echo $this->baseurl();?>';
+	
+	/*
+	* Hide show search box
+	*/
+	
+	$(document).ready(function(){
+	
+		var reqUrl = '<?php echo $_SERVER["REQUEST_URI"]; ?>';
+		
+		$('#paging_grid .page_number').click(function(){
+		   
+		   var xurl = removeQS(this.id);
+		   loaddata(xurl,'item-grid');
+	        });
+		
+		$('#paging_grid .icodel').click(function(){
+			var del_id = '';
+			del_id   = this.id;
+			
+			jConfirm('Are You Sure To Delete This Record(s)?', 'Message', function(resp)
+			{
+				if(resp) {
+					var xurl = removeQS(reqUrl) + del_id;
+					//var xurl = removeQS(reqUrl) + '/id/9999999/delete/yes';
+					loaddata(xurl,"item-grid");
+				}
+			})			
+		});
+		
+		$('#paging_grid .xedit').click(function(){
+			
+			var xurl = removeQS(reqUrl) + this.id;
+			loaddata(xurl,"item-grid");
+		});
+		
+		$('#btnupdate_grid').click(function(){
+			
+			
+			
+			var callUrl = urlReplace(reqUrl,'/edit/', '/update/');
+			
+			var xdata = '';
+			// fetch all check box values
+			$('.update_vals').each(function(){
+				
+				xdata = xdata + this.id + '=' + this.value + '&';
+			});
+			
+			$.ajax({
+				url:callUrl,
+				data: xdata,
+				success:function(data){
+				    $("#item-grid").html(data);
+				    
+				  
+				}
+			})
+		});
+		
+		$('#btncancel_grid').click(function(){
+			
+			xurl = removeQS(reqUrl);
+			loaddata(xurl,"item-grid");
+		});
+		
+		$(".alert .hide").click(function() {
+			$(this).parent().slideUp();
+		});
+		
+	});
+	
+	
+	// remove content from strign (eg. remove id/2/delete/yes from string)
+	function removeQS(str)
+	{
+		var xstr = '';
+		//switch(ty)
+		//{
+		//	case 'd' : xstr = str.replace(/(\/id\/\d+\/delete\/yes)\.*/g, "");  break;
+		//	case 'e' : xstr = str.replace(/(\/id\/\d+\/edit\/yes)\.*/g, "");  break;
+		//	case 'u' : xstr = str.replace(/(\/id\/\d+\/update\/yes)\.*/g, "");  break;
+		//}
+		//xstr = str.replace(/(\/id\/\d+\/(.*)\/yes)\.*/g, "");
+		xstr = str.replace(/(\/id\/\d+\/).*/g, "");
+		return xstr;
+		
+	}
+	function urlReplace(xurl,xfind,yreplace)
+	{
+		return xurl.replace(xfind, yreplace);
+	}
+	
+	function searchbox(obj) {
+		if(obj == 'hide') {
+		    $('#draggable').hide();
+		    $('#table-searchall').show();
+		    $('#table-showpages').show();
+		    
+		} else {
+		    $('#draggable').show();
+		    $('#table-searchall').hide();
+		    $('#table-showpages').hide();
+		}
+	}
+	
+	/*
+	* Reset button will redirect to current url
+	*/
+	function resetSearch() {
+		
+		$('.sefield').val('');
+		$('#reset_val').val(1);
+		$('#frmoverview').submit();		
+	}
+	
+	/*
+	* Added stylesheet for paging
+	*/
+	function addMore()
+	{
+		
+		
+		<?php
+		$tmp = 0;
+		$tempval = '';
+		if(isset($this->showdatagrid['columns'])) {
+			foreach($this->showdatagrid['columns'] as $key => $val)
+			{
+			    $tempval .= '<option value="'.$tmp.'">'.ucfirst($val).'</option>';
+			    $tmp++;
+			}		
+		?>		
+		var Searchbox_tmp = '<tr class="sf"><td class="fields" width="40%"><select name="field[]" >'; 
+		Searchbox_tmp = Searchbox_tmp + '<?php echo $tempval; ?>';
+		Searchbox_tmp = Searchbox_tmp + '</select></td><td class="ops" width="25%"><select class="default" name="op[]" ><option value="eq">equal</option><option value="ne">not equal</option><option value="lt">less</option><option value="le">less or equal</option><option value="gt">greater</option><option value="ge">greater or equal</option><option value="bw">begins with</option><option value="bn">does not begin with</option><option value="in">is in</option><option value="ni">is not in</option><option value="ew">ends with</option><option value="en">does not end with</option><option value="cn">contains</option><option value="nc">does not contain</option></select></td><td class="data" width="25%" ><input type="text" style="" name="seachvalue[]" class="default vdata sea"></td><td width="5%"  ><div class="ui-del ui-state-default ui-corner-all"><span class="ui-icon ui-icon-minus" onclick="$(this).parent().parent().parent().remove()">';
+		Searchbox_tmp = Searchbox_tmp + '<img src="'+base_url+'/public/pagegrid_images/remove.png" alt="remove" />';
+		Searchbox_tmp = Searchbox_tmp + '</span></div></td><td width="5%" ><div class="ui-add ui-state-default ui-corner-all"><span class="ui-icon ui-icon-plus" onclick="addMore();">';
+		Searchbox_tmp = Searchbox_tmp + '<img src="'+base_url+'/public/pagegrid_images/add.png" alt="Add" />';
+		Searchbox_tmp = Searchbox_tmp + '</span></div></td></tr>';
+		<?php } ?>
+		
+	    $('#mydata').append(Searchbox_tmp);
+	}
+	
+	
+	function toggleChecked(status) {
+		
+		$("#table-example .checkbox").each( function() {
+			$(this).attr("checked",status);
+			$('#chkall').attr("checked",status);
+		});
+	}
+	 
+	function toggleUnChecked(status,val) {
+		
+			var d = status;
+			var tval = val;
+			
+			$('#chkall').attr("checked",false);
+			
+			var tmp = 1;
+			
+			$("#table-example input:checkbox").each( function(e) {
+				
+				if(e>0)
+				{
+					if(this.checked==false){
+							tmp = 0;
+					}
+				}
+			})
+			if(tmp == 1){
+				$('#chkall').attr("checked",true);
+			}
+	}
+	
+	<?php if(isset($this->showdatagrid['columns'])) { ?>
+	var grid_colsname = new Array("<?php echo implode('","',array_values($this->showdatagrid['columns']));?>");
+	<?php } ?>
+</script>
+
+<script type="text/javascript">
+    function changeRowRange(obj) {
+	if(obj!="")
+	{
+		var newUrl = "<?php echo $this->url(array('prow'=>'prowval','page'=>'1')); ?>";        
+		newUrl = newUrl.replace("prowval",obj)        
+		window.location = newUrl;
+	}
+    }
+
+
+</script>
+
+	<!-- Content -->
+	
+	<div id="paging_grid">
+				
+					<!--<h2 class="grid_12">Tables</h2>
+					<div class="clear"></div>-->
+					
+	<div class="grid_12">
+	<div class="box">
+							
+		<?php
+		if($grid_js_settings['configuration_params']['show_grid_heading'] == true || $grid_js_settings['configuration_params']['show_searchbox'] == true) {
+			echo '<div class="header">';
+			
+		if($grid_js_settings['configuration_params']['show_grid_heading'] == true)
+		{
+			echo '<h3>'.$grid_js_settings['configuration_params']['grid_heading_message'].'</h3>';
+		}
+		if($grid_js_settings['configuration_params']['show_searchbox'] == true) {
+		    ?>
+		    <div class="right">
+			    <a href="javascript:;" onclick="javascript:searchbox();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/search_icon.png" /></a>
+		    </div>
+		    <?php }
+		    echo '</div>';
+		    } ?>
+					
+			<div class="content" style="min-height:10px;">
+				<!-- SearchBox  -->
+				<div id="draggable"  class="top" style="display:none;" >
+					
+					<div class="grid_12">
+									<div class="box tabbed">
+										<div class="header no-icon">
+											<h3>Advance Search</h3>
+											<div class="right">
+												<!--<span class="ui-icon ui-icon-close" title="Close" onclick="searchbox('hide')">-->
+												<a title="Close" onclick="searchbox('hide')">
+													<img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/close.png" />
+												<!--</span>	-->
+												</a>
+												</div>
+										</div>
+										<div class="content" style="min-height:10px;">
+											<!--	Comment By Hiren dave on 7th Feb 2012   -->
+											<!--<form id="searchForm" name="searchForm" method="post">-->
+											<table id="mydata" width="100"  class="table">
+											<tbody>
+					    <?php
+					    /*
+					     * Display searched values in form
+					     */
+					    if(count($this->searchvalues[0]) > 0) {
+						$tempGroupon = $this->searchvalues[3];
+						
+						for($sm=0; $sm<count($this->searchvalues[0]); $sm++)
+						{
+							$tempFields = $this->searchvalues[0];
+							$tempValues = $this->searchvalues[1];
+							$tempOpt = $this->searchvalues[2];
+						?>
+					    <tr class="sf">
+						<td class="fields" width="40%" >
+						    <select name="field[]" class="" style="width:200%;" >
+							<?php
+							$tmp = 0;
+							foreach($this->showdatagrid['columns'] as $key => $val)
+							{
+								$selected = ($tempFields[$sm] == $tmp) ? 'selected="selected"' : '';
+							    echo '<option value="'.$tmp.'" '.$selected .'>'.ucfirst($val).'</option>';
+							    $tmp++;
+							}
+							?>
+						    </select>
+						</td>
+						<td class="ops" width="25%">
+							<select  name="op[]"  class="default "  >
+								<option value="eq" <?php if($tempOpt[$sm]=='eq') echo "selected='selected'"; ?>>equal</option><option value="ne" <?php if($tempOpt[$sm]=='ne') echo "selected='selected'"; ?>>not equal</option><option value="lt" <?php if($tempOpt[$sm]=='lt') echo "selected='selected'"; ?>>less</option><option value="le" <?php if($tempOpt[$sm]=='le') echo "selected='selected'"; ?>>less or equal</option><option value="gt" <?php if($tempOpt[$sm]=='gt') echo "selected='selected'"; ?>>greater</option><option value="ge" <?php if($tempOpt[$sm]=='ge') echo "selected='selected'"; ?>>greater or equal</option><option value="bw" <?php if($tempOpt[$sm]=='bw') echo "selected='selected'"; ?>>begins with</option><option value="bn" <?php if($tempOpt[$sm]=='bn') echo "selected='selected'"; ?>>does not begin with</option><option value="in" <?php if($tempOpt[$sm]=='in') echo "selected='selected'"; ?>>is in</option><option value="ni" <?php if($tempOpt[$sm]=='ni') echo "selected='selected'"; ?>>is not in</option><option value="ew" <?php if($tempOpt[$sm]=='ew') echo "selected='selected'"; ?>>ends with</option><option value="en" <?php if($tempOpt[$sm]=='en') echo "selected='selected'"; ?>>does not end with</option><option value="cn" <?php if($tempOpt[$sm]=='cn') echo "selected='selected'"; ?>>contains</option><option value="nc" <?php if($tempOpt[$sm]=='nc') echo "selected='selected'"; ?>>does not contain</option>
+							</select>
+						</td>
+						<td class="data"  ><input type="text" style="" name="seachvalue[]" value="<?php echo $tempValues[$sm]; ?>" class="sea sefield" ></td>
+						<td width="5%" style="padding-top:10px;" >
+							<div class="ui-del ui-state-default ui-corner-all"><span class="ui-icon ui-icon-minus"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/remove.png" /></span></div>
+						</td>
+						<td width="5%" style="padding-top:10px;" >
+							<div class="ui-add ui-state-default ui-corner-all"><span class="ui-icon ui-icon-plus" onclick="addMore();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/add.png" /></span></div>
+						</td>
+					    </tr>	
+						<?php
+						}
+					    } else {
+					    ?>
+					    <tr >
+						<td class="fields margin_t" width="40%" >
+						    <select name="field[]" class="default" style="width:200%;" >
+							<?php
+							$tmp = 0;
+							if(isset($this->showdatagrid['columns'])) {
+								foreach($this->showdatagrid['columns'] as $key => $val)
+								{
+								    echo '<option value="'.$tmp.'">'.ucfirst($val).'</option>';
+								    $tmp++;
+								}
+							} 
+							?>
+						    </select>
+						</td>
+						<td class="ops" width="25%" >
+							<select class="default" name="op[]" >
+								<option value="eq">equal</option><option value="ne">not equal</option><option value="lt">less</option><option value="le">less or equal</option><option value="gt">greater</option><option value="ge">greater or equal</option><option value="bw">begins with</option><option value="bn">does not begin with</option><option value="in">is in</option><option value="ni">is not in</option><option value="ew">ends with</option><option value="en">does not end with</option><option value="cn">contains</option><option value="nc">does not contain</option>
+							</select>
+						</td>
+						<td class="data" width="25%" ><input type="text" style="" name="seachvalue[]" class="default vdata sea sefield"></td>
+						<td width="5%" style="padding-top:10px;" >
+							<div class="ui-del ui-state-default ui-corner-all margin_t2"><span class="ui-icon ui-icon-minus"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/remove.png" /></span></div>
+						</td>
+						<td width="5%" style="padding-top:10px;">
+							<div class="ui-add ui-state-default ui-corner-all margin_t2"><span class="ui-icon ui-icon-plus" onclick="addMore();"><img src="<?php echo $this->baseUrl(); ?>/public/pagegrid_images/add.png" /></span></div>
+						</td>
+					    </tr>
+					    <?php } ?>
+					</tbody>
+					<tfoot>
+						<tr>
+						    <td width="33%">
+							<div class="_10 margin_top_10" style="display: inline-block; float: left;" >				   
+							    <input type="button" name="reset" value="Reset" onclick="resetSearch();" />
+							    <input type="hidden" value="0" name="reset_val" id="reset_val">
+							</div>
+						    </td>
+							 <td width="33%">
+							<div class="_100 margin_top_15">
+							    <span class="matchText left margin_left_1 margin_top_10"> match</span>
+							    <div class="left">
+									<select name="groupOp[]"  >
+										<option value="AND" <?php if($tempGroupon[0]=='AND') { echo 'selected="selected"'; } ?>>all</option>
+										<option value="OR" <?php if($tempGroupon[0]=='OR') { echo 'selected="selected"'; } ?>>any</option>
+									</select>
+								</div>
+							    <span class="rulesText left margin_right_1 margin_top_10"> rules</span>
+							</div>
+							</td>
+							 <td width="33%">
+							
+							<div class="_10 margin_top_10">
+							    <input type="submit" name="search" value="Find" />
+							</div>				
+						    </td>
+						</tr>
+						<tr>
+							<td>&nbsp;
+							</td>
+						</tr>
+					</tfoot>	
+											</table>								
+										</div> <!-- End of .content -->
+									</div> <!-- End of .box -->
+								</div>
+				
+				    
+			<!--	Comment By Hiren dave on 7th Feb 2012   -->
+				    <!--</form>-->
+				</div>
+				<!-- End SearchBox -->
+			
+				<div class="top" style="display:none;" >
+				      <?php
+				      //echo "<pre>";
+				      //print_r($grid_js_settings);
+				      //echo "</pre>";
+				      
+				      if(isset($Paginator_Paging->show_records_per_page))
+					      $show_records_per_page = $Paginator_Paging->show_records_per_page;
+				      else
+					      $show_records_per_page = $grid_js_settings["configuration_params"]["show_records_per_page"];
+					      
+				      
+				      if( ($grid_js_settings['configuration_params']['show_grid_heading'] == true && $grid_js_settings['total_data'] > $this->paginator->getItemCountPerPage() ) || $grid_js_settings['total_data'] > 10)
+				      { ?>
+				      
+						<!--	<div id="table-showpages" class="dataTables_length">-->
+						<!--    <label>-->
+						<!--    Show entries:-->
+						<!--    <select name="show_records_per_page" size="1" id="selMBC" class="pageitem" onchange="this.form.submit();" >-->
+						<!--      <option value="10" <?php if($show_records_per_page==10 ) { ?> selected="selected" <?php } ?> >10</option>-->
+						<!--      <option value="25" <?php if($show_records_per_page==25 ) { ?> selected="selected" <?php } ?> >25</option>-->
+						<!--      <option value="50" <?php if($show_records_per_page==50 ) { ?> selected="selected" <?php } ?> >50</option>-->
+						<!--      <option value="100" <?php if($show_records_per_page==100 ) { ?> selected="selected" <?php } ?> >100</option>-->
+						<!--    </select>-->
+						<!--      </label>-->
+						<!--  </div>-->
+				      
+				      <?php		
+				      }	
+				      ?>
+				
+			      <?php
+				      if($grid_js_settings['configuration_params']['show_searchbox'] == true) {
+			      ?>
+			      
+				<div id="table-searchall" class="dataTables_filter">
+				  
+				    <div class="left" ><label>Search:</label></div>
+				    <input type="text" class="sea" name="grid_search_text" id="grid_search_text" value="<?php echo $Paginator_SearchDetails->shortsearch_value; ?>" >
+				</div>
+				<div class="clear"></div>
+			      
+				<?php } ?>
+				</div>
+	
+				<?php
+				// Check the data for the data grid display
+				if(isset($grid_js_settings['total_data']) && $grid_js_settings['total_data'] > 0)
+				{
+				?>
+				<table id="table-example" class="table">
+					<thead>
+					<tr>
+												  
+					<?php
+					    /*
+					     * Display checkbox if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_selectbox'] == true) { 
+						echo '<th width="13"><input type="checkbox" id="chkall" name="chkall" onclick="toggleChecked(this.checked);" class="checkbox" /></th>';
+					    }
+					    
+					    $colsname_int = 0;
+						
+						/*
+						* Set default sort order images
+						*/
+						$grid_js_settings['order_imagetype'] = "sorting";
+						
+						
+						
+						
+						/*
+						* Set sorting images
+						*/
+						if(isset($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="asc")
+						{
+							$grid_js_settings['order_imagetype'] = "sorting_desc";
+						}
+						else if(isset($grid_js_settings['order_columns_number']) && trim($grid_js_settings['order_type'])=="desc")
+						{
+							
+							$grid_js_settings['order_imagetype'] = "sorting_asc";
+						}
+								    
+						$data_display_collection = "";
+						
+						
+						
+						foreach($this->showdatagrid['columns'] as $key => $val)
+						{
+							
+							$colnameshow = "";
+							if(is_integer($key))
+							{
+								$colnameshow = $val;
+							}
+							else
+							{
+								$colnameshow = $key;
+							}
+							$colnameshow = $val;
+							
+							
+							/*
+							* Prepare data grid columns heading with sorting parameters
+							*/
+							if(!is_null($grid_js_settings['order_columns_number']) && $grid_js_settings['order_columns_number']==$colsname_int)
+							{
+								$data_display_collection.= "<th class='".$grid_js_settings['order_imagetype']."'>";
+							
+							    $data_display_collection.= "<a href='javascript:void(0)' class='page_number' id='".$this->url(array('order'=> $colsname_int.'_'.$grid_js_settings['order_type']))."'>".ucfirst($colnameshow)." </a>";
+							}
+							else
+							{
+								$data_display_collection.= "<th class='sorting'>";
+								
+							$data_display_collection.= "<a href='javascript:void(0)' class='page_number' id='".$this->url(array('order'=> $colsname_int.'_asc'))."'>"
+									.ucfirst($colnameshow)."</a>";
+			
+							}
+							$data_display_collection.= "</th>";
+							
+							
+							$colsname_int++;
+						}
+						echo $data_display_collection;
+						
+					    /*
+					     * Display editlink if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_editlink'] == true) { 
+						echo '<th >&nbsp;</th>';
+					    }
+					    
+					    /*
+					     * Display deletelink if is set to true
+					     */
+					    if($grid_js_settings['configuration_params']['show_deletelink'] == true) {
+						echo '<th >&nbsp;</th>';}
+						
+						/*
+						* Display extra link if is set to true
+						*/
+						if($grid_js_settings['configuration_params']['show_extralink'] == true) {
+							    
+							    for($sel=0; $sel<count($grid_js_settings['configuration_params']['extralink']); $sel++)
+								    echo '<th >&nbsp;</th>';
+						    }
+					    ?>
+							</tr>
+						</thead>
+					<?php
+					
+					#echo "<pre>";
+						#print_r($grid_js_settings);
+						#print_r($datashowgrid);
+						#echo "</pre>";
+					?>
+					
+						<tbody>
+						<?php
+						
+						if(isset($grid_js_settings['configuration_params']['mastervalues']) && is_array($grid_js_settings['configuration_params']['mastervalues']))
+						{
+						    // gathering the option values for dropdown on edit mode
+						    $mastervalues = $grid_js_settings['configuration_params']['mastervalues'];
+						
+						    // select box is required for following fields - print_r($mastervaluesKeys)
+						    $mastervaluesKeys = array_keys($mastervalues);    
+						}
+						
+						
+						/*
+						 * fill data array in table body
+						 */
+						
+						for($k=0;$k<count($datashowgrid);$k++)
+						{
+							$classname='class="gradeC"';
+							if(($k+1)%2==0)
+							{
+								$classname='class="gradeA"';
+							}
+							
+							echo "<tr ".$classname." >";
+							
+							## if the grid is in edit mode - value available in textbox
+							
+							
+							if($grid_js_settings['configuration_params']['editmode'] && $datashowgrid[$k]["PRIMARYKEY"]==$grid_js_settings['configuration_params']['editmodeid'])
+							{
+								
+							
+								foreach($datashowgrid[$k] as $key => $val)
+								{
+									if($key!="PRIMARYKEY")
+									{
+										echo "<td>";
+										if($key!="delete_link" && $key!="edit_link"){
+											
+											// if the column required the select box - checking the passed dropdown requirement
+											if(isset($mastervaluesKeys) && is_array($mastervaluesKeys) && in_array($key,$mastervaluesKeys))
+											{
+											    $cSelected = "";
+											    
+											    $keySelect = '<select class="update_vals" name="'.$key.'" id="'.$key.'" >';
+											    $keySelect .= '<option value=""  >---</option>';
+											    if(isset($mastervalues[$key]) && is_array($mastervalues[$key]) && count($mastervalues[$key])){
+												foreach($mastervalues[$key] as $comboKey=>$comboValue)
+												{
+												    if($val==$comboKey)
+													$cSelected = 'selected="selected"';
+												    else
+													$cSelected = "";
+													
+												    $keySelect .= '<option value="'.$comboKey.'" '.$cSelected.' >'.$comboValue.'</option>';
+												}
+											    }
+											    $keySelect .= '</select>';
+											    
+											    echo $keySelect;
+											}
+											else // if there is only text box
+											{
+											  echo '<input class="update_vals" style="width:80% !important" type="text" name="'.$key.'" id="'.$key.'" value="'.$val.'" />';
+											}
+										}
+										
+										if($key=="edit_link")
+											echo '<a href="javascript:void(0)" name="btnupdate_grid" id="btnupdate_grid" >Update</a>';
+											
+											//echo '<input type="button" name="btnupdate_grid" id="btnupdate_grid" value="Update" />';
+										
+											
+										if($key=="delete_link")
+											echo '<a href="javascript:void(0)" name="btncancel_grid" id="btncancel_grid" >Cancel</a>';
+											//echo '<input type="button" name="btncancel_grid" id="btncancel_grid" value="Cancel" />';
+										
+									
+										echo "</td>";
+									}
+								}
+							}
+							else
+							{
+								foreach($datashowgrid[$k] as $key => $val)
+								{
+									if($key!="PRIMARYKEY")
+									{
+										
+										echo "<td>";
+										
+										if($val) {					
+											echo $val;
+										}
+										else
+										{
+											echo "&nbsp;";
+										}
+										
+										echo "</td>";
+									}
+								}
+							}
+							echo "</tr>";
+						}
+						?>
+						</tbody>
+					</table>
+					<div class="actions">
+					<?php
+					/*
+					* Display paging
+					*/		
+					if($grid_js_settings['total_data'] > $this->paginator->getItemCountPerPage())
+					{
+					   echo $this->paginationControl($this->paginator, 'Sliding', 'pagination_ajax.phtml');
+					
+					}
+					?>
+					
+					</div>
+					<div class="clean space_20"></div>
+					<!--</div> M@M commented as structure was not ready --> <!-- End of .content -->
+				<?php
+				}
+				else{ ?>
+					<div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b><?php echo $grid_js_settings['configuration_params']['nodata_message']; ?></b></div>
+				<?php } ?>
+			</div>
+		<div class="clear"></div>
+	</div> <!-- End of .box -->
+	</div> <!-- End of .grid_12 -->
+					
+	<div class="clean"></div>
+	
+	

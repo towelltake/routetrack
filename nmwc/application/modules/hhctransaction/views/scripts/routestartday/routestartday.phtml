@@ -1,0 +1,68 @@
+<?php
+/**
+* @name       invoice.phtml
+* @since      06-02-2012
+* @version    Release: 1.0
+* @author     M@M <miral@elantechnologies.com>
+* @copyright  Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+$date = $this->date != '' ? $this->date : date('d-m-Y');
+$ddloption_val = $this->ddloptions != '' ? $this->ddloptions : "";
+?>
+<script type="text/javascript">
+$(document).ready(function(){
+	$( "#txtdate" ).datepicker({
+	    dateFormat: 'dd-mm-yy'
+	});	
+})
+</script>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<form name="frmoverview" id="frmoverview" action="" method="post">
+<input type="hidden" id="hdDelete" name="hdDelete" value="" />
+<div class="grid_12">
+    <div class="box">
+        <div class="header">
+            <div class="_50_3 back_btn">
+                <img src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png" class="margin_top_10">
+                <h3><?php echo $this->translate->_('Route Start Of Day')?></h3>
+            </div>
+            <div class="_50_3">
+                <?php if($this->checkaccess("insert")) { ?><div class="_10 save_btn"><input class="border_none" type="button" value="" id="btnadd" name="btnadd" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"routestartday","action"=>"addroute"), "default", true);?>')"></div><?php } ?>
+            </div>
+        </div>
+	
+	
+        <div class="_100" >
+            <div class="_10 label_text_align margin_top_7">&nbsp;</div>
+            <div class="_20 label_text_align margin_top_10"><label class="advance_search_css"><?php  echo $this->translate->_('Date').''.$this->colan;?></label></div>
+            <div class="_15 label_text_align"><input type="text" id="txtdate" readonly="readonly" name="txtdate" value="<?php echo $date;?>" class="margin_zero"></div>
+            <div class="_5 margin_top_5 margin_right_2_2"> <input type="checkbox" name="chkoptions" value="1"  <?php if($this->chkoptions != "") { ?> checked="checked" <?php } ?> /></div>
+            <div class="_15  margin_top_12">
+                <?php echo $this->translate->_('Show All Days');?> &nbsp;&nbsp;
+            </div>		
+            <div class="_5"><input type="submit" name="btnload" id="btnload" value="<?php  echo $this->translate->_('OK'); ?>" class="margin_zero"></div>
+            <div class="_10"><input type="submit" name="btnreset" id="btnreset" value="<?php echo $this->translate->_('RESET'); ?>" class="margin_zero"></div>
+            <div class="_15">
+                &nbsp;
+            </div>
+        </div>
+        <div class="clear space_20"></div>
+        <div class="clear"></div>		
+        <?php echo $this->partial('datagrid.phtml', $this); ?>
+        <div class="clear"></div>
+    </div> <!-- End of .box -->
+</div> <!-- End of .grid_12 -->
+</form>

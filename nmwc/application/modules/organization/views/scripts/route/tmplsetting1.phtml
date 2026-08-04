@@ -1,0 +1,455 @@
+<?php
+/**
+* @name       tmplsetting1.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add setting of Route template
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<div class="_100">
+    <div class="clean"></div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Prompt Odometer Input').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlprmpt_odometer" name="ddlprmpt_odometer">
+	    <?php
+	    for($i=0;$i<count($this->prompt_odometer);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['promptodominput'] == $this->prompt_odometer[$i]['id']) { echo 'selected';}?> value="<?php echo $this->prompt_odometer[$i]['id'];?>"><?php echo $this->prompt_odometer[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enablepostvoid']== '1') ? 'checked' : ''; ?> id="chkena_void" name="chkena_void"  value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Post Void');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Inventory Case Input').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlinv_input" name="ddlinv_input">
+	    <?php
+	    for($i=0;$i<count($this->inv_case_input);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['inventorycaseinput'] == $this->inv_case_input[$i]['id']) { echo 'selected';}?> value="<?php echo $this->inv_case_input[$i]['id'];?>"><?php echo $this->inv_case_input[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enableeodaddchecks']== '1') ? 'checked' : ''; ?> id="chkena_eod_check" name="chkena_eod_check" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable EOD Add Checks');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD Deposit Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddleod_deposit" name="ddleod_deposit">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeoddepositreport'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enableeodexpenses']== '1') ? 'checked' : ''; ?> id="chkeod_expnses" name="chkeod_expnses" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable EOD Expenses');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD Balance Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+       <select id="ddleod_bal" name="ddleod_bal">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodunauthbalance'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enableeodadjchecks']== '1') ? 'checked' : ''; ?> id="chkena_adj_check" name="chkena_adj_check" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable EOD Adj Checks');?>
+    </label>    
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD Sales Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddleod_sales" name="ddleod_sales">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodsalesreport'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['loadoutadjustments']== '1') ? 'checked' : ''; ?> id="chkena_load_outajd" name="chkena_load_outajd" value="1"  >
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Load Out Adjustment');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Load Req Report Format').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlreq_repo_frmt" name="ddlreq_repo_frmt">
+	    <?php
+	    for($i=0;$i<count($this->load_req_report);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['loadreqreportformat'] == $this->load_req_report[$i]['id']) { echo 'selected';}?> value="<?php echo $this->load_req_report[$i]['id'];?>"><?php echo $this->load_req_report[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enableaddcustomer']== '1') ? 'checked' : ''; ?> id="chkena_addedit_cust" name="chkena_addedit_cust" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Add/Edit Customer');?>
+    </label>    
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. Route Review Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlroute_revw" name="ddlroute_revw">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodroutereviewrpt'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enablestockicon']== '1') ? 'checked' : ''; ?> id="chkstock_icon" name="chkstock_icon" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Stock Icon');?>
+    </label>
+
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Auto Calculated Load In').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlauto_calcu" name="ddlauto_calcu">
+	    <?php
+	    for($i=0;$i<count($this->auto_calculated);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['autocalculateloadin'] == $this->auto_calculated[$i]['id']) { echo 'selected';}?> value="<?php echo $this->auto_calculated[$i]['id'];?>"><?php echo $this->auto_calculated[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enablestartdaydatetimeedit']== '1') ? 'checked' : ''; ?> id="chkdaydttime" name="chkdaydttime" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Start Day Date Time Edit');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD Rtn/Exch Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddleod_ret_exch" name="ddleod_ret_exch">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodrtnexchreport'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enabledelayprint']== '1') ? 'checked' : ''; ?> id="chkdelay_prnt" name="chkdelay_prnt" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Delay Print');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Require Load In').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlreq_loadin" name="ddlreq_loadin">
+	    <?php
+	    for($i=0;$i<count($this->req_load_in);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['requireloadin'] == $this->req_load_in[$i]['id']) { echo 'selected';}?> value="<?php echo $this->req_load_in[$i]['id'];?>"><?php echo $this->req_load_in[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enforcecallsequence']== '1') ? 'checked' : ''; ?> id="chkenf_call_seq" name="chkenf_call_seq" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enforce Call Sequence');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. Route Activity Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlroute_acti" name="ddlroute_acti">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodrteactivreport'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enablefoclimit']== '1') ? 'checked' : ''; ?> id="chkfoc_limit" name="chkfoc_limit" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Customer FOC Limit');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Load Sheet Report').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlload_sheetrpt" name="ddlload_sheetrpt">
+	    <?php
+	    for($i=0;$i<count($this->load_sheet_data);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['loadsheetreport'] == $this->load_sheet_data[$i]['id']) { echo 'selected';}?> value="<?php echo $this->load_sheet_data[$i]['id'];?>"><?php echo $this->load_sheet_data[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <div class="_5 margin_top_7">
+	<input type="checkbox" <?php echo ( $this->formdata['enablecashonlydiscount']== '1') ? 'checked' : ''; ?> id="chkcash_disc" name="chkcash_disc" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php echo $this->translate->_('Enable Cash Only Discount');?>
+    </label>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD Placements Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddleod_placement" name="ddleod_placement">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodplacementsrpt'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+    <!--<div class="_5 margin_top_7">
+	<input type="checkbox" id="chkmidday_tcom" name="chkmidday_tcom" value="1">
+    </div>
+    <label class="_30 margin_top_15 text_align">
+	<?php //echo $this->translate->_('Enable Mid-Day TCom');?>
+    </label>-->
+    
+</div>
+<div class="_100 ">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Route Currency').''.$this->colan;?>
+    </label>
+    <div class="_30_1 _26 margin_left_3 margin_right_1">
+	<select id="ddlamountdecimaldigits" name="ddlamountdecimaldigits">
+	    <option value="">--- Select ---</option>
+	    <?php
+		for($i=0;$i<count($this->currency_info);$i++)
+		{
+		?>
+		    <option value="<?php echo $this->currency_info[$i]['id'];?>" <?php if($this->currency_info[$i]['id'] == $this->formdata['amountdecimaldigits']){ echo 'selected'; }?>><?php echo $this->currency_info[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD Settlement Rpt.').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddleod_settlement" name="ddleod_settlement">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php //if($this->formdata[''] == $this->[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Unload Over Warning').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlover_warn" name="ddlover_warn">
+	    <option <?php if($this->formdata['unloadoversellmessage'] == "1") { echo 'selected';}?> value="1"><?php echo $this->translate->_('Enable');?></option>
+	    <option <?php if($this->formdata['unloadoversellmessage'] == "0") { echo 'selected';}?> value="0"><?php echo $this->translate->_('Disable');?></option>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Req. EOD ROA Summary').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddleod_roa" name="ddleod_roa">
+	    <?php
+	    for($i=0;$i<count($this->print_option);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['reqeodroasummary'] == $this->print_option[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_option[$i]['id'];?>"><?php echo $this->print_option[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Inventory Value Print').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlinv_val_prnt" name="ddlinv_val_prnt">
+	    <?php
+	    for($i=0;$i<count($this->inv_print_data);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['inventoryvalueprint'] == $this->inv_print_data[$i]['id']) { echo 'selected';}?> value="<?php echo $this->inv_print_data[$i]['id'];?>"><?php echo $this->inv_print_data[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('HHC Item Code Display').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlhhc_code" name="ddlhhc_code">
+	    <?php
+	    for($i=0;$i<count($this->hhc_item_data);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['itemcodedisplay'] == $this->hhc_item_data[$i]['id']) { echo 'selected';}?> value="<?php echo $this->hhc_item_data[$i]['id'];?>"><?php echo $this->hhc_item_data[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Route Item Group').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlroute_tem_code" name="ddlroute_tem_code">
+	    <option value="">--- Select ---</option>
+	    <?php
+	    for($i=0;$i<count($this->routeitemgrp_data);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['routeitemgrpcode'] == $this->routeitemgrp_data[$i]['id']) { echo 'selected';}?> value="<?php echo $this->routeitemgrp_data[$i]['id'];?>"><?php echo $this->routeitemgrp_data[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Print Alternate Item Code').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlalt_itm_code" name="ddlalt_itm_code">
+	    <?php
+	    for($i=0;$i<count($this->print_alternate);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['inventoryreportcontrol'] == $this->print_alternate[$i]['id']) { echo 'selected';}?> value="<?php echo $this->print_alternate[$i]['id'];?>"><?php echo $this->print_alternate[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Item Description Display').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlitem_desc" name="ddlitem_desc">
+	    <?php
+	    for($i=0;$i<count($this->display_item_desc);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['itemdescriptiondisplay'] == $this->display_item_desc[$i]['id']) { echo 'selected';}?> value="<?php echo $this->display_item_desc[$i]['id'];?>"><?php echo $this->display_item_desc[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Enable Load Transfer').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlload_trans" name="ddlload_trans">
+	    <?php
+	    for($i=0;$i<count($this->ena_load_trans);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['enableloadtransfer'] == $this->ena_load_trans[$i]['id']) { echo 'selected';}?> value="<?php echo $this->ena_load_trans[$i]['id'];?>"><?php echo $this->ena_load_trans[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="_100">
+    <label class="_30 padding_0 margin_top_12 label_text_align">
+	<?php echo $this->translate->_('Enable Scanner Use').''.$this->colan;?>
+    </label>
+    <div class="_30_1 margin_left_3 margin_right_1">
+	<select id="ddlscanner_use" name="ddlscanner_use">
+	    <?php
+	    for($i=0;$i<count($this->scan_data);$i++)
+	    {
+	    ?>
+		<option <?php if($this->formdata['enablescanneruse'] == $this->scan_data[$i]['id']) { echo 'selected';}?> value="<?php echo $this->scan_data[$i]['id'];?>"><?php echo $this->scan_data[$i]['val'];?></option>
+	    <?php } ?>
+	</select>
+    </div>
+</div>
+<div class="space_100">&nbsp;</div>

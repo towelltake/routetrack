@@ -1,0 +1,262 @@
+<?php
+/**
+* @name       addauthorizegroup.phtml
+* @since      1 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<script>
+    $(document).ready(function(){
+		
+		$('#txtgrp_desc').focus();
+		
+		loaddata('<?php echo $this->itemgrid; ?>','item-grid');
+		
+		$("#btndeleteall").click(function(){
+			
+			var ids 	= '';
+			var grp_no  = '';
+			var str 	= '';
+			var qry_str	= '';
+			var tbl_id 	= '';
+			$('#table-example td a').each(function() {				
+				str 	= this.id;
+				qry_str	= str.split('/');
+				tbl_id 	= qry_str[2].split('_');
+				
+				ids 	+= tbl_id[0]+',';
+				grp_no	 = tbl_id[1];
+			});
+			
+			if(ids !='')
+			{
+				jConfirm('Are You Sure To Delete This Record(s)?', 'Message', function(resp)
+				{
+					if(resp)
+					{
+						$('#hdngroupno').val(grp_no);
+						$('#hdndeleteall').val(ids);
+					
+						var values = $('#frmdetsec').serialize();
+						$.ajax({
+								type : "POST",
+								url : base_url+"/account/customer/authorizegroupitemgrid",
+								data :values+'&deleteall=yes',
+								success:function(returndata){
+									$('#item-grid').html(returndata); 
+								}
+						});
+					}
+				})
+			}
+			else
+			{
+				jAlert('No Any Record To Delete.');
+			}
+				
+		});
+		
+		$("#sbtnadd").click(function(){
+			if(!$("#frmdet").valid()){
+			return false;
+			}else{
+				var values = $('#frmdet').serialize();
+				$.ajax({
+					type : "POST",
+					url : base_url+"/account/customer/authorizegroupitemgrid",
+					data :values+'&add=yes',
+					success:function(returndata){
+					$("#ddlitem_group").val("");
+					$("#ddlitem_code").val("");
+					$("#ddlitem_code").html("");
+					$('<option/>').val('').html('--- Select ---').appendTo('#ddlitem_code');
+					$('select').trigger('liszt:updated');
+					$('#item-grid').html(returndata); 
+					}
+				});
+			}
+		});
+		$("#btnsave").click(function(){
+			$("#ddlitem_group").removeClass('required');
+			$("#ddlitem_code").removeClass('required');			
+		});
+		$("#ddlitem_group").change(function(){
+			
+			var val = $("#ddlitem_group").val();
+			
+			if(val > 0)
+			{
+				var values = $('#frmdet').serialize();
+				$.ajax({
+					type : "POST",
+					url : base_url+"/account/customer/getitemlistfromitemgroup/grpcode/"+val,
+					data :values,
+					success:function(data) {
+						var item_info = JSON.parse(data);
+						if (item_info == '')
+						{
+							return false;
+						}
+						$("#ddlitem_code").html("");
+						if(typeof(item_info[0]) == 'object')
+						{
+							$('<option/>').val('').html('--- Select ---').appendTo('#ddlitem_code');
+							for (i=0;i<item_info[0].length;i++) {								
+								$('<option/>').val(item_info[0][i]['id']).html(item_info[0][i]['val']).appendTo('#ddlitem_code');								
+							}
+						}
+						$('#ddlitem_code').trigger('liszt:updated');						
+					}
+				});
+			}
+			else
+			{
+				$("#ddlitem_code").html("");
+				$('#ddlitem_code').trigger('liszt:updated');
+			}
+		});		
+    });
+    
+    
+</script>
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="account_customer_addauthorise">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+    <div class="header">
+	<div class="_50_3 back_btn">
+	    <img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_accountreceivables.png">
+	    <h3><?php echo $this->translate->_('Customer Authorize Group')?></h3>
+	</div>
+	<div class="_50_3">
+	    <div class="_10 save_btn">
+		<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"authorizegroup"), "default", true);?>')" >
+	    </div>
+	    <div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+	</div>
+    </div>
+    <div class="clear"></div>
+    <div class="clear"></div>
+    <div id="nav_sub" class="ie_nav_sub">
+    <div class="container_12">
+	<ul id="nav_main">
+	    <li class="current">
+		<ul style="display: block;">
+		   <li>
+			<a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"authorizegroup"),"default", true);?>"><?php echo $this->translate->_('Overview'); ?></a>
+		    </li>
+		    <li class="last-child">
+			<a href="<?php echo $this->url(array("module"=>"account","controller"=>"customer","action"=>"addauthorizegroup"),"default", true);?>"><b><?php echo $this->translate->_('Details'); ?></b></a>
+		    </li>
+		</ul>
+	    </li>
+	</ul>
+    </div>
+    </div>
+    <div class="content with-actions min_height_10">
+		<div class="_100">
+			<div class="clear"></div>
+		</div>
+		<div class="_100">
+			<div class="clear"></div>
+		</div>
+	<div class="_50">
+		<div class="_100">
+			<label class="_50 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Group Number').''.$this->colan;?>
+			</label>
+			<div class="_50">
+				<input type="text" value="<?php echo $this->formdata['txtgrp_num']; ?>" name="txtgrp_num" id="txtgrp_num" readonly="readonly"/>
+			</div>
+		</div>
+		<div class="_100">
+			<label class="_50 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Group Description').''.$this->required;?>
+			</label>
+			<div class="_50">
+				<input type="text" maxlength="50" value="<?php echo $this->formdata['txtgrp_desc']; ?>" name="txtgrp_desc" id="txtgrp_desc" class="required margin_top_5"/>
+			</div>	    
+		</div>		
+		<div class="_100 ">
+			<label class="_50 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Description ('.$this->sec_lang.')').''.$this->colan;?>
+			</label>
+			<div class="_50">
+				<input type="text" maxlength="50" value="<?php echo $this->formdata['txtgrp_arb']; ?>" name="txtgrp_arb" class="margin_top_5 arb_text_align" id="txtgrp_arb"/>
+			</div>
+		</div>
+		<div class="_100">
+			<label class="_50 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Item Group').''.$this->required;?>
+			</label>
+			<div class="_50">
+				<select id="ddlitem_group" name="ddlitem_group" class="required">
+					<option value="">--- Select ---</option>
+					<?php
+					for($i=0; $i<count($this->item_group);$i++){ ?>
+					<option value="<?php echo $this->item_group[$i]['id'];?>"><?php echo $this->item_group[$i]['val'];?></option>
+					<?php } ?>
+				</select>
+			</div>
+		</div>
+	</div>
+	<div class="_50">
+		<div class="_100">
+			<label class="_30 margin_top_7 label_text_align">
+				<?php echo $this->translate->_('Items').''.$this->required;?>
+			</label>
+			<div class="_70 simple_dropdown margin_top_5">
+				<select id="ddlitem_code" name="ddlitem_code[]" class="required" style="height: 130px; display: inline;" multiple="multiple">
+					<option value="">--- Select ---</option>				
+				</select>
+			</div>
+		</div>		
+		<div class="_100">		
+			<div class="_80 simple_dropdown margin_top_5">&nbsp;</div>
+			<div class="_10">
+				<input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd" name="sbtnadd" class="margin_top_10">
+			</div>
+		</div>
+	</div>	
+    </div>
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["id"];?>">
+</form>
+<div class="content with-actions min_height_10">
+    <form id="frmdetsec" name="frmdetsec" class="validate" novalidate action="" method="post">
+	<div class="_100 margin_top_25">
+	    <fieldset id="ab" name="ab" class="fieldset_effect">
+		<legend class="ttl"><?php echo $this->translate->_('Customer Authorize Group');?></legend>
+		<hr id="ie_hr" >
+		<div class="_5 clear_only">&nbsp;</div>
+		<div class="_100">
+		    <div id="loader"></div>
+		    <div id="item-grid"> <!--grid load here --> </div>			
+		    <input type="hidden" id="hdngroupno" name="hdngroupno" value="<?php echo $this->params["id"]; ?>">
+		</div>
+		<div class="space_20 _100">&nbsp;</div>
+		<div class="_100">
+			<input type="button" id="btndeleteall" name="btndeleteall" value="<?php echo $this->translate->_('DELETE ALL');?>" >
+		</div>		
+		</div>
+	    </fieldset>
+	</div>
+	<input type="hidden" name="hdndeleteall" id="hdndeleteall" value="" >
+    </form>
+</div>
+</div> <!-- End of .box -->

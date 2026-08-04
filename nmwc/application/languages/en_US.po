@@ -1,0 +1,1497 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: hiren <hiren.d@elantechnologies.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "CSS"
+msgstr "en_"
+
+msgid "Hello"
+msgstr "Hello"
+
+msgid "Colan"
+msgstr "<span class='label_colan'>&nbsp;:</span>"
+
+msgid "Required"
+msgstr "<span class='label_colan'>&nbsp;<font color='red'>*</font>&nbsp;:</span>"
+
+msgid "How are you ?"
+msgstr "How are you ?"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Mirnah"
+msgstr "Mirnah"
+
+msgid "Username"
+msgstr "Username"
+
+msgid "User Name"
+msgstr "User Name"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Password Remember"
+msgstr "Remember me on this computer"
+
+msgid "Required Field"
+msgstr "This field is required."
+
+msgid "Missed One Field"
+msgstr "You missed 1 field. It has been highlighted."
+
+msgid "You Missed"
+msgstr "You Missed"
+
+msgid "Fields. They have been highlighted."
+msgstr "fields. They have been highlighted."
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Basic"
+msgstr "Basic"
+
+msgid "Company"
+msgstr "Company"
+
+msgid "Currency"
+msgstr "Currency"
+
+msgid "Cash Description"
+msgstr "Cash Description"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Description_Arb"
+msgstr "Description (Arb)"
+
+msgid "Reset"
+msgstr "Reset"
+
+msgid "Submit"
+msgstr "Submit"
+
+msgid "Record Success"
+msgstr "Record Saved Successfully."
+
+msgid "New Record"
+msgstr "Record Saved Successfully."
+
+msgid "Update Record"
+msgstr "Record Updated Successfully."
+
+msgid "Required Data"
+msgstr "Please Enter All Required Information."
+
+msgid "Delete Record"
+msgstr "Record Deleted Successfully."
+
+msgid "Save Record"
+msgstr "Record Saved Successfully."
+
+msgid "Duplicate Record"
+msgstr "Record Already Exists."
+
+msgid "Record Already In use"
+msgstr "Can't Delete A Related Record(s)."
+
+msgid "Add"
+msgstr "Add"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Back"
+msgstr "Back to List"
+
+msgid "Parent Company"
+msgstr "Parent Company"
+
+msgid "Sub Company"
+msgstr "Sub Company"
+
+msgid "Alternate Code"
+msgstr "Alternate Code"
+
+msgid "Company Name"
+msgstr "Company Name"
+
+msgid "Company(Arbic)"
+msgstr "Company(Arbic)"
+
+msgid "Contact Name"
+msgstr "Contact Name"
+
+msgid "Address"
+msgstr "Address"
+
+msgid "Telephone Number"
+msgstr "Telephone Number"
+
+msgid "Fax"
+msgstr "Fax"
+
+msgid "ZipCode"
+msgstr "ZipCode"
+
+msgid "Country Code"
+msgstr "Country Code"
+
+msgid "Distributor Code1"
+msgstr "Distributor Code1"
+
+msgid "Distributor Code2"
+msgstr "Distributor Code2"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Inactive"
+msgstr "Inactive"
+
+msgid "Select"
+msgstr "Select"
+
+msgid "Details"
+msgstr "Details"
+
+msgid "Overview"
+msgstr "Overview"
+
+msgid "Currency Code"
+msgstr "Currency Code"
+
+msgid "Currency Name"
+msgstr "Currency Name"
+
+msgid "ArbCurrency Name"
+msgstr "ArbCurrency Name"
+
+msgid "Start Date"
+msgstr "Start Date"
+
+msgid "End Date"
+msgstr "End Date"
+
+msgid "Detail Section"
+msgstr "Detail Section"
+
+msgid "Currency Detail Code"
+msgstr "Currency Detail Code"
+
+msgid "Exchange Rate"
+msgstr "Exchange Rate"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "ArbName"
+msgstr "ArbName"
+
+msgid "Name(Arabic)"
+msgstr "Name(Arabic)"
+
+msgid "Name(Language)"
+msgstr "Name(Language)"
+
+msgid "Area"
+msgstr "Area"
+
+msgid "SubArea"
+msgstr "SubArea"
+
+msgid "Supervisor"
+msgstr "Supervisor"
+
+msgid "Customer Category"
+msgstr "Customer Category"
+
+msgid "Salesman"
+msgstr "Salesman"
+
+msgid "Message Key"
+msgstr "Message Key"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Customer Master"
+msgstr "Customer Master"
+
+msgid "Address2"
+msgstr "Address2"
+
+msgid "Address3"
+msgstr "Address3"
+
+msgid "P.O.BOX"
+msgstr "P.O.BOX"
+
+msgid "Cash Balance"
+msgstr "Cash Balance"
+
+msgid "Credit Limit"
+msgstr "Credit Limit"
+
+msgid "Credit Days"
+msgstr "Credit Days"
+
+msgid "Route Name"
+msgstr "Route Name"
+
+msgid "Alphanumeric Code"
+msgstr "Alphanumeric Code"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Branch"
+msgstr "Branch"
+
+msgid "Head Office"
+msgstr "Head Office"
+
+msgid "Invoice Payment Terms"
+msgstr "Invoice Payment Terms"
+
+msgid "Price Key"
+msgstr "Price Key"
+
+msgid "Promotion Key"
+msgstr "Promotion Key"
+
+msgid "Discount Key"
+msgstr "Discount Key"
+
+msgid "Distribution Key"
+msgstr "Distribution Key"
+
+msgid "Survey Key"
+msgstr "Survey Key"
+
+msgid "AR Customer Type"
+msgstr "AR Customer Type"
+
+msgid "Open Invoicefor Bill to Bill"
+msgstr "Open Invoicefor Bill to Bill"
+
+msgid "2nd Language Settings:"
+msgstr "2nd Language Settings:"
+
+msgid "Remark"
+msgstr "Remark"
+
+msgid "Remarks"
+msgstr "Remarks"
+
+msgid "Authorized Item Group Key"
+msgstr "Authorized Item Group Key"
+
+msgid "Created Date"
+msgstr "Created Date"
+
+msgid "Setting1"
+msgstr "Setting 1"
+
+msgid "Setting2"
+msgstr "Setting 2"
+
+msgid "Salesman Master"
+msgstr "Salesman Master"
+
+msgid "Display_Message_Key 1"
+msgstr "Display Message Key 1"
+
+msgid "Display_Message_Key 2"
+msgstr "Display Message Key 2"
+
+msgid "Print_Message_Key 1"
+msgstr "Print Message Key 1"
+
+msgid "Print_Message_Key 2"
+msgstr "Print Message Key 2"
+
+msgid "Invoice Header Message Key"
+msgstr "Invoice Header Message Key"
+
+msgid "Invoice Trailor Message Key"
+msgstr "Invoice Trailor Message Key"
+
+msgid "Enable Invoice Comment"
+msgstr "Enable Invoice Comment"
+
+msgid "Enable Delivery Instruction"
+msgstr "Enable Delivery Instruction"
+
+msgid "Force Stock Capture"
+msgstr "Force Stock Capture"
+
+msgid "Invoice Detail Entry Form"
+msgstr "Invoice Detail Entry Form"
+
+msgid "Invoice Price Print"
+msgstr "Invoice Price Print"
+
+msgid "Authorized Item List Ctrl"
+msgstr "Authorized Item List Ctrl"
+
+msgid "Order Format"
+msgstr "Order Format"
+
+msgid "Enable Item Bar Code Print"
+msgstr "Enable Item Bar Code Print"
+
+msgid "Enable Delay Print"
+msgstr "Enable Delay Print"
+
+msgid "Print Sequence"
+msgstr "Print Sequence"
+
+msgid "Enable Edit Price Invs"
+msgstr "Enable Edit Price Invs"
+
+msgid "Enable Sell Previous"
+msgstr "Enable Sell Previous"
+
+msgid "Enable Suggest Sales"
+msgstr "Enable Suggest Sales"
+
+msgid "Enable Auto Fill Returns"
+msgstr "Enable Auto Fill Returns"
+
+msgid "Enable Auto Fill Damage"
+msgstr "Enable Auto Fill Damage"
+
+msgid "Enable Signature Capture"
+msgstr "Enable Signature Capture"
+
+msgid "Enable Sales Trxn"
+msgstr "Enable Sales Trxn"
+
+msgid "Enable Return Trxn"
+msgstr "Enable Return Trxn"
+
+msgid "Enable Damage Return"
+msgstr "Enable Damage Return"
+
+msgid "Enable Promotion Trxn"
+msgstr "Enable Promotion Trxn"
+
+msgid "Enable AR Collection"
+msgstr "Enable AR Collection"
+
+msgid "Auto Settle Collection"
+msgstr "Auto Settle Collection"
+
+msgid "Enable Invoice Copy"
+msgstr "Enable Invoice Copy"
+
+msgid "Enable"
+msgstr "Enable"
+
+msgid "Disable"
+msgstr "Disable"
+
+msgid "ALL AMOUNTS IN DIRHAMS"
+msgstr "ALL AMOUNTS IN DIRHAMS"
+
+msgid "Order Detail Entry"
+msgstr "Order Detail Entry"
+
+msgid "Enable Survey Audit"
+msgstr "Enable Survey Audit"
+
+msgid "Invoice Format"
+msgstr "Invoice Format"
+
+msgid "Sales"
+msgstr "Sales"
+
+msgid "Print Language"
+msgstr "Print Language"
+
+msgid "History Max Deliveries"
+msgstr "History Max Deliveries"
+
+msgid "Tax Option"
+msgstr "Tax Option"
+
+msgid "Lost Placement"
+msgstr "Lost Placement"
+
+msgid "Cust Tax Key 1"
+msgstr "Cust Tax Key 1"
+
+msgid "New Placement Deliveries"
+msgstr "New Placement Deliveries"
+
+msgid "Cust Tax Key 2"
+msgstr "Cust Tax Key 2"
+
+msgid "Invoice Copies"
+msgstr "Invoice Copies"
+
+msgid "Cust Tax Key 3"
+msgstr "Cust Tax Key 3"
+
+msgid "Tax ID"
+msgstr "Tax ID"
+
+msgid "City"
+msgstr "City"
+
+msgid "Enable Promo Edit Ords"
+msgstr "Enable Promo Edit Ords"
+
+msgid "State"
+msgstr "State"
+
+msgid "Enable Promo Edit Invs"
+msgstr "Enable Promo Edit Invs"
+
+msgid "Zip"
+msgstr "Zip"
+
+msgid "Add Addl Promo Ords"
+msgstr "Add Addl Promo Ords"
+
+msgid "Control Invoice Transactions"
+msgstr "Control Invoice Transactions"
+
+msgid "Enable Promo Invoice"
+msgstr "Enable Promo Invoice"
+
+msgid "RoundNetAmount"
+msgstr "RoundNetAmount"
+
+msgid "Enforce Promotion"
+msgstr "Enforce Promotion"
+
+msgid "Enable Draft Copy"
+msgstr "Enable Draft Copy"
+
+msgid "Forward Factor"
+msgstr "Forward Factor"
+
+msgid "Customer City"
+msgstr "Customer City"
+
+msgid "Customer State"
+msgstr "Customer State"
+
+msgid "Memo"
+msgstr "Memo"
+
+msgid "Memo1"
+msgstr "Memo1"
+
+msgid "Allow cash invoice if credit exceed"
+msgstr "Allow cash invoice if credit exceed"
+
+msgid "Memo2"
+msgstr "Memo2"
+
+msgid "Print Outlet Item Code"
+msgstr "Print Outlet Item Code"
+
+msgid "Route"
+msgstr "Route"
+
+msgid "Reports"
+msgstr "Reports"
+
+msgid "2nd Language"
+msgstr "2nd Language"
+
+msgid "Region"
+msgstr "Region"
+
+msgid "Van"
+msgstr "Van"
+
+msgid "Area Name"
+msgstr "Area Name"
+
+msgid "Sub Area Code"
+msgstr "Sub Area Code"
+
+msgid "Sub Area"
+msgstr "Sub Area"
+
+msgid "Customer"
+msgstr "Customer"
+
+msgid "Payment Mode"
+msgstr "Payment Mode"
+
+msgid "Salesman Name"
+msgstr "Salesman Name"
+
+msgid "Depot Route"
+msgstr "Depot Route"
+
+msgid "Business Type"
+msgstr "Business Type"
+
+msgid "PreSalesOrder"
+msgstr "PreSalesOrder"
+
+msgid "Allow Change Salesman"
+msgstr "Allow Change Salesman"
+
+msgid "Delivery Route"
+msgstr "Delivery Route"
+
+msgid "Security Password"
+msgstr "Security Password"
+
+msgid "Start of Day"
+msgstr "Start of Day"
+
+msgid "Promo Override"
+msgstr "Promo Override"
+
+msgid "Program Exit"
+msgstr "Program Exit"
+
+msgid "Settlement"
+msgstr "Settlement"
+
+msgid "Route Setup"
+msgstr "Route Setup"
+
+msgid "Print Doc at EOD"
+msgstr "Print Doc at EOD"
+
+msgid "Telecom Setup Change"
+msgstr "Telecom Setup Change"
+
+msgid "Load Adjust/Unload"
+msgstr "Load Adjust/Unload"
+
+msgid "New/Request/View Stock"
+msgstr "New/Request/View Stock"
+
+msgid "Load Supervisor"
+msgstr "Load Supervisor"
+
+msgid "Load Security Gaurd"
+msgstr "Load Security Gaurd"
+
+msgid "Unload Over Warning"
+msgstr "Unload Over Warning"
+
+msgid "Enable EOD Add Checks"
+msgstr "Enable EOD Add Checks"
+
+msgid "Inventory Value Print"
+msgstr "Inventory Value Print"
+
+msgid "Enable Delay Print with no Customer No."
+msgstr "Enable Delay Print with no Customer No."
+
+msgid "Prompt Odometer Input"
+msgstr "Prompt Odometer Input"
+
+msgid "Enable Add/Edit Customer"
+msgstr "Enable Add/Edit Customer"
+
+msgid "Inventory Case Input"
+msgstr "Inventory Case Input"
+
+msgid "Enable Start Day Date Time Edit"
+msgstr "Enable Start Day Date Time Edit"
+
+msgid "Load Req Report Format"
+msgstr "Load Req Report Format"
+
+msgid "Enforce Call Sequence"
+msgstr "Enforce Call Sequence"
+
+msgid "Auto Calculated Load In"
+msgstr "Auto Calculated Load In"
+
+msgid "Enable Customer Foc Limit"
+msgstr "Enable Customer Foc Limit"
+
+msgid "Require Load In"
+msgstr "Require Load In"
+
+msgid "Enable Customer Scan"
+msgstr "Enable Customer Scan"
+
+msgid "Load Sheet Report"
+msgstr "Load Sheet Report"
+
+msgid "Enable Load Out Adjustment"
+msgstr "Enable Load Out Adjustment"
+
+msgid "Amount Decimal Digits"
+msgstr "Amount Decimal Digits"
+
+msgid "Enable EOD Expenses"
+msgstr "Enable EOD Expenses"
+
+msgid "HHC Item Code Display"
+msgstr "HHC Item Code Display"
+
+msgid "Enable Cash Only Discount"
+msgstr "Enable Cash Only Discount"
+
+msgid "Routes Item Group"
+msgstr "Routes Item Group"
+
+msgid "Enable Post Void"
+msgstr "Enable Post Void"
+
+msgid "Print Alternate Item Code"
+msgstr "Print Alternate Item Code"
+
+msgid "Enable EOD Adj Checks"
+msgstr "Enable EOD Adj Checks"
+
+msgid "Item Desription Display"
+msgstr "Item Desription Display"
+
+msgid "Enable Load Transfer"
+msgstr "Enable Load Transfer"
+
+msgid "Enable Scanner Use"
+msgstr "Enable Scanner Use"
+
+msgid "Default"
+msgstr "Default"
+
+msgid "A/C Number"
+msgstr "A/C Number"
+
+msgid "Enable No Sale"
+msgstr "Enable No Sale"
+
+msgid "Inventory Varience"
+msgstr "Inventory Varience"
+
+msgid "Inventory Over Sell"
+msgstr "Inventory Over Sell"
+
+msgid "Enable Damage Trxn"
+msgstr "Enable Damage Trxn"
+
+msgid "Load Access After Unload"
+msgstr "Load Access After Unload"
+
+msgid "Use Sales Date Flag"
+msgstr "Use Sales Date Flag"
+
+msgid "Display Inv Summary"
+msgstr "Display Inv Summary"
+
+msgid "Include Load Request"
+msgstr "Include Load Request"
+
+msgid "Load Req Roll Up Orders"
+msgstr "Load Req Roll Up Orders"
+
+msgid "Depot Printer"
+msgstr "Depot Printer"
+
+msgid "Enable TCOM Lock"
+msgstr "Enable TCOM Lock"
+
+msgid "Lock Status"
+msgstr "Lock Status"
+
+msgid "Load Request Method"
+msgstr "Load Request Method"
+
+msgid "Route Printer"
+msgstr "Route Printer"
+
+msgid "Route Type"
+msgstr "Route Type"
+
+msgid "Enable Mid-Day TCom"
+msgstr "Enable Mid-Day TCom"
+
+msgid "Allow Cash Invoice On GC Customer"
+msgstr "Allow Cash Invoice On GC Customer"
+
+msgid "Allow Route Start Day in Back Office"
+msgstr "Allow Route Start Day in Back Office"
+
+msgid "Use Alternate Codes"
+msgstr "Use Alternate Codes"
+
+msgid "Edit Route Week Day"
+msgstr "Edit Route Week Day"
+
+msgid "CDC Validity Days"
+msgstr "CDC Validity Days"
+
+msgid "New Customer Seq"
+msgstr "New Customer Seq"
+
+msgid "Route Balance"
+msgstr "Route Balance"
+
+msgid "Vehicle No."
+msgstr "Vehicle No."
+
+msgid "Vehicle Odemeter"
+msgstr "Vehicle Odemeter"
+
+msgid "Defalut Delivery Days"
+msgstr "Defalut Delivery Days"
+
+msgid "Locked"
+msgstr "Locked"
+
+msgid "Unlocked"
+msgstr "Unlocked"
+
+msgid "Req. EOD Deposit Rpt."
+msgstr "Req. EOD Deposit Rpt."
+
+msgid "Req. EOD Sales Rpt."
+msgstr "Req. EOD Sales Rpt."
+
+msgid "Req. Route Review Rpt."
+msgstr "Req. Route Review Rpt."
+
+msgid "Req. EOD Rtn/Exch Rpt."
+msgstr "Req. EOD Rtn/Exch Rpt."
+
+msgid "Req. Route Activity Rpt."
+msgstr "Req. Route Activity Rpt."
+
+msgid "Req. EOD Placements Rpt."
+msgstr "Req. EOD Placements Rpt."
+
+msgid "Req. EOD Settlemet Rpt."
+msgstr "Req. EOD Settlemet Rpt."
+
+msgid "Req. EOD No Sale Rpt."
+msgstr "Req. EOD No Sale Rpt."
+
+msgid "Req. EOD Balance Rpt."
+msgstr "Req. EOD Balance Rpt."
+
+msgid "Req. EOD ROA Summary"
+msgstr "Req. EOD ROA Summary"
+
+msgid "Req. Non Dell Rpt."
+msgstr "Req. Non Dell Rpt."
+
+msgid "Req. EOD Execption Rpt."
+msgstr "Req. EOD Execption Rpt."
+
+msgid "Req. EOD Price Change Rpt."
+msgstr "Req. EOD Price Change Rpt."
+
+msgid "Req. EOD Non Scanned Rpt."
+msgstr "Req. EOD Non Scanned Rpt."
+
+msgid "Req. EOD OdomLog Rpt."
+msgstr "Req. EOD OdomLog Rpt."
+
+msgid "Country Name"
+msgstr "Country Name"
+
+msgid "ArbCountryName"
+msgstr "ArbCountryName"
+
+msgid "National Sales Manager"
+msgstr "National Sales Manager"
+
+msgid "Price Change Variance"
+msgstr "Price Change Variance"
+
+msgid "Country"
+msgstr "Country"
+
+msgid "Region Master"
+msgstr "Region Master"
+
+msgid "Region Code"
+msgstr "Region Code"
+
+msgid "Region Name"
+msgstr "Region Name"
+
+msgid "Region Manager"
+msgstr "Region Manager"
+
+msgid "ArbRegionName"
+msgstr "ArbRegionName"
+
+msgid "Branch/Depot"
+msgstr "Branch/Depot"
+
+msgid "Branch/Depot Prefix"
+msgstr "Branch/Depot Prefix"
+
+msgid "Branch/Depot Name"
+msgstr "Branch/Depot Name"
+
+msgid "Branch/Depot Name(Arabic)"
+msgstr "Branch/Depot Name(Arabic)"
+
+msgid "Branch/Depot Manager"
+msgstr "Branch/Depot Manager"
+
+msgid "Branch/Depot Code"
+msgstr "Branch/Depot Code"
+
+msgid "Van Master"
+msgstr "Van Master"
+
+msgid "Van Code"
+msgstr "Van Code"
+
+msgid "Van Reg. No"
+msgstr "Van Reg. No"
+
+msgid "Van Brand/Model"
+msgstr "Van Brand/Model"
+
+msgid "Van Type"
+msgstr "Van Type"
+
+msgid "Van Description"
+msgstr "Van Description"
+
+msgid "ArbVanDescription"
+msgstr "ArbVanDescription"
+
+msgid "LOAD"
+msgstr "LOAD"
+
+msgid "Load"
+msgstr "Load"
+
+msgid "NEW"
+msgstr "NEW"
+
+msgid "Template ID"
+msgstr "Template ID"
+
+msgid "Route Template"
+msgstr "Route Template"
+
+msgid "Item Descrption Display"
+msgstr "Item Descrption Display"
+
+msgid "Stock Icon"
+msgstr "Stock Icon"
+
+msgid "Load Req Method"
+msgstr "Load Req Method"
+
+msgid "Generate HHC Seq From Back Office"
+msgstr "Generate HHC Seq From Back Office"
+
+msgid "Allow Populate Load"
+msgstr "Allow Populate Load"
+
+msgid "Disable (Default)"
+msgstr "Disable (Default)"
+
+msgid "Enable (Include Load Request)"
+msgstr "Enable (Include Load Request)"
+
+msgid "User Types"
+msgstr "User Types"
+
+msgid "User Type"
+msgstr "User Type"
+
+msgid "User Master"
+msgstr "User Master"
+
+msgid "Confirm Password"
+msgstr "Confirm Password"
+
+msgid "User Access"
+msgstr "User Access"
+
+msgid "Enter Key"
+msgstr "Enter Key"
+
+msgid "Password Generation"
+msgstr "Password Generation"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "CANCEL"
+msgstr "CANCEL"
+
+msgid "Admin Password"
+msgstr "Admin Password"
+
+msgid "Load Archive Data"
+msgstr "Load Archive Data"
+
+msgid "Select Table"
+msgstr "Select Table"
+
+msgid "User"
+msgstr "User"
+
+msgid "From Date"
+msgstr "From Date"
+
+msgid "To Date"
+msgstr "To Date"
+
+msgid "Company Group"
+msgstr "Company Group"
+
+msgid "Major Category"
+msgstr "Major Category"
+
+msgid "Major Category Name"
+msgstr "Major Category Name"
+
+msgid "Major Category Name(Arabic)"
+msgstr "Major Category Name(Arabic)"
+
+msgid "Sub Major Category"
+msgstr "Sub Major Category"
+
+msgid "Name(2nd Language)"
+msgstr "Name(2nd Language)"
+
+msgid "Item Group"
+msgstr "Item Group"
+
+msgid "Item Group Code"
+msgstr "Item Group Code"
+
+msgid "Item Master"
+msgstr "Item Master"
+
+msgid "Sequence #"
+msgstr "Sequence #"
+
+msgid "Item Name"
+msgstr "Item Name"
+
+msgid "Warehouse Stock"
+msgstr "Warehouse Stock"
+
+msgid "Item Filter On HHC"
+msgstr "Item Filter On HHC"
+
+msgid "Data Entry Sq"
+msgstr "Data Entry Sq"
+
+msgid "Litre Per Case"
+msgstr "Litre Per Case"
+
+msgid "Litre Per Unit"
+msgstr "Litre Per Unit"
+
+msgid "Std Sales Case Price"
+msgstr "Std Sales Case Price"
+
+msgid "Std Sales PC Price"
+msgstr "Std Sales PC Price"
+
+msgid "Std Good Return Case Price"
+msgstr "Std Good Return Case Price"
+
+msgid "Std Good Return PC Price"
+msgstr "Std Good Return PC Price"
+
+msgid "Std Damage/Expiry Case Price"
+msgstr "Std Damage/Expiry Case Price"
+
+msgid "Std Damage/Expiry PC Price"
+msgstr "Std Damage/Expiry PC Price"
+
+msgid "Case Quantity"
+msgstr "Case Quantity"
+
+msgid "Capture Shelf Stock"
+msgstr "Capture Shelf Stock"
+
+msgid "TCAllowed"
+msgstr "TCAllowed"
+
+msgid "Allow Invoice Price Change"
+msgstr "Allow Invoice Price Change"
+
+msgid "Short Name(Arabic)"
+msgstr "Short Name(Arabic)"
+
+msgid "Outlet Product Codes"
+msgstr "Outlet Product Codes"
+
+msgid "Outlet Product Code"
+msgstr "Outlet Product Code"
+
+msgid "Group Name"
+msgstr "Group Name"
+
+msgid "Group Code"
+msgstr "Group Code"
+
+msgid "Customer Messages"
+msgstr "Customer Messages"
+
+msgid "Customer Message"
+msgstr "Customer Message"
+
+msgid "Message Description"
+msgstr "Message Description"
+
+msgid "Message Line1"
+msgstr "Message Line1"
+
+msgid "Message Line2"
+msgstr "Message Line2"
+
+msgid "Message Line3"
+msgstr "Message Line3"
+
+msgid "Message Line4"
+msgstr "Message Line4"
+
+msgid "Message Line1(Arabic)"
+msgstr "Message Line1(Arabic)"
+
+msgid "Message Line2(Arabic)"
+msgstr "Message Line2(Arabic)"
+
+msgid "Message Line3(Arabic)"
+msgstr "Message Line3(Arabic)"
+
+msgid "Message Line4(Arabic)"
+msgstr "Message Line4(Arabic)"
+
+msgid "Customer Group"
+msgstr "Customer Group"
+
+msgid "Number of Open Invoices for Bill to Bill"
+msgstr "Number of Open Invoices for Bill to Bill"
+
+msgid "Customer Template"
+msgstr "Customer Template"
+
+msgid "Customer Location"
+msgstr "Customer Location"
+
+msgid "Enable AR Return"
+msgstr "Enable AR Return"
+
+msgid "Enable Returns Trxn"
+msgstr "Enable Returns Trxn"
+
+msgid "Enable Promotions Trxn"
+msgstr "Enable Promotions Trxn"
+
+msgid "Enable FOC Printing"
+msgstr "Enable FOC Printing"
+
+msgid "OutletSub Types"
+msgstr "OutletSub Types"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Quantum No."
+msgstr "Quantum No."
+
+msgid "Allow Edit Promotion"
+msgstr "Allow Edit Promotion"
+
+msgid "Force POS Check"
+msgstr "Force POS Check"
+
+msgid "Bad Credit Customer"
+msgstr "Bad Credit Customer"
+
+msgid "Allow cash invoice if credit exceeds"
+msgstr "Allow cash invoice if credit exceeds"
+
+msgid "Salesman Messages"
+msgstr "Salesman Messages"
+
+msgid "Expiry Management"
+msgstr "Expiry Management"
+
+msgid "Equally"
+msgstr "Equally"
+
+msgid "APPLY"
+msgstr "APPLY"
+
+msgid "CusromerCode"
+msgstr "CusromerCode"
+
+msgid "CusromerName"
+msgstr "CusromerName"
+
+msgid "NetSales"
+msgstr "NetSales"
+
+msgid "Expiry"
+msgstr "Expiry"
+
+msgid "Document No"
+msgstr "Document No"
+
+msgid "Invoice Amount"
+msgstr "Invoice Amount"
+
+msgid "Amount Paid"
+msgstr "Amount Paid"
+
+msgid "Invoice Balance"
+msgstr "Invoice Balance"
+
+msgid "Select Date"
+msgstr "Select Date"
+
+msgid "First in First Out"
+msgstr "First in First Out"
+
+msgid "Doc Date"
+msgstr "Doc Date"
+
+msgid "GC Collection"
+msgstr "GC Collection"
+
+msgid "HO Collection"
+msgstr "HO Collection"
+
+msgid "Opening Balance"
+msgstr "Opening Balance"
+
+msgid "Invoice Number"
+msgstr "Invoice Number"
+
+msgid "Amount"
+msgstr "Amount"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Transaction Type"
+msgstr "Transaction Type"
+
+msgid "Description 1"
+msgstr "Description 1"
+
+msgid "Description 2"
+msgstr "Description 2"
+
+msgid "Customer Debit Note"
+msgstr "Customer Debit Note"
+
+msgid "Route Debit Note"
+msgstr "Route Debit Note"
+
+msgid "Document Number"
+msgstr "Document Number"
+
+msgid "Customer Credit Note"
+msgstr "Customer Credit Note"
+
+msgid "Customer Credit Note Details"
+msgstr "Customer Credit Note Details"
+
+msgid "Route Credit Note"
+msgstr "Route Credit Note"
+
+msgid "Cashier Receipt Overview"
+msgstr "Cashier Receipt Overview"
+
+msgid "Cashier Receipt Details"
+msgstr "Cashier Receipt Details"
+
+msgid "Populate"
+msgstr "Populate"
+
+msgid "Paid"
+msgstr "Paid"
+
+msgid "Inv. Amt"
+msgstr "Inv. Amt"
+
+msgid "Rec No."
+msgstr "Rec No."
+
+msgid "Trxn No."
+msgstr "Trxn No."
+
+msgid "Trxn Date"
+msgstr "Trxn Date"
+
+msgid "Balance"
+msgstr "Balance"
+
+msgid "Bank"
+msgstr "Bank"
+
+msgid "Slip No"
+msgstr "Slip No"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Check Amount"
+msgstr "Check Amount"
+
+msgid "Receipt Amount"
+msgstr "Receipt Amount"
+
+msgid "PDC Cheque"
+msgstr "PDC Cheque"
+
+msgid "PDC Cheque Details"
+msgstr "PDC Cheque Details"
+
+msgid "All"
+msgstr "All"
+
+msgid "Group description"
+msgstr "Group description"
+
+msgid "Qualification Group"
+msgstr "Qualification Group"
+
+msgid "Group Number"
+msgstr "Group Number"
+
+msgid "Item Quantity"
+msgstr "Item Quantity"
+
+msgid "Assignment Group"
+msgstr "Assignment Group"
+
+msgid "Promotion Type"
+msgstr "Promotion Type"
+
+msgid "Customer Promotion Plan"
+msgstr "Customer Promotion Plan"
+
+msgid "Promo Plan"
+msgstr "Promo Plan"
+
+msgid "No record to display."
+msgstr "No record to display."
+
+msgid "Survey Description"
+msgstr "Survey Description"
+
+# Merchandizing
+msgid "Merchandizing"
+msgstr "Merchandizing"
+
+msgid "Servay Key"
+msgstr "Servay Key"
+
+msgid "Servey Index"
+msgstr "Servey Index"
+
+msgid "Sequence No"
+msgstr "Sequence No"
+
+msgid "Servey Mendatory"
+msgstr "Servey Mendatory"
+
+msgid "Servey Desciption"
+msgstr "Servey Desciption"
+
+msgid "Survay Description(Arabic)"
+msgstr "Survay Description(Arabic)"
+
+msgid "Fill By"
+msgstr "Fill By"
+
+msgid "Survey"
+msgstr "Survey"
+
+msgid "Customer Group Promotion Link"
+msgstr "Customer Group Promotion Link"
+
+msgid "Add Survey"
+msgstr "Add Survey"
+
+msgid "Depot"
+msgstr "Depot"
+
+msgid "Link Survey"
+msgstr "Link Survey"
+
+msgid "Survey Control"
+msgstr "Survey Control"
+
+msgid "Servey No"
+msgstr "Servey No"
+
+msgid "Description(Arabic)"
+msgstr "Description(Arabic)"
+
+msgid "Survey Definition"
+msgstr "Survey Definition"
+
+msgid "Survey Prompt"
+msgstr "Survey Prompt"
+
+msgid "Line Index"
+msgstr "Line Index"
+
+msgid "Record Type"
+msgstr "Record Type"
+
+msgid "Survey Prompt(Arabic)"
+msgstr "Survey Prompt(Arabic)"
+
+msgid "Response Length"
+msgstr "Response Length"
+
+msgid "CustomerPricingPlan Key"
+msgstr "CustomerPricingPlan Key"
+
+msgid "CustomerPricing Plan"
+msgstr "CustomerPricing Plan"
+
+msgid "Response Decimal Pos"
+msgstr "Response Decimal Pos"
+
+msgid "Lookup Type"
+msgstr "Lookup Type"
+
+msgid "Lookup Index"
+msgstr "Lookup Index"
+
+msgid "Message Type"
+msgstr "Message Type"
+
+msgid "Survey Promt(Arabic)"
+msgstr "Survey Promt(Arabic)"
+
+msgid "Survey Promt"
+msgstr "Survey Promt"
+
+msgid "Detail Key"
+msgstr "Detail Key"
+
+msgid "Survey Lookup"
+msgstr "Survey Lookup"
+
+msgid "Lookup Description"
+msgstr "Lookup Description"
+
+msgid "Lookup Index Detail"
+msgstr "Lookup Index Detail"
+
+msgid "Item Price"
+msgstr "Item Price"
+
+msgid "Pricing Control Header"
+msgstr "Pricing Control Header"
+
+msgid "%on Sales Piece Price"
+msgstr "%on Sales Piece Price"
+
+msgid "UPC"
+msgstr "UPC"
+
+msgid "%on Return Piece Price"
+msgstr "%on Return Piece Price"
+
+msgid "Price Tax 1"
+msgstr "Price Tax 1"
+
+msgid "Active-Non Active Items"
+msgstr "Active-Non Active Items"
+
+msgid "Active Items"
+msgstr "Active Items"
+
+msgid "Non Active Items"
+msgstr "Non Active Items"
+
+msgid "Start of day"
+msgstr "Start of day"
+
+msgid "Daily Salesman Load"
+msgstr "Daily Salesman Load"
+
+msgid "Cases"
+msgstr "Cases"
+
+msgid "Pieces"
+msgstr "Pieces"
+
+msgid "Transfer Out"
+msgstr "Transfer Out"
+
+msgid "Unload Return Stock"
+msgstr "Unload Return Stock"
+
+msgid "Transation Date"
+msgstr "Transation Date"
+
+msgid "Add Item"
+msgstr "Add Item"
+
+msgid "Filter By"
+msgstr "Filter By"
+
+msgid "Invoice"
+msgstr "Invoice"
+
+msgid "Invoice No"
+msgstr "Invoice No"
+
+msgid "moveone"
+msgstr ">"
+
+msgid "moveall"
+msgstr ">>"
+
+msgid "removeone"
+msgstr "<"
+
+msgid "removeall"
+msgstr "<<"
+
+msgid "Do Login"
+msgstr "Please Login."
+
+msgid "Missing Field"
+msgstr "Field(s) should not be blank."
+
+msgid "Duplicate entry"
+msgstr "Duplicate entry"
+
+msgid "No Record(s) Found"
+msgstr "No Record(s) Found."
+

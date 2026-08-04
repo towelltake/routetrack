@@ -1,0 +1,156 @@
+<?php
+/**
+* @name       viewunloadret.phtml
+* @since      26 jan, 2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+*
+*/
+
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<script>
+	$(document).ready(function() {
+		loaddata_popup('<?php echo $this->itemgrid; ?>/key1/5','item-grid');
+		
+		$('#ddltrantyppe').change(function() {
+			var val = this.value;
+			loaddata_popup('<?php echo $this->itemgrid; ?>/key1/'+val,'item-grid');
+		})
+	})
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12 margin_bottom_10">
+<div class="box" id="hhctransaction_unload_viewunloadret">
+<form id="frmdet" name="frmdet" class="validate" novalidate action="" method="post">
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_10"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_hhctransaction.png">
+        <h3><?php echo $this->translate->_('Unload Inventory')?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+	    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"unload","action"=>"unloadret"), "default", true);?>')" >
+	</div>
+	<div class="_10 save_btn">&nbsp;</div>
+    </div>
+</div>
+<div id="nav_sub" class="ie_nav_sub" >
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"unload","action"=>"unloadret"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="javascript:;" class="admin_active"><?php echo $this->details;?></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+<div class="content with-actions ie_grid min_height_10">
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+	<div class="_100">
+	    <div class="clear"></div>
+	</div>
+
+	<div class="_100">
+	    <div class="_5">&nbsp;</div>
+	    <label class="_15 label_text_align"><?php echo $this->translate->_('Transaction Date').''.$this->colan;?></label>
+	    <div class="_15"><?php echo $this->formdata['transactiondate'];?></div>
+	    <label class="_15 label_text_align"><?php echo $this->translate->_('Transaction Time').''.$this->colan;?></label>
+	    <div class="_15"><?php echo $this->formdata['transactiontime'];?></div>
+	    <label class="_15 label_text_align"><?php echo $this->translate->_('Route Start Date').''.$this->colan;?></label>
+	    <div class="_15"><?php echo $this->formdata['routestartdate'];?></div>
+	    <div class="_5">&nbsp;</div>
+	</div>
+	<div class="_100 margin_top_10 ">
+	    <label class="_25_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Document No.').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" readonly="readonly" id="txtpromo_key" name="txtpromo_key" value="<?php echo $this->formdata['documentnumber'];?>">
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Document Valid').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_left_right_1 margin_right_1">
+		<input type="text" readonly="readonly" id="txtdoc_valid" name="txtdoc_valid" value="<?php echo $this->formdata['voidflag'];?>">
+	    </div>
+	</div>
+	<div class="_100">
+	    <label class="_25_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Route').''.$this->required;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<select id="ddlroute" name="ddlroute" class="required" disabled="disabled">
+		    <option value="">--- Select ---</option>
+		    <?php
+			for($i=0;$i<count($this->route_info);$i++)
+			{
+		    ?>
+			    <option <?php echo ($this->formdata['routecode'] == $this->route_info[$i]['id']) ? 'selected' : '' ;?> value="<?php echo $this->route_info[$i]['id'];?>"><?php echo $this->route_info[$i]['val'];?></option>
+		    <?php } ?>
+		</select>
+	    </div>
+	    <label class="_15 margin_top_10 label_text_align">
+		<?php echo $this->translate->_('Acc Period').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_left_right_1">
+		<input type="text" class="margin_top_5" readonly="readonly" id="txtacc_period" name="txtacc_period" value="<?php echo $this->formdata['accperiod'];?>">
+	    </div>
+	</div>
+	<div class="_100 margin_bottom_10">
+	    <label class="_25_1 margin_top_12 label_text_align">
+		<?php echo $this->translate->_('Salesman').''.$this->colan;?>
+	    </label>
+	    <div class="_25_1 margin_right_1">
+		<input type="text" id="salesman" name="salesman" value="<?php echo $this->formdata['salesmanname1'];?>"  class="margin_top_5">
+	    </div>
+	</div>
+	<fieldset class="fieldset_effect">
+	    <legend class="ttl" ><?php echo $this->translate->_('Unload Return Stock');?></legend>
+	    <hr id="ie_hr" >
+			<div class="_100 margin_bottom_10">
+				<label class="_25_1 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Transaction Type').''.$this->colan;?>
+				</label>
+				<div class="_25_1 margin_right_1">
+					<select id="ddltrantyppe" name="ddltrantyppe" class="required">
+						<option value="5"><?php echo $this->translate->_('Ending/ Closing Stock');?></option>
+						<option value="11"><?php echo $this->translate->_('Truck Damage');?></option>
+						<option value="14"><?php echo $this->translate->_('Fresh Unload');?></option>												
+					</select>
+				</div>
+			</div>
+		<div id="loader"></div>
+	     <div class="_100" id="item-grid">
+		<?php //echo $this->partial('datagrid.phtml', $this); ?>
+	    </div>
+	</fieldset>
+</div>
+</form>
+</div> <!-- End of .box -->
+</div>
+<script type="text/javascript">
+$(window).load(function() {
+    $(function() {
+	$( "#txtdate" ).datepicker({
+	    dateFormat: 'dd-mm-yy'
+	});
+    });
+});
+</script>

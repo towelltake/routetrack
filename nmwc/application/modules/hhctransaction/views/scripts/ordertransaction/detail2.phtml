@@ -1,0 +1,105 @@
+<style type="text/css">
+	#orderitem1 input { padding:6px !important;}
+</style>
+<div id="hhctransaction_ordertransaction_salesorderadd_detail2" class="_100">
+	<form id="frmorderitem" name="frmorderitem" class="validate" novalidate action="" method="post">
+	<div class="content with-actions" id="hhctransaction_ordertransaction_order_item">	
+		<input type="hidden" name="hdndata" value="add_order_item" />
+		<div id="settings_value" ></div>
+		<div class="_100 margin_bottom_10">
+			<label class="_15_2 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Customer Name').$this->colan;?>
+			</label>
+			<label class="_40 margin_top_12 margin_left_2">
+				<div id="detail_2_customer"></div>
+			</label>			
+		 </div>
+		<fieldset id="orderitem1">
+			<legend class="ttl" ><?php echo $this->translate->_('Add Item');?></legend>
+			<div class="_100">
+				<label class="_15_2 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Item').$this->required;?>
+				</label>
+				<div class="_40 margin_left_1 margin_right_1">
+					<select id="ddlitem" name="ddlitem" class="required"   >
+						<option value="">--- Select ---</option>					
+					</select>
+				</div>
+				<label class="_20 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('UPC').''.$this->required;?>
+				</label>
+				<div class="_25 margin_top_3" >
+					<input type="text" id="txt_upc" name="txt_upc" value=""  class="invoice_qty_width_150  amount_text_align"  readonly="readonly">
+				</div>
+		   </div>
+			<div class="_100 ">
+				<label class="_15_2 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Order Qty').' '.$this->colan;?>
+				</label>
+				<div class="_40 margin_left_1">
+				   <input type="text" id="txt_sales_case" name="txt_sales_case" value=""  onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align">
+				   <input type="text" id="txt_sales_pieces" name="txt_sales_pieces" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" value=""  class="invoice_qty_width_67 invoice_margin_right_5 amount_text_align">
+				   <input type="text" id="txt_sale_price" name="txt_sale_price" value=""  onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align" readonly="readonly">
+				   <input type="text" id="txt_sales_pcs_price" name="txt_sales_pcs_price" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');"  class="invoice_qty_width_67 invoice_margin_right_5 amount_text_align" readonly="readonly"> 				
+				   <input type="hidden" id="txt_costcaseprice" name="txt_costcaseprice" value=""   readonly="readonly">
+				   <input type="hidden" id="txt_defaultcostprice" name="txt_defaultcostprice" value=""  readonly="readonly">
+				</div>
+				<label class="_20 margin_left_1 margin_right_1">&nbsp;</label>
+				<div class="_20 margin_right_1" >&nbsp;</div>
+			</div>
+			<div class="_100 ">
+				<label class="_15_2 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Free Qty').' '.$this->colan;?>
+				</label>
+				<div class="_40 margin_left_1">
+				   <input type="text" id="txt_freegood_case" name="txt_freegood_case" value=""  onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align">
+				   <input type="text" id="txt_freegood_pieces" name="txt_freegood_pieces" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align">				
+				</div>			
+			</div>
+			<div class="_100 ">
+				<label class="_15_2 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Return Qty').' '.$this->colan;?>
+				</label>
+				<div class="_40 margin_left_1">
+					<input type="text" id="txt_return_cases" name="txt_return_cases" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');"  class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align">
+					<input type="text" id="txt_return_pieces" name="txt_return_pieces" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');"  class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align">
+					<input type="text" id="txt_freegood_price" name="txt_freegood_price" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" class="invoice_qty_width_67 invoice_margin_right_5 amount_text_align" readonly="readonly">
+					<input type="text" id="txt_freegood_pcs_price" name="txt_freegood_pcs_price" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" value=""  class="invoice_qty_width_67  invoice_margin_right_5 amount_text_align" readonly="readonly"> 	
+				</div>			
+			</div>			
+			<div class="_100 margin_bottom_10 ">
+				<label class="_15_2 margin_top_12 label_text_align">
+					<?php echo $this->translate->_('Damage Qty').' '.$this->colan;?>
+				</label>
+				<div class="_40 margin_left_1">
+					<input type="text" id="txt_damage_cases" name="txt_damage_cases" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');"  class="invoice_qty_width_67 invoice_margin_right_5  amount_text_align">
+					<input type="text" id="txt_damage_pieces" name="txt_damage_pieces" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');"  class="invoice_qty_width_67 invoice_margin_right_5 amount_text_align">
+					<input type="text" id="txt_return_price" name="txt_return_price" value="" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" class="invoice_qty_width_67 invoice_margin_right_5 amount_text_align" readonly="readonly">
+					<input type="text" id="txt_return_pcs_price" name="txt_return_pcs_price" onkeypress="this.value = this.value.replace(/[^0-9\.]/g,'');"  onblur="this.value = this.value.replace(/[^0-9\.]/g,'');" value=""  class="invoice_qty_width_67 invoice_margin_right_5 amount_text_align" readonly="readonly">
+				</div>
+				<div class="_20 margin_top_10 label_text_align">&nbsp;</div>
+				<div class="_25 margin_right_1" >
+					<input type="button" name="btn_save_invoice_item" id="btn_save_invoice_item" value="Add" />
+				</div>
+			</div>
+		</fieldset>
+			<div class="_100 hhctransaction_invoiceadd_itemgrid_data" id="divid" style="display:none;" >
+				<div id="invoice_item_grid" >			  
+					<div class="clear"></div>
+					<div id="loader"></div>
+					<div class="_100" id="item-grid" ></div>
+				</div>
+			</div>		  
+			<div class="_100 margin_top_5">
+				<input type="button" name="btn_next_order_item" class="float_right invoice_margin_right_5" id="btn_next_order_item" value="Next" />
+				<input type="button" name="btn_previous_order_item" class="float_right invoice_margin_right_5" id="btn_previous_order_item" value="Previous" />		  
+		   </div>
+			<div class="_100 margin_top_5">&nbsp;</div>			
+	</div>
+	</form>
+</div>
+<script>
+    $("#hhctransaction_ordertransaction_salesorderadd_detail2").keypress( function(e) {
+        if( e.keyCode == 13 ) return false;
+    }); 
+</script>

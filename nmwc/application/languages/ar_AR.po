@@ -1,0 +1,3890 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: hiren <hiren.d@elantechnologies.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "CSS"
+msgstr "ar_"
+
+msgid "Hello"
+msgstr "مرحبا"
+
+msgid "How are you ?"
+msgstr "كيف حالك؟"
+
+msgid "Colan"
+msgstr "<span class='label_colan'>&nbsp;:</span>"
+
+msgid "Required"
+msgstr "<span class='label_colan'>&nbsp;<font color='red'>*</font>&nbsp;:</span>"
+
+msgid "Login"
+msgstr "دخول"
+
+msgid "Mirnah"
+msgstr "مرحبا"
+
+msgid "Username"
+msgstr "اسم المستخدم"
+
+msgid "Password"
+msgstr "كلمة السر"
+
+msgid "Password Remember"
+msgstr "تذكرني على هذا الكمبيوتر"
+
+msgid "Required Field"
+msgstr "هذا الحقل مطلوب"
+
+msgid "Missed One Field"
+msgstr "فاتك 1 الميدان. وقد تم تسليط الضوء عليه."
+
+msgid "You Missed"
+msgstr "فاتك"
+
+msgid "Fields. They have been highlighted."
+msgstr "الحقول. وقد تم تسليط الضوء عليها."
+
+msgid "Dashboard"
+msgstr "لوحة القيادة"
+
+msgid "Settings"
+msgstr "إعدادات"
+
+msgid "Basic"
+msgstr "الأساسية"
+
+msgid "Company"
+msgstr "شركة"
+
+msgid "Currency"
+msgstr "عملة"
+
+msgid "Cash Description"
+msgstr "وصف النقدية"
+
+msgid "Code"
+msgstr "رمز"
+
+msgid "Description"
+msgstr "وصف"
+
+msgid "Description_Arb"
+msgstr "الوصف )عربي)"
+
+msgid "Reset"
+msgstr "إعادة تعيين"
+
+msgid "Submit"
+msgstr "يقدم"
+
+msgid "Record Success"
+msgstr "المحفوظة سجل بنجاح"
+
+msgid "New Record"
+msgstr "المحفوظة سجل بنجاح"
+
+msgid "Update Record"
+msgstr "سجل تحديثها بنجاح."
+
+msgid "Required Data"
+msgstr "من فضلك ادخل كل المعلومات المطلوبة."
+
+msgid "Delete Record"
+msgstr "تسجيل حذف بنجاح."
+
+msgid "Duplicate Record"
+msgstr "سجل موجود مسبقا"
+
+msgid "Record Already In use"
+msgstr "هذه الإجابات بالفعل المستخدمة في صفحات أخرى."
+
+msgid "Add"
+msgstr "إضافة"
+
+msgid "Back"
+msgstr "العودة إلى قائمة"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "moveone"
+msgstr "<"
+
+msgid "moveall"
+msgstr "<<"
+
+msgid "removeone"
+msgstr ">"
+
+msgid "removeall"
+msgstr ">>"
+
+msgid "Alternate Code"
+msgstr "البديل مدونة"
+
+msgid "Name"
+msgstr "اسم"
+
+msgid "ArbName"
+msgstr "الاسم العربي"
+
+msgid "Type"
+msgstr "نوع"
+
+msgid "A/C Number"
+msgstr "البديل مدونة"
+
+msgid "Status"
+msgstr "حالة"
+
+msgid "Active"
+msgstr "نشط"
+
+msgid "Inactive"
+msgstr "غير فعال"
+
+msgid "Good Return Reasons"
+msgstr "أسباب عائد جيد"
+
+msgid "Bad Return Reasons"
+msgstr "أسباب العودة سيئة"
+
+msgid "FOC Reasons"
+msgstr "أسباب FOC"
+
+msgid "Currency Code"
+msgstr "عملة رمز"
+
+msgid "Currency Name"
+msgstr "اسم العملة"
+
+msgid "ArbCurrency Name"
+msgstr "العربى اسم العملة"
+
+msgid "Start Date"
+msgstr "تاريخ البدء"
+
+msgid "End Date"
+msgstr "نهاية التاريخ"
+
+msgid "Currency Detail Code"
+msgstr "عملة تفصيل قانون"
+
+msgid "Exchange Rate"
+msgstr "سعر الصرف"
+
+msgid "Detail Section"
+msgstr "التفاصيل القسم"
+
+msgid "Details"
+msgstr "تفاصيل"
+
+msgid "Sub Major Category"
+msgstr "الرئيسية الفئة الفرعية"
+
+msgid "Arabic"
+msgstr "العربية"
+
+msgid "Overview"
+msgstr "نظرة عامة"
+
+msgid "Item Group"
+msgstr "البند المجموعة"
+
+msgid "Sequence #"
+msgstr "تسلسل #"
+
+msgid "Alphanumeric Code"
+msgstr "أبجدية مدونة"
+
+msgid "Warehouse Stock"
+msgstr "المخزونات في المستودعات،"
+
+msgid "Item Filter On HHC"
+msgstr "تصفية البند على HHC"
+
+msgid "Item Name"
+msgstr "البند الاسم"
+
+msgid "Data Entry Sq"
+msgstr "إدخال البيانات ميدان"
+
+msgid "Litre Per Unit"
+msgstr "لتر لكل وحدة"
+
+msgid "Litre Per Case"
+msgstr "لتر لكل حالة"
+
+msgid "Std Sales PC Price"
+msgstr "السعر STD مبيعات أجهزة الكمبيوتر"
+
+msgid "Std Sales Case Price"
+msgstr "السعر STD المبيعات حالة"
+
+msgid "Std Good Return PC Price"
+msgstr "STD PC عائد جيد السعر"
+
+msgid "Std Good Return Sales Price"
+msgstr "STD جيد السعر العودة المبيعات"
+
+msgid "Std Damage/Expiry PC Price"
+msgstr "السعر STD PC الضرر / انتهاء العرض"
+
+msgid "Std Damage/Expiry Case Price"
+msgstr "الضرر الأمراض المنقولة جنسيا / انتهاء العرض السعر القضية"
+
+msgid "Case Quantity"
+msgstr "الحالة الكمية"
+
+msgid "TCAllowed"
+msgstr ""
+
+msgid "Capture Shelf Stock"
+msgstr "القبض على أسهم الجرف"
+
+msgid "Allow Invoice Price Change"
+msgstr "السماح للفاتورة تغير السعر"
+
+msgid "Short Name(Arabic)"
+msgstr "باختصار اسم )عربي)"
+
+msgid "Name(Arabic)"
+msgstr "اسم )عربي)"
+
+msgid "Print Sequence Cust"
+msgstr "طباعة الزبون تسلسل"
+
+msgid "Print Sequence Route"
+msgstr "طباعة طريق التسلسل"
+
+msgid "Fast Moving Items"
+msgstr "بسرعة نقل عناصر"
+
+msgid "UPC Case Code"
+msgstr "UPC رمز القضية"
+
+msgid "UPC Unit Code"
+msgstr "اتحاد الوطنيين الكونغوليين وحدة القانون"
+
+msgid "Item Tax Key 1"
+msgstr "البند مفتاح ضريبة 1"
+
+msgid "Item Tax Key 2"
+msgstr "لبند مفتاح ضريبة 2"
+
+msgid "Item Tax Key 3"
+msgstr "لبند مفتاح ضريبة 3"
+
+msgid "Item Type"
+msgstr "نوع البند"
+
+msgid "Item Package"
+msgstr "البند حزمة"
+
+msgid "Allow Batch Entry"
+msgstr "السماح بدخول دفعة"
+
+msgid "Memo 1"
+msgstr "مذكرة 1"
+
+msgid "Memo 2"
+msgstr "مذكرة 2"
+
+msgid "Code Day Format"
+msgstr "شفرة اليوم تنسيق"
+
+msgid "Batch"
+msgstr "دفعة"
+
+msgid "Password Generator"
+msgstr "كلمة السر للمولدات"
+
+msgid "Disable Balance Update While Posting"
+msgstr "تعطيل التحديث الرصيد بينما المشاركة"
+
+msgid "Suggested Sales"
+msgstr "واقترح المبيعات"
+
+msgid "Depot Damage Expiry"
+msgstr "مستودع الضرر انتهاء العرض"
+
+msgid "Save New Customer With default Route Sequence(Generic Plans only)"
+msgstr "حفظ عميل جديد مع تسلسل الطريق الافتراضي )خطط عام فقط)"
+
+msgid "Fixed Qualification/Fixed Assignment"
+msgstr "ثابت المؤهل / تعيين ثابت"
+
+msgid "Enter Target By Hierarchy"
+msgstr "دخول الهدف حسب التسلسل الهرمي"
+
+msgid "Authorized Item Group"
+msgstr "أذن البند المجموعة"
+
+msgid "Use Alternate Code"
+msgstr "استخدم الرمز البديل"
+
+msgid "PDC Amount From CI"
+msgstr "PDC المبلغ من CI"
+
+msgid "PDC Amount From ARD"
+msgstr "PDC المبلغ من ARD"
+
+msgid "Dmg/Exp Management"
+msgstr "شركة دي ام جي / إدارة إكسب"
+
+msgid "Download Other Route Pending Invs"
+msgstr "تحميل Invs طريق أخرى معلقة"
+
+msgid "Ranged Qualification on Fixed Assignment"
+msgstr "وتراوحت المؤهل على تعيين ثابت"
+
+msgid "Validate Prepare File Process(Hermes Users Only)"
+msgstr "التحقق من صحة عملية إعداد ملف )عدد الأعضاء هيرميس فقط)"
+
+msgid "Prepare File With Salesman Load"
+msgstr "إعداد ملف مع تحميل بائع"
+
+msgid "Round Return Amount While Posting"
+msgstr "جولة المبلغ العائد بينما المشاركة"
+
+msgid "Discount Key"
+msgstr "خصم مفتاح"
+
+msgid "Distribution Key"
+msgstr "توزيع مفتاح"
+
+msgid "Month Close"
+msgstr "إغلاق شهر"
+
+msgid "Add New Items To Route Item Grouping"
+msgstr "إضافة عناصر جديدة إلى التجمع البند الطريق"
+
+msgid "Download Multiple Load"
+msgstr "تحميل تحميل متعددة"
+
+msgid "Enable Bluetooth Printer"
+msgstr "تمكن الطابعة بلوتوث"
+
+msgid "Outlet Product Code By Customer"
+msgstr "منفذ رمز المنتج من قبل العملاء"
+
+msgid "Use Good Return History Price"
+msgstr "استخدام جيد السعر التاريخ العودة"
+
+msgid "Display Company and Region"
+msgstr "عرض الشركة والمنطقة"
+
+msgid "Upload OTA Price Change"
+msgstr "تحميل OTA تغير السعر"
+
+msgid "Additional Barcode(Item)"
+msgstr "إضافية الباركود )البند)"
+
+msgid "New Item To Pricing Table(Only Advance Price)"
+msgstr "عنصر جديد إلى جدول التسعير )السعر فقط المقدمة)"
+
+msgid "To Display KG"
+msgstr "لعرض كغ"
+
+msgid "Use Additional Contact Details for HHC"
+msgstr "استخدام تفاصيل الاتصال الإضافية ل HHC"
+
+msgid "Update GPS Coordinates"
+msgstr "تحديث الإحداثيات"
+
+msgid "Post Void Invoices"
+msgstr "إضافة الفواتير الفراغ"
+
+msgid "Insert A/R With Respect To Old Salesman"
+msgstr "إدراج A / R وفيما يتعلق بائع قديم"
+
+msgid "Use Alternate Code For Pending Invoices"
+msgstr "استخدم الرمز البديل عن الفواتير المعلقة"
+
+msgid "Pricing Key"
+msgstr "التسعير مفتاح"
+
+msgid "Standard"
+msgstr "معيار"
+
+msgid "Advanced"
+msgstr "متقدم"
+
+msgid "Advance"
+msgstr "تقدم"
+
+msgid "Promotion Key"
+msgstr "تعزيز مفتاح"
+
+msgid "Salesman Lead"
+msgstr "بائع الرصاص"
+
+msgid "Convert Load Request to Salesman Load"
+msgstr "تحويل تحميل طلب لتحميل بائع"
+
+msgid "Populated Salesman Load from Previous Day"
+msgstr "المأهولة تحميل بائع من اليوم السابق"
+
+msgid "Generate Load From SalesOrder"
+msgstr "توليد الحمولة من ترتيب المبيعات"
+
+msgid "Load From ERP"
+msgstr "تحميل من تخطيط موارد المؤسسات"
+
+msgid "Application Model"
+msgstr "تطبيق نموذج"
+
+msgid "Central"
+msgstr "مركزي"
+
+msgid "Distributed"
+msgstr "وزعت"
+
+msgid "Accounts"
+msgstr "حسابات"
+
+msgid "PDC Clearance With CashierReceipt"
+msgstr "PDC التخليص مع استلام الصراف"
+
+msgid "PDC Clearance WithOut CashierReceipt"
+msgstr "PDC التخليص بدون تلقي الصراف"
+
+msgid "Depot Inventory"
+msgstr "مستودع الجرد"
+
+msgid "Allowed Radius"
+msgstr "سمح الشعاع"
+
+msgid "Multi-Load"
+msgstr "متعددة تحميل"
+
+msgid "Enforce Promotion"
+msgstr "فرض دعائية"
+
+msgid "GPS Data"
+msgstr "بيانات نظام تحديد المواقع"
+
+msgid "Fixed Rent"
+msgstr "ثابت للإيجار"
+
+msgid "Sales Rebate"
+msgstr "مبيعات الخصم"
+
+msgid "Define Credit Limit for each Journey Route"
+msgstr "تحديد الحد الائتماني لكل رحلة الطريق"
+
+msgid "Link Street to Customer"
+msgstr "شارع تصل إلى العملاء"
+
+msgid "Use Grace Period(Credit Limit)"
+msgstr "استخدام فترة السماح )الحد الائتماني)"
+
+msgid "Code Generation"
+msgstr "رمز الجيل"
+
+msgid "With Route Code"
+msgstr "مع رمز الطريق"
+
+msgid "With Depot Code"
+msgstr "مع مستودع رمز"
+
+msgid "With Route and Depot Code"
+msgstr "مع الطريق وقانون مستودع"
+
+msgid "Profitability Reports"
+msgstr "تقارير الربحية"
+
+msgid "Add Cost Price as"
+msgstr "إضافة سعر التكلفة كما"
+
+msgid "Conversion Rate"
+msgstr "معدل التحويل"
+
+msgid "Currency Symbol"
+msgstr "عملة رمز"
+
+msgid "Arb Currency Symbol"
+msgstr "ARB العملة الرمز"
+
+msgid "Decimal Places"
+msgstr "عشري الأماكن"
+
+msgid "Restrict Prepare File for Same Day"
+msgstr "تقييد تحضير ملف عن اليوم الواحد"
+
+msgid "Journey Plan"
+msgstr "خطط للرحلة"
+
+msgid "Route Sequence"
+msgstr "طريق التسلسل"
+
+msgid "Week Start Day"
+msgstr "بداية الأسبوع يوم"
+
+msgid "Average Parameter"
+msgstr "متوسط ​​معلمة"
+
+msgid "Date Con File Format"
+msgstr "تنسيق التاريخ كون الملف"
+
+msgid "Transfer Inventory"
+msgstr "نقل المخزون"
+
+msgid "Convert To Load"
+msgstr "تحويل إلى تحميل"
+
+msgid "Date For Multi Day Posting"
+msgstr "تاريخ لليوم موضوع المشاركة"
+
+msgid "Allow Previous Day Upload"
+msgstr "السماح لليوم السابق تحميل"
+
+msgid "Allow Control On Prepare File"
+msgstr "السماح للتحكم في ملف تحضير"
+
+msgid "Allow Normal GC Collection On HHC"
+msgstr "السماح عادي GC مجموعة على الرعاية الصحية المنزلية"
+
+msgid "Allow Prepare Files After Upload"
+msgstr "السماح للتحضير بالملفات بعد تحميلها"
+
+msgid "Default On Prepare Files"
+msgstr "الافتراضية على ملفات تحضير"
+
+msgid "Allow Resend Data to ERP"
+msgstr "تسمح إعادة إرسال البيانات إلى نظام تخطيط موارد المؤسسات"
+
+msgid "Allow Cash Invoice on Credit Customer"
+msgstr "السماح للفاتورة الدفع النقدي عند العملاء الائتمان"
+
+msgid "Files Based On Call Restriction Days"
+msgstr "الملفات على أساس أيام حصر المكالمات"
+
+msgid "Allow More Than One Salesman To Visit One Customer"
+msgstr "السماح لأكثر من بائع لزيارة أحد العملاء"
+
+msgid "Setup"
+msgstr "الإعداد"
+
+msgid "Parent Company"
+msgstr "الشركة الأم"
+
+msgid "Sub Company"
+msgstr "شركة فرعية"
+
+msgid "Company Name"
+msgstr "اسم الشركة"
+
+msgid "Company(Arabic)"
+msgstr "شركة )عربي)"
+
+msgid "Contact Name"
+msgstr "اتصل اسم"
+
+msgid "Address"
+msgstr "عنوان"
+
+msgid "Telephone Number"
+msgstr "رقم الهاتف"
+
+msgid "Fax"
+msgstr "الفاكس"
+
+msgid "ZipCode"
+msgstr "الرمز البريدي"
+
+msgid "Distributor Code1"
+msgstr "قانون التوزيع 1"
+
+msgid "Distributor Code2"
+msgstr "قانون التوزيع 2"
+
+msgid "Do Login"
+msgstr "الرجاء تسجيل الدخول."
+
+msgid "Sub Area Code"
+msgstr "دون رمز المنطقة"
+
+msgid "Sub Area"
+msgstr "شبه المنطقة"
+
+msgid "Supervisor"
+msgstr "مشرف"
+
+msgid "Area Name"
+msgstr "اسم المنطقة"
+
+msgid "Branch/Depot"
+msgstr "فرع / مستودع"
+
+msgid "Search"
+msgstr "البحث"
+
+msgid "Name(Language)"
+msgstr "اسم )اللغة)"
+
+msgid "Area"
+msgstr "منطقة"
+
+msgid "Created Date"
+msgstr "تاريخ الانشاء"
+
+msgid "Customer Name"
+msgstr "اسم العميل"
+
+msgid "HeadOfficeCode"
+msgstr "رئيسمكتبالقانون"
+
+msgid "Route Code"
+msgstr "طريق الرمز"
+
+msgid "Payment Mode"
+msgstr "طريقة الدفع"
+
+msgid "Select Template"
+msgstr "حدد قالب"
+
+msgid "Route Name"
+msgstr "مسار اسم"
+
+msgid "Address2"
+msgstr "عنوان2"
+
+msgid "Address3"
+msgstr "عنوان3"
+
+msgid "Normal"
+msgstr "طبيعي"
+
+msgid "Branch"
+msgstr "فرع"
+
+msgid "Head Office"
+msgstr "المكتب الرئيسي"
+
+msgid "Invoice Payment Terms"
+msgstr "شروط الدفع فاتورة"
+
+msgid "Price Key"
+msgstr "سعر مفتاح"
+
+msgid "Cash Balance"
+msgstr "الرصيد النقدي"
+
+msgid "Credit Limit"
+msgstr "حد الائتمان"
+
+msgid "Credit Days"
+msgstr "الائتمان أيام"
+
+msgid "Authorized Item Group Key"
+msgstr "أذن مفتاح المدينة المجموعة"
+
+msgid "Survey Key"
+msgstr "مسح مفتاح"
+
+msgid "Outlet Product Codes"
+msgstr "رموز المنتج المنفذ"
+
+msgid "AR Customer Type"
+msgstr "AR نوع العميل"
+
+msgid "Customer Category"
+msgstr "الفئة العملاء"
+
+msgid "Open Invoice for Bill to Bill"
+msgstr "فتح الفاتورة لبيل بيل"
+
+msgid "Expiry Limit"
+msgstr "انتهاء حد"
+
+msgid "Expiry Running Value"
+msgstr "انقضاء قيمة الجري"
+
+msgid "Remark"
+msgstr "الملاحظة"
+
+msgid "Load"
+msgstr "تحميل"
+
+msgid "General"
+msgstr "عام"
+
+msgid "Settings 1"
+msgstr "1 إعدادات"
+
+msgid "Settings 2"
+msgstr "2 إعدادات"
+
+msgid "Contact"
+msgstr "اتصل"
+
+msgid "Customer Master"
+msgstr "العملاء ماجستير"
+
+msgid "2nd Language Settings:"
+msgstr "2إعدادات اللغة:"
+
+msgid "Display Message Key 1"
+msgstr "1 عرض مفتاح الرسالة"
+
+msgid "Display Message Key 2"
+msgstr "2 عرض مفتاح الرسالة"
+
+msgid "Print Message Key 1"
+msgstr "1 مفتاح طباعة رسالة"
+
+msgid "Print Message Key 2"
+msgstr "2 مفتاح طباعة رسالة"
+
+msgid "Invoice Trailor Message Key"
+msgstr "فاتورة مفتاح Trailor رسالة"
+
+msgid "Invoice Header Message Key"
+msgstr "فاتورة مفتاح رأس الرسالة"
+
+msgid "Order Detail Entry"
+msgstr "ترتيب تفاصيل الدخول"
+
+msgid "Enable Survey Audit"
+msgstr "تمكين التدقيق المسح"
+
+msgid "Enable Delivery Instruction"
+msgstr "تمكين تعليمات التسليم"
+
+msgid "Enable Invoice Comment"
+msgstr "تمكين التعليق الفاتورة"
+
+msgid "Invoice Detail Entry Form"
+msgstr "فاتورة نموذج تفاصيل الدخول"
+
+msgid "Force Stock Capture"
+msgstr "قوة سهم لقطة"
+
+msgid "Authorized Item List Ctrl"
+msgstr "أذن عنصر قائمة السيطرة"
+
+msgid "Invoice Price Print"
+msgstr "فاتورة السعر طباعة"
+
+msgid "Enable Item Bar Code Print"
+msgstr "تمكين البند طباعة الباركود"
+
+msgid "Order Format"
+msgstr "أجل تنسيق"
+
+msgid "Print Sequence"
+msgstr "تسلسل الطباعة"
+
+msgid "Enable Delay Print"
+msgstr "تمكين تأخير طباعة"
+
+msgid "Enable Sell Previous"
+msgstr "تمكين بيع السابق"
+
+msgid "Enable Edit Price Invs"
+msgstr "تمكين تحرير Invs السعر"
+
+msgid "Enable Auto Fill Returns"
+msgstr "تمكين العائدين التعبئة التلقائية"
+
+msgid "Enable Suggest Sales"
+msgstr "تمكين الاقتراحات المبيعات"
+
+msgid "Enable Signature Capture"
+msgstr "تمكين التقاط التوقيع"
+
+msgid "Enable Auto Fill Damage"
+msgstr "تمكين الضرر التعبئة التلقائية"
+
+msgid "Enable Returns Trxn"
+msgstr "تمكين العائدين Trxn"
+
+msgid "Enable Sales Trxn"
+msgstr "تمكين المبيعات Trxn"
+
+msgid "Enable Promotions Trxn"
+msgstr "تمكين الترقيات Trxn"
+
+msgid "Enable Damage Returns"
+msgstr "تمكين العائدين الضرر"
+
+msgid "Auto Settle Collection"
+msgstr "السيارات تسوية مجموعة"
+
+msgid "Enable AR Collection"
+msgstr "تمكين AR مجموعة"
+
+msgid "Enable Invoice Copy"
+msgstr "تمكين نسخة الفاتورة"
+
+msgid "Invoice Format"
+msgstr "فاتورة تنسيق"
+
+msgid "Sales"
+msgstr "مبيعات"
+
+msgid "Print Language"
+msgstr "طباعة اللغة"
+
+msgid "History Max Deliveries"
+msgstr "تاريخ تسليم ماكس"
+
+msgid "Lost Placement"
+msgstr "خسر التنسيب"
+
+msgid "Tax Option"
+msgstr "ضريبة الخيار"
+
+msgid "New Placement Deliveries"
+msgstr "تسليم التنسيب جديد"
+
+msgid "Cust Tax Key 1"
+msgstr "الزبون مفتاح ضريبة 1"
+
+msgid "Cust Tax Key 2"
+msgstr "الزبون مفتاح ضريبة 2"
+
+msgid "Cust Tax Key 3"
+msgstr "الزبون مفتاح ضريبة 3"
+
+msgid "Invoice Copies"
+msgstr "فاتورة نسخ"
+
+msgid "Tax ID"
+msgstr "معرف الضريبة"
+
+msgid "Enable Promo Edit Ords"
+msgstr "تمكين الترويجي Ords تحرير"
+
+msgid "City"
+msgstr "مدينة"
+
+msgid "Enable Promo Edit Invs"
+msgstr "تمكين الترويجي تحرير Invs"
+
+msgid "State"
+msgstr "دولة"
+
+msgid "Enable Addl Promo Ords"
+msgstr "تمكين Ords الترويجي Addl"
+
+msgid "Zip"
+msgstr "الرمز البريدي"
+
+msgid "Enable Promo Invoices"
+msgstr "تمكين الفواتير الترويجي"
+
+msgid "Control Invoice Transactions"
+msgstr "السيطرة على العمليات الفاتورة"
+
+msgid "RoundNetAmount"
+msgstr "صافيالمبلغجولة"
+
+msgid "Forward Factor"
+msgstr "إلى الأمام عامل"
+
+msgid "Enable Draft Copy"
+msgstr "مشروع تمكين نسخة"
+
+msgid "Customer State"
+msgstr "زبون الدولة"
+
+msgid "Customer City"
+msgstr "العملاء مدينة"
+
+msgid "Allow cash invoice if credit exceeds"
+msgstr "السماح للفاتورة النقدية إذا تجاوز الائتمان"
+
+msgid "Memo1"
+msgstr "مذكرة1"
+
+msgid "Memo2"
+msgstr "مذكرة2"
+
+msgid "Print Outlet Item Code"
+msgstr "طباعة المخرج رمز المدينة"
+
+msgid "2nd Language"
+msgstr "2 اللغة"
+
+msgid "Shop Fax"
+msgstr "متجر فاكس"
+
+msgid "Shop Telephone"
+msgstr "متجر الهاتف"
+
+msgid "Owner Land Line"
+msgstr "صاحب الأرض الخط"
+
+msgid "Owner Name"
+msgstr "صاحب الاسم"
+
+msgid "Contact Person Name"
+msgstr "اتصل اسم الشخص"
+
+msgid "Owner Mobile"
+msgstr "موبايل مالك"
+
+msgid "Contact Person Mobile"
+msgstr "الاتصال الشخص"
+
+msgid "Contact Person Land Line"
+msgstr "اتصل الشخص الخط الأرض"
+
+msgid "Purchase Manager Name"
+msgstr "شراء اسم مدير"
+
+msgid "Contact Person Email"
+msgstr "اتصل الشخص البريد الإلكتروني"
+
+msgid "Purchase Manager Mobile"
+msgstr "شراء موبايل مدير"
+
+msgid "Purchase Manager Landline Line"
+msgstr "شراء خط هاتف أرضي مدير"
+
+msgid "Warehouse Manager Name"
+msgstr "مستودع مدير اسم"
+
+msgid "Purchase Manager Email"
+msgstr "شراء البريد الإلكتروني مدير"
+
+msgid "Ware House Manager Mobile"
+msgstr "مستودع مدير موبايل"
+
+msgid "Warehouse Manager Land Line"
+msgstr "مستودع الخط مدير الأرض"
+
+msgid "Warehouse Manager Email"
+msgstr "مستودع مدير البريد الإلكتروني"
+
+msgid "Group Code"
+msgstr "مجموعة رمز"
+
+msgid "Group Name"
+msgstr "اسم المجموعة"
+
+msgid "Salesman Name"
+msgstr "اسم بائع"
+
+msgid "Show Entries"
+msgstr "عرض مقالات"
+
+msgid "Message Key"
+msgstr "الرسالة الرئيسية"
+
+msgid "Salesman Master"
+msgstr "بائع ماجستير"
+
+msgid "Area Manager"
+msgstr "مدير منطقة"
+
+msgid "ArbCompany Name"
+msgstr "الشركة العربية للاسم"
+
+msgid "ADD"
+msgstr "أضف"
+
+msgid "No Record(s) Found"
+msgstr ".لم يتم العثور على الإجابات"
+
+msgid "Route"
+msgstr "طريق"
+
+msgid "Week"
+msgstr "أسبوع"
+
+msgid "Sales Calendar"
+msgstr "مبيعات التقويم"
+
+msgid "Arrange Customer"
+msgstr "ترتيب العملاء"
+
+msgid "Copy Sequence"
+msgstr "نسخة تسلسل"
+
+msgid "Customer Sequence"
+msgstr "تسلسل العملاء"
+
+msgid "Period"
+msgstr "فترة"
+
+msgid "LOAD DATA"
+msgstr "تحميل البيانات"
+
+msgid "Year"
+msgstr "عام"
+
+msgid "CLOSE"
+msgstr "إغلاق"
+
+msgid "SAVE"
+msgstr "وفر"
+
+msgid "DELETE"
+msgstr "حذف"
+
+msgid "AUTO"
+msgstr "بادئة معناها ذاتي"
+
+msgid "RP32 Week"
+msgstr "RP32 أسبوع"
+
+msgid "Customer"
+msgstr "زبون"
+
+msgid "Report"
+msgstr "تقرير"
+
+msgid "Control Panel"
+msgstr "لوحة التحكم"
+
+msgid "No Records(s) Found."
+msgstr "لا توجد سجلات )ق)."
+
+msgid "Customer Code"
+msgstr "العميل الرمز"
+
+msgid "Mon"
+msgstr "يوم الاثنين"
+
+msgid "Tue"
+msgstr "الثلاثاء"
+
+msgid "Wed"
+msgstr "الأربعاء"
+
+msgid "Thu"
+msgstr "الخميس"
+
+msgid "Fri"
+msgstr "الجمعة"
+
+msgid "Sat"
+msgstr "السبت"
+
+msgid "Sun"
+msgstr "الأحد"
+
+msgid "REMOVE CUSTOMER"
+msgstr "إزالة العملاء"
+
+msgid "ADD CUSTOMER"
+msgstr "أضف العملاء"
+
+msgid "Add Customer"
+msgstr "إضافة العملاء"
+
+msgid "Sequence"
+msgstr "تسلسل"
+
+msgid "CANCEL"
+msgstr "إلغاء"
+
+msgid "PRINT"
+msgstr "اطبع"
+
+msgid "Day Sequence"
+msgstr "يوم تسلسل"
+
+msgid "From Week"
+msgstr "من أسبوع"
+
+msgid "To Week"
+msgstr "إلى أسبوع"
+
+msgid "From Day"
+msgstr "من يوم"
+
+msgid "To Day"
+msgstr "إلى اليوم"
+
+msgid "Copy Sequences"
+msgstr "نسخة متواليات"
+
+msgid "Group Number"
+msgstr "المجموعة رقم"
+
+msgid "Group Description"
+msgstr "مجموعة الوصف"
+
+msgid "Arb Group Description"
+msgstr "المجموعة العربية الوصف"
+
+msgid "Item Code"
+msgstr "بند قانون"
+
+msgid "Customer Authorize Group"
+msgstr "العميل تخويل المجموعة"
+
+msgid "Assignment Group"
+msgstr "مهمة المجموعة"
+
+msgid "Qualification Group"
+msgstr "تأهل فريق"
+
+msgid "Description (Arabic)"
+msgstr "وصف )عربي)"
+
+msgid "Item Description"
+msgstr "وصف السلعة"
+
+msgid "Item Code is already Exist."
+msgstr "رمز بند وموجودة بالفعل"
+
+msgid "Missing Field"
+msgstr "وينبغي أن حقل (ق) أن يكون فارغا."
+
+msgid "Allow Previous Day Upload Sync"
+msgstr "تسمح اليوم السابق حمل سينك"
+
+msgid "Allow Import Sync After Upload Sync"
+msgstr "السماح باستيراد سينك سينك وبعد الرفع"
+
+msgid "Enforce GPS Data Check"
+msgstr "تطبيق بيانات GPS تحقق"
+
+msgid "Duplicate entry"
+msgstr "تكرار دخول"
+
+msgid "Company Name(Arabic)"
+msgstr "اسم الشركة )عربي)"
+
+msgid "Currency Name (Arabic)"
+msgstr "اسم العملة )عربي)"
+
+msgid "Currency Symbol (Arabic)"
+msgstr "رمز العملة (عربي)"
+
+msgid "National Sales Manager"
+msgstr "مدير المبيعات الوطنية"
+
+msgid "National Sales Manager Name"
+msgstr "وطني اسم مدير المبيعات"
+
+msgid "National Sales Manager Name (Arabic)"
+msgstr "وطني اسم مدير المبيعات )عربي)"
+
+msgid "Region Manager"
+msgstr "مدير المنطقة"
+
+msgid "Region Manager Name"
+msgstr "مدير منطقة اسم"
+
+msgid "Region Manager Name (Arabic)"
+msgstr "اسم مدير المنطقة )العربية)"
+
+msgid "Branch/Depot Manager"
+msgstr "فرع / مدير مستودع"
+
+msgid "Name (Arabic)"
+msgstr "اسم )عربي)"
+
+msgid "Company Name (Arabic)"
+msgstr "اسم الشركة )عربي)"
+
+msgid "Non Serviced"
+msgstr "غير المخدمة"
+
+msgid "Good Return"
+msgstr "جيد العودة"
+
+msgid "Bad Return"
+msgstr "سيئة العودة"
+
+msgid "Free"
+msgstr "حر"
+
+msgid "Void/Cancel"
+msgstr "إفراغ / إلغاء"
+
+msgid "Expenses"
+msgstr "النفقات"
+
+msgid "Country"
+msgstr "بلد"
+
+msgid "Country Code"
+msgstr "كود البلد"
+
+msgid "Country Name"
+msgstr "اسم البلد"
+
+msgid "Country Name (Arabic)"
+msgstr "اسم بلد (عربي)"
+
+msgid "Price Change Variance"
+msgstr "سعر تغير الفرق"
+
+msgid "Region"
+msgstr "منطقة"
+
+msgid "Region Code"
+msgstr "رمز المنطقة"
+
+msgid "Region Name"
+msgstr "اسم المنطقة"
+
+msgid "Region Name (Arabic)"
+msgstr "اسم المنطقة (العربية)"
+
+msgid "Branch/Depot Code"
+msgstr "فرع / مستودع رمز"
+
+msgid "Branch/Depot Name"
+msgstr "فرع / مستودع اسم"
+
+msgid "Branch/Depot Prefix"
+msgstr "فرع / مستودع بادئة"
+
+msgid "Branch/Depot Name (Arabic)"
+msgstr "فرع / مستودع اسم (عربي)"
+
+msgid "Central WH"
+msgstr "وسط WH"
+
+msgid "Van"
+msgstr "عربة"
+
+msgid "Van Reg. No"
+msgstr "فان ريج. لا"
+
+msgid "Van Brand/Model"
+msgstr "فان الماركة / الموديل"
+
+msgid "Van Type"
+msgstr "فان نوع"
+
+msgid "Van Description"
+msgstr "فان الوصف"
+
+msgid "Van Description (Arabic)"
+msgstr "فان الوصف (عربي)"
+
+msgid "Business Type"
+msgstr "نوع العمل"
+
+msgid "Business Type Code"
+msgstr "نوع النشاط الرمز"
+
+msgid "Business Type Name"
+msgstr "عمل نوع اسم"
+
+msgid "Business Type Name (Arabic)"
+msgstr "عمل اسم نوع (عربي)"
+
+msgid "Salesman"
+msgstr "بائع"
+
+msgid "Route Category"
+msgstr "طريق التصنيف"
+
+msgid "Route Type"
+msgstr "طريق نوع"
+
+msgid "Load Request"
+msgstr "تحميل طلب"
+
+msgid "Route Setup"
+msgstr "طريق الإعداد"
+
+msgid "View Van Stock"
+msgstr "عرض فان بورصة"
+
+msgid "Telecom Setup"
+msgstr "الاتصالات الإعداد"
+
+msgid "Un Load"
+msgstr "الامم المتحدة تحميل"
+
+msgid "Application Exit"
+msgstr "تطبيق خروج"
+
+msgid "Price Change"
+msgstr "ثمن التغيير"
+
+msgid "Start Of Day"
+msgstr "تبدأ اليوم"
+
+msgid "Promo Override"
+msgstr "الترويجي تجاوز"
+
+msgid "Date/Time Change"
+msgstr "تاريخ / وقت التغيير"
+
+msgid "Settlement"
+msgstr "تسوية"
+
+msgid "Load Out"
+msgstr "تحميل خارج"
+
+msgid "Print Doc At EOD"
+msgstr "ورد طباعة في التخلص من الذخائر المتفجرة"
+
+msgid "Load Adjust"
+msgstr "تحميل ضبط"
+
+msgid "Load Transfer"
+msgstr "تحميل نقل"
+
+msgid "Unload Over Warning"
+msgstr "تفريغ أكثر من تحذير"
+
+msgid "Inventory Value Print"
+msgstr "جرد قيمة طباعة"
+
+msgid "Prompt Odometer Input"
+msgstr "موجه عداد المسافات الإدخال"
+
+msgid "Inventory Case Input"
+msgstr "جرد حالة الإدخال"
+
+msgid "Load Req Report Format"
+msgstr "تحميل ةداملا مسا تنسيق تقرير"
+
+msgid "Auto Calculated Load In"
+msgstr "السيارات محسوب في تحميل"
+
+msgid "Require Load In"
+msgstr "يتطلب تحميل في"
+
+msgid "Load Sheet Report"
+msgstr "حمل ورقة التبليغ"
+
+msgid "Amount Decimal Digits"
+msgstr "الأرقام مبلغ عشري"
+
+msgid "Tablet Item Code Display"
+msgstr "لوحة عرضالسلعة قانون"
+
+msgid "Route Item Group"
+msgstr "طريق المدينة المجموعة"
+
+msgid "Print Alternate ItemCode"
+msgstr "طباعة البديل رمزالمدينة"
+
+msgid "Tablet CustomerCode Display"
+msgstr "لوحة العرضالعملاء رمز"
+
+msgid "Enable Load Transfer"
+msgstr "تمكين نقل الحمولة"
+
+msgid "Enable Scanner Use"
+msgstr "تمكين استخدام الماسح الضوئي"
+
+msgid "Enable EOD Add Checks"
+msgstr "تمكين EOD الشيكات إضافة"
+
+msgid "Enable Delay Print With No Customer No."
+msgstr "تمكين طباعة تأخير لا رقم خدمة العملاء"
+
+msgid "Enable Add/Edit Customer"
+msgstr "تمكين إضافة / تحرير العملاء"
+
+msgid "Enable Start Day Date Time Edit"
+msgstr "تمكين بدء تحرير اليوم التاريخ الوقت"
+
+msgid "Enforce Call Sequence"
+msgstr "فرض المكالمات تسلسل"
+
+msgid "Enable Customer Foc Limit"
+msgstr "تمكين العملاء FOC حد"
+
+msgid "Enable Customer Scan"
+msgstr "تمكين العملاء المسح الضوئي"
+
+msgid "Enable Load Out Adjustment"
+msgstr "تمكين تحميل تلك الأجزاء التعديل"
+
+msgid "Enable EOD Expenses"
+msgstr "تمكين نفقات التخلص من الذخائر المتفجرة"
+
+msgid "Enable Cash Only Discount"
+msgstr "تمكين الخصم النقدي فقط"
+
+msgid "Enable Post Void"
+msgstr "تمكين الفراغ مشاركة"
+
+msgid "Enable EOD Adj Checks"
+msgstr "تمكين EOD الشيكات الصفة"
+
+msgid "Use Separate Invoice Sequencing For Sales & Return"
+msgstr "استخدام منفصل تسلسل فاتورة المبيعات والعودة"
+
+msgid "Enable No Sale"
+msgstr "تمكين لا بيع"
+
+msgid "Inventory Varience"
+msgstr "جرد الفرق"
+
+msgid "Inventory Over Sell"
+msgstr "جرد أكثر من بيع"
+
+msgid "Enable Damage Trxn"
+msgstr "تمكين المعاملات الضرر"
+
+msgid "Display Inv Summary"
+msgstr "عرض موجز للإستثمار"
+
+msgid "Include Load Request"
+msgstr "وتشمل طلب تحميل"
+
+msgid "Load Req Roll Up Orders"
+msgstr "تحميل رول ةداملا مسا حتى الطلبيات"
+
+msgid "Depot Printer"
+msgstr "مستودع للطباعة"
+
+msgid "Load Request Method"
+msgstr "تحميل طريقة طلب"
+
+msgid "Route Printer"
+msgstr "مسار الطابعة"
+
+msgid "Enable Mid Day Import Sync"
+msgstr "تمكين منتصف مزامنة استيراد يوم"
+
+msgid "Allow Cash Invoice On GC Customer"
+msgstr "تسمح الفاتورة نقدا على العملاء GC"
+
+msgid "Change Route Week Day In Start Day"
+msgstr "تغيير الطريق أسبوع يوم في يوم البداية"
+
+msgid "CDC Validity Days"
+msgstr "أيام CDC الصلاحية"
+
+msgid "New Customer Seq"
+msgstr "جديد تسلسل العملاء"
+
+msgid "Route Balance"
+msgstr "طريق التوازن"
+
+msgid "Vehicle Odometer"
+msgstr "مركبة عداد المسافات"
+
+msgid "Default Delivery Days"
+msgstr "يوم التسليم الافتراضي"
+
+msgid "PDC Threshold"
+msgstr "PDC عتبة"
+
+msgid "Reports"
+msgstr "تقارير"
+
+msgid "EOD Sales Report"
+msgstr "التخلص من الذخائر المتفجرة المبيعات تقرير"
+
+msgid "EOD Deposit Report"
+msgstr "التخلص من الذخائر المتفجرة ودائع تقرير"
+
+msgid "Route Review Report"
+msgstr "طريق مراجعة تقرير"
+
+msgid "EOD Rtn/Exch Report"
+msgstr "التخلص من الذخائر المتفجرة العودة / تبادل تقرير"
+
+msgid "Route Activity Report"
+msgstr "طريق تقرير النشاط"
+
+msgid "EOD Placements Report"
+msgstr "التخلص من الذخائر المتفجرة مواضع تقرير"
+
+msgid "EOD Settlemet Report"
+msgstr "التخلص من الذخائر المتفجرة التسوية تقرير"
+
+msgid "EOD No Sale Report"
+msgstr "التخلص من الذخائر المتفجرة لا تقرير بيع"
+
+msgid "EOD Balance Report"
+msgstr "التخلص من الذخائر المتفجرة التوازن تقرير"
+
+msgid "EOD ROA Summary"
+msgstr "التخلص من الذخائر المتفجرة ROA ملخص"
+
+msgid "Non Dell Report"
+msgstr "غير ديل تقرير"
+
+msgid "EOD Exception Report"
+msgstr "التخلص من الذخائر المتفجرة استثناء تقرير"
+
+msgid "EOD Price Change Report"
+msgstr "التخلص من الذخائر المتفجرة تقرير السعر التغيير"
+
+msgid "EOD Promotions Report"
+msgstr "التخلص من الذخائر المتفجرة الترقيات تقرير"
+
+msgid "EOD Non Scanned Report"
+msgstr "التخلص من الذخائر المتفجرة غير تقرير ضوئيا"
+
+msgid "EOD OdomLog Report"
+msgstr "التخلص من الذخائر المتفجرة أودوم سجل التقرير"
+
+msgid "Route Template"
+msgstr "مسار القالب"
+
+msgid "Template ID"
+msgstr "قالب معرف"
+
+msgid "Date Time Change"
+msgstr "تاريخ وقت التغيير"
+
+msgid "Program Exit"
+msgstr "برنامج إنهاء"
+
+msgid "Load Adjust/Unload"
+msgstr "ضبط تحميل / إلغاء تحميل"
+
+msgid "New/Request/View Stock"
+msgstr "جديد / طلب / عرض الأسهم"
+
+msgid "Security Password"
+msgstr "أمن المرور"
+
+msgid "NEW"
+msgstr "جديد"
+
+msgid "Req. EOD Deposit Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة ودائع تقرير"
+
+msgid "Req. EOD Balance Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة تقرير التوازن"
+
+msgid "Req. EOD Sales Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة المبيعات تقرير"
+
+msgid "Req. Route Review Rpt."
+msgstr "تقرير طلب مراجعة الطريق"
+
+msgid "Req. EOD Rtn/Exch Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة العودة / تبادل تقرير"
+
+msgid "Req. Route Activity Rpt."
+msgstr "تقرير طلب توجيه نشاط"
+
+msgid "Req. EOD Placements Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة مواضع تقرير"
+
+msgid "Req. EOD Settlement Rpt."
+msgstr "طلب تقرير EOD التسوية"
+
+msgid "Req. EOD ROA Summary"
+msgstr "طلب التخلص من الذخائر المتفجرة ROA ملخص"
+
+msgid "HHC Item Code Display"
+msgstr "HHC عرض السلعة قانون"
+
+msgid "Print Alternate Item Code"
+msgstr "طباعة البديل رمز المدينة"
+
+msgid "Item Descrption Display"
+msgstr "وصف العرض"
+
+msgid "Stock Icon"
+msgstr "أيقونة الأوراق المالية"
+
+msgid "Enable Customer FOC Limit"
+msgstr "تمكين العملاء FOC حد"
+
+msgid "Req. EOD No Sale Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة لا عن بيع"
+
+msgid "Req. Non Dell Rpt."
+msgstr "تقرير طلب عدم ديل"
+
+msgid "Req. EOD Execption Rpt."
+msgstr "طلب تقرير EOD استثناء"
+
+msgid "Inventory Variance"
+msgstr "جرد الفرق"
+
+msgid "Req. EOD Price Change Rpt."
+msgstr "طلب تغير السعر EOD تقرير"
+
+msgid "Req. EOD Promotions Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة الترقيات تقرير"
+
+msgid "Req. EOD Non Scanned Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة غير تقرير ضوئيا"
+
+msgid "Load Access After Unload"
+msgstr "تحميل وصول بعد إلغاء"
+
+msgid "Req. EOD OdomLog Rpt."
+msgstr "طلب التخلص من الذخائر المتفجرة أودوم سجل التقرير"
+
+msgid "Use Sales Date Flag"
+msgstr "استخدم المبيعات علم التاريخ"
+
+msgid "Lock Status"
+msgstr "قفل الحالة"
+
+msgid "Load Req. Method"
+msgstr "تحميل طريقة طلب"
+
+msgid "Generate HHC Seq From Back Office"
+msgstr "توليد HHC تسلسل من المكتب الخلفي"
+
+msgid "Edit Route Week Day"
+msgstr "تحرير الطريق أسبوع يوم"
+
+msgid "Allow Populate Load"
+msgstr "السماح للتعبئة الحمولة"
+
+msgid "Allow Route Start Day In Back Office"
+msgstr "تسمح الطريق يوم البدء في المكتب الخلفي"
+
+msgid "Item Description Display"
+msgstr "وصف العرض"
+
+msgid "Request EOD Exception Report"
+msgstr "طلب تقرير EOD استثناء"
+
+msgid "Salesman Message"
+msgstr "بائع رسالة"
+
+msgid "Message Description"
+msgstr "رسالة الوصف"
+
+msgid "Message Line1"
+msgstr "الخط 1 رسالة"
+
+msgid "Message Line2"
+msgstr "الخط 2 رسالة"
+
+msgid "Message Line3"
+msgstr "الخط 3 رسالة"
+
+msgid "Message Line4"
+msgstr "الخط 4 رسالة"
+
+msgid "Message Line1 (Arabic)"
+msgstr "خط الرسالة 1 (عربي)"
+
+msgid "Message Line2 (Arabic)"
+msgstr "خط الرسالة 2 (عربي)"
+
+msgid "Message Line3 (Arabic)"
+msgstr "خط الرسالة 3 (عربي)"
+
+msgid "Message Line4 (Arabic)"
+msgstr "خط الرسالة 4 (عربي)"
+
+msgid "Customer Message"
+msgstr "العميل رسالة"
+
+msgid "Tablet Username"
+msgstr "قرص المستخدم"
+
+msgid "Tablet Password"
+msgstr "لوح كلمة السر"
+
+msgid "Confirm Password"
+msgstr "تأكيد كلمة السر"
+
+msgid "Address1"
+msgstr "العنوان1"
+
+msgid "Outstanding Balance"
+msgstr "الرصيد المستحق"
+
+msgid "Open Invoice For Bill To Bill"
+msgstr "فتح الفاتورة للحصول على مشروع قانون لبيل"
+
+msgid "Enable Stock Capture"
+msgstr "تمكين التقاط الأسهم"
+
+msgid "Enable Sales"
+msgstr "تمكين المبيعات"
+
+msgid "Enable POS"
+msgstr "تمكين نقاط البيع"
+
+msgid "Enable Auto Fill Sales"
+msgstr "تمكين مبيعات السيارات التعبئة"
+
+msgid "Enable Buy Back Free"
+msgstr "تمكين إعادة الشراء الحرة"
+
+msgid "Enable Good Returns"
+msgstr "تمكين عوائد جيدة"
+
+msgid "Enable Free"
+msgstr "تمكين الحرة"
+
+msgid "Enable Survey"
+msgstr "تمكين المسح"
+
+msgid "Enable Rental"
+msgstr "تمكين تأجير"
+
+msgid "Enable Advance Payment"
+msgstr "تمكين الدفع المسبق"
+
+msgid "Enable Batch Selection"
+msgstr "تمكين اختيار الدفعة"
+
+msgid "Enable Sales Promotion"
+msgstr "تمكين ترويج المبيعات"
+
+msgid "Enable Order Promotion"
+msgstr "تمكين تعزيز النظام"
+
+msgid "FixedLatitude"
+msgstr "ثابت خط العرض"
+
+msgid "FixedLongitude"
+msgstr "ثابت خط الطول"
+
+msgid "Round Net Amount"
+msgstr "صافي المبلغ جولة"
+
+msgid "Allow Cash If Credit Exceeds"
+msgstr "السماح للنقد إذا الائتمان يتجاوز"
+
+msgid "BACK"
+msgstr "ظهر"
+
+msgid "Outlet Product Code"
+msgstr "منفذ رمز المنتج"
+
+msgid "Outlet Item Code"
+msgstr "منفذ المدينة الرمز"
+
+msgid "Expiry Management"
+msgstr "انتهاء الإدارة"
+
+msgid "Equally"
+msgstr "بالتساوي"
+
+msgid "CustomerCode"
+msgstr "العميلالرمز"
+
+msgid "CustomerName"
+msgstr "اسمالعميل"
+
+msgid "NetSales"
+msgstr "صافيالمبيعات"
+
+msgid "Expiry"
+msgstr "انقضاء"
+
+msgid "Journey Plan Credit Limit"
+msgstr "رحلة حد خطة الائتمان"
+
+msgid "GC Collection"
+msgstr "GC مجموعة"
+
+msgid "Invoice Amount"
+msgstr "مبلغ الفاتورة"
+
+msgid "Select Date"
+msgstr "حدد تاريخ"
+
+msgid "Amount Paid"
+msgstr "المبلغ المدفوع"
+
+msgid "Invoice Balance"
+msgstr "رصيد الفاتورة"
+
+msgid "Document No"
+msgstr "الوثيقة رقم"
+
+msgid "Doc Date"
+msgstr "تاريخ الوثيقة"
+
+msgid "First In First Out"
+msgstr "الأول في الخروج أولا"
+
+msgid "Invoice No"
+msgstr "فاتورة لا"
+
+msgid "Invoice Date"
+msgstr "تاريخ الفاتورة"
+
+msgid "Balance Amount"
+msgstr "رصيد المبلغ"
+
+msgid "Amount"
+msgstr "كمية"
+
+msgid "Cheque Date"
+msgstr "تاريخ الشيك"
+
+msgid "Cheque Number"
+msgstr "عدد الشيكات"
+
+msgid "Bank Name"
+msgstr "اسم البنك"
+
+msgid "HO Collection"
+msgstr "مجموعة HO"
+
+msgid "Opening Balance"
+msgstr "افتتاح الرصيد"
+
+msgid "Invoice Number"
+msgstr "رقم الفاتورة"
+
+msgid "Date"
+msgstr "تاريخ"
+
+msgid "Transaction Type"
+msgstr "نوع المعاملة"
+
+msgid "Description 1"
+msgstr "الوصف 1"
+
+msgid "Description 2"
+msgstr "الوصف 2"
+
+msgid "Customer Debit Note"
+msgstr "العميل الخصم ملاحظة"
+
+msgid "Route Debit Note"
+msgstr "طريق الخصم ملاحظة"
+
+msgid "Customer Credit Note"
+msgstr "ملاحظة العملاء الائتمان"
+
+msgid "Route Credit Note"
+msgstr "طريق الائتمان ملاحظة"
+
+msgid "Month"
+msgstr "شهر"
+
+msgid "Cashier Receipt"
+msgstr "أمين الصندوق الإيصال"
+
+msgid "Populate"
+msgstr "تعبئةs"
+
+msgid "POPULATE"
+msgstr "تعبئةs"
+
+msgid "Trxn No"
+msgstr "لا Trxn"
+
+msgid "Trxn Date"
+msgstr "Trxn تاريخ"
+
+msgid "Rec No."
+msgstr "تفصيل رقم"
+
+msgid "Check Date"
+msgstr "التحقق من تاريخ"
+
+msgid "Bank"
+msgstr "مصرف"
+
+msgid "Inv. Amt"
+msgstr "الجرد. كمية"
+
+msgid "Paid"
+msgstr "دفع"
+
+msgid "Receipt Amount"
+msgstr "استلام المبلغ"
+
+msgid "Balance"
+msgstr "تحقيق التوازن"
+
+msgid "Cash Amount"
+msgstr "المبلغ النقدي"
+
+msgid "Total"
+msgstr "مجموع"
+
+msgid "Check Amount"
+msgstr "تحقق المبلغ"
+
+msgid "Slip No"
+msgstr "لا تنزلق"
+
+msgid "PDC Cheque"
+msgstr "PDC شيك"
+
+msgid "Check Amt"
+msgstr "تحقق المبلغ"
+
+msgid "Amt.Paid"
+msgstr "المبلغ المدفوع"
+
+msgid "Bal.Amt"
+msgstr "رصيد المبلغ"
+
+msgid "PDC.AMT"
+msgstr "PDC المبلغ"
+
+msgid "Clear"
+msgstr "مسح"
+
+msgid "Invoice"
+msgstr "فاتورة"
+
+msgid "Check No."
+msgstr "تحقق رقم"
+
+msgid "All"
+msgstr "جميع"
+
+msgid "Promo Case Price"
+msgstr "الترويجي القضية السعر"
+
+msgid "Promo PC Price"
+msgstr "الترويجي PC السعر"
+
+msgid "Promo Plan"
+msgstr "الترويجي خطة"
+
+msgid "Plan Number"
+msgstr "خطة رقم"
+
+msgid "Promo Key"
+msgstr "الترويجي مفتاح"
+
+msgid "Promotion Type"
+msgstr "ترويج نوع"
+
+msgid "Pricing Plan"
+msgstr "خطة تسعير"
+
+msgid "CustomerPricing Key "
+msgstr "العملاءالتسعير مفتاح"
+
+msgid "Filter By"
+msgstr "تصفية حسب"
+
+msgid "SEARCH"
+msgstr "تنقيب"
+
+msgid "Plan Key"
+msgstr "خطة رئيسية"
+
+msgid "Units Per Case"
+msgstr "وحدة في حالة"
+
+msgid "Price PCS"
+msgstr "سعر PCS"
+
+msgid "Price Case"
+msgstr "السعر القضية"
+
+msgid "Return Price PCS"
+msgstr "عودة PCS السعر"
+
+msgid "Return Price Case"
+msgstr "عودة الحالة السعر"
+
+msgid "New Price PCS"
+msgstr "PCS سعر جديد"
+
+msgid "New Price Case"
+msgstr "السعر الجديد حالة"
+
+msgid "New Return Price PCS"
+msgstr "جديد PCS سعر العائد"
+
+msgid "New Return Price Case"
+msgstr "جديد حالة عودة السعر"
+
+msgid "New Price Case(R)"
+msgstr "السعر الجديد حالة (R)"
+
+msgid "New Price PCS(R)"
+msgstr "PCS سعر جديد (R)"
+
+msgid "Value"
+msgstr "قيمة"
+
+msgid "Max Discount"
+msgstr "ماكس الخصم"
+
+msgid "Min Discount"
+msgstr "ماكس الخصم"
+
+msgid "Customer Free Contract"
+msgstr "عقد الزبون الحرة"
+
+msgid "Contract ID"
+msgstr "العقد رقم"
+
+msgid "Creation Date"
+msgstr "خلق تاريخ"
+
+msgid "Depot"
+msgstr "مستودع"
+
+msgid "Remarks"
+msgstr "تصريحات"
+
+msgid "Free Items"
+msgstr "حر وحدات"
+
+msgid "Free Qty"
+msgstr "الكمية مجانا"
+
+msgid "Used"
+msgstr "يستخدم"
+
+msgid "Remaining"
+msgstr "المتبقية"
+
+msgid "ID"
+msgstr "معرف"
+
+msgid "Customer Free Goods"
+msgstr "محلات العملاء الحرة"
+
+msgid "Survey Definition"
+msgstr "مسح تعريف"
+
+msgid "Survey Description"
+msgstr "مسح الوصف"
+
+msgid "Survey Index"
+msgstr "استطلاع مقياس"
+
+msgid "Lookup Type"
+msgstr "بحث نوع"
+
+msgid "Survey Order Index"
+msgstr "مسح ترتيب فهرس"
+
+msgid "Survey Prompt"
+msgstr "مسح موجه"
+
+msgid "Survey Prompt Arabic"
+msgstr "مسح موجه اللغة العربية"
+
+msgid "Survey Type"
+msgstr "مسح نوع"
+
+msgid "Response Length"
+msgstr "استجابة طول"
+
+msgid "Response Decimal"
+msgstr "استجابة عشري"
+
+msgid "Lookup Index"
+msgstr "بحث فهرس"
+
+msgid "EDIT"
+msgstr "تحرير"
+
+msgid "Survey Lookup"
+msgstr "مسح بحث"
+
+msgid "Lookup Description"
+msgstr "بحث الوصف"
+
+msgid "Lookup Description (Arabic)"
+msgstr "بحث الوصف (عربي)"
+
+msgid "Survey Plan"
+msgstr "مسح خطة"
+
+msgid "Survey Mandatory"
+msgstr "إلزامية المسح"
+
+msgid "Survey Plan (Arabic)"
+msgstr "خطة مسح (عربي)"
+
+msgid "Is Mandatory"
+msgstr "غير إلزامي"
+
+msgid "Selected Definition"
+msgstr "تحديد تعريف"
+
+msgid "Definition"
+msgstr "تعريف"
+
+msgid "Survey Key (Arabic)"
+msgstr "مسح مفتاح (عربي)"
+
+msgid "Sequence No"
+msgstr "تسلسل لا"
+
+msgid "Survey Description (Arabic)"
+msgstr "وصف الدراسة (عربي)"
+
+msgid "Survey Plan Selection"
+msgstr "مسح خطة التحديد"
+
+msgid "Selected Survey Plan"
+msgstr "تحديد خطة المسح"
+
+msgid "Company Group"
+msgstr "شركة المجموعة"
+
+msgid "Major Category"
+msgstr "الفئة الرئيسية"
+
+msgid "Major Category Name"
+msgstr "الرئيسية اسم التصنيف"
+
+msgid "Major Category Name (Arabic)"
+msgstr "الرئيسية اسم التصنيف (عربي)"
+
+msgid "Item Group Code"
+msgstr "البند رمز المجموعة"
+
+msgid "Items"
+msgstr "البنود"
+
+msgid "Litre/Kg per Case"
+msgstr "لتر / كيلوغرام في حالة"
+
+msgid "Litre/Kg per PC"
+msgstr "لتر / كغم PC"
+
+msgid "Short Name (Arabic)"
+msgstr "باختصار اسم (عربي)"
+
+msgid "Data Entry Sequence(For Load)"
+msgstr "بيانات تسلسل الدخول (للتحميل)"
+
+msgid "UPC Case Code(Barcode)"
+msgstr "UPC رمز الحالة (الباركود)"
+
+msgid "UPC PC Code(Barcode)"
+msgstr "اتحاد الوطنيين الكونغوليين PC رمز (الباركود)"
+
+msgid "Memo"
+msgstr "مذكرة"
+
+msgid "Route Item Group Code"
+msgstr "مدونة طريق المدينة المجموعة"
+
+msgid "Selected Items"
+msgstr "تحديد عناصر"
+
+msgid "POS Master"
+msgstr "POS ماجستير"
+
+msgid "POS Code"
+msgstr "POS قانون"
+
+msgid "POS Description"
+msgstr "POS الوصف"
+
+msgid "POS Description (Arabic)"
+msgstr "POS الوصف (عربي)"
+
+msgid "POS Value"
+msgstr "POS القيمة"
+
+msgid "Inventory Type"
+msgstr "جرد نوع"
+
+msgid "Customer POS Limit"
+msgstr "العملاء POS حد"
+
+msgid "POS Limit"
+msgstr "POS حد"
+
+msgid "POS Balance"
+msgstr "POS الرصيد"
+
+msgid "POS"
+msgstr "POS"
+
+msgid "Serial Number"
+msgstr "رقم متسلسل"
+
+msgid "Quantity"
+msgstr "كمية"
+
+msgid "Add POS"
+msgstr "إضافة نقاط البيع"
+
+msgid "POS Instruction"
+msgstr "POS التدريس"
+
+msgid "Daily Salesman Load"
+msgstr "يوميا بائع تحميل"
+
+msgid "OK"
+msgstr "موافق"
+
+msgid "RESET"
+msgstr "إعادة تعيين"
+
+msgid "Sales Price"
+msgstr "مبيعات السعر"
+
+msgid "Case Price"
+msgstr "قضية السعر"
+
+msgid "Pieces"
+msgstr "قطعة"
+
+msgid "Cases"
+msgstr "الحالات"
+
+msgid "Add Item"
+msgstr "إضافة عنصر"
+
+msgid "Item "
+msgstr "بند"
+
+msgid "Transation Date"
+msgstr "تاريخ المعاملات"
+
+msgid "Invoice Time"
+msgstr "فاتورة الوقت"
+
+msgid "Route Start of Day"
+msgstr "بداية الطريق من اليوم"
+
+msgid "Invoice Status"
+msgstr "فاتورة الحالة"
+
+msgid "Invoice Payment Term"
+msgstr "فاتورة الدفع الأجل"
+
+msgid "Total Invoice Amount"
+msgstr "فاتورة بمبلغ إجمالي"
+
+msgid "Total Sales Amount"
+msgstr "مجموع المبيعات المبلغ"
+
+msgid "Total Return Amount"
+msgstr "مجموع المبلغ العائد"
+
+msgid "Total Damaged Amount"
+msgstr "مجموع المبلغ التالفة"
+
+msgid "Total Free Goods"
+msgstr "مجموع السلع الحرة"
+
+msgid "Total Line Item Tax"
+msgstr "مجموع الضرائب بند"
+
+msgid "Total Invoice Discount"
+msgstr "مجموع الفاتورة خصم"
+
+msgid "Header"
+msgstr "رأس"
+
+msgid "Detail"
+msgstr "التفاصيل"
+
+msgid "S. Case Price"
+msgstr "S. القضية السعر"
+
+msgid "S. Pcs Price"
+msgstr "S. قطع السعر"
+
+msgid "R. Case Price"
+msgstr "R. القضية السعر"
+
+msgid "R. Pcs Price"
+msgstr "R. قطع السعر"
+
+msgid "Case Sales Qty"
+msgstr "حالة المبيعات الكمية"
+
+msgid "Pcs Sales Qty"
+msgstr "Pcs مبيعات الكميه"
+
+msgid "Case Return Qty"
+msgstr "حالة العودة الكميه"
+
+msgid "Pcs Return Qty"
+msgstr "Pcs عودة الكميه"
+
+msgid "Case Damage Qty"
+msgstr "حالة الضرر الكميه"
+
+msgid "Pcs Damage Qty"
+msgstr "تلف الكمية"
+
+msgid "Case Free Qty"
+msgstr "الكمية قضية الحرة"
+
+msgid "Pcs Free Qty"
+msgstr "الكمية مجانا"
+
+msgid "Line Discounts"
+msgstr "خط خصومات"
+
+msgid "Total Amount"
+msgstr "المبلغ الكلي"
+
+msgid "Selected Date"
+msgstr "تحديد تاريخ"
+
+msgid "Date Posting For Multiple Days Trip"
+msgstr "تاريخ عرضها لرحلة عدة أيام"
+
+msgid "Inventory Load Transfers"
+msgstr "نقل المخزون تحميل"
+
+msgid "Salesman Load Conversion"
+msgstr "بائع تحميل تحويل"
+
+msgid "Average Parameter %"
+msgstr "متوسط ​​معلمة٪"
+
+msgid "Tablet Transaction Sync Mode"
+msgstr "قرص وضع معاملة مزامنة"
+
+msgid "Tablet Transaction Sync time interval"
+msgstr "قرص مزامنة الوقت الفاصل المعاملات"
+
+msgid "Restrict Multiple Import Sync"
+msgstr "تقييد استيراد متعددة مزامنة"
+
+msgid "Allow Multiple Salesman To Visit A Customer"
+msgstr "بائع تسمح متعددة لزيارة العملاء"
+
+msgid "Allow Normal GC Collection On Tablet"
+msgstr "تسمح عادي GC كوكتيل على الجهاز اللوحي"
+
+msgid "Route Journey Plan"
+msgstr "الطريق خطط للرحلة"
+
+msgid "Basic Setup"
+msgstr "الإعداد الأساسي"
+
+msgid "Enable Suggested Sales"
+msgstr "تمكين المبيعات المقترحة"
+
+msgid "Enable Authorized Item Group"
+msgstr "تمكين المأذون مجموعة السلعة"
+
+msgid "Enable Outlet Product Code"
+msgstr "تمكين منفذ رمز المنتج"
+
+msgid "Use Alternate Code In Backoffice (Customer & Item)"
+msgstr "استخدام التعليمات البرمجية القابلة ادارية بديلة في (العملاء الصنف)"
+
+msgid "Download Other Route Pending Invoices"
+msgstr "تحميل الفواتير الطريق المعلقة الأخرى"
+
+msgid "Enable Rounding Off"
+msgstr "تمكين تقريب الكسور"
+
+msgid "Allow Cloud Transaction Entry"
+msgstr "تسمح السحب الدخول المعاملات"
+
+msgid "Damage/Expiry Management"
+msgstr "الضرر / انتهاء الاشتراك إدارة"
+
+msgid "Ranged Qualification On Fixed Assignment"
+msgstr "تراوحت المؤهل في مهمة الثابتة"
+
+msgid "Import Sync With Salesman Load"
+msgstr "استيراد متزامنة مع تحميل بائع"
+
+msgid "Convert Load Request To Starting Load"
+msgstr "تحويل الطلب إلى تحميل تحميل ابتداء"
+
+msgid "Populated Previous Day Starting Load"
+msgstr "اليوم السابق بالسكان ابتداء تحميل"
+
+msgid "Convert Sales Order To Starting Load"
+msgstr "تحويل المبيعات ابتداء أجل تحميل"
+
+msgid "Enable Company And Region"
+msgstr "تمكين الشركة والمنطقة"
+
+msgid "Auto Insert Route Sequence For New Customers"
+msgstr "تسلسل السيارات الطريق إدراج للعملاء الجدد"
+
+msgid "Show Additional Customer Details"
+msgstr "عرض تفاصيل إضافية العملاء"
+
+msgid "With Depot And Route Code"
+msgstr "مع مستودع ورمز الطريق"
+
+msgid "With Route And Depot Code"
+msgstr "مع الطريق والقانون مستودع"
+
+msgid "Enabled Batch And Expiry"
+msgstr "تمكين دفعة وانتهاء الاشتراك"
+
+msgid "Enable Cost Price"
+msgstr "تمكين السعر التكلفة"
+
+msgid "Cost Price Calculation %"
+msgstr "تكلف٪ الأسعار حساب"
+
+msgid "Cost Price"
+msgstr "سعر الكلفة"
+
+msgid "User Type"
+msgstr "نوع المستخدم"
+
+msgid "User Master"
+msgstr "ماجستير المستخدم"
+
+msgid "Access Type"
+msgstr "الوصول نوع"
+
+msgid "User Name"
+msgstr "اسم المستخدم"
+
+msgid "Modules"
+msgstr "وحدات"
+
+msgid "Select All Modules"
+msgstr "حدد كافة الوحدات النمطية"
+
+msgid "Permission By"
+msgstr "إذن من"
+
+msgid "Choose"
+msgstr "اختار"
+
+msgid "Select All Rows"
+msgstr "حدد كافة الصفوف"
+
+msgid "Module"
+msgstr "وحدة"
+
+msgid "Form"
+msgstr "شكل"
+
+msgid "Read"
+msgstr "قرأ"
+
+msgid "Write"
+msgstr "الكتابة"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "User Permission"
+msgstr "إذن المستخدم"
+
+msgid "Delete Data"
+msgstr "حذف البيانات"
+
+msgid "Delete Transaction By Route"
+msgstr "حذف المعاملات من خلال الطريق"
+
+msgid "View Activity Log"
+msgstr "عرض سجل النشاط"
+
+msgid "Form Name"
+msgstr "شكل اسم"
+
+msgid "Table Name"
+msgstr "الجدول اسم"
+
+msgid "Operation Type"
+msgstr "نوع العملية"
+
+msgid "Record Id"
+msgstr "سجل رقم"
+
+msgid "Created By"
+msgstr "ابتكرت من قبل"
+
+msgid "Exchange Details"
+msgstr "تبادل تفاصيل"
+
+msgid "Exchange Currency"
+msgstr "صرف العملات"
+
+msgid "Default Currency"
+msgstr "العملة الافتراضية"
+
+msgid "Currency Decimal Place"
+msgstr "العملة عشري مكان"
+
+msgid "Bank Master"
+msgstr "البنك ماجستير"
+
+msgid "Inventory Location"
+msgstr "جرد الموقع"
+
+msgid "Discount Key (Item Level Ranged Discounts)"
+msgstr "مفتاح الخصم (خصومات مستوى الإغلاق أحداث)"
+
+msgid "Distribution Key (Item Level Case Price Discounts)"
+msgstr "مفتاح توزيع (البند تخفيضات الأسعار مستوى القضية)"
+
+msgid "Fixed Qualification And Fixed Assignment"
+msgstr "ثابت ثابت التأهيل والتعيين"
+
+msgid "Disable Balance Update While Posting (For Cheques)"
+msgstr "تعطيل التحديث الرصيد في حين نشر (للشيكات)"
+
+msgid "Allowed Radius (For GPS Checking)"
+msgstr "يسمح الشعاع (GPS للتدقيق)"
+
+msgid "Void Description"
+msgstr "وصف الفراغ"
+
+msgid "Void Description (Arabic)"
+msgstr "وصف باطلة (عربي)"
+
+msgid "Expenses Description"
+msgstr "وصف نفقات"
+
+msgid "Route Category Code"
+msgstr "الفئة طريق قانون"
+
+msgid "Route Category Name"
+msgstr "الطريق اسم التصنيف"
+
+msgid "Route Category Name (Arabic)"
+msgstr "الطريق الاسم (عربي)"
+
+msgid "Category Code"
+msgstr "الفئة قانون"
+
+msgid "Category Name"
+msgstr "اسم التصنيف"
+
+msgid "Category (Arabic)"
+msgstr "الفئة (عربي)"
+
+msgid "Allow Change Salesman"
+msgstr "السماح بتغيير بائع"
+
+msgid "Depot Route"
+msgstr "مستودع الطريق"
+
+msgid "Security Assignment"
+msgstr "الأمن تعيين"
+
+msgid "Salesman Code"
+msgstr "بائع قانون"
+
+msgid "Route Template Name"
+msgstr "الطريق قالب اسم"
+
+msgid "Template Name"
+msgstr "قالب اسم"
+
+msgid "P.O.BOX"
+msgstr "صندوق بريد"
+
+msgid "Customer Type"
+msgstr "نوع العميل"
+
+msgid "Bill To Bill"
+msgstr "مشروع قانون لبيل"
+
+msgid "ItemDescription"
+msgstr "وصف السلعة"
+
+msgid "Saleman Code"
+msgstr "بيع رجل قانون"
+
+msgid "Debit Note (Route)"
+msgstr "ملاحظة الخصم (الطريق)"
+
+msgid "Credit Note (Route)"
+msgstr "ملاحظة الائتمان (الطريق)"
+
+msgid "PDC Clearance"
+msgstr "PDC التخليص"
+
+msgid "Item Quantity"
+msgstr "البند الكمية"
+
+msgid "PromotionPlan No."
+msgstr "خطة الترويج رقم"
+
+msgid "Range Basis"
+msgstr "مجموعة الأساس"
+
+msgid "Amount Basis"
+msgstr "المبلغ أساس"
+
+msgid "Exclution Option"
+msgstr "استبعاد الخيار"
+
+msgid "One Time Use"
+msgstr "مرة واحدة استخدام"
+
+msgid "Assignment No."
+msgstr "احالة رقم"
+
+msgid "Quantity In Cases"
+msgstr "الكمية في حالات"
+
+msgid "Promo Value"
+msgstr "الترويجي القيمة"
+
+msgid "Range Repeat"
+msgstr "كرر مجموعة"
+
+msgid "Range High"
+msgstr "مجموعة عالية"
+
+msgid "Range Low"
+msgstr "منخفض مجموعة"
+
+msgid "Promotion Plan"
+msgstr "خطة الترويج"
+
+msgid "Plan Selection"
+msgstr "خطة اختيار"
+
+msgid "CustomerPricing Key"
+msgstr "العملاء التسعير الرئيسية"
+
+msgid "Plan #"
+msgstr "تخطط #"
+
+msgid "Contact No"
+msgstr "الاتصال لا"
+
+msgid "Item"
+msgstr "بند"
+
+msgid "Category Key"
+msgstr "الفئة الرئيسية"
+
+msgid "Selected Customer"
+msgstr "اختيار العملاء"
+
+msgid "Fill By"
+msgstr "بواسطة ملء"
+
+msgid "Category"
+msgstr "فئة"
+
+msgid "Outltet Product Code"
+msgstr "رمز المنتج المنفذ"
+
+msgid "Active/ In Active Items"
+msgstr "نشط / في البنود بالموقع"
+
+msgid "Non Active Item"
+msgstr "غير بالموقع الإغلاق"
+
+msgid "Active Item"
+msgstr "نشط الإغلاق"
+
+msgid "Sales Cost Price"
+msgstr "مبيعات تكلفة السعر"
+
+msgid "Sales Cost PCS Price"
+msgstr "سعر البيع التكلفة PCS"
+
+msgid "Setting 1"
+msgstr "وضع 1"
+
+msgid "BarCode"
+msgstr "الباركود"
+
+msgid "Print Sequence Customer"
+msgstr "طباعة تسلسل العملاء"
+
+msgid "BarCode2"
+msgstr "الباركود 2"
+
+msgid "BarCode1"
+msgstr "الباركود 1"
+
+msgid "BarCode3"
+msgstr "الباركود 3"
+
+msgid "BarCode4"
+msgstr "الباركود 4"
+
+msgid "BarCode5"
+msgstr "الباركود 5"
+
+msgid "BarCode6"
+msgstr "الباركود 6"
+
+msgid "BarCode7"
+msgstr "الباركود 7"
+
+msgid "BarCode8"
+msgstr "الباركود 8"
+
+msgid "BarCode9"
+msgstr "الباركود 9"
+
+msgid "BarCode10"
+msgstr "الباركود 10"
+
+msgid "Package ID"
+msgstr "حزمة ID"
+
+msgid "Quota"
+msgstr "كوتا"
+
+msgid "Quota ID"
+msgstr "حصة ID"
+
+msgid "Quota Description"
+msgstr "حصة وصف"
+
+msgid "Quota Description (Arabic)"
+msgstr "وصف الحصص (عربي)"
+
+msgid "Salesman Target"
+msgstr "بائع الهدف"
+
+msgid "Select Year"
+msgstr "اختر السنة"
+
+msgid "Is Case"
+msgstr "لحالة"
+
+msgid "Case"
+msgstr "حالة"
+
+msgid "Yearly"
+msgstr "سنويا"
+
+msgid "Monthly"
+msgstr "شهريا"
+
+msgid "Weekly"
+msgstr "الأسبوعية"
+
+msgid "Daily"
+msgstr "يوميا"
+
+msgid "Package Code"
+msgstr "حزمة مدونة"
+
+msgid "Daily Qty"
+msgstr "الكمية اليومية"
+
+msgid "Weekly Qty"
+msgstr "الكمية الأسبوعية"
+
+msgid "Monthly Qty"
+msgstr "الكمية الشهرية"
+
+msgid "Yearly Qty"
+msgstr "الكمية سنويا"
+
+msgid "DepotInvKey"
+msgstr "مستودع مفتاح الاستثمار"
+
+msgid "From Depot"
+msgstr "من مستودع"
+
+msgid "To Depot"
+msgstr "لمستودع"
+
+msgid "Transaction Date"
+msgstr "تاريخ المعاملة"
+
+msgid "IsPosted"
+msgstr "والسؤال"
+
+msgid "Depot/Branch"
+msgstr "مستودع / فرع"
+
+msgid "Depot Stock"
+msgstr "مستودع للأوراق"
+
+msgid "Goods Receipt Note"
+msgstr "استلام البضائع ملاحظة"
+
+msgid "GRN No"
+msgstr "لا GRN"
+
+msgid "From"
+msgstr "من"
+
+msgid "To"
+msgstr "إلى"
+
+msgid "Goods Receipt"
+msgstr "استلام البضائع"
+
+msgid "Avl Rel Pcs"
+msgstr "AVL الرطوبة قطع"
+
+msgid "Avl Rel Cases"
+msgstr "AVL الرطوبة حالات"
+
+msgid "Avl Hld Pieces"
+msgstr "HLD قطع AVL"
+
+msgid "Avl Hld Cases"
+msgstr "HLD حالات AVL"
+
+msgid "Released Pcs"
+msgstr "صدر قطع"
+
+msgid "Released Cases"
+msgstr "صدر حالات"
+
+msgid "Hold Pcs"
+msgstr "عقد قطع"
+
+msgid "Hold Cases"
+msgstr "عقد القضايا"
+
+msgid "Depot Damage/Expiry"
+msgstr "الأضرار مستودع / انتهاء الاشتراك"
+
+msgid "Tran.ID"
+msgstr "تران. ID"
+
+msgid "ReferanceNo"
+msgstr "لا بإشارة"
+
+msgid "From Date"
+msgstr "من تاريخ"
+
+msgid "To Date"
+msgstr "حتى الان"
+
+msgid "Depot Code"
+msgstr "مستودع قانون"
+
+msgid "Sales Date"
+msgstr "مبيعات تاريخ"
+
+msgid "Tran.No."
+msgstr "تران. لا."
+
+msgid "Referance No."
+msgstr "بإشارة رقم"
+
+msgid "Route Start Of Day"
+msgstr "بدء الطريق من اليوم"
+
+msgid "Show All Days"
+msgstr "مشاهدة جميع أيام"
+
+msgid "Process Load"
+msgstr "عملية تحميل"
+
+msgid "Sales Order"
+msgstr "ترتيب المبيعات"
+
+msgid "Order Date"
+msgstr "الترتيب التاريخ"
+
+msgid "AR Collection"
+msgstr "AR كوكتيل"
+
+msgid "Receipt Date"
+msgstr "تاريخ استلام"
+
+msgid "Advance Payment"
+msgstr "الدفع مقدما"
+
+msgid "Route End Of Day"
+msgstr "تاريخ مسار اليوم"
+
+msgid "Begin/ Opening Stock"
+msgstr "تبدأ / افتتاح سوق الأسهم"
+
+msgid "Customer Inventory"
+msgstr "العملاء المخزون"
+
+msgid "Unload Inventory"
+msgstr "تفريغ المخزون"
+
+msgid "Unload Variance"
+msgstr "تفريغ الفرق"
+
+msgid "Damage Return"
+msgstr "الضرر العودة"
+
+msgid "Inventory Summary"
+msgstr "ملخص المخزون"
+
+msgid "Route Sync Status"
+msgstr "الطريق مزامنة الحالة"
+
+msgid "Route End Date"
+msgstr "الطريق تاريخ الإنتهاء"
+
+msgid "Route Summary"
+msgstr "ملخص الطريق"
+
+msgid "Daily Route Activity"
+msgstr "يومية الطريق نشاط"
+
+msgid "Route Inventory"
+msgstr "الطريق الجرد"
+
+msgid "Route Deposit Summar"
+msgstr "الطريق الإيداع الصيف"
+
+msgid "Route End Date - From"
+msgstr "الطريق تاريخ الإنتهاء - من"
+
+msgid "Route End Date - To"
+msgstr "الطريق تاريخ الإنتهاء - ل"
+
+msgid "Discount Summary"
+msgstr "ملخص الخصم"
+
+msgid "Pricing Summary"
+msgstr "ملخص التسعير"
+
+msgid "Sales Summary"
+msgstr "ملخص المبيعات"
+
+msgid "Transaction Date - From"
+msgstr "تاريخ المعاملة - من"
+
+msgid "Transaction Date - To"
+msgstr "تاريخ المعاملة - ل"
+
+msgid "Order Summary"
+msgstr "ملخص النظام"
+
+msgid "Return Summary"
+msgstr "ملخص العودة"
+
+msgid "FOC Summary"
+msgstr "ملخص FOC"
+
+msgid "Collection Summary"
+msgstr "جمع ملخص"
+
+msgid "Route Visit Review"
+msgstr "الطريق زيارة استعراض"
+
+msgid "Payment Summary"
+msgstr "ملخص الدفع"
+
+msgid "Deposit Summary"
+msgstr "إيداع ملخص"
+
+msgid "Item History"
+msgstr "تفاصيل"
+
+msgid "POS Tracking"
+msgstr "POS تتبع"
+
+msgid "Survey Tracking"
+msgstr "مسح تتبع"
+
+msgid "Route Ageing"
+msgstr "الطريق شيخوخة"
+
+msgid "Customer Ageing"
+msgstr "العملاء شيخوخة"
+
+msgid "Route Pending Balance"
+msgstr "الرصيد الطريق ريثما"
+
+msgid "Customer Pending Balance"
+msgstr "وفي انتظار العملاء الرصيد"
+
+msgid "Tablet Report"
+msgstr "تقرير اللوحي"
+
+msgid "Cash Cheque Collection"
+msgstr "كوكتيل النقدية الشيكات"
+
+msgid "Route Activity"
+msgstr "الطريق نشاط"
+
+msgid "Return/Buy Back Summary"
+msgstr "العودة / شراء ملخص العودة"
+
+msgid "Free Summary"
+msgstr "ملخص مجانا"
+
+msgid "Void Transaction"
+msgstr "الفراغ المعاملات"
+
+msgid "Route Monthly Revenue"
+msgstr "إيرادات الطريق الشهري"
+
+msgid "Sales Free Summary"
+msgstr "ملخص المبيعات مجاني"
+
+msgid "Item Sales Summary"
+msgstr "البند المبيعات ملخص"
+
+msgid "Item Distribution"
+msgstr "البند توزيع"
+
+msgid "Actual Transaction Data - From"
+msgstr "بيانات المعاملات الفعلية - من"
+
+msgid "Actual Transaction Data - To"
+msgstr "بيانات المعاملات الفعلية - ل"
+
+msgid "StrikeRate CallRate Discipline Length AvgTime"
+msgstr "إضراب سعر المكالمة قيم الانضباط طول الزمن المتوسط"
+
+msgid "Route Start Date - Month"
+msgstr "الطريق تاريخ البدء - شهر"
+
+msgid "Route Start Date - Year"
+msgstr "الطريق تاريخ البدء - سنة"
+
+msgid "Salesman Productivity"
+msgstr "بائع الإنتاجية"
+
+msgid "Average Drop Size"
+msgstr "متوسط ​​حجم قطرة"
+
+msgid "Allowed Radius (For GPS)"
+msgstr "يسمح الشعاع (للGPS)"
+
+msgid "EOD Settlement Report"
+msgstr "EOD التسوية تقرير"
+
+msgid "Route Currency"
+msgstr "الطريق العملات"
+
+msgid "Tablet ItemCode Display"
+msgstr "قرص عرض تفاصيل القانون"
+
+msgid "Print Alternate Itemcode"
+msgstr "طباعة رمز السلعة البديل"
+
+msgid "Load Req Roll Up"
+msgstr "تحميل رول ةداملا مسا أعلى"
+
+msgid "Round Net Amount (Line Level)"
+msgstr "صافي المبلغ الجولة (مستوى خط)"
+
+msgid "Rounding Off Value"
+msgstr "تقريب الكسور القيمة"
+
+msgid "Latitude Coordinates"
+msgstr "خط العرض الإحداثيات"
+
+msgid "Longitude Coordinates"
+msgstr "خط الطول الإحداثيات"
+
+msgid "Barcode"
+msgstr "الباركود"
+
+msgid "REMOVE"
+msgstr "إزالة"
+
+msgid "APPLY"
+msgstr "التقدم للوظيفة"
+
+msgid "Remark 1"
+msgstr "الملاحظة 1"
+
+msgid "Remark 2"
+msgstr "الملاحظة 2"
+
+msgid "ERP Reference No."
+msgstr "ERP مرجع رقم"
+
+msgid "Amount To Pay"
+msgstr "لدفع مبلغ"
+
+msgid "Present Balance"
+msgstr "الرصيد الحالي"
+
+msgid "Credit Note (Customer)"
+msgstr "ملاحظة الائتمان (العملاء)"
+
+msgid "Cheque Amount"
+msgstr "شيك المبلغ"
+
+msgid "BOUNCE"
+msgstr "وثب"
+
+msgid "CLEAR"
+msgstr "غائم"
+
+msgid "Selected Route"
+msgstr "اختيار الطريق"
+
+msgid "Batch No"
+msgstr "لا دفعة"
+
+msgid "Reason Code"
+msgstr "السبب كود"
+
+msgid "Expiry Date"
+msgstr "تاريخ انتهاء الصلاحية"
+
+msgid "Load Period"
+msgstr "تحميل الفترة"
+
+msgid "Export As"
+msgstr "وتصدير"
+
+msgid "Sync Date"
+msgstr "مزامنة تاريخ"
+
+msgid "Sync Time"
+msgstr "مزامنة الوقت"
+
+msgid "Sync Type"
+msgstr "مزامنة نوع"
+
+msgid "Route Status"
+msgstr "الحالة الطريق"
+
+msgid "Order Net Amount"
+msgstr "المبلغ الصافي أجل"
+
+msgid "Received Time"
+msgstr "تلقى الزمن"
+
+msgid "Order Number"
+msgstr "رقم الطلب"
+
+msgid "Tran. Time"
+msgstr "تران. مرة"
+
+msgid "Order Qty"
+msgstr "أجل الكمية"
+
+msgid "Return Qty"
+msgstr "العودة الكمية"
+
+msgid "Damage Qty"
+msgstr "الضرر الكمية"
+
+msgid "Order No"
+msgstr "الأمر رقم"
+
+msgid "Order Time"
+msgstr "أجل التوقيت"
+
+msgid "Route Start Date"
+msgstr "الطريق تاريخ البدء"
+
+msgid "Order Status"
+msgstr "أجل وضع"
+
+msgid "Customer Payment Term"
+msgstr "العملاء الدفع الأجل"
+
+msgid "Total Order Amount"
+msgstr "إجمالي المبلغ ترتيب"
+
+msgid "Delivery Date"
+msgstr "تاريخ التسليم"
+
+msgid "LPO Number"
+msgstr "عدد LPO"
+
+msgid "Total Returned Amount"
+msgstr "المبلغ الكلي عاد"
+
+msgid "Total Free Amount"
+msgstr "مجاني المبلغ الإجمالي"
+
+msgid "Total Line Item Discount"
+msgstr "مجموع الخصم الخط الإغلاق"
+
+msgid "Total Order Discount"
+msgstr "مجموع ترتيب الخصم"
+
+msgid "Comments"
+msgstr "تعليقات"
+
+msgid "Signature"
+msgstr "توقيع"
+
+msgid "Order"
+msgstr "النظام"
+
+msgid "Return"
+msgstr "عودة"
+
+msgid "Damage"
+msgstr "تلف"
+
+msgid "Promotion"
+msgstr "ترويج"
+
+msgid "CASE"
+msgstr "حالة"
+
+msgid "PCS"
+msgstr "قطعة"
+
+msgid "Unit Price"
+msgstr "سعر الوحدة"
+
+msgid "Discount"
+msgstr "خصم"
+
+msgid "Comment / Remarks"
+msgstr "التعليق / ملاحظات"
+
+msgid "Available Qty"
+msgstr "الكمية المتاحة"
+
+msgid "Free Reason"
+msgstr "السبب مجانا"
+
+msgid "Return Reason"
+msgstr "العودة السبب"
+
+msgid "BuyBack Reason"
+msgstr "اعادة شراء السبب"
+
+msgid "Damage Reason"
+msgstr "الضرر السبب"
+
+msgid "Expiry Reason"
+msgstr "انتهاء السبب"
+
+msgid "Sales Qty"
+msgstr "مبيعات الكمية"
+
+msgid "BuyBack Qty"
+msgstr "إعادة شراء الكمية"
+
+msgid "Expiry Qty"
+msgstr "انتهاء الكمية"
+
+msgid "Rental Qty"
+msgstr "تأجير الكمية"
+
+msgid "Enter Key"
+msgstr "إدخال مفتاح"
+
+msgid "Select Data"
+msgstr "تحديد بيانات"
+
+msgid "Van Code"
+msgstr "فان قانون"
+
+msgid "Acc Period"
+msgstr "ACC الفترة"
+
+msgid "Document Valid"
+msgstr "صالحة الوثيقة"
+
+msgid "Document No."
+msgstr "الوثيقة رقم"
+
+msgid "Transaction Time"
+msgstr "المعاملة الزمن"
+
+msgid "Load No."
+msgstr "تحميل رقم"
+
+msgid "Route (Salesman)"
+msgstr "الطريق (بائع)"
+
+msgid "Route Start Time"
+msgstr "الطريق وقت البدء"
+
+msgid "Route End Time"
+msgstr "الطريق نهاية الوقت"
+
+msgid "Total Sales Documents"
+msgstr "مجموع مبيعات وثائق"
+
+msgid "Total Return Documents"
+msgstr "وثائق العائد الإجمالي"
+
+msgid "Total Cash Sales"
+msgstr "المبيعات النقدية الإجمالية"
+
+msgid "Total GC Sales"
+msgstr "إجمالي المبيعات GC"
+
+msgid "Total TC Sales"
+msgstr "المبيعات الإجمالية TC"
+
+msgid "Total Invoiced Amount"
+msgstr "إجمالي مبلغ بفاتورة"
+
+msgid "Total Receipt Documents"
+msgstr "مجموع ثائق الاستلام"
+
+msgid "Total Receipt Amount"
+msgstr "إجمالي المبلغ استلام"
+
+msgid "Total Cash"
+msgstr "مجموع النقدية"
+
+msgid "Total Checks"
+msgstr "إجمالي الشيكات"
+
+msgid "Total Expenses"
+msgstr "إجمالي المصروفات"
+
+msgid "Cash Variance"
+msgstr "الفرق نقدا"
+
+msgid "Document Number"
+msgstr "الوثيقة رقم"
+
+msgid "Visit Start Time"
+msgstr "زيارة وقت البدء"
+
+msgid "Visit End Time"
+msgstr "زيارة وقت الانتهاء"
+
+msgid "Duration hh:mm"
+msgstr "مدة hh:mm"
+
+msgid "Transaction"
+msgstr "صفقة"
+
+msgid "Total Transaction Amount"
+msgstr "إجمالي المبلغ المعاملات"
+
+msgid "Invoice Amount Collected"
+msgstr "مبلغ الفاتورة المجمعة"
+
+msgid "Receipt Amount Collected"
+msgstr "المبلغ استلام المجمعة"
+
+msgid "Opening Case"
+msgstr "فتح القضية"
+
+msgid "Opening Pcs"
+msgstr "فتح الحاسوب الشخصي"
+
+msgid "Load Case"
+msgstr "تحميل القضية"
+
+msgid "Load Pcs"
+msgstr "تحميل قطع"
+
+msgid "Transfer IN Case"
+msgstr "في حالة نقل"
+
+msgid "Transfer IN Pcs"
+msgstr "نقل في أجهزة الكمبيوتر"
+
+msgid "Transfer OUT Case"
+msgstr "نقل القضية خارج"
+
+msgid "Transfer OUT Pcs"
+msgstr "نقل قطع المغادرة"
+
+msgid "Sales Case"
+msgstr "مبيعات القضية"
+
+msgid "Sales Pcs"
+msgstr "مبيعات أجهزة الكمبيوتر"
+
+msgid "Good Return Case"
+msgstr "العودة القضية جيدة"
+
+msgid "Good Return Pcs"
+msgstr "قطع عائد جيد"
+
+msgid "Damaged Case"
+msgstr "حالة التالفة"
+
+msgid "Damaged Pcs"
+msgstr "قطع التالفة"
+
+msgid "Expiry Case"
+msgstr "انتهاء القضية"
+
+msgid "Expiry Pcs"
+msgstr "انتهاء قطع"
+
+msgid "Promo Free Case"
+msgstr "مجاني حالة الترويجي"
+
+msgid "Promo Free Pcs"
+msgstr "مجاني قطع الترويجي"
+
+msgid "Manual Sample Case"
+msgstr "دليل نموذج حالة"
+
+msgid "Manual Sample Pcs"
+msgstr "قطع عينة دليل"
+
+msgid "Closing Case"
+msgstr "إغلاق القضية"
+
+msgid "Closing Pcs"
+msgstr "إغلاق أجهزة الكمبيوتر"
+
+msgid "Load Value"
+msgstr "تحميل القيمة"
+
+msgid "Closing Value"
+msgstr "إغلاق القيمة"
+
+msgid "Route Trip Analysis"
+msgstr "تحليل مسار الرحلة"
+
+msgid "Customer Visit Schedule"
+msgstr "جدول زيارة العملاء"
+
+msgid "Visit Status"
+msgstr "زيارة مركز"
+
+msgid "Transaction Amount"
+msgstr "الصفقة المبلغ"
+
+msgid "No Transaction Reason"
+msgstr "لا المعاملات السبب"
+
+msgid "Last Invoiced Date"
+msgstr "مشاركة تاريخ بفاتورة"
+
+msgid "Last Order Taken On"
+msgstr "ترتيب مشاركة المتخذة بشأن"
+
+msgid "Visit Sequ."
+msgstr "زيارة Sequ."
+
+msgid "Group Total"
+msgstr "مجموعة إجمالي"
+
+msgid "Against Invoice"
+msgstr "ضد الفاتورة"
+
+msgid "Invoiced Date"
+msgstr "تاريخ الفاتورة"
+
+msgid "Invoiced Salesman"
+msgstr "فواتير بائع"
+
+msgid "Check Number"
+msgstr "التحقق من رقم"
+
+msgid "Draw Date"
+msgstr "رسم تاريخ"
+
+msgid "Payment Type"
+msgstr "الدفع نوع"
+
+msgid "Invoice Type"
+msgstr "الفاتورة نوع"
+
+msgid "Route Deposit Summary"
+msgstr "ملخص الطريق الإيداع"
+
+msgid "Tran. Date - From "
+msgstr "تاريخ المعاملة - من"
+
+msgid "Tran. Date - To "
+msgstr "تاريخ المعاملة - ل"
+
+msgid "Qty in PCS"
+msgstr "الكمية في أجهزة الكمبيوتر"
+
+msgid "Return Price (Pcs)"
+msgstr "عودة السعر (كومبيوتر)"
+
+msgid "Free Amount"
+msgstr "المبلغ مجانا"
+
+msgid "Net Amount"
+msgstr "صافي القيمة"
+
+msgid "Discount Amount"
+msgstr "خصم المبلغ"
+
+msgid "Sales Amount"
+msgstr "مبيعات المبلغ"
+
+msgid "Paid Amount"
+msgstr "دفع المبلغ"
+
+msgid "Invoice By"
+msgstr "فاتورة"
+
+msgid "Amount Paid in CHECK"
+msgstr "المبلغ المدفوع في التحقق من"
+
+msgid "Amount Paid in CASH"
+msgstr "المبلغ المدفوع نقدا"
+
+msgid "Receipt Number"
+msgstr "استلام عدد"
+
+msgid "Total Kms Covered"
+msgstr "كم إجمالي المغطاة"
+
+msgid "Day"
+msgstr "يوم"
+
+msgid "Scheduled Targets To Visit"
+msgstr "الأهداف المقرر للزيارة"
+
+msgid "Scheduled Targets Visited"
+msgstr "تمت الزيارة الأهداف المقرر"
+
+msgid "Scheduled Targets Not Visited"
+msgstr "أهداف المقرر لم يزر"
+
+msgid "Un Scheduled Targets Visited"
+msgstr "تمت الزيارة في الأمم المتحدة الأهداف المجدولة"
+
+msgid "Total Visits"
+msgstr "عدد الزيارات"
+
+msgid "Schedule Sale"
+msgstr "جدولة بيع"
+
+msgid "Schedule No Sale"
+msgstr "يعقد ما لا بيع"
+
+msgid "Un Schedule Sale"
+msgstr "الأمم المتحدة جدول بيع"
+
+msgid "Un Schedule No Sale"
+msgstr "الأمم المتحدة بالجدول رقم بيع"
+
+msgid "Effective Visit"
+msgstr "فعالية زيارة"
+
+msgid "Starting Kms"
+msgstr "بدءا كم"
+
+msgid "Ending Kms"
+msgstr "كم المنتهية"
+
+msgid "Outstanding Balance Amount"
+msgstr "الرصيد المستحق المبلغ"
+
+msgid "AR Check Collection"
+msgstr "AR تحقق كوكتيل"
+
+msgid "AR CASH Collection"
+msgstr "AR النقدية كوكتيل"
+
+msgid "Immediate Check Payment"
+msgstr "على الفور التحقق من الدفع"
+
+msgid "Immediate CASH Payment"
+msgstr "الدفع النقدي الفوري"
+
+msgid "Immediate Cash"
+msgstr "نقد فوري"
+
+msgid "Immediate Check"
+msgstr "تحقق فوري"
+
+msgid "Truck Stock Value"
+msgstr "شاحنة الأسهم القيمة"
+
+msgid "Daily Loaded Value"
+msgstr "القيمة اليومية المحملة"
+
+msgid "Opening Stock Value"
+msgstr "فتح قيمة الأسهم"
+
+msgid "Closing Unit"
+msgstr "إغلاق وحدة"
+
+msgid "Manual Sample Unit"
+msgstr "دليل نموذج الوحدة"
+
+msgid "Promo Free Unit"
+msgstr "وحدة حر الترويجي"
+
+msgid "Expiry Unit"
+msgstr "انتهاء الوحدة"
+
+msgid "Damaged Unit"
+msgstr "التالفة وحدة"
+
+msgid "Good Return Unit"
+msgstr "العودة جيدة حدة"
+
+msgid "Sales Unit"
+msgstr "مبيعات وحدة"
+
+msgid "Transfer OUT Unit"
+msgstr "نقل وحدة OUT"
+
+msgid "Transfer IN Unit"
+msgstr "نقل في وحدة"
+
+msgid "Load Unit"
+msgstr "تحميل وحدة"
+
+msgid "Opening Unit"
+msgstr "فتح وحدة"
+
+msgid "Trip End Date"
+msgstr "رحلة تاريخ الإنتهاء"
+
+msgid "Trip Start Date"
+msgstr "رحلة تاريخ البدء"
+
+msgid "Customer Number"
+msgstr "عدد العملاء"
+
+msgid "Time Out"
+msgstr "تايم آوت"
+
+msgid "Time In"
+msgstr "وفي الوقت"
+
+msgid "Document#"
+msgstr "توثيق #"
+
+msgid "Route Activity Log"
+msgstr "الطريق سجل النشاط"
+
+msgid "ItemCode"
+msgstr "البند الرمز"
+
+msgid "Qty (InPcs)"
+msgstr "الكمية (في أجهزة الكمبيوتر)"
+
+msgid "Reason Description"
+msgstr "السبب وصف"
+
+msgid "Tablet Free Summary"
+msgstr "ملخص قرص مجاني"
+
+msgid "Good Ret. Amount"
+msgstr "نقع جيدة. كمية"
+
+msgid "Dmged Ret.Amount"
+msgstr "تضررت العودة المبلغ"
+
+msgid "Expiry Ret.Amount"
+msgstr "انتهاء عودة المبلغ"
+
+msgid "Std Sales Price"
+msgstr "معيار المبيعات السعر"
+
+msgid "Sales Case Price"
+msgstr "مبيعات حالة السعر"
+
+msgid "Time"
+msgstr "مرة"
+
+msgid "POS Qty"
+msgstr "POS الكمية"
+
+msgid "POS Serial"
+msgstr "POS المسلسل"
+
+msgid "POS Status"
+msgstr "POS الحالة"
+
+msgid "Survey Response"
+msgstr "مسح الاستجابة"
+
+msgid "Above 120"
+msgstr "فوق 120"
+
+msgid "PDC Date"
+msgstr "PDC تاريخ"
+
+msgid "PDC Amount"
+msgstr "PDC المبلغ"
+
+msgid "Statement Of Account"
+msgstr "كشف حساب"
+
+msgid "Detail Type"
+msgstr "التفاصيل نوع"
+
+msgid "Detail Text"
+msgstr "التفاصيل نص"
+
+msgid "January"
+msgstr "يناير"
+
+msgid "February"
+msgstr "فبراير"
+
+msgid "March"
+msgstr "مسيرة"
+
+msgid "April"
+msgstr "أبريل"
+
+msgid "May"
+msgstr "قد"
+
+msgid "June"
+msgstr "يونيو"
+
+msgid "July"
+msgstr "يوليو"
+
+msgid "August"
+msgstr "أغسطس"
+
+msgid "September"
+msgstr "سبتمبر"
+
+msgid "October"
+msgstr "أكتوبر"
+
+msgid "November"
+msgstr "نوفمبر"
+
+msgid "December"
+msgstr "ديسمبر"
+
+msgid "Damaged Qty"
+msgstr "تلف الكمية"
+
+msgid "Expired Qty"
+msgstr "انتهت الكمية"
+
+msgid "Good Ret. Qty"
+msgstr "نقع جيدة. الكمية"
+
+msgid "Sales @ Std. Price"
+msgstr "مبيعات @ الأمراض المنقولة جنسيا. السعر"
+
+msgid "Sales @ Inv. Price"
+msgstr "@ مبيعات الاستثمار. السعر"
+
+msgid "Damage Ret @ Std. Price"
+msgstr "الضرر نقع @ الأمراض المنقولة جنسيا. السعر"
+
+msgid "Damage Ret @ Inv. Price"
+msgstr "الضرر نقع @ الاستثمار. السعر"
+
+msgid "Expired Ret @ Std. Price"
+msgstr "انتهت نقع @ الأمراض المنقولة جنسيا. السعر"
+
+msgid "Expired Ret @ Inv. Price"
+msgstr "انتهت نقع @ الاستثمار. السعر"
+
+msgid "Good Return @ Std. Price"
+msgstr "الأمراض المنقولة جنسيا جيدة العودة @. السعر"
+
+msgid "Good Return @ Inv. Price"
+msgstr "@ عائد جيد للإستثمار. السعر"
+
+msgid "Inv. Discount Break Up"
+msgstr "الجرد. خصم تفريق"
+
+msgid "Item Discount Break Up"
+msgstr "البند الخصم تفريق"
+
+msgid "Free Goods @ Std. Price"
+msgstr "بضائع السوق الحرة @ الأمراض المنقولة جنسيا. السعر"
+
+msgid "Price Difference"
+msgstr "السعر الفرق"
+
+msgid "Total FOC"
+msgstr "مجموع FOC"
+
+msgid "Net Sales Qty"
+msgstr "صافي المبيعات الكمية"
+
+msgid "Net Sales Amount"
+msgstr "صافي المبيعات المبلغ"
+
+msgid "Net Sales"
+msgstr "صافي المبيعات"
+
+msgid "Sales Value"
+msgstr "قيمة المبيعات"
+
+msgid "Return Value"
+msgstr "القيمة المرجعة"
+
+msgid "Damage Value"
+msgstr "الضرر القيمة"
+
+msgid "Expired Value"
+msgstr "انتهت قيمة"
+
+msgid "Free Value"
+msgstr "القيمة مجانا"
+
+msgid "Item Discount"
+msgstr "البند الخصم"
+
+msgid "Invoice Discounts"
+msgstr "الفاتورة خصومات"
+
+msgid "Net Value"
+msgstr "صافي القيمة"
+
+msgid "Discounts"
+msgstr "الخصومات"
+
+msgid "Item Distribution Monthly Comparison"
+msgstr "البند مقارنة التوزيع الشهري"
+
+msgid "Item Group Wise Sales"
+msgstr "مبيعات مجموعة البند الحكيم"
+
+msgid "G. Return Qty"
+msgstr "G. العودة الكمية"
+
+msgid "G.Return @ Inv. Price"
+msgstr "@ G.Return الاستثمار. السعر"
+
+msgid "Damaged @ Inv. Price"
+msgstr "@ تضررت الاستثمار. السعر"
+
+msgid "Expired @ Inv. Price"
+msgstr "انتهت @ الاستثمار. السعر"
+
+msgid "Route / Salesman"
+msgstr "الطريق / بائع"
+
+msgid "Target To Visit"
+msgstr "استهداف لزيارة"
+
+msgid "Targets Visited"
+msgstr "تمت الزيارة في الأهداف"
+
+msgid "Targets Not Visited"
+msgstr "الأهداف التي لم تتم زيارتها"
+
+msgid "Non Targeted Visits"
+msgstr "غير المستهدفة الزيارات"
+
+msgid "Scheduled Sale"
+msgstr "من المقرر بيع"
+
+msgid "Un Scheduled Sale"
+msgstr "الامم المتحدة بيع المجدولة"
+
+msgid "Scheduled No Sale"
+msgstr "لا بيع المقرر"
+
+msgid "Un Scheduled No Sale"
+msgstr "المجدولة للامم المتحدة لا بيع"
+
+msgid "Strike Rate"
+msgstr "إضراب قيم"
+
+msgid "Call Complete Rate"
+msgstr "سعر المكالمة كاملة"
+
+msgid "Route Discipline"
+msgstr "الطريق الانضباط"
+
+msgid "Kms Covered"
+msgstr "كم المغطاة"
+
+msgid "Average In Out Time"
+msgstr "وفي المتوسط ​​تايم آوت"
+
+msgid "Value Drop Size"
+msgstr "قيمة قطرة الحجم"
+
+msgid "Quantity Drop Size"
+msgstr "كمية قطرة الحجم"
+
+msgid "Promo Qty"
+msgstr "الترويجي الكمية"
+
+msgid "No Of Invoices"
+msgstr "لا الفواتير"
+
+msgid "Customer Images"
+msgstr "صور العملاء"
+

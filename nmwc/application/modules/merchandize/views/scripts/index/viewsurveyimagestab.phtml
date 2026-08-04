@@ -1,0 +1,34 @@
+<?php
+if(count($this->survey_img) > 0)
+{
+    ?>
+    <div class="content with-actions padding_zero clear_only" id="customerimages">
+        <table border="1" cellpadding="10px" >
+            <tr> 
+                <?php
+                $i=0;						
+                foreach($this->survey_img as $curimg)
+                {
+                    if(file_exists($this->survey_path.$curimg['imagename']) && $curimg['imagename'] != '.' && $curimg['imagename'] != '..')
+                    {
+                        ?>
+                        <td align="center" class="padding_top_10"><?php echo '<img height="200" width="200" src="' . $this->survey_path1.$curimg['imagename'] . '" /><br>'.$curimg['surveyprompt'].'&nbsp;'; ?></td>
+                        <?php
+                        if(++$i%4 == 0) echo '</tr><tr>';
+                    }
+                }
+                ?>
+            </tr>
+        </table>
+    </div>
+    <?php
+}
+else
+{
+    ?>
+    <div class="content with-actions min_height_10 margin_top_10">
+        <div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b><?php echo $this->message;?></b></div>
+    </div>
+    <?php
+}
+?>

@@ -1,0 +1,48 @@
+<style>
+.active_menu{ font-weight:bold}
+</style>
+<ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"ordertransaction","action"=>"detail1","id"=>"1"), "default", true);?>"
+                        <?php
+                        echo ($this->params['action'] == "detail1") ? 'class="active_menu"' : '';
+                        ?>
+                >
+                    <?php echo $this->translate->_('STEP 1')?></a>  |
+                </li>
+                 <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"ordertransaction","action"=>"detail2","id"=>"1"), "default", true);?>"
+                    <?php
+                        echo ($this->params['action'] == "detail2") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 2')?></a> |
+                </li>
+                  <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"ordertransaction","action"=>"detail3","id"=>"1"), "default", true);?>"
+                    <?php
+                        echo ($this->params['action'] == "detail3") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 3')?></a> |
+                </li>
+                    <li>
+                    <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"ordertransaction","action"=>"detail4","id"=>"1"), "default", true);?>"
+                                   <?php
+                        echo ($this->params['action'] == "detail4") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 4')?></a> |
+                </li>
+                      <li>
+                   <a href="<?php echo $this->url(array("module"=>"hhctransaction","controller"=>"ordertransaction","action"=>"detail5","id"=>"1"), "default", true);?>"
+                                  <?php
+                        echo ($this->params['action'] == "detail5") ? 'class="active_menu"' : '';
+                        ?> >
+                    <?php echo $this->translate->_('STEP 5')?></a> |
+                </li>
+                      
+                     
+              
+            </ul>
+        </li>
+    </ul>

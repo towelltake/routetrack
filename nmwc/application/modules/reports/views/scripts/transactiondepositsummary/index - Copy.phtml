@@ -1,0 +1,77 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/transactiondepositsummary/depositsum/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Transaction Date');?>','<?php echo $this->translate->_('Type');?>','<?php echo $this->translate->_('Immediate Cash');?>','<?php echo $this->translate->_('Immediate Cheque');?>','<?php echo $this->translate->_('Total');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:100},
+		{name:'transactiondate',index:'transactiondate', width:120},
+		{name:'trantype',index:'trantype', width:120},		
+		{name:'immediatecash',index:'immediatecash', width:75,summaryType:'sum', formatter: 'number',align:"right",formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},
+		{name:'immediatecheck',index:'immediatecheck', width:75,summaryType:'sum', formatter: 'number',align:"right",formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},
+        {name:'total',index:'total', width:70,summaryType:'sum', formatter: 'number',align:"right",formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }}
+		
+		
+   	],
+	<?php if($this->css == 'ar_') { ?>
+		direction :"rtl",
+	<?php } ?>	
+    height: 'auto',
+    width: eval(reportwidth),
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+    rowList:eval(RP_ROWLISTSHOW),
+  //loadonce:true,
+    pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "desc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:false,        
+	groupingView :
+        {
+            groupField : ['routecode','trantype'],
+            groupColumnShow : [false,false],
+            groupCollapse : true,
+            groupOrder: ['asc','asc'] ,
+            groupSummary : [true,false],
+            groupDataSorted : true,
+            showSummaryOnHide: true,
+	    groupText : ['','','<b style="text-transform: uppercase;">{0}</b>']
+        }
+});
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+
+</script>

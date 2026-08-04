@@ -1,0 +1,80 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/merchandizingpos/postrack/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Salesman');?>','<?php echo $this->translate->_('Customer Code');?>','<?php echo $this->translate->_('Customer Name');?>','<?php echo $this->translate->_('Date');?>','<?php echo $this->translate->_('Time');?>','<?php echo $this->translate->_('POS Description');?>','<?php echo $this->translate->_('POS Qty');?>','<?php echo $this->translate->_('POS Serial');?>','<?php echo $this->translate->_('POS Instruction');?>','<?php echo $this->translate->_('POS Status');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:100},
+		{name:'salesmancode',index:'salesmancode', width:100},
+		{name:'customercode',index:'customercode', width:100},
+		{name:'customer',index:'customer', width:250},
+		{name:'date',index:'date', width:80},
+        {name:'time',index:'time', width:70},
+        {name:'itemdescription',index:'itemdescription', width:250},
+        {name:'quantity',index:'quantity', width:70},
+        {name:'serialnumber',index:'serialnumber', width:70},
+        {name:'posinstructionname',index:'posinstructionname', width:120},
+		{name:'posstatus',index:'posstatus', width:100}
+   	],
+    <?php if($this->css == 'ar_') { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+    rowList:eval(RP_ROWLISTSHOW),
+  //  loadonce:true,
+    pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,        
+	groupingView :
+        {
+            groupField : ['routecode','salesmancode'],
+            groupColumnShow : [false,false],
+            groupCollapse : true,
+            groupOrder: ['asc','asc'] ,
+            groupSummary : [false,false],
+            groupDataSorted : false,
+            showSummaryOnHide: false,
+	    groupText : ['','']
+        }
+});
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+
+</script>

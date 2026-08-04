@@ -1,0 +1,326 @@
+<?php
+/**
+* @name       page.phtml
+* @since      31-01-2012
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add prmotion pricing
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+$promo_plan_url = $this->url(array("module"=>"promotions","controller"=>"supervisor","action"=>"customerfreegoodsdetails"), "default", true);
+?>
+<script>
+$(document).ready(function(){
+	var wait = 0;
+	<?php if($this->params["id"]) { ?>
+		loaddepotdatadata('<?php echo $this->itemgrid; ?>','item-grid');		
+		getcustomerdepotcode('<?php echo $this->formdata['depotcode'];?>','<?php echo $this->formdata['supervisorcode'];?>');
+	
+	<?php } else { ?>
+	    loaddepotdatadata('<?php echo $this->itemgrid; ?>'+'/key/1000000000000000000000000000','item-grid');		
+	<?php } ?>
+	
+	$('#btnsave').click(function() {
+		$('#ddl_itemcode').removeClass('required');
+		$('#txt_freequantity').removeClass('required');
+	});
+	$("#sbtnadd").click(function() {
+		
+		$('#ddl_itemcode').addClass('required');
+		$('#txt_freequantity').addClass('required');
+		
+		if($("#frmdetsec").valid())
+		{
+			$.ajax({
+				type : "POST",
+				url : base_url+"/promotions/supervisor/addfreegoodsgrid",
+				data:$("#frmdetsec").serialize(),
+				success:function(returndata){
+				if(returndata.trim()!="")
+				{
+					//$('#item-grid').html(returndata);
+					loaddepotdatadata(base_url+"/promotions/supervisor/freegoodsgrid/key/"+returndata,'item-grid');
+					$('#hdnid').val(returndata);
+					$("#ddl_itemcode").val('');
+					$("#txtupc").val('');
+					$('#txt_freequantity').val('');
+					$('select').trigger('liszt:updated');
+					
+					$("#item-grid #table-example tr").each(function() {
+						if($(this).find('td').eq(4).html() == '0') {
+							$(this).find('td').eq(5).find('a').html('');
+							$(this).find('td').eq(6).find('a').html('');
+						}
+					})
+					
+					
+				}
+				else
+				{
+					
+					alert("This Supervisor already have a Free contarct in the given date");return;
+				}
+				}
+			});
+		}
+	});
+	$("#ddl_depotcode").change(function() {
+		var depotid = $('#ddl_depotcode').val();
+		$("#ddl_customercode").attr('disabled',false);
+					$('ddl_customercode').trigger('liszt:updated');
+					
+		getcustomerdepotcode(depotid,'');
+	});
+	$("#ddl_itemcode").change(function() {
+		
+		var item_id = $("#ddl_itemcode").val();
+		
+		$("#txtupc").val('');
+		
+		if(item_id > 0 )
+		{
+			var url 		= base_url+'/home/index/getiteminfo/itemid/'+item_id;			
+			$.ajax({
+				url:url,				
+				type:'post',
+				beforeSend: function() {
+					$("#loader").html("<img src='"+base_url+"/public/images/ajax-loader-bar.gif' alt='Loading..' />");	    
+				},
+				success:function(data)
+				{	
+					var item_info = JSON.parse(data);
+					if (item_info == '')
+					{
+						return false;
+					}					
+					if(typeof(item_info[0]) == 'object')
+					{
+						$("#txtupc").val(item_info[0][0]['unitspercase']);						
+						$("#loader").html("");
+					}
+				}
+			})			
+		}
+	});
+	
+	
+})
+function getcustomerdepotcode(depotid,customerid)
+{ depotid=1;
+	//alert(depotid);
+	if(depotid > 0)
+	{
+		$("#ddl_customercode").html("");
+		var values = $('#frmdetsec').serialize();
+		$.ajax({
+			type : "POST",
+			url : base_url+"/promotions/supervisor/getcustomerroutecode/depotid/"+depotid,
+			data :values,			
+			success:function(data) {
+				var customer_info = JSON.parse(data);
+				if (customer_info == '')
+				{
+					return false;
+				}
+				if(typeof(customer_info[0]) == 'object')
+				{
+					$('<option/>').val('').html('--- Select ---').appendTo('#ddl_customercode');
+					for (i=0;i<customer_info[0].length;i++) {
+						if(customerid > 0 && customerid == customer_info[0][i]['id']) {
+							$('<option selected />').val(customer_info[0][i]['id']).html(customer_info[0][i]['val']).appendTo('#ddl_customercode');
+						}
+						else {
+							$('<option/>').val(customer_info[0][i]['id']).html(customer_info[0][i]['val']).appendTo('#ddl_customercode');
+						}
+					}
+				}
+				$('#ddl_customercode').trigger('liszt:updated');		//txtstartdate		
+			}
+		});
+	}
+	else
+	{
+		$("#ddl_customercode").html("");
+	$('#ddl_customercode').trigger('liszt:updated');
+	}
+}
+function fnload()
+{	
+	$("#item-grid #paging_grid #table-example tr").each(function() {
+		if($(this).find('td').eq(4).html() < '0') {
+			$(this).find('td').eq(6).html('---');
+			$(this).find('td').eq(7).html('---');
+		}
+	})
+}
+</script>
+<style>
+.margin_zero {margin-top:0px !important;}
+.actions {width:100%;}
+.box .content {border:none !important;} td{padding:5px;}
+</style>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="promotion_customer_addfreegoods">
+<?php if(SFA_Message::isSetMsg()) {  ?>
+    <div class="alert success">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getMsg(); ?></strong>
+    </div>
+<?php } ?>
+<?php if(SFA_Message::isErrorMsg()) {  ?>
+    <div class="alert error">
+        <span class="icon"></span><span class="hide">x</span><strong><?php echo SFA_Message::getErrorMsg(); ?></strong>
+    </div>
+<?php } ?>
+<form id="frmdetsec" name="frmdetsec" novalidate class="validate" action="" method="post">
+<div class="header">
+    <div class="_50_3 back_btn">
+	<img class="margin_top_7"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_promotions.png">
+	<h3><?php echo $this->title;?></h3>
+    </div>
+    <div class="_50_3">
+	<div class="_10 save_btn">
+		<input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"promotions","controller"=>"supervisor","action"=>"freegoods"),"default", true);?>')">
+	</div>
+	<div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+    </div>
+</div>
+<div class="clear"></div>
+    <div class="clear"></div>
+<div id="nav_sub" class="ie_nav_sub">
+<div class="container_12">
+    <ul id="nav_main">
+        <li class="current">
+            <ul style="display: block;">
+                <li>
+                    <a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"supervisor","action"=>"freegoods"),"default", true);?>"><?php echo $this->overview?></a>
+                </li>
+                <li class="last-child">
+                    <a href="<?php echo $this->url(array("module"=>"promotions","controller"=>"supervisor","action"=>"addfreegoods"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</div>
+</div>
+
+<div class="content with-actions ie_grid min_height_10">
+	<div class="_25_1">
+		All Quantity Entered Is In Pcs<span class="back_btn"><font color="red">*</font>&nbsp;</span>
+	</div>
+    <div class="_100 margin_top_12">
+	 <label class="_20 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Contract ID').''.$this->colan;?>														
+	</label>
+	<div class="_25 margin_right_1">
+	    <input name="txt_contractid" id="txt_contractid" type="text" value="<?php echo isset($this->formdata['contractid'])?$this->formdata['contractid']:"" ;?>" readonly="readonly" >
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_20 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('Start Date').''.$this->required;?>
+	</label>
+	<div class="_25 margin_right_1">
+	    <input name="txtstartdate" id="txtstartdate" type="text" class="required" value="<?php echo isset($this->formdata['creationdate'])?$this->formdata['creationdate']:"" ;?>" >
+	</div>    
+	 <label class="_20 margin_top_12 label_text_align">
+	    <?php echo $this->translate->_('End Date').''.$this->required;?>
+	</label>
+	<div class="_25 margin_right_1">
+	    <input name="txtenddate" id="txtenddate" type="text" class="required" value="<?php echo isset($this->formdata['enddate'])?$this->formdata['enddate']:"" ;?>" >
+	</div>
+    </div>
+    <div class="_100">
+	 <label class="_20 margin_top_12 label_text_align">
+	    <?php // print_r($this->depot_data);exit; 
+		echo $this->translate->_('Supervisor').''.$this->required;?>
+	</label>
+	<div class="_25 margin_right_1"><?php //if($this->params["id"] > 0) { ?><!-- disabled="disabled"--> <?php// } ?>
+	    <select id="ddl_customercode" name="ddl_customercode" class="required"  >
+		<option value="">--- Select ---</option>
+		<?php  for($i=0;$i<count($this->depot_data);$i++) {// echo "ddd";exit;
+		?>
+		    <option <?php echo ($this->depot_data[$i]['id'] == $this->formdata['supervisorcode'])? 'selected="selected"' : '' ;?> value="<?php echo $this->depot_data[$i]['id'];?>"><?php echo $this->depot_data[$i]['id']."--".$this->depot_data[$i]['val'];?></option>
+		<?php } ?>
+	    </select>
+	</div>    
+	 <label class="_20 margin_top_12 label_text_align">
+	     <?php echo $this->translate->_('Active').''.$this->colan;?>
+	</label>
+	 <input type="checkbox" id="chk_active" name="chk_active" value="1" <?php echo (isset($this->formdata['active']) && $this->formdata['active']==1)?'checked="checked"':'' ;?> >
+	
+    </div>
+    <div class="_100 margin_bottom_10">
+	<label class="_20 margin_top_7 label_text_align">
+	   <?php echo $this->translate->_('Remarks').''.$this->colan;?>
+	</label>
+	<div class="_25 margin_right_1">
+	    <textarea class="margin_top_5" name="txt_remarks"  maxlength="200"  id="txt_remarks"><?php echo isset($this->formdata['remarks'])?$this->formdata['remarks']:"" ;?></textarea>
+	</div>    
+	<label class="_20 margin_top_10 label_text_align">
+	  
+	</label>
+	<div class="_25 margin_right_1">
+	   
+	</div>
+    </div>
+
+</div>
+
+<input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>">
+<input type="hidden" id="dots" name="dots" value="">
+
+<input type="hidden" id="returnUrl" name="returnUrl" value="<?php echo $this->returnUrl; ?>" />
+<div class="content with-actions min_height_10"> 
+    <div class="_100" style="margin-top: 0px !important;">	
+	    <div class="_100" style="margin-top: 0px !important;">	
+	    <fieldset id="a" name="a">
+		<legend><?php echo $this->translate->_('Detail Section');?></legend>
+		<div class="_100">
+		    <label class="_15_1 margin_top_10 label_text_align margin_left_right_1_1">
+			 <?php echo $this->translate->_('Item').''.$this->required;?>
+		    </label>
+		    <div class="_25_1 margin_right_1">
+			<select id="ddl_itemcode" name="ddl_itemcode" class="required">
+			    <option value="">--- Select ---</option>
+			    <?php for($i=0;$i<count($this->item_master_data);$i++) { ?>
+			    <option value="<?php echo $this->item_master_data[$i]['id'];?>"><?php echo $this->item_master_data[$i]['val'];?></option>
+			    <?php } ?>
+			</select>
+		    </div>
+			<label class="_8 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('UPC').''.$this->colan;?>
+		    </label>
+		    <div class="_15 margin_right_2_2">
+				<input type="text" id="txtupc" maxlength="4" name="txtupc" value="" class="margin_top_5 number" readonly="readonly" />
+		    </div>
+		    <label class="_12 margin_top_10 label_text_align">
+				<?php echo $this->translate->_('Free Qty').''.$this->required;?>
+		    </label>
+		    <div class="_15 margin_right_2_2">
+				<input type="text" id="txt_freequantity" maxlength="7" name="txt_freequantity" value="" class="margin_top_5 required number" />
+		    </div>
+			<div class="_5 margin_right_4">
+			    <input type="button" value="<?php echo $this->translate->_('ADD');?>" id="sbtnadd" name="sbtnadd" class="margin_top_5">
+			</div>
+		</div>
+	    </fieldset>
+	    </div>
+    </div>    
+   <div class="_100 margin_top_25">
+		<fieldset class="fieldset_effect">
+		<legend class="ttl" ><?php echo $this->translate->_('Customer Free Goods');?></legend>
+		<hr id="ie_hr" >
+		<div class="_100">
+			<div id="loader"></div>
+			<div id="item-grid"> </div>
+		</div>
+		</fieldset>
+   </div>
+</div>
+</form>
+</div>
+</div>
+<!-- End of .box -->

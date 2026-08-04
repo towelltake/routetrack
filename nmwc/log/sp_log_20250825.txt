@@ -1,0 +1,233 @@
+
+CALL sp_web_permissions()
+
+CALL sp_get_company_information()
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_decimal_places()
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus',' AND (route.routecode LIKE "%91%" OR route.routename LIKE "%91%" OR salesman.salesmancode LIKE "%91%" OR salesman.salesmanname1 LIKE "%91%" OR subarea.subareaname LIKE "%91%" OR route.device_assigned_id LIKE "%91%" OR route.activestatus LIKE "%91%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_combo_itemmust()
+
+CALL sp_get_organization_route_addroute('91')
+
+CALL sp_get_not_assigned_devices('1da290f01dcfa673')
+
+CALL sp_get_organization_route_setting1('91')
+
+CALL sp_get_organization_route_setting2('91')
+
+CALL sp_get_organization_route_report('91')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_salesman('1','','','desc',0,'10','salesmancode, alternatesalesmancode, salesmanname1, getsalesmantype(type) as type, activestatus',' AND (salesmancode LIKE "%123%" OR alternatesalesmancode LIKE "%123%" OR salesmanname1 LIKE "%123%" OR getsalesmantype(type) LIKE "%123%" OR activestatus LIKE "%123%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_account_salesman_addsalesman("123")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('C11','C11','a1b7f10aaf6fb057')
+
+CALL sp_combo_itemmust()
+
+CALL sp_edit_organization_route_addroute('C11','C11','1','123','admin','2025-08-25','111111','0','0','0','111111',0,'0','0',0,0,'0','0',0,'1',0,'1','0','0','0','0','0',0,0,'C11',NULL,NULL,'1','1','1',0,'91','a1b7f10aaf6fb057',0)
+
+CALL sp_edit_organization_route_setting1('91','0','1','1','1',0,'3','1',0,'1','1','1','1',0,0,'4','0',0,'1',0,0,0,0,0,0,0,0,0,0,0,0,'admin','0',0,0,0,0,0)
+
+CALL sp_edit_organization_route_setting2('91','0','0','0','0','0',0,'1','0',0,0,'0','2','2','','','1',0,0,0,'1',0,'0','','0.000','84','','admin','0.00000','0','0',0,0,0,0,0,0,0,0,0)
+
+CALL sp_edit_organization_route_report('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','91')
+
+CALL sp_get_organization_route_route('1','','','desc',0,'10','route.routecode, route.routename, salesman.salesmancode, salesman.salesmanname1, subarea.subareaname, route.device_assigned_id, route.activestatus','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_companyid_device('a1b7f10aaf6fb057')
+
+CALL sp_ws_app_version('a1b7f10aaf6fb057')
+
+CALL sp_ws_salesman_login('C11','C11','a1b7f10aaf6fb057')
+
+CALL sp_ws_tablet_check_load('123','91')
+
+CALL sp_ws_syncicsdata_setting('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','91','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','91')
+
+CALL sp_ws_updatesyncdate('123','a1b7f10aaf6fb057','91')
+
+CALL sp_ws_instertion_tbl_synclog('123','91','null','0','1')
+
+CALL sp_ws_tablet_check_load('123','91')
+
+CALL sp_ws_syncicsdata_setting('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_items('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_inventory('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_customers('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_schemes('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_survey('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_reasons('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_others('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_orders('-1','0','91','2023-11-01')
+
+CALL sp_ws_syncicsdata_itemmust('-1','0','91','2023-11-01')
+
+CALL sp_ws_tablet_deletemaster('-1','-1','0')
+
+CALL sp_ws_syncicsdata_customeritemgrp('-1','0','91')
+
+CALL sp_ws_updatesyncdate('123','a1b7f10aaf6fb057','91')
+
+CALL sp_ws_instertion_tbl_synclog('123','91','null','0','1')
+
+CALL sp_ws_stratendday('91','123','85','a1b7f10aaf6fb057','4.0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','48998','7070','91','123','0','2025-08-25','10:23','2025-08-25','10:24','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_routemaster('91','0','9126','1','1','1','9126','0','0','0','1','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('1','48998','1','91009126','91109126','2025-08-25','10:23:47','0','0','7070','91','123.0','0','2025-08-25','19.3929','12.319','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-08-25','','1','0','7.0739')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','1','281938','333.0','12','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0.4572','3.048','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','1','281938','367.0','12','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0.4572','3.048','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','1','281938','334.0','1','0','0','0','0.127','0.127','0.127','0.127','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0','0.0635','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_sigcaptchdata('48998','1','','7070','9.10091e+07','2025-08-25','10:24:03','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('48998','9','1','91','7070','0','1','1','0')
+
+CALL sp_ws_instertion_tbl_synclog('123','91','48998','0','2')
+
+CALL sp_check_isroute_closed("48998")
+
+CALL sp_get_inventory_index_items('1','','','desc',0,'10','item.actualitemcode, item.alternatecode, item.itemshortdescription AS itemshortdescription, igrp.itemgroupname AS itemgroupname, unitspercase, item.activeitem','')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_index_items('1','','','desc',0,'10','item.actualitemcode, item.alternatecode, item.itemshortdescription AS itemshortdescription, igrp.itemgroupname AS itemgroupname, unitspercase, item.activeitem',' AND (item.actualitemcode LIKE "%KG-CLPET%" OR item.alternatecode LIKE "%KG-CLPET%" OR item.itemshortdescription LIKE "%KG-CLPET%" OR igrp.itemgroupname LIKE "%KG-CLPET%" OR unitspercase LIKE "%KG-CLPET%" OR item.activeitem LIKE "%KG-CLPET%")')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_inventory_index_additem('333')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','48998','7070','91','123','0','2025-08-25','10:23','2025-08-25','10:24','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('2','48998','7070','91','123','0','2025-08-25','10:23','2025-08-25','10:36','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_routemaster('91','0','9127','1','1','1','9127','0','0','0','1','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('2','48998','2','91009127','91109127','2025-08-25','10:36:19','0','0','7070','91','123.0','0','2025-08-25','33.6042','21.336','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-08-25','','2','0','12.2682')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','2','281939','333.0','12','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0.4572','3.048','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','2','281939','367.0','30','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','1.143','7.62','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_sigcaptchdata('48998','2','','7070','9.10091e+07','2025-08-25','10:36:48','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_instertion_tbl_synclog('123','91','48998','0','2')
+
+CALL sp_check_isroute_closed("48998")
+
+CALL sp_get_transaction_index_salesorder('1','','','desc',0,'10','cm.alternatecode, customername, invoicenumber, salesmanname1, IF(voidflag = 0,"NORMAL","VOIDED") AS voidflag, DATE_FORMAT(orderdeliverydate,"%d-%m-%Y") AS orderdeliverydate, FORMAT(totalinvoiceamount,3) AS totalinvoiceamount, transactionkey as edit_del_primary_id',' AND  (transactiondate BETWEEN \'2025-08-25 00:00:00\' AND \'2025-08-25 23:59:59\' )  AND record_flag = \'1\' ')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_transaction_index_salesorderheader("281939")
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_get_transaction_index_salesorderdetailgrid('1','','desc',0,'10','im.alternatecode, im.itemshortdescription, im.unitspercase, FLOOR((salesqty/im.unitspercase)) AS case_sales_qty, (salesqty%im.unitspercase) AS pcs_sales_qty, FORMAT(id.salescaseprice,3) AS salescaseprice, FORMAT(id.salesprice,3) AS salesprice, FLOOR((returnqty/im.unitspercase)) AS case_return_qty, (returnqty%im.unitspercase) AS pcs_return_qty, FORMAT(id.returncaseprice,3) AS returncaseprice, FORMAT(id.returnprice,3) AS returnprice, FLOOR((damagedqty/im.unitspercase)) AS case_damage_qty, (damagedqty%im.unitspercase) AS pcs_damage_qty, FLOOR((manualfreeqty/im.unitspercase)) AS case_manualfreeqty_qty, (manualfreeqty%im.unitspercase) AS pcs_manualfreeqty_qty, FLOOR((freesampleqty/im.unitspercase)) AS casediscount, (freesampleqty%im.unitspercase) AS pcsdiscount, FORMAT(promoamount,3) AS discount, FORMAT(salesorderexcisetax +salesordervat +fgexcisetax+fgvat+promoexcisetax+promovat ,3)AS taxorder, FORMAT(returnexcisetax +returnvat+damagedexcisetax+damagedvat,3) AS taxreturn, FORMAT((
+					(((FLOOR(salesqty/im.unitspercase)*id.salescaseprice)+((salesqty%im.unitspercase)*id.salesprice))+(salesorderexcisetax+salesordervat+fgexcisetax+fgvat+promoexcisetax+promovat))-
+					(((FLOOR(returnqty/im.unitspercase)*id.returncaseprice)+((returnqty%im.unitspercase)*id.returnprice))+(returnexcisetax +returnvat))-
+					(((FLOOR(damagedqty/im.unitspercase)*id.returncaseprice)+((damagedqty%im.unitspercase)*id.returnprice))+(damagedexcisetax+damagedvat))-
+					promoamount),3) AS total_amount','','281939')
+
+CALL sp_get_case_pcs_label()
+
+CALL sp_get_transaction_index_salesorderheader("281939")
+
+CALL sp_get_transaction_index_salesorderdetailgrid_print('','desc',0,'100','im.alternatecode, im.itemshortdescription, im.unitspercase, FLOOR((salesqty/im.unitspercase)) AS case_sales_qty, (salesqty%im.unitspercase) AS pcs_sales_qty, FORMAT(id.salescaseprice,3) AS salescaseprice, FORMAT(id.salesprice,3) AS salesprice, FORMAT(((id.salescaseprice)*FLOOR(id.salesqty/im.unitspercase))+(id.salesprice*(id.salesqty%im.unitspercase)),3) AS total_amt, FLOOR((returnqty/im.unitspercase)) AS case_return_qty, (returnqty%im.unitspercase) AS pcs_return_qty, FORMAT(id.returncaseprice,3) AS returncaseprice, FORMAT(id.returnprice,3) AS returnprice, im.itemtaxkey1 as itemtaxkey1, FORMAT(id.salesorderexcisetax,3) AS sales_excise, FORMAT(id.salesordervat,3) AS sales_vat, FORMAT(id.salesorderexcisetax,3) AS return_excise, FORMAT(id.returnvat,3) AS return_vat, FORMAT(id.damagedexcisetax,3) AS bad_return_excise, FORMAT(id.damagedvat,3) AS bad_return_vat, FORMAT(id.promoexcisetax,3) AS promo_excise, FORMAT(id.promovat,3) AS promo_vat, FORMAT(id.fgexcisetax,3) AS free_excise, FORMAT(id.fgvat,3) AS free_vat, FORMAT(((id.returncaseprice)*FLOOR(returnqty/im.unitspercase))+(id.returnprice*(returnqty%im.unitspercase)),3) AS ret_total_amt, FLOOR((damagedqty/im.unitspercase)) AS case_damage_qty, (damagedqty%im.unitspercase) AS pcs_damage_qty, FORMAT(((id.returncaseprice)*FLOOR(damagedqty/im.unitspercase))+(id.returnprice*(damagedqty%im.unitspercase)),3) AS dam_total_amt, FLOOR((manualfreeqty/im.unitspercase)) AS case_manualfreeqty_qty, (manualfreeqty%im.unitspercase) AS pcs_manualfreeqty_qty, FLOOR((freesampleqty/im.unitspercase)) AS casediscount, (freesampleqty%im.unitspercase) AS pcsdiscount, FORMAT(promoamount,3) AS discount, FORMAT(((((salesqty/im.unitspercase)*id.salescaseprice)+
+						((salesqty%im.unitspercase)*id.salesprice))-(((returnqty/im.unitspercase)*id.returncaseprice)
+						+((returnqty%im.unitspercase)*id.returnprice))-(((damagedqty/im.unitspercase)*id.returncaseprice)
+						+((damagedqty%im.unitspercase)*id.returnprice))-promoamount),3) AS total_amount','','281939')
+
+CALL sp_get_transaction_index_salesorder('1','','','desc',0,'10','cm.alternatecode, customername, invoicenumber, salesmanname1, IF(voidflag = 0,"NORMAL","VOIDED") AS voidflag, DATE_FORMAT(orderdeliverydate,"%d-%m-%Y") AS orderdeliverydate, FORMAT(totalinvoiceamount,3) AS totalinvoiceamount, transactionkey as edit_del_primary_id',' AND  (transactiondate BETWEEN \'2025-08-25 00:00:00\' AND \'2025-08-25 23:59:59\' )  AND record_flag = \'1\' ')
+
+CALL sp_get_userwisepermission('7','160','1')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('1','48998','7070','91','123','0','2025-08-25','10:23','2025-08-25','10:38','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('2','48998','7070','91','123','0','2025-08-25','10:23','2025-08-25','10:38','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_customeroperationcontrol('3','48998','6622','91','123','0','2025-08-25','10:38','2025-08-25','10:39','2','0','0','0','0','0.0','0.0','0')
+
+CALL sp_ws_getdata_from_routemaster('91','0','9128','1','1','1','9128','0','0','0','1','1','','')
+
+CALL sp_ws_getdata_from_salesorderheader('3','48998','3','91009128','91109128','2025-08-25','10:39:07','0','0','6622','91','123.0','0','2025-08-25','38.4048','24.384','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','','2025-08-25','','3','0','14.0208')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','3','281940','333.0','30','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','1.143','7.62','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_salesorderdetail('48998','3','281940','367.0','18','0','0','0','0.508','0.508','0.508','0.508','0','3.048','3.048','3.048','3.048','0','0','0','0','0','0','0','0','0','0','0','0.6858','4.572','0','0','0','0','0','0','0','0','0','0')
+
+CALL sp_ws_getdata_from_sigcaptchdata('48998','3','','6622','9.10091e+07','2025-08-25','10:39:24','0','data:image/jpeg;base64,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','0')
+
+CALL sp_ws_get_from_routesequencecustomerstatus('48998','9','1','91','6622','0','1','1','0')
+
+CALL sp_ws_instertion_tbl_synclog('123','91','48998','0','2')
+
+CALL sp_check_isroute_closed("48998")

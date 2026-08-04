@@ -1,0 +1,78 @@
+<?php
+/**
+* @name       addbusinesstype.phtml
+* @since      06 feb, 2012
+* @version    Release: 1.0
+* @author     PM <pankit@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add Cash Description
+*/
+    $this->translate = Zend_Registry::get('Zend_Translate');
+
+?>
+<div class="clean"></div>
+<div class="grid_12">
+<div class="box" id="inventory_transaction_addbusiness">
+<form class="validate" method="post" action="" novalidate="novalidate">
+    <div class="header">
+	<div class="_50_3 back_btn">
+	    <img class="margin_top_4"  alt="" src="<?php echo $this->baseUrl()?>/public/images/icon_org.png">
+	    <h3><?php echo $this->translate->_('Business Type Details');?></h3>
+	</div>
+	<div class="_50_3">
+	    <div class="_10 save_btn">
+		    <input class="border_none" type="button" value="" name="btncancel" id="btncancel" onclick="winloc('<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"businesstype"),"default", true);?>')">
+	    </div>
+	    <div class="_10 save_btn"><input class="border_none" type="submit" value="" name="btnsave" id="btnsave"></div>
+	</div>
+    </div>
+    <div id="nav_sub" class="ie_nav_sub">
+    <div class="container_12">
+	<ul id="nav_main">
+	    <li class="current">
+		<ul style="display: block;">
+		    <li>
+			<a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"businesstype"),"default", true);?>"><?php echo $this->overview?></a>
+		    </li>
+		    <li class="last-child">
+			<a href="<?php echo $this->url(array("module"=>"organization","controller"=>"index","action"=>"addbusinesstype"),"default", true);?>"><b><?php echo $this->details;?></b></a>
+		    </li>
+		</ul>
+	    </li>
+	</ul>
+    </div>
+    </div>
+    <div class="content with-actions">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	<div class="_100">
+	     <label class="_36 margin_top_17 label_text_align">
+		<?php echo $this->translate->_('Business Type Code').''.$this->required;?>
+	    </label>
+	    <div class="_50 margin_right_1">
+		<input name="txtbtypecode" id="txtbtypecode" type="text" class="required text_align" value="1">
+	    </div>
+	</div>
+	<div class="_100">
+	     <label class="_36 margin_top_17 label_text_align">
+		<?php echo $this->translate->_('Business Type Name').''.$this->required;?>
+	    </label>
+	    <div class="_50 margin_right_1">
+		<input name="txtbtypename" id="txtbtypename" type="text" class="text_align required" value="CATRING">
+	    </div>
+	</div>
+	<div class="_100 margin_bottom_5">
+	     <label class="_36 margin_top_17 label_text_align">
+		<?php echo $this->translate->_('Business Type Name('.$this->sec_lang.')').''.$this->colan;?>
+	    </label>
+	    <div class="_50 margin_right_1">
+		<input name="txtarbtypename" id="txtarbtypename" class="arb_text_align" type="text" value="catering">
+	    </div>
+	</div>
+    </div>
+    <input type="hidden" id="hdnid" name="hdnid" value="<?php echo $this->params["edit"]=="yes"?$this->params["id"]:0; ?>" />
+</form>
+</div>
+</div> <!-- End of .box -->

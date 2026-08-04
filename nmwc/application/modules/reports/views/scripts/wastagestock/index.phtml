@@ -1,0 +1,91 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+var decimalplaces = <?php echo $this->decimalplaces; ?>;
+jQuery("#search").jqGrid({
+   	url:base_url+"/reports/wastagestock/wastagestockdata/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Visit Date');?>','<?php echo $this->translate->_('Visit Time');?>','<?php echo $this->translate->_( 'Customer Code');?>','<?php echo $this->translate->_('Customer Name');?>','<?php echo $this->translate->_('Item Code');?>','<?php echo $this->translate->_('Item');?>','<?php echo $this->translate->_('UPC');?>','<?php echo $this->translate->_('CasePrice');?>','<?php echo $this->translate->_('UnitPrice');?>','<?php echo $this->translate->_('Location1Qty');?>','<?php echo $this->translate->_('Location2Qty');?>','<?php echo $this->translate->_('Location3Qty');?>','<?php echo $this->translate->_('Expiry');?>'],
+   	colModel:[
+		{name:'routecode',index:'routecode', width:85},
+		{name:'VisitDate',index:'VisitDate', width:85},
+        {name:'VisitTime',index:'VisitTime', width:65,align:'center'},
+   		{name:'CustomerCode',index:'CustomerCode', width:75},
+        {name:'Customer',index:'Customer', width:100},
+        {name:'ItemCode',index:'ItemCode', width:90},
+		{name:'Item',index:'Item', width:120},
+        {name:'UPC',index:'UPC', width:90},
+        {name:'CasePrice',index:'CasePrice', width:90,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+	{name:'UnitPrice',index:'UnitPrice', width:90,align:'right',formatter: 'number', formatoptions: { decimalPlaces: decimalplaces }},
+	{name:'Location1Qty',index:'Location1Qty', width:90},
+	{name:'Location2Qty',index:'Location2Qty', width:90},
+	{name:'Location3Qty',index:'Location3Qty', width:90},
+	{name:'Expiry',index:'Expiry', width:90}
+	],
+    <?php if($this->css == 'ar_') { ?>
+        direction :"rtl", 
+    <?php } ?>
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+   	rowList:eval(RP_ROWLISTSHOW),
+   	pager: '#pagersr',
+   	sortname: 'VisitDate',
+	viewrecords:true,
+	sortorder: "asc",
+   	altRows : false,
+	grouping:true,  
+   groupingView :
+        {
+            groupField : ['routecode'],
+            groupColumnShow : [false],
+            groupCollapse : true,
+            groupOrder: ['asc'],
+            groupSummary : [true],
+            groupDataSorted : true,
+            showSummaryOnHide: true,
+	    groupText : ['','','<b style="text-transform: uppercase;">{0}</b>']
+        },
+    multiselect: false,
+	subGrid : false,
+	subGridUrl: base_url+"/reports/wastagestock/wastagestocksubgriddata/",
+    subGridModel: [{ name  : ['<?php echo $this->translate->_('Item Code');?>','<?php echo $this->translate->_('Item Description');?>','<?php echo $this->translate->_('Sales Qty');?>','<?php echo $this->translate->_('Sales Case Price');?>','<?php echo $this->translate->_('Sales Price');?>','<?php echo $this->translate->_('Std Sales Case Price');?>','<?php echo $this->translate->_('Std Sales Price');?>'], 
+                    width : [75,250,60,85,60,85,85],
+                    params: ['VisitDate','VisitTime','POSCode'],
+                    formatter: ['','','','number','number','number','number'],
+                    formatoptions: { decimalPlaces: decimalplaces }
+                   } 
+                  ]
+				 
+});
+
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+
+</script>

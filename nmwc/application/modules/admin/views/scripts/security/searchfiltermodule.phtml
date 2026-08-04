@@ -1,0 +1,41 @@
+<?php $this->translate = Zend_Registry::get('Zend_Translate'); ?>
+<table>
+<thead>
+    <tr>
+        <th width="25%"><a href="javascript:void(0)"><?php echo $this->translate->_('Module')?></a></th>
+        <th width="35%"><a href="javascript:void(0)"><?php echo $this->translate->_('Form')?></a></th>
+        <th width="10%"><a href="javascript:void(0)" class="_70" ><?php echo $this->translate->_('Read')?></a>
+            <input class="save_btn checkbox margin_0 access" type="checkbox" onclick="read_accessclick(this)" name="read_access" id="read_access"></th>
+        <th width="10%"><a href="javascript:void(0)" class="_70"><?php echo $this->translate->_('Write')?></a>
+            <input class="save_btn checkbox margin_0 access" type="checkbox" onclick="write_accessclick(this)" name="write_access" id="write_access"></th>
+        <th width="10%"><a href="javascript:void(0)" class="_70"><?php echo $this->translate->_('Delete')?></a>
+            <input class="save_btn checkbox margin_0 access " type="checkbox" onclick="delete_accessclick(this)" name="delete_access" id="delete_access"></th>
+        <th width="10%"><a href="javascript:void(0)"><?php echo $this->translate->_('All')?></a></th>
+    </tr>
+</thead>
+<tbody>    
+    <?php
+        $modulename = '';
+        $moduleid   = '';
+        $test = '';
+        for($i=0;$i<count($this->form_data);$i++) {
+            $css = $i%2 == 0 ? 'gradeC' : 'gradeA';
+            $class = str_replace(" ","",$this->form_data[$i]['modulename'].$this->form_data[$i]['formname']);
+    ?>
+        <?php $test .= ($moduleid != $this->form_data[$i]['moduleid']) ? $this->form_data[$i]['moduleid'].',' : ''; ?>
+        <tr class="<?php echo $css?>">
+            <td><?php echo ($modulename != $this->form_data[$i]['modulename']) ? $this->form_data[$i]['modulename'] : ''; ?></td>
+            <td><?php echo $this->form_data[$i]['formname'];?></td>
+            <td><input class="read_per checkbox <?php echo $class;?> rwd" type="checkbox" name="read_chk[]" id="<?php echo $class;?>_r" onclick="toggleUnChecked(this.checked,this.value)" <?php if($this->all_check == "1") { ?> checked="checked" <?php } elseif($this->form_data[$i]['readdata'] == "1") { ?> checked="checked" <?php } ?> value="<?php echo $this->form_data[$i]['moduleid']."_".$this->form_data[$i]['formid'];?>" /></td>
+            <td><input class="write_per checkbox <?php echo $class;?> rwd" type="checkbox" name="write_chk[]" id="<?php echo $class;?>_w" onclick="toggleUnChecked(this.checked,this.value)" <?php if($this->all_check == "1") { ?> checked="checked" <?php } elseif($this->form_data[$i]['insertdata'] == "1") { ?> checked="checked" <?php } ?> value="<?php echo $this->form_data[$i]['moduleid']."_".$this->form_data[$i]['formid'];?>" /></td>
+            <td><input class="delete_per checkbox <?php echo $class;?> rwd" type="checkbox" name="delete_chk[]" id="<?php echo $class;?>_d" onclick="toggleUnChecked(this.checked,this.value)" <?php if($this->all_check == "1") { ?> checked="checked" <?php } elseif($this->form_data[$i]['deletedata'] == "1") { ?> checked="checked" <?php } ?>  value="<?php echo $this->form_data[$i]['moduleid']."_".$this->form_data[$i]['formid'];?>" /></td>
+            <td><input class="all_per checkbox all777" type="checkbox" name="all_chk[]" id="<?php echo $class;?>_a" onclick="toggleUnChecked(this.checked,this.value)" <?php if($this->all_check == "1") { ?> checked="checked" <?php } elseif($this->form_data[$i]['allpermissions'] == "1") { ?> checked="checked" <?php } ?>  value="<?php echo $this->form_data[$i]['moduleid']."_".$this->form_data[$i]['formid'];?>" /></td>            
+        </tr>
+    <?php
+            $modulename = $this->form_data[$i]['modulename'];
+            $moduleid   = $this->form_data[$i]['moduleid'];
+        }
+    ?>
+    <input type="hidden" id="modulelist_detail" name="modulelist_detail" value="<?php echo ($test !='') ? substr($test,0,-1) : ''; ?>" />
+    </table>
+</tbody>

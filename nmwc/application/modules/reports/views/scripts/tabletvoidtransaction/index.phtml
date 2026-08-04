@@ -1,0 +1,75 @@
+<?php
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+<table id="search" ></table>
+<div id="pagersr"></div>
+
+<script  type="text/javascript">
+
+jQuery("#search").jqGrid({        
+   	url:base_url+"/reports/tabletvoidtransaction/voidtran/",
+	datatype: "json",
+   	colNames:['<?php echo $this->translate->_('Route');?>','<?php echo $this->translate->_('Transaction Type');?>','<?php echo $this->translate->_('Transaction Date');?>','<?php echo $this->translate->_('Transaction Time');?>','<?php echo $this->translate->_('Invoice Number');?>','<?php echo $this->translate->_('Customer Code');?>','<?php echo $this->translate->_('Customer Name');?>','<?php echo $this->translate->_('Transaction Amount');?>','<?php echo $this->translate->_('Amount Paid');?>'],
+   	colModel:[
+   		{name:'routecode',index:'routecode', width:100},
+		{name:'trantype',index:'trantype', width:70},
+		{name:'transactiondate',index:'transactiondate', width:90},
+		{name:'transactiontime',index:'transactiontime', width:80},
+        {name:'invoicenumber',index:'invoicenumber', width:100},
+        {name:'customercode',index:'customercode', width:120},
+        {name:'customername',index:'customername', width:250},
+        {name:'invoiceamount',index:'invoiceamount', width:90, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }},
+        {name:'amountpaid',index:'amountpaid', width:90, align:"right",summaryType:'sum', formatter: 'number',formatoptions: { decimalSeparator: ".", decimalPlaces: <?php echo $this->decimalplaces; ?>, defaultValue: '0.00' }}	
+		
+   	],
+    height: 'auto',
+    width: 'auto',
+   	rowNum:eval(RP_NOOFRECORDSHOW),
+    rowList:eval(RP_ROWLISTSHOW),
+    //  loadonce:true,
+    pager: '#pagersr',
+   	sortname: 'routecode',
+	viewrecords:true,
+	sortorder: "asc",
+   	footerrow : true,
+	userDataOnFooter : true,
+	altRows : false,
+	grouping:true,        
+	groupingView :
+    {
+        groupField : ['routecode'],
+        groupColumnShow : [false],
+        groupCollapse : true,
+        groupOrder: ['asc'] ,
+        groupSummary : [true],
+        groupDataSorted : true,
+        showSummaryOnHide: false
+    }
+});
+jQuery("#search").jqGrid('navGrid','#pagersr',
+{
+	edit:false,add:false,del:false,search:false,refresh:false
+},
+{}, // edit options
+{}, // add options
+{}, //del options
+{multipleSearch:false,showQuery: false} // search options,
+ 
+
+);
+
+jQuery("#xlsexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    document.location.href = exporturl;
+    return false;
+});
+jQuery("#csvexport").click( function() {
+    var sortname = $("#search").jqGrid('getGridParam',"sortname");
+    var sortorder = $("#search").jqGrid('getGridParam',"sortorder");
+    var exporturl = $(this).attr('href')+"?sidx="+sortname+"&sord="+sortorder;
+    //document.location.href = exporturl;
+    return false;
+});
+</script>

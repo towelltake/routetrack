@@ -1,0 +1,161 @@
+<?php
+/**
+* @name       itemset1.phtml
+* @since      19 Dec, 2011
+* @version    Release: 1.0
+* @author     HD <hiren.d@elantechnologies.com>
+* @copyright  2011 Elan Technologies
+*
+* Add items detail
+*/
+$this->translate = Zend_Registry::get('Zend_Translate');
+?>
+
+<div id="inventory_index_itemset1">
+    <div class="content with-actions">
+	<div class="_100">
+	    <div class="clean"></div>
+	</div>
+	    <div class="_100 ">
+		<label class="_25_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Print Sequence Route').''.$this->colan;?>
+		</label>
+		<div class="_25 margin_right_2_2">
+		    <input type="text" id="txtprnt_seq_route" name="txtprnt_seq_route" class="number" value="<?php echo $this->formdata['txtprnt_seq_route']; ?>">
+		</div>
+		<label class="_25_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Print Sequence Customer').''.$this->colan;?>
+		</label>
+		<div class="_25 margin_right_2_2">
+		    <input maxlength="11" type="text"  id="txtprnt_seq_cust" name="txtprnt_seq_cust" class="number" value="<?php echo $this->formdata['txtprnt_seq_cust']; ?>">
+		</div>
+	    </div>	    
+	    <div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align">
+		   <?php echo $this->translate->_('Item Type').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <select id="ddlitemtype" name="ddlitemtype">			
+			<?php
+			for($i=0;$i<count($this->itemtype);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->itemtype[$i]['id'];?>" <?php echo ($this->itemtype[$i]['id'] == $this->formdata['ddlitemtype'])? 'selected' : ''  ?> ><?php echo $this->itemtype[$i]['val'];?></option>
+			<?php } ?>
+		   </select>
+		</div>		
+		<label class="_25_1 margin_top_12 label_text_align">
+		   <?php echo $this->translate->_('Item Tax Key 1').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <select id="ddlitemtaxkey1" name="ddlitemtaxkey1" class="">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->itemtaxkey1);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->itemtaxkey1[$i]['id'];?>" <?php echo ($this->itemtaxkey1[$i]['id'] == $this->formdata['ddlitemtaxkey1'])? 'selected' : ''; ?>><?php echo $this->itemtaxkey1[$i]['val'];?></option>
+			<?php } ?>
+		   </select>
+		</div>
+	    </div>
+	    <div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Item Package').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <select id="ddlitempkg" name="ddlitempkg">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->itempkg);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->itempkg[$i]['id'];?>" <?php echo ($this->itempkg[$i]['id'] == $this->formdata['ddlitempkg'])? 'selected' : ''  ?> ><?php echo $this->itempkg[$i]['val'];?></option>
+			<?php } ?>
+		   </select>
+		</div>
+		<label class="_25_1 margin_top_12 label_text_align">
+		   <?php echo $this->translate->_('Item Tax Key 2').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <select id="ddlitemtaxkey2" name="ddlitemtaxkey2" class="">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->itemtaxkey2);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->itemtaxkey2[$i]['id'];?>" <?php echo ($this->itemtaxkey2[$i]['id'] == $this->formdata['ddlitemtaxkey2'])? 'selected' : ''  ?> ><?php echo $this->itemtaxkey2[$i]['val'];?></option>
+			<?php } ?>
+		   </select>
+		</div>
+	    </div>
+	    <div class="_100">
+		<label class="_25_1 margin_top_12 label_text_align">
+		    <?php echo $this->translate->_('Allow Batch Entry').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+            <select id="ddlallowbatch" name="ddlallowbatch">
+				<option value="0" <?php echo ($this->formdata['ddlallowbatch'] == '0')? 'selected' : ''  ?> ><?php echo $this->translate->_('Disable');?></option>
+				<option value="1" <?php echo ($this->formdata['ddlallowbatch'] == '1')? 'selected' : ''  ?> ><?php echo $this->translate->_('Enable');?></option>
+		   </select>
+		</div>
+		<!--
+		<label class="_25_1 margin_top_12 label_text_align">
+		   <?php echo $this->translate->_('Item Tax Key 3').''.$this->colan;?>
+		</label>
+		<div class="_25_1">
+		    <select id="ddlitemtaxkey3" name="ddlitemtaxkey3" class="">
+			<option value="">--- Select ---</option>
+			<?php
+			for($i=0;$i<count($this->itemtaxkey3);$i++)
+			{
+			?>
+			    <option value="<?php echo $this->itemtaxkey3[$i]['id'];?>" <?php echo ($this->itemtaxkey3[$i]['id'] == $this->formdata['ddlitemtaxkey3'])? 'selected' : ''  ?> ><?php echo $this->itemtaxkey3[$i]['val'];?></option>
+			<?php } ?>
+		   </select>
+		</div>	
+		-->		
+		<div class="_100">		
+            <div id="chk" class="_25_1  label_text_align">
+				<input type="checkbox" name="chkfastmovingitem" id="chkfastmovingitem" value="1" <?php echo ($this->formdata['chkfastmovingitem'] == 1) ? 'checked': ''; ?>>
+			</div>
+			<label class="_25_1 margin_top_10">
+				<?php echo $this->translate->_('Fast Moving Items');?>
+			</label>	    
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Data Entry Sequence(For Load)').''.$this->colan;?>
+			</label>
+			<div class="_25 margin_right_2_2">
+				<input maxlength="11" type="text" id="txtdataentry_sq" name="txtdataentry_sq" value="<?php echo $this->formdata['txtdataentry_sq']; ?>" class="number" >
+			</div>
+	    </div>
+		<div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Average Parameter %').''.$this->colan;?>
+			</label>
+			<div class="_25_1">
+				<input name="txtavgpara" id="txtavgpara" maxlength="4" class="margin_top_5 number" type="text" value="<?php echo $this->formdata['txtavgpara'];?>">
+			</div>
+		</div>
+	    </div>
+    <div class="_100 margin_top_15">
+	<fieldset>
+	    <legend><?php echo $this->translate->_('Memo')."".$this->colan;?></legend>
+	    <div class="_100">
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Memo 1').''.$this->colan;?>
+			</label>
+			<div class="_25 margin_right_2_2">
+				<input maxlength="50" type="text" id="txtmemo1" name="txtmemo1" value="<?php echo $this->formdata['txtmemo1']; ?>">
+			</div>        
+			<label class="_25_1 margin_top_12 label_text_align">
+				<?php echo $this->translate->_('Memo 2').''.$this->colan;?>
+			</label>
+			<div class="_25 margin_right_2_2">
+				<input maxlength="50" type="text" id="txtmemo2" name="txtmemo2" value="<?php echo $this->formdata['txtmemo2']; ?>">
+			</div>
+	    </div>
+	</fieldset>
+</div>    
+</div>
+</div>

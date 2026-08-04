@@ -1,0 +1,56 @@
+<table cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <th> Item Description </th>
+        <th colspan="2"> Order </th>
+        <th colspan="2"> Free </th>
+        <th colspan="2"> Return </th>
+        <th colspan="2"> Damage  </th>
+        <th colspan="2"> Promotion Free Qty  </th>
+       
+    </tr>
+     <tr>
+        <th> &nbsp;</th>
+        <th > OUT</th>
+        <th > PCS</th>
+        <th > OUT</th>
+        <th > PCS</th>
+        <th > OUT</th>
+        <th > PCS</th>
+        <th > OUT</th>
+        <th > PCS</th>
+        <th > OUT</th>
+        <th > PCS</th>
+      
+        
+    </tr>
+    <?php
+    if(!empty($this->result))
+    {
+        foreach($this->result as $value)
+        {
+        ?>
+                <tr>
+                     <td><?php echo $value['itemshortdescription'];?></td>
+                     <td><?php echo $value['case_order_qty'];?></td>
+                     <td><?php echo $value['pcs_order_qty'];?></td>
+                     <td><?php echo $value['case_free_qty'];?></td>
+                     <td><?php echo $value['pcs_free_qty'];?></td>
+                     <td><?php echo $value['case_return_qty'];?></td>
+                     <td><?php echo $value['pcs_return_qty'];?></td>
+                     <td><?php echo $value['case_damage_qty'];?></td>
+                     <td><?php echo $value['pcs_damage_qty'];?></td>
+                      <td><?php echo $value['case_promo_free_qty'];?></td>
+                     <td><?php echo $value['pcs_promo_free_qty'];?></td>
+                   
+                     
+                     
+
+                </tr>
+       
+<?php
+        }
+    }
+    ?>
+</table>
+
+<input type="hidden" name="summery_fianl_total_discount" id="summery_fianl_total_discount" value="<?php echo trim($this->result1[0]['totaldiscount']);?>" />

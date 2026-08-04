@@ -1,0 +1,59 @@
+<?php
+if(count($this->planogram_img) > 0)
+{
+        ?>
+        <div class="content with-actions padding_zero clear_only" id="planogramimages">
+                <?php
+                foreach($this->planogram_img as $plaimg)
+                {
+                        ?>
+                        <div class="_100">
+                                <h5>Planogram Description: <?php echo $plaimg['plan_desc'];?></h5>
+                                <div class="space_10 clear"></div>
+                                <div class="_50 center">
+                                        <h6>Original Image</h6>
+                                        <?php
+                                        if(file_exists($this->planogram_old_path.$plaimg['oldimg']) && $plaimg['oldimg'] != '')
+                                        {
+                                                echo '<img height="200" width="200" src="' . $this->planogram_old_path1.$plaimg['oldimg'] . '" />';
+                                        }
+                                        else
+                                        {
+                                                ?>
+                                                <div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b>No Image</b></div>
+                                                <?php
+                                        }
+                                        ?>
+                                </div>
+                                <div class="_50 center">
+                                        <h6>Captured Image</h6>
+                                        <?php
+                                        if(file_exists($this->planogram_new_path.$plaimg['newimg']) && $plaimg['newimg'] != '')
+                                        {
+                                                echo '<img height="200" width="200" src="' . $this->planogram_new_path1.$plaimg['newimg'] . '" />';
+                                        }
+                                        else
+                                        {
+                                                ?>
+                                                <div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b>No Image</b></div>
+                                                <?php
+                                        }
+                                        ?>
+                                </div>
+                        </div>
+                        <div class="space_20 clear"></div>
+                        <?php
+                }
+                ?>
+        </div>
+        <?php
+}
+else
+{
+        ?>				
+        <div class="content with-actions min_height_10 margin_top_10">
+                <div class="clear_only nodata_message margin_top_50 margin_bottom_10"><b><?php echo $this->message;?></b></div>
+        </div>
+        <?php
+}
+?>

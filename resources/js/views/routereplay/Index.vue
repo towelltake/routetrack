@@ -49,18 +49,12 @@ let lastBracketIndex = -1;
 
 onMounted(async () => {
     map = L.map(mapEl.value, { maxBounds: OMAN_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 6 }).setView([20.5, 56], 8);
+    map.attributionControl.setPrefix("Maps powered by Towell-TAKE Solutions LLC");
 
-    const streetLayer = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "&copy; Esri" },
-    ).addTo(map);
-
-    const satelliteLayer = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "&copy; Esri" },
-    );
-
-    L.control.layers({ Street: streetLayer, Satellite: satelliteLayer }).addTo(map);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
 
     const [routesRes, companiesRes] = await Promise.all([
         axios.get("/route-replay/routes.json"),
@@ -423,7 +417,7 @@ function resetFilters() {
             </div>
         </BaseBlock>
 
-        <BaseBlock title="Route Replay">
+        <BaseBlock title="Route Replay" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
 
             <div v-if="track" class="row mb-3 g-3">

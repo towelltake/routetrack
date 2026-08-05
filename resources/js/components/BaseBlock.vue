@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, computed } from "vue";
+import { reactive, computed, watch } from "vue";
 import { Link } from "@inertiajs/vue3";
 
 // Component properties
@@ -199,6 +199,13 @@ const state = reactive({
   // If block itself is hidden
   optionHide: props.modeHide,
 });
+
+watch(
+  () => props.modeLoading,
+  (loading) => {
+    state.optionLoading = loading;
+  },
+);
 
 // Set CSS classes accordingly
 const classContainer = computed(() => {

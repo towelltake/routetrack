@@ -65,18 +65,12 @@ onMounted(async () => {
     });
 
     map = L.map(mapEl.value, { maxBounds: OMAN_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 6 }).setView([23.588, 58.4], 13);
+    map.attributionControl.setPrefix("Maps powered by Towell-TAKE Solutions LLC");
 
-    const streetLayer = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "&copy; Esri" },
-    ).addTo(map);
-
-    const satelliteLayer = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "&copy; Esri" },
-    );
-
-    L.control.layers({ Street: streetLayer, Satellite: satelliteLayer }).addTo(map);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
 
     const [routesRes, companiesRes] = await Promise.all([
         axios.get("/customer-location/routes.json"),

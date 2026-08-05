@@ -1,2 +1,0 @@
-
-CALL sp_ws_tablet_get_supervisor_foc('28')

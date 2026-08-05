@@ -55,7 +55,7 @@ class AuthorizeFormAccess
             return back(303)->with('error', $message);
         }
 
-        return redirect()->route('dashboard')->with('error', $message);
+        return redirect()->route('customer-location.index')->with('error', $message);
     }
 
     private function resolveFormName(?string $routeName): ?string

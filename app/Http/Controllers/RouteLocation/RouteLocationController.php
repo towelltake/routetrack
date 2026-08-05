@@ -30,6 +30,7 @@ class RouteLocationController extends Controller
             ->pluck('cmpycode');
 
         $companies = CompanyMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('cmpycode', $routedCmpyCodes)
             ->orderBy('name')
             ->get(['cmpycode', 'name']);
@@ -44,6 +45,8 @@ class RouteLocationController extends Controller
         ]);
 
         $routedSubareaCodes = RouteMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->pluck('subareacode');
@@ -54,6 +57,7 @@ class RouteLocationController extends Controller
             ->pluck('areacode');
 
         $areas = AreaMaster::query()
+            ->whereIn('areacode', session('user_access.area_codes', []))
             ->whereIn('areacode', $areaCodes)
             ->orderBy('areaname')
             ->get(['areacode', 'areaname']);
@@ -69,11 +73,14 @@ class RouteLocationController extends Controller
         ]);
 
         $routedSubareaCodes = RouteMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->pluck('subareacode');
 
         $subareas = SubAreaMaster::query()
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->where('areacode', $validated['areacode'])
             ->whereIn('subareacode', $routedSubareaCodes)
             ->orderBy('subareaname')
@@ -90,12 +97,14 @@ class RouteLocationController extends Controller
     {
         $validated = $request->validate([
             'date' => ['required', 'date_format:Y-m-d'],
-            'companycode' => ['nullable', 'integer'],
-            'areacode' => ['nullable', 'integer'],
-            'subareacode' => ['nullable', 'integer'],
+            'companycode' => ['required', 'integer'],
+            'areacode' => ['required', 'integer'],
+            'subareacode' => ['required', 'integer'],
         ]);
 
         $matchingRouteCodes = RouteMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->when($validated['subareacode'] ?? null, fn ($query, $subareacode) => $query->where('subareacode', $subareacode))
@@ -115,16 +124,16 @@ class RouteLocationController extends Controller
             return response()->json([]);
         }
 
-        $points = DB::connection('pgsql_transfer')->table('trac_routetrack')
+        $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
             ->whereIn('routecode', $routes->keys())
-            ->where('entrydate', $validated['date'])
+            ->where('date', $validated['date'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('latitude', '!=', 0)
             ->where('longitude', '!=', 0)
-            ->selectRaw('routecode, salesmancode, latitude, longitude, COALESCE(devicetimestamp, entrydate + entrytime) as effective_timestamp')
+            ->selectRaw('routecode, salesmancode, latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp')
             ->orderByDesc('effective_timestamp')
-            ->orderByDesc('entryid')
+            ->orderByDesc('id')
             ->get()
             ->unique('routecode')
             ->keyBy('routecode');

@@ -32,6 +32,7 @@ class RouteReplayController extends Controller
             ->pluck('cmpycode');
 
         $companies = CompanyMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('cmpycode', $routedCmpyCodes)
             ->orderBy('name')
             ->get(['cmpycode', 'name']);
@@ -46,6 +47,8 @@ class RouteReplayController extends Controller
         ]);
 
         $routedSubareaCodes = RouteMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->pluck('subareacode');
@@ -56,6 +59,7 @@ class RouteReplayController extends Controller
             ->pluck('areacode');
 
         $areas = AreaMaster::query()
+            ->whereIn('areacode', session('user_access.area_codes', []))
             ->whereIn('areacode', $areaCodes)
             ->orderBy('areaname')
             ->get(['areacode', 'areaname']);
@@ -71,11 +75,14 @@ class RouteReplayController extends Controller
         ]);
 
         $routedSubareaCodes = RouteMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->pluck('subareacode');
 
         $subareas = SubAreaMaster::query()
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->where('areacode', $validated['areacode'])
             ->whereIn('subareacode', $routedSubareaCodes)
             ->orderBy('subareaname')
@@ -92,6 +99,8 @@ class RouteReplayController extends Controller
         ]);
 
         $routes = RouteMaster::query()
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->when($validated['subareacode'] ?? null, fn ($query, $subareacode) => $query->where('subareacode', $subareacode))
@@ -113,6 +122,12 @@ class RouteReplayController extends Controller
             'routecode' => ['required', 'integer'],
             'date' => ['required', 'date_format:Y-m-d'],
         ]);
+
+        abort_unless(RouteMaster::query()
+            ->where('routecode', $validated['routecode'])
+            ->whereIn('cmpycode', session('user_access.company_codes', []))
+            ->whereIn('subareacode', session('user_access.subarea_codes', []))
+            ->exists(), 403);
 
         $points = $this->fetchCleanTrail($validated['routecode'], $validated['date']);
 
@@ -170,16 +185,16 @@ class RouteReplayController extends Controller
     {
         // devicetimestamp is null for some devices/routes — entrydate + entrytime
         // is always populated, so it's used as a fallback ordering/timing source.
-        $points = DB::connection('pgsql_transfer')->table('trac_routetrack')
+        $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
             ->where('routecode', $routecode)
-            ->where('entrydate', $date)
+            ->where('date', $date)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('latitude', '!=', 0)
             ->where('longitude', '!=', 0)
-            ->selectRaw('latitude, longitude, COALESCE(devicetimestamp, entrydate + entrytime) as effective_timestamp')
+            ->selectRaw('latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp')
             ->orderBy('effective_timestamp')
-            ->orderBy('entryid')
+            ->orderBy('id')
             ->get()
             ->values()
             ->all();

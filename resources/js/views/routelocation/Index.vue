@@ -192,7 +192,11 @@ function resetFilters() {
     selectedSubarea.value = null;
     subareas.value = [];
     selectedDate.value = DEFAULT_DATE;
-    showAllLocations();
+    locations.value = [];
+    routeListSearch.value = "";
+    markersLayer.clearLayers();
+    Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
+    map.setView([20.5, 56], 8);
 }
 </script>
 
@@ -247,7 +251,7 @@ function resetFilters() {
                     <input v-model="selectedDate" type="date" class="form-control" />
                 </div>
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading" @click="showAllLocations">
+                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedArea || !selectedSubarea || !selectedDate" @click="showAllLocations">
                         {{ loading ? "..." : "Apply" }}
                     </button>
                 </div>
@@ -257,7 +261,7 @@ function resetFilters() {
             </div>
         </BaseBlock>
 
-        <BaseBlock title="Route Location">
+        <BaseBlock title="Route Location" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
             <p v-else-if="locations.length" class="text-muted small">Showing {{ locations.length }} route(s) on {{ selectedDate }}</p>
 

@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use App\Notifications\TemplatePasswordResetNotification;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -17,6 +15,7 @@ class User extends Authenticatable
     protected ?array $cachedFormPermissions = null;
 
     protected $table = 'usermaster';
+    protected $connection = 'sfa_mysql';
     protected $primaryKey = 'userid';
     public $timestamps = false;
 
@@ -59,11 +58,6 @@ class User extends Authenticatable
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->username) . '&size=128&background=4f46e5&color=ffffff&bold=true';
     }
 
-    public function sendPasswordResetNotification($token): void
-    {
-        $this->notify(new TemplatePasswordResetNotification($token));
-    }
-
     public function userType(): BelongsTo
     {
         return $this->belongsTo(UserType::class, 'usertypeid', 'usertypeid');
@@ -102,38 +96,33 @@ class User extends Authenticatable
             return $this->cachedFormPermissions;
         }
 
-        $permissions = [];
+        $hasUserPermissions = UserDetail::query()->where('userid', $this->userid)->exists();
+        $rows = ($hasUserPermissions
+            ? UserDetail::query()->from('userdetail as permission')->where('permission.userid', $this->userid)
+            : UserTypeDetail::query()->from('usertypedetail as permission')->where('permission.usertypeid', $this->usertypeid))
+            ->join('moduledetail as md', 'permission.formid', '=', 'md.formid')
+            ->get([
+                'md.formname',
+                'permission.readdata',
+                'permission.updatedata',
+                'permission.insertdata',
+                'permission.deletedata',
+                'permission.allpermissions',
+            ]);
 
-        // Step 1: user-type permissions as baseline
-        if (!empty($this->usertypeid)) {
-            $this->mergePermissions(
-                $permissions,
-                UserTypeDetail::query()
-                    ->where('usertypeid', $this->usertypeid)
-                    ->get($this->permissionColumns('usertypedetail'))
-            );
-        }
-
-        // Step 2: per-user rows completely override the type baseline for that form.
-        // This lets an admin restrict a specific user below what their type allows.
-        foreach ($this->details()->get($this->permissionColumns('userdetail')) as $detail) {
+        return $this->cachedFormPermissions = $rows->mapWithKeys(function ($detail) {
             $key = $this->normalizePermissionKey($detail->formname);
+            $read = (bool) $detail->readdata;
 
-            if ($key === '') {
-                continue;
-            }
-
-            $permissions[$key] = [
-                'view'   => (bool) ($detail->viewdata ?? 0),
-                'read'   => (bool) $detail->readdata,
+            return [$key => [
+                'view' => $read,
+                'read' => $read,
                 'create' => (bool) $detail->insertdata,
-                'write'  => (bool) $detail->updatedata,
+                'write' => (bool) $detail->updatedata,
                 'delete' => (bool) $detail->deletedata,
-                'all'    => (bool) $detail->allpermissions,
-            ];
-        }
-
-        return $this->cachedFormPermissions = $permissions;
+                'all' => (bool) $detail->allpermissions,
+            ]];
+        })->all();
     }
 
     public function hasFormPermission(string $formName, string $action = 'view'): bool
@@ -168,43 +157,4 @@ class User extends Authenticatable
         return $value ?? '';
     }
 
-    private function permissionColumns(string $table): array
-    {
-        $columns = ['formname', 'readdata', 'updatedata', 'insertdata', 'deletedata', 'allpermissions'];
-
-        if (Schema::hasColumn($table, 'viewdata')) {
-            array_splice($columns, 1, 0, 'viewdata');
-        }
-
-        return $columns;
-    }
-
-    private function mergePermissions(array &$permissions, iterable $rows): void
-    {
-        foreach ($rows as $detail) {
-            $key = $this->normalizePermissionKey($detail->formname);
-
-            if ($key === '') {
-                continue;
-            }
-
-            $existing = $permissions[$key] ?? [
-                'view' => false,
-                'read' => false,
-                'create' => false,
-                'write' => false,
-                'delete' => false,
-                'all' => false,
-            ];
-
-            $permissions[$key] = [
-                'view' => $existing['view'] || (bool) ($detail->viewdata ?? 0),
-                'read' => $existing['read'] || (bool) $detail->readdata,
-                'create' => $existing['create'] || (bool) $detail->insertdata,
-                'write' => $existing['write'] || (bool) $detail->updatedata,
-                'delete' => $existing['delete'] || (bool) $detail->deletedata,
-                'all' => $existing['all'] || (bool) $detail->allpermissions,
-            ];
-        }
-    }
 }

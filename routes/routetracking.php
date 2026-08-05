@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'form.access'])->prefix('route-tracking')->name('route-tracking.')->group(function () {
+Route::middleware('auth')->prefix('route-tracking')->name('route-tracking.')->group(function () {
     Route::get('/', [RouteTrackingController::class, 'index'])->name('index');
     Route::get('/companies.json', [RouteTrackingController::class, 'companies'])->name('companies');
     Route::get('/areas.json', [RouteTrackingController::class, 'areas'])->name('areas');

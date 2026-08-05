@@ -61,7 +61,7 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'migrating',
+            'driver' => 'sfa',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 

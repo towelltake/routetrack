@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'sfa_mysql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -30,6 +30,22 @@ return [
     */
 
     'connections' => [
+
+        'sfa_mysql' => [
+            'driver' => 'mysql',
+            'host' => env('SFA_DB_HOST', '127.0.0.1'),
+            'port' => env('SFA_DB_PORT', '3306'),
+            'database' => env('SFA_DB_DATABASE', 'sfa_migration'),
+            'username' => env('SFA_DB_USERNAME', ''),
+            'password' => env('SFA_DB_PASSWORD', ''),
+            'unix_socket' => env('SFA_DB_SOCKET', ''),
+            'charset' => env('SFA_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('SFA_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => env('SFA_DB_TABLE_PREFIX', ''),
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+        ],
 
         'sqlite' => [
             'driver' => 'sqlite',
@@ -97,19 +113,19 @@ return [
             'sslmode' => 'prefer',
         ],
 
-        'pgsql_transfer' => [
+        'tracking_pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('PGTRANSFER_URL'),
-            'host' => env('PGTRANSFER_HOST', '127.0.0.1'),
-            'port' => env('PGTRANSFER_PORT', '5432'),
-            'database' => env('PGTRANSFER_DATABASE', 'trac_pg'),
-            'username' => env('PGTRANSFER_USERNAME', ''),
-            'password' => env('PGTRANSFER_PASSWORD', ''),
-            'charset' => env('PGTRANSFER_CHARSET', 'utf8'),
-            'prefix' => env('PGTRANSFER_TABLE_PREFIX', ''),
+            'url' => env('TRACKING_DB_URL'),
+            'host' => env('TRACKING_DB_HOST', '127.0.0.1'),
+            'port' => env('TRACKING_DB_PORT', '5432'),
+            'database' => env('TRACKING_DB_DATABASE', 'merch_live_location'),
+            'username' => env('TRACKING_DB_USERNAME', ''),
+            'password' => env('TRACKING_DB_PASSWORD', ''),
+            'charset' => env('TRACKING_DB_CHARSET', 'utf8'),
+            'prefix' => env('TRACKING_DB_TABLE_PREFIX', ''),
             'prefix_indexes' => true,
-            'search_path' => env('PGTRANSFER_SEARCH_PATH', 'public'),
-            'sslmode' => env('PGTRANSFER_SSLMODE', 'prefer'),
+            'search_path' => env('TRACKING_DB_SCHEMA', 'public'),
+            'sslmode' => env('TRACKING_DB_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [

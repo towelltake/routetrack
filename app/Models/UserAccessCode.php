@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class UserAccessCode extends Model
 {
     protected $table = 'useraccesscodes';
+    protected $connection = 'sfa_mysql';
     public $timestamps = false;
     public $incrementing = false;
     protected $primaryKey = null;

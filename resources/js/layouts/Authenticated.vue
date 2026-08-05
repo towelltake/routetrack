@@ -5,7 +5,6 @@ import BaseLayout from "@/layouts/BaseLayout.vue";
 import BaseNavigation from "@/components/BaseNavigation.vue";
 import FlashMessage from "@/components/FlashMessage.vue";
 import { navigation } from "@/config/navigation";
-import { settingsModules } from "@/config/settings";
 import { useI18n } from "@/composables/useI18n";
 import { computed } from "vue";
 import { usePage } from "@inertiajs/vue3";
@@ -37,29 +36,7 @@ const translatedNavigation = computed(() =>
     .filter(Boolean),
 );
 
-const availableSettingsModules = computed(() =>
-  settingsModules
-    .map((module) => ({
-      ...module,
-      title: t.value[module.titleKey ?? module.key] ?? module.title,
-      groups: module.groups
-        ?.map((group) => ({
-          ...group,
-          title: t.value[group.titleKey ?? group.key] ?? group.title,
-          items:
-            group.items
-              ?.filter((item) => canViewNode(item))
-              .map((item) => ({
-                ...item,
-                title:
-                  t.value[item.titleKey ?? item.key?.replaceAll("-", "_")] ??
-                  item.title,
-              })) ?? [],
-        }))
-        .filter((group) => group.items.length),
-    }))
-    .filter((module) => module.groups?.length),
-);
+const availableSettingsModules = computed(() => []);
 
 const currentPath = computed(() => page.url.split("?")[0]);
 
@@ -89,13 +66,7 @@ function translateNode(node) {
 }
 
 function canViewNode(node) {
-  if (!node.permission) {
-    return true;
-  }
-
-  const permission = page.props.auth?.formPermissions?.[node.permission];
-
-  return !!(permission?.all || permission?.view || permission?.read);
+  return true;
 }
 
 function isMenuItemActive(item) {

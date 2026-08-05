@@ -454,14 +454,14 @@ function focusEnd() {
                     <input v-model="selectedDate" type="date" class="form-control" />
                 </div>
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !selectedRoute" @click="runComparison">
+                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedArea || !selectedSubarea || !selectedRoute || !selectedDate" @click="runComparison">
                         {{ loading ? "..." : "Compare" }}
                     </button>
                 </div>
             </div>
         </BaseBlock>
 
-        <BaseBlock title="Route Tracking">
+        <BaseBlock title="Route Tracking" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
 
             <div v-if="routeQualityWarnings.length" class="alert alert-warning py-2">

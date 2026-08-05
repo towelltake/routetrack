@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'form.access'])->prefix('route-replay')->name('route-replay.')->group(function () {
+Route::middleware('auth')->prefix('route-replay')->name('route-replay.')->group(function () {
     Route::get('/', [RouteReplayController::class, 'index'])->name('index');
     Route::get('/companies.json', [RouteReplayController::class, 'companies'])->name('companies');
     Route::get('/areas.json', [RouteReplayController::class, 'areas'])->name('areas');

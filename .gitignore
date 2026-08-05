@@ -3,6 +3,8 @@
 /public/build
 /storage/*.key
 /storage/logs
+/sfa_enhance
+/microservice-routetracking
 .env
 .env.*
 /bootstrap/cache/*.php

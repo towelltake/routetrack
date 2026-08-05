@@ -55,12 +55,7 @@ function translateNode(node) {
 }
 
 function canViewNode(node) {
-  if (!node.permission) {
-    return true;
-  }
-
-  const permission = page.props.auth?.formPermissions?.[node.permission];
-  return !!(permission?.all || permission?.view || permission?.read);
+  return true;
 }
 
 // Init SimpleBar (custom scrolling)

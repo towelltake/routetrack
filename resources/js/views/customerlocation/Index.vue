@@ -21,15 +21,17 @@ function median(numbers) {
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 
 const mapEl = ref(null);
-const loading = ref(true);
+const loading = ref(false);
 const error = ref(null);
 const companies = ref([]);
 const areas = ref([]);
 const subareas = ref([]);
+const routes = ref([]);
 const customers = ref([]);
 const selectedCompany = ref(null);
 const selectedArea = ref(null);
 const selectedSubarea = ref(null);
+const selectedRoute = ref(null);
 const selectedCustomer = ref(null);
 const customerListSearch = ref("");
 
@@ -87,7 +89,6 @@ onMounted(async () => {
     areas.value = areasRes.data;
     companies.value = companiesRes.data;
 
-    await loadLocations();
 });
 
 async function loadLocations() {
@@ -106,7 +107,9 @@ async function loadLocations() {
         const { data } = await axios.get("/customer-location/locations.json", {
             params: {
                 companycode: selectedCompany.value,
+                areacode: selectedArea.value,
                 subareacode: selectedSubarea.value,
+                routecode: selectedRoute.value,
             },
         });
         customers.value = data;
@@ -147,33 +150,34 @@ async function loadLocations() {
     }
 }
 
-watch(selectedCompany, async (companycode) => {
-    selectedArea.value = null;
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    const { data } = await axios.get("/customer-location/areas.json", { params: { companycode } });
-    areas.value = data;
-
-    await loadLocations();
-});
-
 watch(selectedArea, async (areacode) => {
     selectedSubarea.value = null;
+    selectedRoute.value = null;
     subareas.value = [];
+    routes.value = [];
 
     if (!areacode) {
         return;
     }
 
     const { data } = await axios.get("/customer-location/subareas.json", {
-        params: { areacode, companycode: selectedCompany.value },
+        params: { areacode },
     });
     subareas.value = data;
 });
 
-watch(selectedSubarea, async () => {
-    await loadLocations();
+watch(selectedSubarea, async (subareacode) => {
+    selectedRoute.value = null;
+    routes.value = [];
+
+    if (!subareacode) {
+        return;
+    }
+
+    const { data } = await axios.get("/customer-location/routes.json", {
+        params: { subareacode },
+    });
+    routes.value = data;
 });
 
 function focusCustomer(customercode) {
@@ -189,13 +193,23 @@ async function resetFilters() {
     selectedCompany.value = null;
     selectedArea.value = null;
     selectedSubarea.value = null;
+    selectedRoute.value = null;
     selectedCustomer.value = null;
+    customers.value = [];
+    customerListSearch.value = "";
     subareas.value = [];
+    routes.value = [];
+
+    if (clusterGroup) {
+        map.removeLayer(clusterGroup);
+        clusterGroup = null;
+    }
+    Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
+    map.setView([20.5, 56], 8);
 
     const { data } = await axios.get("/customer-location/areas.json");
     areas.value = data;
 
-    await loadLocations();
 }
 </script>
 
@@ -210,7 +224,7 @@ async function resetFilters() {
 
         <BaseBlock title="Filters" class="customer-location-filters">
             <div class="row align-items-end mb-3 g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Company</label>
                     <VueSelect
                         v-model="selectedCompany"
@@ -220,7 +234,7 @@ async function resetFilters() {
                         placeholder="All companies..."
                     />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Area</label>
                     <VueSelect
                         v-model="selectedArea"
@@ -230,7 +244,7 @@ async function resetFilters() {
                         placeholder="All areas..."
                     />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Sub Area</label>
                     <VueSelect
                         v-model="selectedSubarea"
@@ -239,6 +253,17 @@ async function resetFilters() {
                         label="subareaname"
                         :disabled="!selectedArea"
                         placeholder="All sub areas..."
+                    />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Route</label>
+                    <VueSelect
+                        v-model="selectedRoute"
+                        :options="routes"
+                        :reduce="(route) => route.routecode"
+                        label="routename"
+                        :disabled="!selectedSubarea"
+                        placeholder="All routes..."
                     />
                 </div>
             </div>
@@ -258,10 +283,10 @@ async function resetFilters() {
                     <button
                         type="button"
                         class="btn btn-primary w-100"
-                        :disabled="!selectedCustomer"
-                        @click="focusCustomer(selectedCustomer)"
+                        :disabled="loading || !selectedCompany"
+                        @click="loadLocations"
                     >
-                        Apply
+                        {{ loading ? "..." : "Apply" }}
                     </button>
                 </div>
                 <div class="col-md-3">
@@ -270,7 +295,7 @@ async function resetFilters() {
             </div>
         </BaseBlock>
 
-        <BaseBlock title="Map">
+        <BaseBlock title="Map" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
             <p class="text-muted small">{{ customers.length }} customer(s) shown</p>
 

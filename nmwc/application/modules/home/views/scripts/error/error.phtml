@@ -1,5 +1,0 @@
-<?php echo "<b>Error ".$this->code." ".$this->message."</b>"; ?> 
-<?php if ('development' === APPLICATION_ENV): ?>
-	<hr />
-	<?php print_r($this->stack_trace);?>
-<?php endif ?>

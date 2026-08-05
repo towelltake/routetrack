@@ -50,6 +50,7 @@ class RouteTrackingController extends Controller
     public function companies(): JsonResponse
     {
         $routedCmpyCodes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('routecode', $this->routesequenceCustomerStatusRouteCodes())
             ->distinct()
             ->pluck('cmpycode');
@@ -122,6 +123,7 @@ class RouteTrackingController extends Controller
         ]);
 
         $routes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', $this->routesequenceCustomerStatusRouteCodes())
@@ -523,6 +525,7 @@ class RouteTrackingController extends Controller
     private function ensureRouteAllowed(int $routecode): void
     {
         abort_unless(RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->where('routecode', $routecode)
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))

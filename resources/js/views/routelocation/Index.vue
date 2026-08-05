@@ -12,11 +12,9 @@ const DEFAULT_DATE = "2025-06-22";
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
 const companies = ref([]);
-const areas = ref([]);
-const subareas = ref([]);
+const routes = ref([]);
 const selectedCompany = ref(null);
-const selectedArea = ref(null);
-const selectedSubarea = ref(null);
+const selectedRoute = ref(null);
 const selectedDate = ref(DEFAULT_DATE);
 const loading = ref(false);
 const error = ref(null);
@@ -60,11 +58,11 @@ onMounted(async () => {
 
     markersLayer = L.layerGroup().addTo(map);
 
-    const [areasRes, companiesRes] = await Promise.all([
-        axios.get("/route-location/areas.json"),
+    const [routesRes, companiesRes] = await Promise.all([
+        axios.get("/route-location/routes.json"),
         axios.get("/route-location/companies.json"),
     ]);
-    areas.value = areasRes.data;
+    routes.value = routesRes.data;
     companies.value = companiesRes.data;
 
     document.addEventListener("fullscreenchange", () => {
@@ -76,26 +74,9 @@ onMounted(async () => {
 });
 
 async function onCompanyChange(companycode) {
-    selectedArea.value = null;
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    const { data } = await axios.get("/route-location/areas.json", { params: { companycode } });
-    areas.value = data;
-}
-
-async function onAreaChange(areacode) {
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    if (!areacode) {
-        return;
-    }
-
-    const { data } = await axios.get("/route-location/subareas.json", {
-        params: { areacode, companycode: selectedCompany.value },
-    });
-    subareas.value = data;
+    selectedRoute.value = null;
+    const { data } = await axios.get("/route-location/routes.json", { params: { companycode } });
+    routes.value = data;
 }
 
 function toggleFullscreen() {
@@ -131,8 +112,7 @@ async function showAllLocations() {
             params: {
                 date: selectedDate.value,
                 companycode: selectedCompany.value,
-                areacode: selectedArea.value,
-                subareacode: selectedSubarea.value,
+                routecode: selectedRoute.value,
             },
         });
         locations.value = data;
@@ -188,9 +168,7 @@ function focusRoute(routecode) {
 
 function resetFilters() {
     selectedCompany.value = null;
-    selectedArea.value = null;
-    selectedSubarea.value = null;
-    subareas.value = [];
+    selectedRoute.value = null;
     selectedDate.value = DEFAULT_DATE;
     locations.value = [];
     routeListSearch.value = "";
@@ -223,25 +201,14 @@ function resetFilters() {
                     />
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Area</label>
+                    <label class="form-label">Route</label>
                     <VueSelect
-                        v-model="selectedArea"
-                        :options="areas"
-                        :reduce="(area) => area.areacode"
-                        label="areaname"
-                        placeholder="All areas..."
-                        @update:model-value="onAreaChange"
-                    />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Sub Area</label>
-                    <VueSelect
-                        v-model="selectedSubarea"
-                        :options="subareas"
-                        :reduce="(subarea) => subarea.subareacode"
-                        label="subareaname"
-                        :disabled="!selectedArea"
-                        placeholder="All sub areas..."
+                        v-model="selectedRoute"
+                        :options="routes"
+                        :reduce="(route) => route.routecode"
+                        :get-option-label="(route) => `${route.routecode} - ${route.routename}`"
+                        :disabled="!selectedCompany"
+                        placeholder="All routes..."
                     />
                 </div>
             </div>
@@ -251,7 +218,7 @@ function resetFilters() {
                     <input v-model="selectedDate" type="date" class="form-control" />
                 </div>
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedArea || !selectedSubarea || !selectedDate" @click="showAllLocations">
+                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedDate" @click="showAllLocations">
                         {{ loading ? "..." : "Apply" }}
                     </button>
                 </div>

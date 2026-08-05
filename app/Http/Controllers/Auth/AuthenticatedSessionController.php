@@ -38,38 +38,54 @@ class AuthenticatedSessionController extends Controller
             ->where('username', $request->user()->username)
             ->get(['cmpycode', 'countrycode', 'regionmstcode', 'depotcode', 'areacode', 'subareacode']);
 
-        $subareaCodes = $rows->pluck('subareacode')->filter()->unique()->values();
-        $hierarchy = DB::connection('sfa_mysql')->table('subareamaster as subarea')
+        $routes = DB::connection('sfa_mysql')->table('routemaster as route')
+            ->leftJoin('subareamaster as subarea', 'subarea.subareacode', '=', 'route.subareacode')
             ->leftJoin('areamaster as area', 'area.areacode', '=', 'subarea.areacode')
             ->leftJoin('depotmaster as depot', 'depot.depotcode', '=', 'area.depotcode')
             ->leftJoin('regionmaster as region', 'region.regionmstcode', '=', 'depot.regionmstcode')
             ->leftJoin('country', 'country.countrycode', '=', 'region.countrycode')
-            ->whereIn('subarea.subareacode', $subareaCodes)
+            ->where(function ($query) use ($rows) {
+                if ($rows->isEmpty()) {
+                    $query->whereRaw('1 = 0');
+                }
+
+                foreach ($rows as $row) {
+                    $permission = collect([
+                        'subarea.subareacode' => $row->subareacode,
+                        'area.areacode' => $row->areacode,
+                        'depot.depotcode' => $row->depotcode,
+                        'region.regionmstcode' => $row->regionmstcode,
+                        'country.countrycode' => $row->countrycode,
+                        'route.cmpycode' => $row->cmpycode,
+                    ]);
+                    $column = $permission->search(fn ($value) => filled($value));
+
+                    if ($column !== false) {
+                        $query->orWhere($column, $permission[$column]);
+                    }
+                }
+            })
             ->get([
+                'route.routecode',
+                'route.cmpycode',
                 'subarea.subareacode',
                 'area.areacode',
                 'depot.depotcode',
                 'region.regionmstcode',
                 'country.countrycode',
-                'country.cmpycode',
             ]);
 
         $accessType = (int) $request->user()->accesstypeid;
-        $companyCodes = ($accessType === 1 ? $rows : $hierarchy)
-            ->pluck('cmpycode')
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
 
         $request->session()->put('user_access', [
             'access_type' => $accessType,
-            'company_codes' => $companyCodes,
-            'country_codes' => $hierarchy->pluck('countrycode')->filter()->unique()->values()->all(),
-            'region_codes' => $hierarchy->pluck('regionmstcode')->filter()->unique()->values()->all(),
-            'depot_codes' => $hierarchy->pluck('depotcode')->filter()->unique()->values()->all(),
-            'area_codes' => $hierarchy->pluck('areacode')->filter()->unique()->values()->all(),
-            'subarea_codes' => $subareaCodes->all(),
+            'route_codes' => $routes->pluck('routecode')->filter()->unique()->values()->all(),
+            'company_codes' => $routes->pluck('cmpycode')->filter()->unique()->values()->all(),
+            'country_codes' => $routes->pluck('countrycode')->filter()->unique()->values()->all(),
+            'region_codes' => $routes->pluck('regionmstcode')->filter()->unique()->values()->all(),
+            'depot_codes' => $routes->pluck('depotcode')->filter()->unique()->values()->all(),
+            'area_codes' => $routes->pluck('areacode')->filter()->unique()->values()->all(),
+            'subarea_codes' => $routes->pluck('subareacode')->filter()->unique()->values()->all(),
         ]);
 
         return redirect()->intended(route('customer-location.index', absolute: false));

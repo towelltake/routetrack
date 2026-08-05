@@ -11,12 +11,8 @@ const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
 const companies = ref([]);
-const areas = ref([]);
-const subareas = ref([]);
 const routes = ref([]);
 const selectedCompany = ref(null);
-const selectedArea = ref(null);
-const selectedSubarea = ref(null);
 const selectedRoute = ref(null);
 const selectedDate = ref(new Date().toISOString().slice(0, 10));
 const loading = ref(false);
@@ -98,13 +94,11 @@ onMounted(async () => {
 
     L.control.layers({ Street: streetLayer, Satellite: satelliteLayer }).addTo(map);
 
-    const [routesRes, areasRes, companiesRes] = await Promise.all([
+    const [routesRes, companiesRes] = await Promise.all([
         axios.get("/route-tracking/routes.json"),
-        axios.get("/route-tracking/areas.json"),
         axios.get("/route-tracking/companies.json"),
     ]);
     routes.value = routesRes.data;
-    areas.value = areasRes.data;
     companies.value = companiesRes.data;
 
     // Deep-link support: Route Location's "Track" button sends a route + date
@@ -128,37 +122,8 @@ onMounted(async () => {
 });
 
 watch(selectedCompany, async (companycode) => {
-    selectedArea.value = null;
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    const { data } = await axios.get("/route-tracking/areas.json", { params: { companycode } });
-    areas.value = data;
-
     const { data: routeData } = await axios.get("/route-tracking/routes.json", { params: { companycode } });
     routes.value = routeData;
-    selectedRoute.value = null;
-});
-
-watch(selectedArea, async (areacode) => {
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    if (!areacode) {
-        return;
-    }
-
-    const { data } = await axios.get("/route-tracking/subareas.json", {
-        params: { areacode, companycode: selectedCompany.value },
-    });
-    subareas.value = data;
-});
-
-watch(selectedSubarea, async (subareacode) => {
-    const { data } = await axios.get("/route-tracking/routes.json", {
-        params: { subareacode, companycode: selectedCompany.value },
-    });
-    routes.value = data;
     selectedRoute.value = null;
 });
 
@@ -404,7 +369,7 @@ function focusEnd() {
         </div>
 
         <BaseBlock title="Filters" class="route-tracking-filters">
-            <div class="row align-items-end mb-3 g-3">
+            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label class="form-label">Company</label>
                     <VueSelect
@@ -415,29 +380,6 @@ function focusEnd() {
                         placeholder="All companies..."
                     />
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Area</label>
-                    <VueSelect
-                        v-model="selectedArea"
-                        :options="areas"
-                        :reduce="(area) => area.areacode"
-                        label="areaname"
-                        placeholder="All areas..."
-                    />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Sub Area</label>
-                    <VueSelect
-                        v-model="selectedSubarea"
-                        :options="subareas"
-                        :reduce="(subarea) => subarea.subareacode"
-                        label="subareaname"
-                        :disabled="!selectedArea"
-                        placeholder="All sub areas..."
-                    />
-                </div>
-            </div>
-            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label class="form-label">Route</label>
                     <VueSelect
@@ -454,7 +396,7 @@ function focusEnd() {
                     <input v-model="selectedDate" type="date" class="form-control" />
                 </div>
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedArea || !selectedSubarea || !selectedRoute || !selectedDate" @click="runComparison">
+                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedRoute || !selectedDate" @click="runComparison">
                         {{ loading ? "..." : "Compare" }}
                     </button>
                 </div>

@@ -24,13 +24,9 @@ const mapEl = ref(null);
 const loading = ref(false);
 const error = ref(null);
 const companies = ref([]);
-const areas = ref([]);
-const subareas = ref([]);
 const routes = ref([]);
 const customers = ref([]);
 const selectedCompany = ref(null);
-const selectedArea = ref(null);
-const selectedSubarea = ref(null);
 const selectedRoute = ref(null);
 const selectedCustomer = ref(null);
 const customerListSearch = ref("");
@@ -82,11 +78,11 @@ onMounted(async () => {
 
     L.control.layers({ Street: streetLayer, Satellite: satelliteLayer }).addTo(map);
 
-    const [areasRes, companiesRes] = await Promise.all([
-        axios.get("/customer-location/areas.json"),
+    const [routesRes, companiesRes] = await Promise.all([
+        axios.get("/customer-location/routes.json"),
         axios.get("/customer-location/companies.json"),
     ]);
-    areas.value = areasRes.data;
+    routes.value = routesRes.data;
     companies.value = companiesRes.data;
 
 });
@@ -107,8 +103,6 @@ async function loadLocations() {
         const { data } = await axios.get("/customer-location/locations.json", {
             params: {
                 companycode: selectedCompany.value,
-                areacode: selectedArea.value,
-                subareacode: selectedSubarea.value,
                 routecode: selectedRoute.value,
             },
         });
@@ -150,32 +144,11 @@ async function loadLocations() {
     }
 }
 
-watch(selectedArea, async (areacode) => {
-    selectedSubarea.value = null;
-    selectedRoute.value = null;
-    subareas.value = [];
-    routes.value = [];
-
-    if (!areacode) {
-        return;
-    }
-
-    const { data } = await axios.get("/customer-location/subareas.json", {
-        params: { areacode },
-    });
-    subareas.value = data;
-});
-
-watch(selectedSubarea, async (subareacode) => {
+watch(selectedCompany, async (companycode) => {
     selectedRoute.value = null;
     routes.value = [];
-
-    if (!subareacode) {
-        return;
-    }
-
     const { data } = await axios.get("/customer-location/routes.json", {
-        params: { subareacode },
+        params: { companycode },
     });
     routes.value = data;
 });
@@ -191,13 +164,10 @@ function focusCustomer(customercode) {
 
 async function resetFilters() {
     selectedCompany.value = null;
-    selectedArea.value = null;
-    selectedSubarea.value = null;
     selectedRoute.value = null;
     selectedCustomer.value = null;
     customers.value = [];
     customerListSearch.value = "";
-    subareas.value = [];
     routes.value = [];
 
     if (clusterGroup) {
@@ -206,9 +176,6 @@ async function resetFilters() {
     }
     Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
     map.setView([20.5, 56], 8);
-
-    const { data } = await axios.get("/customer-location/areas.json");
-    areas.value = data;
 
 }
 </script>
@@ -224,7 +191,7 @@ async function resetFilters() {
 
         <BaseBlock title="Filters" class="customer-location-filters">
             <div class="row align-items-end mb-3 g-3">
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <label class="form-label">Company</label>
                     <VueSelect
                         v-model="selectedCompany"
@@ -234,35 +201,14 @@ async function resetFilters() {
                         placeholder="All companies..."
                     />
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Area</label>
-                    <VueSelect
-                        v-model="selectedArea"
-                        :options="areas"
-                        :reduce="(area) => area.areacode"
-                        label="areaname"
-                        placeholder="All areas..."
-                    />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Sub Area</label>
-                    <VueSelect
-                        v-model="selectedSubarea"
-                        :options="subareas"
-                        :reduce="(subarea) => subarea.subareacode"
-                        label="subareaname"
-                        :disabled="!selectedArea"
-                        placeholder="All sub areas..."
-                    />
-                </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <label class="form-label">Route</label>
                     <VueSelect
                         v-model="selectedRoute"
                         :options="routes"
                         :reduce="(route) => route.routecode"
                         label="routename"
-                        :disabled="!selectedSubarea"
+                        :disabled="!selectedCompany"
                         placeholder="All routes..."
                     />
                 </div>

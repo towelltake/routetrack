@@ -12,7 +12,7 @@ import { usePage } from "@inertiajs/vue3";
 const page = usePage();
 const t = computed(() => page.props.translations.ui) || {};
 
-const { locale, isRtl, toggleLanguage } = useI18n();
+const { isRtl } = useI18n();
 
 // Main store
 const store = useTemplateStore();
@@ -264,18 +264,6 @@ function markLogoutRedirect() {
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Language Switch -->
-      <div class="d-inline-block ms-2">
-        <button
-          type="button"
-          class="btn btn-sm btn-alt-secondary me-2"
-          @click="toggleLanguage"
-        >
-          <i class="fa fa-language me-1"></i>
-          {{ locale === "en" ? "AR" : "EN" }}
-        </button>
       </div>
 
       <!-- User Dropdown -->

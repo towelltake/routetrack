@@ -24,6 +24,7 @@ class CustomerLocationController extends Controller
     public function companies(): JsonResponse
     {
         $routedCmpyCodes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->distinct()
             ->pluck('cmpycode');
@@ -91,13 +92,14 @@ class CustomerLocationController extends Controller
     public function routes(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'subareacode' => ['required', 'integer'],
+            'companycode' => ['nullable', 'integer'],
         ]);
 
         $routes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
-            ->where('subareacode', $validated['subareacode'])
+            ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->orderBy('routename')
             ->get(['routecode', 'routename']);
@@ -115,6 +117,7 @@ class CustomerLocationController extends Controller
         ]);
 
         $routeCodes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))

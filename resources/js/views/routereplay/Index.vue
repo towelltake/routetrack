@@ -13,12 +13,8 @@ const SPEED_OPTIONS = [50, 100, 300, 600, 1000, 2000];
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
 const companies = ref([]);
-const areas = ref([]);
-const subareas = ref([]);
 const routes = ref([]);
 const selectedCompany = ref(null);
-const selectedArea = ref(null);
-const selectedSubarea = ref(null);
 const selectedRoute = ref(null);
 const selectedDate = ref(DEFAULT_DATE);
 const speedMultiplier = ref(300);
@@ -66,13 +62,11 @@ onMounted(async () => {
 
     L.control.layers({ Street: streetLayer, Satellite: satelliteLayer }).addTo(map);
 
-    const [routesRes, areasRes, companiesRes] = await Promise.all([
+    const [routesRes, companiesRes] = await Promise.all([
         axios.get("/route-replay/routes.json"),
-        axios.get("/route-replay/areas.json"),
         axios.get("/route-replay/companies.json"),
     ]);
     routes.value = routesRes.data;
-    areas.value = areasRes.data;
     companies.value = companiesRes.data;
 
     // Deep-link support: Route Location's "Replay" button sends a route + date
@@ -102,37 +96,8 @@ onBeforeUnmount(() => {
 });
 
 async function onCompanyChange(companycode) {
-    selectedArea.value = null;
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    const { data } = await axios.get("/route-replay/areas.json", { params: { companycode } });
-    areas.value = data;
-
     const { data: routeData } = await axios.get("/route-replay/routes.json", { params: { companycode } });
     routes.value = routeData;
-    selectedRoute.value = null;
-}
-
-async function onAreaChange(areacode) {
-    selectedSubarea.value = null;
-    subareas.value = [];
-
-    if (!areacode) {
-        return;
-    }
-
-    const { data } = await axios.get("/route-replay/subareas.json", {
-        params: { areacode, companycode: selectedCompany.value },
-    });
-    subareas.value = data;
-}
-
-async function onSubareaChange(subareacode) {
-    const { data } = await axios.get("/route-replay/routes.json", {
-        params: { subareacode, companycode: selectedCompany.value },
-    });
-    routes.value = data;
     selectedRoute.value = null;
 }
 
@@ -403,9 +368,7 @@ function onScrub(event) {
 
 function resetFilters() {
     selectedCompany.value = null;
-    selectedArea.value = null;
-    selectedSubarea.value = null;
-    subareas.value = [];
+    selectedRoute.value = null;
     selectedDate.value = DEFAULT_DATE;
 }
 </script>
@@ -420,7 +383,7 @@ function resetFilters() {
         </div>
 
         <BaseBlock title="Filters" class="route-replay-filters">
-            <div class="row align-items-end mb-3 g-3">
+            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label class="form-label">Company</label>
                     <VueSelect
@@ -432,31 +395,6 @@ function resetFilters() {
                         @update:model-value="onCompanyChange"
                     />
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Area</label>
-                    <VueSelect
-                        v-model="selectedArea"
-                        :options="areas"
-                        :reduce="(area) => area.areacode"
-                        label="areaname"
-                        placeholder="All areas..."
-                        @update:model-value="onAreaChange"
-                    />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Sub Area</label>
-                    <VueSelect
-                        v-model="selectedSubarea"
-                        :options="subareas"
-                        :reduce="(subarea) => subarea.subareacode"
-                        label="subareaname"
-                        :disabled="!selectedArea"
-                        placeholder="All sub areas..."
-                        @update:model-value="onSubareaChange"
-                    />
-                </div>
-            </div>
-            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label class="form-label">Route</label>
                     <VueSelect

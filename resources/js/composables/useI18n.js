@@ -1,5 +1,5 @@
 import { computed, watch } from "vue";
-import { router, usePage } from "@inertiajs/vue3";
+import { usePage } from "@inertiajs/vue3";
 import { useTemplateStore } from "@/stores/template";
 
 export function useI18n() {
@@ -19,18 +19,5 @@ export function useI18n() {
     { immediate: true },
   );
 
-  function toggleLanguage() {
-    const next = locale.value === "en" ? "ar" : "en";
-
-    router.post(
-      "/set-locale",
-      { locale: next },
-      {
-        preserveScroll: true,
-        preserveState: false,
-      },
-    );
-  }
-
-  return { locale, isRtl, toggleLanguage };
+  return { isRtl };
 }

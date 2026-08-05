@@ -27,6 +27,7 @@ class RouteReplayController extends Controller
     public function companies(): JsonResponse
     {
         $routedCmpyCodes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->distinct()
             ->pluck('cmpycode');
@@ -99,6 +100,7 @@ class RouteReplayController extends Controller
         ]);
 
         $routes = RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
@@ -124,6 +126,7 @@ class RouteReplayController extends Controller
         ]);
 
         abort_unless(RouteMaster::query()
+            ->whereIn('routecode', session('user_access.route_codes', []))
             ->where('routecode', $validated['routecode'])
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))

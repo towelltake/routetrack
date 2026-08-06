@@ -7,7 +7,8 @@ import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
-const DEFAULT_DATE = "2025-06-22";
+const now = new Date();
+const DEFAULT_DATE = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
@@ -182,7 +183,7 @@ function resetFilters() {
         </div>
 
         <BaseBlock title="Filters" class="route-location-filters">
-            <div class="row align-items-end mb-3 g-3">
+            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label class="form-label">Company</label>
                     <VueSelect
@@ -205,12 +206,12 @@ function resetFilters() {
                         placeholder="All routes..."
                     />
                 </div>
-            </div>
-            <div class="row align-items-end g-3">
                 <div class="col-md-4">
                     <label class="form-label">Operation Date</label>
                     <input v-model="selectedDate" type="date" class="form-control" />
                 </div>
+            </div>
+            <div class="row align-items-end g-3 mt-3">
                 <div class="col-md-4">
                     <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedDate" @click="showAllLocations">
                         {{ loading ? "..." : "Apply" }}

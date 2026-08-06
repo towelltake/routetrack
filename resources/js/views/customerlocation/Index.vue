@@ -184,8 +184,8 @@ async function resetFilters() {
         </div>
 
         <BaseBlock title="Filters" class="customer-location-filters">
-            <div class="row align-items-end mb-3 g-3">
-                <div class="col-md-6">
+            <div class="row align-items-end g-3">
+                <div class="col-md-4">
                     <label class="form-label">Company</label>
                     <VueSelect
                         v-model="selectedCompany"
@@ -195,7 +195,7 @@ async function resetFilters() {
                         placeholder="All companies..."
                     />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Route</label>
                     <VueSelect
                         v-model="selectedRoute"
@@ -206,9 +206,7 @@ async function resetFilters() {
                         placeholder="All routes..."
                     />
                 </div>
-            </div>
-            <div class="row align-items-end g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Customer</label>
                     <VueSelect
                         v-model="selectedCustomer"
@@ -219,7 +217,9 @@ async function resetFilters() {
                         placeholder="Jump to a customer..."
                     />
                 </div>
-                <div class="col-md-3">
+            </div>
+            <div class="row align-items-end g-3 mt-3">
+                <div class="col-md-4">
                     <button
                         type="button"
                         class="btn btn-primary w-100"
@@ -229,7 +229,7 @@ async function resetFilters() {
                         {{ loading ? "..." : "Apply" }}
                     </button>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <button type="button" class="btn btn-light w-100" @click="resetFilters">Reset</button>
                 </div>
             </div>

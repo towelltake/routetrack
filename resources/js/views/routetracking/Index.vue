@@ -1,12 +1,14 @@
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Head } from "@inertiajs/vue3";
+import { useTemplateStore } from "@/stores/template";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
+const store = useTemplateStore();
 
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
@@ -14,7 +16,9 @@ const companies = ref([]);
 const routes = ref([]);
 const selectedCompany = ref(null);
 const selectedRoute = ref(null);
-const selectedDate = ref(new Date().toISOString().slice(0, 10));
+const now = new Date();
+const DEFAULT_DATE = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+const selectedDate = ref(DEFAULT_DATE);
 const loading = ref(false);
 const error = ref(null);
 const result = ref(null);
@@ -80,6 +84,7 @@ let startMarker = null;
 let endMarker = null;
 
 onMounted(async () => {
+    store.pageLoader({ mode: "on" });
     map = L.map(mapEl.value, { maxBounds: OMAN_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 6 }).setView([20.5, 56], 8);
     map.attributionControl.setPrefix("Maps powered by Towell-TAKE Solutions LLC");
 
@@ -88,25 +93,29 @@ onMounted(async () => {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    const [routesRes, companiesRes] = await Promise.all([
-        axios.get("/route-tracking/routes.json"),
-        axios.get("/route-tracking/companies.json"),
-    ]);
-    routes.value = routesRes.data;
-    companies.value = companiesRes.data;
+    try {
+        const [routesRes, companiesRes] = await Promise.all([
+            axios.get("/route-tracking/routes.json"),
+            axios.get("/route-tracking/companies.json"),
+        ]);
+        routes.value = routesRes.data;
+        companies.value = companiesRes.data;
 
-    // Deep-link support: Route Location's "Track" button sends a route + date
-    // here via query params so the comparison runs immediately on arrival.
-    const params = new URLSearchParams(window.location.search);
-    const linkedRoute = params.get("routecode");
-    const linkedDate = params.get("date");
+        // Deep-link support: Route Location's "Track" button sends a route + date
+        // here via query params so the comparison runs immediately on arrival.
+        const params = new URLSearchParams(window.location.search);
+        const linkedRoute = params.get("routecode");
+        const linkedDate = params.get("date");
 
-    if (linkedRoute && routes.value.some((route) => route.routecode === Number(linkedRoute))) {
-        selectedRoute.value = Number(linkedRoute);
-        if (linkedDate) {
-            selectedDate.value = linkedDate;
+        if (linkedRoute && routes.value.some((route) => route.routecode === Number(linkedRoute))) {
+            selectedRoute.value = Number(linkedRoute);
+            if (linkedDate) {
+                selectedDate.value = linkedDate;
+            }
+            await runComparison();
         }
-        runComparison();
+    } finally {
+        store.pageLoader({ mode: "off" });
     }
 
     document.addEventListener("fullscreenchange", () => {
@@ -114,6 +123,8 @@ onMounted(async () => {
         setTimeout(() => map.invalidateSize(), 0);
     });
 });
+
+onBeforeUnmount(() => store.pageLoader({ mode: "off" }));
 
 watch(selectedCompany, async (companycode) => {
     const { data: routeData } = await axios.get("/route-tracking/routes.json", { params: { companycode } });
@@ -186,6 +197,7 @@ async function runComparison() {
     }
 
     loading.value = true;
+    store.pageLoader({ mode: "on" });
     error.value = null;
     result.value = null;
 
@@ -252,7 +264,25 @@ async function runComparison() {
         error.value = e.response?.data?.error || "Unable to compute comparison.";
     } finally {
         loading.value = false;
+        store.pageLoader({ mode: "off" });
     }
+}
+
+function resetFilters() {
+    selectedCompany.value = null;
+    selectedRoute.value = null;
+    selectedDate.value = DEFAULT_DATE;
+    error.value = null;
+    result.value = null;
+    customerSearch.value = "";
+    customerListTab.value = "all";
+
+    if (resultLayer) {
+        map.removeLayer(resultLayer);
+        resultLayer = null;
+    }
+
+    map.setView([20.5, 56], 8);
 }
 
 function km(meters) {
@@ -389,10 +419,15 @@ function focusEnd() {
                     <label class="form-label">Operation Date</label>
                     <input v-model="selectedDate" type="date" class="form-control" />
                 </div>
+            </div>
+            <div class="row align-items-end g-3 mt-3">
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedRoute || !selectedDate" @click="runComparison">
-                        {{ loading ? "..." : "Compare" }}
+                    <button class="btn btn-primary w-100" :disabled="loading || !selectedRoute || !selectedDate" @click="runComparison">
+                        {{ loading ? "..." : "Apply" }}
                     </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-light w-100" :disabled="loading" @click="resetFilters">Reset</button>
                 </div>
             </div>
         </BaseBlock>

@@ -21,7 +21,9 @@ class RouteTrackingController extends Controller
     private const MATCH_CHUNK_SIZE = 100;
     private const MIN_DOWNSAMPLE_METERS = 20;
     private const MAX_PLAUSIBLE_SPEED_KMH = 150;
-    private const MIN_MATCH_CONFIDENCE = 0.1;
+    //  private const MIN_MATCH_CONFIDENCE = 0.1;
+    //Jyothish Changes this value to 0.0 from 0.1 to get more matched points in the actual route
+    private const MIN_MATCH_CONFIDENCE = 0.0;
     private const MIN_MATCH_DISTANCE_METERS = 50;
 
     // Matches the OMAN_BOUNDS used on the map UI — guards against bad

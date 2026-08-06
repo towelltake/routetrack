@@ -21,9 +21,7 @@ class RouteTrackingController extends Controller
     private const MATCH_CHUNK_SIZE = 100;
     private const MIN_DOWNSAMPLE_METERS = 20;
     private const MAX_PLAUSIBLE_SPEED_KMH = 150;
-    //  private const MIN_MATCH_CONFIDENCE = 0.1;
-    //Jyothish Changes this value to 0.0 from 0.1 to get more matched points in the actual route
-    private const MIN_MATCH_CONFIDENCE = 0.0;
+    private const MIN_MATCH_CONFIDENCE = 0.1;
     private const MIN_MATCH_DISTANCE_METERS = 50;
 
     // Matches the OMAN_BOUNDS used on the map UI — guards against bad
@@ -296,8 +294,8 @@ class RouteTrackingController extends Controller
 
     private function fetchCleanTrail(int $routecode, string $date): array
     {
-        // devicetimestamp is null for some devices/routes — entrydate + entrytime
-        // is always populated, so it's used as a fallback ordering/timing source.
+        // date + time is the actual tracking timestamp; cdate is only the
+        // database audit/creation time and must not be sent to OSRM.
         $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
             ->where('routecode', $routecode)
             ->where('date', $date)
@@ -305,7 +303,7 @@ class RouteTrackingController extends Controller
             ->whereNotNull('longitude')
             ->where('latitude', '!=', 0)
             ->where('longitude', '!=', 0)
-            ->selectRaw('latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp')
+            ->selectRaw('latitude, longitude, date + time as effective_timestamp')
             ->orderBy('effective_timestamp')
             ->orderBy('id')
             ->get()

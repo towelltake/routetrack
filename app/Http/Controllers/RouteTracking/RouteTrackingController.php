@@ -509,11 +509,20 @@ class RouteTrackingController extends Controller
 
         foreach ($orderedCustomers as &$customer) {
             $visit = $visits->get($customer['customercode']);
+            $startTimestamp = $visit?->visitstartdate && $visit?->visitstarttime
+                ? strtotime(substr((string) $visit->visitstartdate, 0, 10).' '.$visit->visitstarttime)
+                : false;
+            $endTimestamp = $visit?->visitenddate && $visit?->visitendtime
+                ? strtotime(substr((string) $visit->visitenddate, 0, 10).' '.$visit->visitendtime)
+                : false;
             $customer['visited'] = $customer['serviced_flag'] !== 0;
             $customer['visit_start_date'] = $visit ? substr((string) $visit->visitstartdate, 0, 10) : null;
             $customer['visit_start_time'] = $visit?->visitstarttime;
             $customer['visit_end_date'] = $visit ? substr((string) $visit->visitenddate, 0, 10) : null;
             $customer['visit_end_time'] = $visit?->visitendtime;
+            $customer['visit_duration_minutes'] = $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
+                ? intdiv($endTimestamp - $startTimestamp, 60)
+                : null;
         }
 
         return [

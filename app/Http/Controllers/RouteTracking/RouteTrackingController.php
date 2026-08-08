@@ -528,6 +528,7 @@ class RouteTrackingController extends Controller
         return [
             'day' => $dayKey,
             'routekey' => (int) $routeDay->routekey,
+            'route_closed' => (int) $routeDay->routeclosed === 1,
             'customer_count' => $customers->count(),
             'visited_count' => $customers->where('serviced_flag', '!=', 0)->count(),
             'distance' => $totalDistance,
@@ -572,7 +573,7 @@ class RouteTrackingController extends Controller
                     });
             })
             ->orderByDesc('routekey')
-            ->first(['routekey', 'routecode', 'routestartdate', 'routeenddate']);
+            ->first(['routekey', 'routecode', 'routestartdate', 'routeenddate', 'routeclosed']);
 
         if ($routeDay !== null) {
             return $routeDay;
@@ -594,6 +595,7 @@ class RouteTrackingController extends Controller
             'routecode' => $routecode,
             'routestartdate' => $date,
             'routeenddate' => $date,
+            'routeclosed' => 0,
         ];
     }
 

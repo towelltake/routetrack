@@ -25,6 +25,8 @@ const result = ref(null);
 const isFullscreen = ref(false);
 const customerSearch = ref("");
 const customerListTab = ref("all");
+const plannedRouteVisible = ref(true);
+const actualRouteVisible = ref(true);
 
 const numberedCustomers = computed(() =>
     (result.value?.planned?.customers ?? []).map((customer, index) => ({ ...customer, displayNumber: index + 1 })),
@@ -230,6 +232,8 @@ async function runComparison() {
     Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
     customerSearch.value = "";
     customerListTab.value = "all";
+    plannedRouteVisible.value = true;
+    actualRouteVisible.value = true;
 
     const params = {
         routecode: selectedRoute.value,
@@ -257,7 +261,7 @@ async function runComparison() {
             customerMarkers[customer.customercode] = marker;
         });
 
-        actualLineLayer = L.featureGroup().addTo(actualLayer);
+        actualLineLayer = L.featureGroup().addTo(resultLayer);
         result.value.actual.geometries.forEach((geometry) => {
             L.geoJSON(geometry, { style: actualRouteStyle() }).addTo(actualLineLayer);
         });
@@ -266,8 +270,8 @@ async function runComparison() {
         startMarker = L.marker([start.lat, start.lng], { icon: flagIcon("#16a34a", "S") })
             .bindPopup(`<strong>Route Start</strong><br>${start.time ?? ""}`)
             .addTo(actualLayer);
-        endMarker = L.marker([end.lat, end.lng], { icon: flagIcon("#dc2626", "E") })
-            .bindPopup(`<strong>Route End</strong><br>${end.time ?? ""}`)
+        endMarker = L.marker([end.lat, end.lng], { icon: flagIcon("#dc2626", "L") })
+            .bindPopup(`<strong>Last Known Location</strong><br>${end.time ?? ""}`)
             .addTo(actualLayer);
 
         // Zoom to the actual start/end points (smaller, more relevant area) rather than
@@ -293,6 +297,8 @@ function resetFilters() {
     result.value = null;
     customerSearch.value = "";
     customerListTab.value = "all";
+    plannedRouteVisible.value = true;
+    actualRouteVisible.value = true;
 
     if (resultLayer) {
         map.removeLayer(resultLayer);
@@ -359,24 +365,30 @@ function selectCustomerTab(tab) {
     }
 }
 
-function focusPlannedRoute() {
-    if (!plannedLineLayer || !map) {
+function togglePlannedRoute() {
+    if (!plannedLineLayer || !resultLayer || !map) {
         return;
     }
 
+    plannedRouteVisible.value = !plannedRouteVisible.value;
+    plannedRouteVisible.value ? resultLayer.addLayer(plannedLineLayer) : resultLayer.removeLayer(plannedLineLayer);
+
     const bounds = plannedLineLayer.getBounds();
-    if (bounds.isValid()) {
+    if (plannedRouteVisible.value && bounds.isValid()) {
         map.fitBounds(bounds, { padding: [60, 60] });
     }
 }
 
-function focusActualRoute() {
-    if (!actualLineLayer || !map) {
+function toggleActualRoute() {
+    if (!actualLineLayer || !resultLayer || !map) {
         return;
     }
 
+    actualRouteVisible.value = !actualRouteVisible.value;
+    actualRouteVisible.value ? resultLayer.addLayer(actualLineLayer) : resultLayer.removeLayer(actualLineLayer);
+
     const bounds = actualLineLayer.getBounds();
-    if (bounds.isValid()) {
+    if (actualRouteVisible.value && bounds.isValid()) {
         map.fitBounds(bounds, { padding: [60, 60] });
     }
 }
@@ -406,7 +418,7 @@ function focusEnd() {
     <div class="content route-tracking-content">
         <div class="route-tracking-page-heading">
             <h1 class="h3 fw-bold mb-1">Route Tracking</h1>
-            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual start/end GPS points</h2>
+            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual GPS points</h2>
         </div>
 
         <BaseBlock title="Filters" class="route-tracking-filters">
@@ -459,6 +471,12 @@ function focusEnd() {
             <div v-if="result" class="row mb-3 g-3">
                 <div class="col-md-4">
                     <div class="fw-bold text-primary">Planned</div>
+                    <div>
+                        Status:
+                        <span :class="result.planned.route_closed ? 'text-danger' : 'text-success'">
+                            {{ result.planned.route_closed ? "Closed" : "Live" }}
+                        </span>
+                    </div>
                     <div>{{ km(result.planned.distance) }} km</div>
                     <div>{{ minutes(result.planned.duration) }} min</div>
                     <div class="text-muted small">{{ result.planned.customer_count }} customers ({{ result.planned.day }})</div>
@@ -489,7 +507,13 @@ function focusEnd() {
             </div>
 
             <div class="route-tracking-legend small">
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusPlannedRoute">
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :class="{ active: plannedRouteVisible }"
+                    :disabled="!result"
+                    @click="togglePlannedRoute"
+                >
                     <span class="text-primary">&#9632;</span>
                     {{ result?.planned?.used_fallback_geometry ? "Planned Approx." : "Planned Route" }}
                 </button>
@@ -499,7 +523,13 @@ function focusEnd() {
                 <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusNotVisitedCustomers">
                     <span style="color: #9ca3af">&#9679;</span> Not Visited Customer
                 </button>
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusActualRoute">
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :class="{ active: actualRouteVisible }"
+                    :disabled="!result"
+                    @click="toggleActualRoute"
+                >
                     <span class="text-danger">&#9632;</span>
                     {{ result?.actual?.used_fallback_geometry ? "Actual Raw GPS" : "Actual Matched GPS Route" }}
                 </button>
@@ -507,7 +537,7 @@ function focusEnd() {
                     <span style="color: #16a34a">&#9632;</span> Route Start (S)
                 </button>
                 <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusEnd">
-                    <span style="color: #dc2626">&#9632;</span> Route End (E)
+                    <span style="color: #dc2626">&#9632;</span> Last Known Location (L)
                 </button>
             </div>
 
@@ -631,6 +661,12 @@ function focusEnd() {
     &:hover:not(:disabled) {
         background: #f1f3f5;
         border-color: #ced4da;
+    }
+
+    &.active {
+        background: #e8f1ff;
+        border-color: #3b82f6;
+        color: #212529;
     }
 
     &:disabled {

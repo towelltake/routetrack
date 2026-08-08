@@ -196,12 +196,16 @@ function customerVisitDetails(customer) {
         return "";
     }
 
-    return [
-        customer.visit_start_date && `Customer Visit Date: ${customer.visit_start_date}`,
-        customer.visit_start_time && `Customer Visit Time: ${customer.visit_start_time}`,
-        customer.visit_end_date && `Customer Visit End Date: ${customer.visit_end_date}`,
-        customer.visit_end_time && `Customer Visit End Time: ${customer.visit_end_time}`,
-    ]
+    const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
+    const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
+    const startTime = Date.parse(`${customer.visit_start_date}T${customer.visit_start_time}`);
+    const endTime = Date.parse(`${customer.visit_end_date}T${customer.visit_end_time}`);
+    const durationMinutes = Math.floor((endTime - startTime) / 60_000);
+    const duration = Number.isFinite(durationMinutes) && durationMinutes >= 0
+        ? `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`
+        : null;
+
+    return [start && `Visit Start: ${start}`, end && `Visit End: ${end}`, duration && `Visit Duration: ${duration}`]
         .filter(Boolean)
         .map((line) => `<br>${line}`)
         .join("");

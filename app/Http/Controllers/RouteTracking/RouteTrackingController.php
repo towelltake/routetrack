@@ -541,12 +541,22 @@ class RouteTrackingController extends Controller
 
     private function findRouteDay(int $routecode, string $date): ?object
     {
-       
-    $routeDay = DB::table('startendday')
-    ->where('routecode', $routecode)
-    ->whereDate('routestartdate', $date)
-    ->orderByDesc('routekey')
-    ->first(['routekey', 'routecode', 'routestartdate', 'routeenddate']);
+        $routeDay = DB::table('startendday')
+            ->where('routecode', $routecode)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('routeenddate', $date)
+                    ->orWhereDate('routestartdate', $date)
+                    ->orWhere(function ($query) use ($date) {
+                        $query->whereDate('routestartdate', '<=', $date)
+                            ->whereDate('routeenddate', '>=', $date);
+                    });
+            })
+            ->orderByDesc('routekey')
+            ->first(['routekey', 'routecode', 'routestartdate', 'routeenddate']);
+
+        if ($routeDay !== null) {
+            return $routeDay;
+        }
 
         $statusRouteKey = DB::table('routesequencecustomerstatus')
             ->where('routecode', $routecode)

@@ -419,6 +419,13 @@ class RouteTrackingController extends Controller
 
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
 
+        $visits = DB::table('customeroperationscontrol')
+            ->where('routekey', $routeDay->routekey)
+            ->orderByDesc('primary_id')
+            ->get(['customercode', 'visitstartdate', 'visitstarttime', 'visitenddate', 'visitendtime'])
+            ->unique('customercode')
+            ->keyBy('customercode');
+
         if ($customers->count() < 2) {
             return ['error' => "Not enough planned customers for this route on {$dayKey}"];
         }
@@ -501,8 +508,12 @@ class RouteTrackingController extends Controller
         }
 
         foreach ($orderedCustomers as &$customer) {
+            $visit = $visits->get($customer['customercode']);
             $customer['visited'] = $customer['serviced_flag'] !== 0;
-            $customer['visit_time'] = null;
+            $customer['visit_start_date'] = $visit ? substr((string) $visit->visitstartdate, 0, 10) : null;
+            $customer['visit_start_time'] = $visit?->visitstarttime;
+            $customer['visit_end_date'] = $visit ? substr((string) $visit->visitenddate, 0, 10) : null;
+            $customer['visit_end_time'] = $visit?->visitendtime;
         }
 
         return [

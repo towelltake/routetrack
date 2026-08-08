@@ -191,6 +191,22 @@ function customerVisitStatus(customer) {
     return "Not Visited Customer";
 }
 
+function customerVisitDetails(customer) {
+    if (!customer.visited) {
+        return "";
+    }
+
+    return [
+        customer.visit_start_date && `Customer Visit Date: ${customer.visit_start_date}`,
+        customer.visit_start_time && `Customer Visit Time: ${customer.visit_start_time}`,
+        customer.visit_end_date && `Customer Visit End Date: ${customer.visit_end_date}`,
+        customer.visit_end_time && `Customer Visit End Time: ${customer.visit_end_time}`,
+    ]
+        .filter(Boolean)
+        .map((line) => `<br>${line}`)
+        .join("");
+}
+
 async function runComparison() {
     if (!selectedRoute.value || !selectedDate.value) {
         return;
@@ -234,7 +250,7 @@ async function runComparison() {
         result.value.planned.customers.forEach((customer, index) => {
             const marker = L.marker([customer.lat, customer.lng], { icon: numberedIcon(index + 1, customer) })
                 .bindPopup(
-                    `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customer.customercode}<br>${customerVisitStatus(customer)}`,
+                    `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customer.customercode}<br>${customerVisitStatus(customer)}${customerVisitDetails(customer)}`,
                 )
                 .addTo(resultLayer);
             customerMarkers[customer.customercode] = marker;

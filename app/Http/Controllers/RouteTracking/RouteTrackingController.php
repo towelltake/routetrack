@@ -21,6 +21,7 @@ class RouteTrackingController extends Controller
     private const MATCH_CHUNK_SIZE = 100;
     private const MIN_DOWNSAMPLE_METERS = 20;
     private const MAX_PLAUSIBLE_SPEED_KMH = 150;
+    private const VISIT_GPS_FALLBACK_MINUTES = 5;
     private const MIN_MATCH_CONFIDENCE = 0.0;
     private const MIN_MATCH_DISTANCE_METERS = 50;
 
@@ -419,12 +420,8 @@ class RouteTrackingController extends Controller
 
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
 
-        $visits = DB::table('customeroperationscontrol')
-            ->where('routekey', $routeDay->routekey)
-            ->orderByDesc('primary_id')
-            ->get(['customercode', 'visitstartdate', 'visitstarttime', 'visitenddate', 'visitendtime'])
-            ->unique('customercode')
-            ->keyBy('customercode');
+        $visits = $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode);
+        $visitCounts = $visits->countBy('customercode');
 
         if ($customers->count() < 2) {
             return ['error' => "Not enough planned customers for this route on {$dayKey}"];
@@ -508,21 +505,8 @@ class RouteTrackingController extends Controller
         }
 
         foreach ($orderedCustomers as &$customer) {
-            $visit = $visits->get($customer['customercode']);
-            $startTimestamp = $visit?->visitstartdate && $visit?->visitstarttime
-                ? strtotime(substr((string) $visit->visitstartdate, 0, 10).' '.$visit->visitstarttime)
-                : false;
-            $endTimestamp = $visit?->visitenddate && $visit?->visitendtime
-                ? strtotime(substr((string) $visit->visitenddate, 0, 10).' '.$visit->visitendtime)
-                : false;
-            $customer['visited'] = $customer['serviced_flag'] !== 0;
-            $customer['visit_start_date'] = $visit ? substr((string) $visit->visitstartdate, 0, 10) : null;
-            $customer['visit_start_time'] = $visit?->visitstarttime;
-            $customer['visit_end_date'] = $visit ? substr((string) $visit->visitenddate, 0, 10) : null;
-            $customer['visit_end_time'] = $visit?->visitendtime;
-            $customer['visit_duration_minutes'] = $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
-                ? intdiv($endTimestamp - $startTimestamp, 60)
-                : null;
+            $customer['visit_count'] = $visitCounts->get($customer['customercode'], 0);
+            $customer['visited'] = $customer['visit_count'] > 0;
         }
 
         return [
@@ -530,11 +514,13 @@ class RouteTrackingController extends Controller
             'routekey' => (int) $routeDay->routekey,
             'route_closed' => (int) $routeDay->routeclosed === 1,
             'customer_count' => $customers->count(),
-            'visited_count' => $customers->where('serviced_flag', '!=', 0)->count(),
+            'visited_count' => collect($orderedCustomers)->where('visited', true)->count(),
+            'visit_count' => $visits->count(),
             'distance' => $totalDistance,
             'duration' => $totalDuration,
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
+            'customer_visits' => $visits->values(),
             'chunks_failed' => $chunksFailed,
             'osrm_legs' => $osrmLegs,
             'fallback_legs' => $fallbackLegs,
@@ -642,6 +628,114 @@ class RouteTrackingController extends Controller
                 'serviced_flag' => (int) ($customer->servicedflag ?? 0),
                 'scanned_flag' => (int) ($customer->scannedflag ?? 0),
             ]);
+    }
+
+    private function fetchCustomerVisits(int $routekey, int $routecode): Collection
+    {
+        $operations = DB::table('customeroperationscontrol')
+            ->where('routekey', $routekey)
+            ->where('log_id', '>', 0)
+            ->orderByDesc('primary_id')
+            ->get(['log_id', 'latitude', 'longitude'])
+            ->unique('log_id')
+            ->keyBy('log_id');
+
+        $visits = DB::table('customervisitlog as cvl')
+            ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
+            ->where('cvl.routekey', $routekey)
+            ->orderBy('cvl.logkey')
+            ->get([
+                'cvl.logkey',
+                'cvl.customercode',
+                'cvl.logstartdate',
+                'cvl.logstarttime',
+                'cvl.logenddate',
+                'cvl.logendtime',
+                'cm.customername',
+                'cm.fixedlatitude',
+                'cm.fixedlongitude',
+            ])
+            ->map(function (object $visit) use ($operations) {
+                $operation = $operations->get($visit->logkey);
+                $coordinates = $this->validOmanCoordinates($operation?->latitude, $operation?->longitude)
+                    ?? $this->validOmanCoordinates($visit->fixedlatitude, $visit->fixedlongitude);
+                $startDate = (string) $visit->logstartdate;
+                $startTime = (string) $visit->logstarttime;
+                $endDate = $this->validVisitDate($visit->logenddate);
+                $endTime = $endDate && $visit->logendtime ? (string) $visit->logendtime : null;
+                $startTimestamp = strtotime("{$startDate} {$startTime}");
+                $endTimestamp = $endDate && $endTime ? strtotime("{$endDate} {$endTime}") : false;
+
+                return [
+                    'logkey' => (int) $visit->logkey,
+                    'customercode' => (int) $visit->customercode,
+                    'customername' => $visit->customername ?? "Customer {$visit->customercode}",
+                    'visit_start_date' => $startDate,
+                    'visit_start_time' => $startTime,
+                    'visit_end_date' => $endDate,
+                    'visit_end_time' => $endTime,
+                    'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
+                        ? intdiv($endTimestamp - $startTimestamp, 60)
+                        : null,
+                    'lat' => $coordinates['lat'] ?? null,
+                    'lng' => $coordinates['lng'] ?? null,
+                    'location_source' => $coordinates ? ($operation && $this->validOmanCoordinates($operation->latitude, $operation->longitude) ? 'visit' : 'customer') : null,
+                ];
+            });
+
+        $missingLocations = $visits->whereNull('lat');
+        if ($missingLocations->isEmpty()) {
+            return $visits;
+        }
+
+        $trackingPoints = DB::connection('tracking_pgsql')->table('trac_routetrack')
+            ->where('routecode', $routecode)
+            ->whereIn('date', $missingLocations->pluck('visit_start_date')->unique())
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->where('latitude', '!=', 0)
+            ->where('longitude', '!=', 0)
+            ->selectRaw('latitude, longitude, date + time as effective_timestamp')
+            ->orderBy('effective_timestamp')
+            ->get();
+
+        return $visits->map(function (array $visit) use ($trackingPoints) {
+            if ($visit['lat'] !== null) {
+                return $visit;
+            }
+
+            $visitTimestamp = strtotime($visit['visit_start_date'].' '.$visit['visit_start_time']);
+            $nearest = $trackingPoints
+                ->map(fn (object $point) => ['point' => $point, 'seconds' => abs(strtotime($point->effective_timestamp) - $visitTimestamp)])
+                ->sortBy('seconds')
+                ->first();
+
+            if ($nearest && $nearest['seconds'] <= self::VISIT_GPS_FALLBACK_MINUTES * 60) {
+                $visit['lat'] = (float) $nearest['point']->latitude;
+                $visit['lng'] = (float) $nearest['point']->longitude;
+                $visit['location_source'] = 'gps';
+            }
+
+            return $visit;
+        });
+    }
+
+    private function validOmanCoordinates(mixed $latitude, mixed $longitude): ?array
+    {
+        $lat = (float) $latitude;
+        $lng = (float) $longitude;
+
+        return $lat >= self::OMAN_MIN_LAT && $lat <= self::OMAN_MAX_LAT
+            && $lng >= self::OMAN_MIN_LNG && $lng <= self::OMAN_MAX_LNG
+                ? ['lat' => $lat, 'lng' => $lng]
+                : null;
+    }
+
+    private function validVisitDate(mixed $date): ?string
+    {
+        $date = substr((string) $date, 0, 10);
+
+        return $date !== '' && $date !== '0000-00-00' ? $date : null;
     }
 
     private function plannedLegFallback(array $from, array $to): array

@@ -29,7 +29,21 @@ const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 
 const numberedCustomers = computed(() =>
-    (result.value?.planned?.customers ?? []).map((customer, index) => ({ ...customer, displayNumber: index + 1 })),
+    (result.value?.planned?.customers ?? []).map((customer, index) => ({
+        ...customer,
+        displayNumber: index + 1,
+        listKey: `planned-${customer.customercode}`,
+        type: "planned",
+    })),
+);
+
+const customerVisits = computed(() =>
+    (result.value?.planned?.customer_visits ?? []).map((visit, index) => ({
+        ...visit,
+        displayNumber: index + 1,
+        listKey: `visit-${visit.logkey}`,
+        type: "visit",
+    })),
 );
 
 const routeQualityWarnings = computed(() => {
@@ -53,11 +67,11 @@ const routeQualityWarnings = computed(() => {
 });
 
 const tabCustomers = computed(() => {
-    if (customerListTab.value === "visited") {
-        return numberedCustomers.value.filter((customer) => customer.visited);
+    if (customerListTab.value === "visits") {
+        return customerVisits.value;
     }
 
-    if (customerListTab.value === "not_visited") {
+    if (customerListTab.value === "planned_not_visited") {
         return numberedCustomers.value.filter((customer) => !customer.visited);
     }
 
@@ -79,6 +93,7 @@ const filteredCustomers = computed(() => {
 
 let map = null;
 const customerMarkers = {};
+const visitMarkers = {};
 let resultLayer = null;
 let plannedLineLayer = null;
 let actualLineLayer = null;
@@ -152,11 +167,20 @@ function flagIcon(color, label) {
 }
 
 function customerStatusColor(customer) {
-    if (customer.visited) {
+    if (customer.type === "visit" || customer.visited) {
         return "#16a34a";
     }
 
     return "#9ca3af";
+}
+
+function visitIcon(sequence) {
+    return L.divIcon({
+        className: "route-tracking-customer-marker",
+        html: `<div style="background:#16a34a;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${sequence}</div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+    });
 }
 
 function numberedIcon(sequence, customer) {
@@ -186,18 +210,18 @@ function actualRouteStyle() {
 }
 
 function customerVisitStatus(customer) {
-    if (customer.visited) {
-        return "Visited Customer";
+    if (customer.type === "visit") {
+        return "Customer Visit";
     }
 
-    return "Not Visited Customer";
+    if (customer.visited) {
+        return `${customer.visit_count} Customer Visit${customer.visit_count === 1 ? "" : "s"}`;
+    }
+
+    return "Planned Not Visited";
 }
 
 function customerVisitDetails(customer) {
-    if (!customer.visited) {
-        return "";
-    }
-
     const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
     const duration = customer.visit_duration_minutes !== null
@@ -230,6 +254,7 @@ async function runComparison() {
     startMarker = null;
     endMarker = null;
     Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
+    Object.keys(visitMarkers).forEach((key) => delete visitMarkers[key]);
     customerSearch.value = "";
     customerListTab.value = "all";
     plannedRouteVisible.value = true;
@@ -255,10 +280,23 @@ async function runComparison() {
         result.value.planned.customers.forEach((customer, index) => {
             const marker = L.marker([customer.lat, customer.lng], { icon: numberedIcon(index + 1, customer) })
                 .bindPopup(
-                    `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customer.customercode}<br>${customerVisitStatus(customer)}${customerVisitDetails(customer)}`,
+                    `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customer.customercode}<br>${customerVisitStatus(customer)}`,
                 )
                 .addTo(resultLayer);
             customerMarkers[customer.customercode] = marker;
+        });
+
+        result.value.planned.customer_visits.forEach((visit, index) => {
+            if (visit.lat === null || visit.lng === null) {
+                return;
+            }
+
+            const marker = L.marker([visit.lat, visit.lng], { icon: visitIcon(index + 1) })
+                .bindPopup(
+                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${visit.customercode}<br>Customer Visit${customerVisitDetails(visit)}`,
+                )
+                .addTo(resultLayer);
+            visitMarkers[visit.logkey] = marker;
         });
 
         actualLineLayer = L.featureGroup().addTo(resultLayer);
@@ -321,7 +359,7 @@ function pct(ratio) {
 }
 
 function focusCustomer(customer) {
-    const marker = customerMarkers[customer.customercode];
+    const marker = customer.type === "visit" ? visitMarkers[customer.logkey] : customerMarkers[customer.customercode];
     if (!marker || !map) {
         return;
     }
@@ -343,22 +381,25 @@ function fitToCustomers(predicate) {
     map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
 }
 
-function focusVisitedCustomers() {
-    customerListTab.value = "visited";
-    fitToCustomers((customer) => customer.visited);
+function focusCustomerVisits() {
+    customerListTab.value = "visits";
+    const markers = Object.values(visitMarkers);
+    if (markers.length) {
+        map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
+    }
 }
 
 function focusNotVisitedCustomers() {
-    customerListTab.value = "not_visited";
+    customerListTab.value = "planned_not_visited";
     fitToCustomers((customer) => !customer.visited);
 }
 
 function selectCustomerTab(tab) {
     customerListTab.value = tab;
 
-    if (tab === "visited") {
-        fitToCustomers((customer) => customer.visited);
-    } else if (tab === "not_visited") {
+    if (tab === "visits") {
+        focusCustomerVisits();
+    } else if (tab === "planned_not_visited") {
         fitToCustomers((customer) => !customer.visited);
     } else {
         fitToCustomers(() => true);
@@ -484,7 +525,7 @@ function focusEnd() {
                         Approximate fallback, not road routed
                     </div>
                     <div class="text-success small">
-                        {{ result.planned.visited_count }} / {{ result.planned.customer_count }} visited
+                        {{ result.planned.visit_count }} customer visits; {{ result.planned.visited_count }} distinct planned customers visited
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -517,11 +558,11 @@ function focusEnd() {
                     <span class="text-primary">&#9632;</span>
                     {{ result?.planned?.used_fallback_geometry ? "Planned Approx." : "Planned Route" }}
                 </button>
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusVisitedCustomers">
-                    <span style="color: #16a34a">&#9679;</span> Visited Customer
+                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusCustomerVisits">
+                    <span style="color: #16a34a">&#9679;</span> Customer Visits
                 </button>
                 <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusNotVisitedCustomers">
-                    <span style="color: #9ca3af">&#9679;</span> Not Visited Customer
+                    <span style="color: #9ca3af">&#9679;</span> Planned Not Visited
                 </button>
                 <button
                     type="button"
@@ -560,7 +601,7 @@ function focusEnd() {
                         <div class="card-header">
                             <strong>Customers</strong>
                             <span v-if="result" class="text-muted small">
-                                ({{ result.planned.visited_count }} / {{ result.planned.customer_count }} visited)
+                                ({{ result.planned.visit_count }} visits)
                             </span>
                         </div>
                         <div class="route-tracking-customer-tabs">
@@ -576,20 +617,20 @@ function focusEnd() {
                             <button
                                 type="button"
                                 class="route-tracking-customer-tab"
-                                :class="{ active: customerListTab === 'visited' }"
+                                :class="{ active: customerListTab === 'visits' }"
                                 :disabled="!result"
-                                @click="selectCustomerTab('visited')"
+                                @click="selectCustomerTab('visits')"
                             >
-                                Visited Customer
+                                Customer Visits
                             </button>
                             <button
                                 type="button"
                                 class="route-tracking-customer-tab"
-                                :class="{ active: customerListTab === 'not_visited' }"
+                                :class="{ active: customerListTab === 'planned_not_visited' }"
                                 :disabled="!result"
-                                @click="selectCustomerTab('not_visited')"
+                                @click="selectCustomerTab('planned_not_visited')"
                             >
-                                Not Visited Customer
+                                Planned Not Visited
                             </button>
                         </div>
                         <div class="route-tracking-customer-search p-2">
@@ -607,7 +648,7 @@ function focusEnd() {
                                 <p v-else-if="!filteredCustomers.length" class="text-muted small px-1">No customers match.</p>
                                 <button
                                     v-for="customer in filteredCustomers"
-                                    :key="customer.customercode"
+                                    :key="customer.listKey"
                                     type="button"
                                     class="list-group-item list-group-item-action route-tracking-customer-item"
                                     @click="focusCustomer(customer)"

@@ -81,6 +81,7 @@ The first GPS point is Route Start. The final GPS point is Last Known Location.
 - Customer Visits: one green marker and one list entry per `customervisitlog` row; repeated customers appear repeatedly. This layer is initially off.
 - Planned Not Visited: an on/off highlight that changes the existing unvisited planned markers to grey and filters the list. It does not create duplicate markers.
 - Planned and actual route lines are visible initially and can be toggled independently.
+- Customer codes shown in lists and popups use `customermaster.alternatecode`; the internal `customercode` remains the linking key.
 - If no scheduled planner rows exist, a Route Sequence Data Not Available/Uploaded warning is shown. Planned Route, Planned Visits, and Planned Not Visited are disabled while actual GPS and Customer Visits continue to load; Customer Visits becomes the active list and marker layer.
 - If fewer than two usable GPS points exist, a Route Track Data Not Available warning is shown. Actual Route, Route Start, and Last Known Location are disabled while planned and visit data remain available.
 

@@ -98,7 +98,7 @@ const filteredCustomers = computed(() => {
 
     return tabCustomers.value.filter(
         (customer) =>
-            customer.customername.toLowerCase().includes(search) || String(customer.customercode).includes(search),
+            customer.customername.toLowerCase().includes(search) || String(customer.alternatecode ?? "").toLowerCase().includes(search),
     );
 });
 
@@ -234,6 +234,10 @@ function customerVisitStatus(customer) {
     return "Planned Not Visited";
 }
 
+function customerDisplayCode(customer) {
+    return customer.alternatecode ?? "";
+}
+
 function customerVisitDetails(customer) {
     const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
@@ -317,7 +321,7 @@ async function runComparison() {
         result.value.planned.customers.forEach((customer, index) => {
             const marker = L.marker([customer.lat, customer.lng], { icon: numberedIcon(index + 1, customer) })
                 .bindPopup(
-                    `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customer.customercode}<br>${customerVisitStatus(customer)}`,
+                    `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customerDisplayCode(customer)}<br>${customerVisitStatus(customer)}`,
                 )
                 .addTo(plannedCustomerLayer);
             customerMarkers[customer.customercode] = marker;
@@ -330,7 +334,7 @@ async function runComparison() {
 
             const marker = L.marker([visit.lat, visit.lng], { icon: visitIcon(index + 1) })
                 .bindPopup(
-                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${visit.customercode}<br>Customer Visit${customerVisitDetails(visit)}`,
+                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${customerDisplayCode(visit)}<br>Customer Visit${customerVisitDetails(visit)}`,
                 )
                 .addTo(customerVisitLayer);
             visitMarkers[visit.logkey] = marker;
@@ -794,7 +798,7 @@ function focusEnd() {
                                     <span class="route-tracking-customer-info">
                                         <span class="d-block fw-semibold small">{{ customer.customername }}</span>
                                         <span class="d-block text-muted small">
-                                            {{ customer.customercode }} &middot;
+                                            {{ customerDisplayCode(customer) }} &middot;
                                             {{ customerVisitStatus(customer) }}
                                         </span>
                                     </span>

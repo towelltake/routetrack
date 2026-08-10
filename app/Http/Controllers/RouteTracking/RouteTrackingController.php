@@ -497,6 +497,7 @@ class RouteTrackingController extends Controller
         $customerValues
             ->map(fn ($customer, $i) => [
                 'customercode' => $customer['customercode'],
+                'alternatecode' => $customer['alternatecode'],
                 'customername' => $customer['customername'],
                 'lat' => $customer['lat'],
                 'lng' => $customer['lng'],
@@ -653,11 +654,13 @@ class RouteTrackingController extends Controller
                 'rscs.servicedflag',
                 'rscs.scannedflag',
                 'cm.customername',
+                'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
             ])
             ->map(fn (object $customer) => [
                 'customercode' => $customer->customercode,
+                'alternatecode' => $customer->alternatecode,
                 'customername' => $customer->customername,
                 'lat' => (float) $customer->fixedlatitude,
                 'lng' => (float) $customer->fixedlongitude,
@@ -689,6 +692,7 @@ class RouteTrackingController extends Controller
                 'cvl.logenddate',
                 'cvl.logendtime',
                 'cm.customername',
+                'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
             ])
@@ -706,6 +710,7 @@ class RouteTrackingController extends Controller
                 return [
                     'logkey' => (int) $visit->logkey,
                     'customercode' => (int) $visit->customercode,
+                    'alternatecode' => $visit->alternatecode,
                     'customername' => $visit->customername ?? "Customer {$visit->customercode}",
                     'visit_start_date' => $startDate,
                     'visit_start_time' => $startTime,

@@ -66,6 +66,14 @@ const routeQualityWarnings = computed(() => {
         warnings.push("Actual route is raw GPS trail because OSRM map matching failed.");
     }
 
+    if (!result.value.planned?.has_planned_data) {
+        warnings.push("Route Sequence Data Not Available/Uploaded.");
+    }
+
+    if (!result.value.actual?.has_tracking_data) {
+        warnings.push("Route Track Data Not Available.");
+    }
+
     return warnings;
 });
 
@@ -278,13 +286,30 @@ async function runComparison() {
     try {
         const { data } = await axios.get("/route-tracking/compare.json", { params });
         result.value = data;
+        const hasPlannedData = data.planned.has_planned_data;
+        const hasTrackingData = data.actual.has_tracking_data;
+        plannedRouteVisible.value = hasPlannedData;
+        actualRouteVisible.value = hasTrackingData;
+        plannedCustomersVisible.value = hasPlannedData;
+        plannedNotVisitedVisible.value = false;
+        customerVisitsVisible.value = !hasPlannedData;
+        customerListTab.value = hasPlannedData ? "all" : "visits";
 
         resultLayer = L.featureGroup().addTo(map);
         const actualLayer = L.featureGroup().addTo(resultLayer);
-        plannedCustomerLayer = L.featureGroup().addTo(resultLayer);
+        plannedCustomerLayer = L.featureGroup();
         customerVisitLayer = L.featureGroup();
 
-        plannedLineLayer = L.featureGroup().addTo(resultLayer);
+        if (hasPlannedData) {
+            plannedCustomerLayer.addTo(resultLayer);
+        } else {
+            customerVisitLayer.addTo(resultLayer);
+        }
+
+        plannedLineLayer = L.featureGroup();
+        if (hasPlannedData) {
+            plannedLineLayer.addTo(resultLayer);
+        }
         result.value.planned.geometries.forEach((geometry) => {
             L.geoJSON(geometry, { style: plannedRouteStyle() }).addTo(plannedLineLayer);
         });
@@ -311,24 +336,31 @@ async function runComparison() {
             visitMarkers[visit.logkey] = marker;
         });
 
-        actualLineLayer = L.featureGroup().addTo(resultLayer);
+        actualLineLayer = L.featureGroup();
+        if (hasTrackingData) {
+            actualLineLayer.addTo(resultLayer);
+        }
         result.value.actual.geometries.forEach((geometry) => {
             L.geoJSON(geometry, { style: actualRouteStyle() }).addTo(actualLineLayer);
         });
 
         const { start, end } = result.value.actual;
-        startMarker = L.marker([start.lat, start.lng], { icon: flagIcon("#16a34a", "S") })
-            .bindPopup(`<strong>Route Start</strong><br>${start.time ?? ""}`)
-            .addTo(actualLayer);
-        endMarker = L.marker([end.lat, end.lng], { icon: flagIcon("#dc2626", "L") })
-            .bindPopup(`<strong>Last Known Location</strong><br>${end.time ?? ""}`)
-            .addTo(actualLayer);
+        if (start && end) {
+            startMarker = L.marker([start.lat, start.lng], { icon: flagIcon("#16a34a", "S") })
+                .bindPopup(`<strong>Route Start</strong><br>${start.time ?? ""}`)
+                .addTo(actualLayer);
+            endMarker = L.marker([end.lat, end.lng], { icon: flagIcon("#dc2626", "L") })
+                .bindPopup(`<strong>Last Known Location</strong><br>${end.time ?? ""}`)
+                .addTo(actualLayer);
+        }
 
         // Zoom to the actual start/end points (smaller, more relevant area) rather than
         // fitting both planned + actual — the planned route stays drawn but out of frame.
         const bounds = actualLayer.getBounds();
         if (bounds.isValid()) {
             map.fitBounds(bounds, { padding: [60, 60] });
+        } else if (resultLayer.getBounds().isValid()) {
+            map.fitBounds(resultLayer.getBounds(), { padding: [60, 60] });
         }
     } catch (e) {
         console.error(e);
@@ -410,6 +442,10 @@ function updatePlannedCustomerIcons() {
 }
 
 function showPlannedCustomers() {
+    if (!result.value?.planned?.has_planned_data) {
+        return;
+    }
+
     if (!plannedCustomersVisible.value) {
         resultLayer.addLayer(plannedCustomerLayer);
         plannedCustomersVisible.value = true;
@@ -617,7 +653,7 @@ function focusEnd() {
                     type="button"
                     class="route-tracking-legend-item"
                     :class="{ active: plannedRouteVisible }"
-                    :disabled="!result"
+                    :disabled="!result || !result.planned.has_planned_data"
                     @click="togglePlannedRoute"
                 >
                     <span class="text-primary">&#9632;</span>
@@ -627,7 +663,7 @@ function focusEnd() {
                     type="button"
                     class="route-tracking-legend-item"
                     :class="{ active: plannedCustomersVisible }"
-                    :disabled="!result"
+                    :disabled="!result || !result.planned.has_planned_data"
                     @click="togglePlannedCustomers"
                 >
                     <span style="color: #2563eb">&#9679;</span> Planned Visits
@@ -645,7 +681,7 @@ function focusEnd() {
                     type="button"
                     class="route-tracking-legend-item"
                     :class="{ active: plannedNotVisitedVisible }"
-                    :disabled="!result"
+                    :disabled="!result || !result.planned.has_planned_data"
                     @click="togglePlannedNotVisited"
                 >
                     <span style="color: #9ca3af">&#9679;</span> Planned Not Visited
@@ -654,16 +690,26 @@ function focusEnd() {
                     type="button"
                     class="route-tracking-legend-item"
                     :class="{ active: actualRouteVisible }"
-                    :disabled="!result"
+                    :disabled="!result || !result.actual.has_tracking_data"
                     @click="toggleActualRoute"
                 >
                     <span class="text-danger">&#9632;</span>
                     {{ result?.actual?.used_fallback_geometry ? "Actual Raw GPS" : "Actual Matched GPS Route" }}
                 </button>
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusStart">
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :disabled="!result || !result.actual.has_tracking_data"
+                    @click="focusStart"
+                >
                     <span style="color: #16a34a">&#9632;</span> Route Start (S)
                 </button>
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusEnd">
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :disabled="!result || !result.actual.has_tracking_data"
+                    @click="focusEnd"
+                >
                     <span style="color: #dc2626">&#9632;</span> Last Known Location (L)
                 </button>
             </div>
@@ -695,7 +741,7 @@ function focusEnd() {
                                 type="button"
                                 class="route-tracking-customer-tab"
                                 :class="{ active: customerListTab === 'all' }"
-                                :disabled="!result"
+                                :disabled="!result || !result.planned.has_planned_data"
                                 @click="selectCustomerTab('all')"
                             >
                                 Planned Visits
@@ -713,7 +759,7 @@ function focusEnd() {
                                 type="button"
                                 class="route-tracking-customer-tab"
                                 :class="{ active: customerListTab === 'planned_not_visited' }"
-                                :disabled="!result"
+                                :disabled="!result || !result.planned.has_planned_data"
                                 @click="selectCustomerTab('planned_not_visited')"
                             >
                                 Planned Not Visited

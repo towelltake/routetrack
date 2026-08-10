@@ -52,7 +52,6 @@ class RouteTrackingController extends Controller
     {
         $routedCmpyCodes = RouteMaster::query()
             ->whereIn('routecode', session('user_access.route_codes', []))
-            ->whereIn('routecode', $this->routesequenceCustomerStatusRouteCodes())
             ->distinct()
             ->pluck('cmpycode');
 
@@ -74,7 +73,6 @@ class RouteTrackingController extends Controller
         $routedSubareaCodes = RouteMaster::query()
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
-            ->whereIn('routecode', $this->routesequenceCustomerStatusRouteCodes())
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->pluck('subareacode');
 
@@ -102,7 +100,6 @@ class RouteTrackingController extends Controller
         $routedSubareaCodes = RouteMaster::query()
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
-            ->whereIn('routecode', $this->routesequenceCustomerStatusRouteCodes())
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->pluck('subareacode');
 
@@ -127,7 +124,6 @@ class RouteTrackingController extends Controller
             ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
-            ->whereIn('routecode', $this->routesequenceCustomerStatusRouteCodes())
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->when($validated['subareacode'] ?? null, fn ($query, $subareacode) => $query->where('subareacode', $subareacode))
             ->orderBy('routename')
@@ -214,7 +210,19 @@ class RouteTrackingController extends Controller
         $points = $this->fetchCleanTrail($routecode, $date);
 
         if (count($points) < 2) {
-            return ['error' => 'Not enough GPS points recorded for this route on this date'];
+            return [
+                'has_tracking_data' => false,
+                'distance' => 0,
+                'duration' => 0,
+                'geometries' => [],
+                'start' => null,
+                'end' => null,
+                'point_count' => count($points),
+                'chunks_attempted' => 0,
+                'chunks_failed' => 0,
+                'used_fallback_geometry' => false,
+                'geometry_source' => 'none',
+            ];
         }
 
         $totalDistance = 0;
@@ -280,6 +288,7 @@ class RouteTrackingController extends Controller
         }
 
         return [
+            'has_tracking_data' => true,
             'distance' => $totalDistance,
             'duration' => $totalDuration,
             'geometries' => $geometries,
@@ -415,17 +424,17 @@ class RouteTrackingController extends Controller
         $routeDay = $this->findRouteDay($routecode, $date);
 
         if ($routeDay === null) {
-            return ['error' => "No route day found for route {$routecode} on {$date}"];
+            return $this->emptyPlannedRoute($dayKey);
         }
 
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
+        $hasPlannedData = DB::table('routesequencecustomerstatus')
+            ->where('routekey', $routeDay->routekey)
+            ->where('schelduledflag', 1)
+            ->exists();
 
         $visits = $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode);
         $visitCounts = $visits->countBy('customercode');
-
-        if ($customers->count() < 2) {
-            return ['error' => "Not enough planned customers for this route on {$dayKey}"];
-        }
 
         $totalDistance = 0;
         $totalDuration = 0;
@@ -500,10 +509,6 @@ class RouteTrackingController extends Controller
                 $orderedCustomers[] = $c;
             });
 
-        if ($geometries === []) {
-            return ['error' => 'Could not compute planned route through OSRM'];
-        }
-
         foreach ($orderedCustomers as &$customer) {
             $customer['visit_count'] = $visitCounts->get($customer['customercode'], 0);
             $customer['visited'] = $customer['visit_count'] > 0;
@@ -513,6 +518,7 @@ class RouteTrackingController extends Controller
             'day' => $dayKey,
             'routekey' => (int) $routeDay->routekey,
             'route_closed' => (int) $routeDay->routeclosed === 1,
+            'has_planned_data' => $hasPlannedData,
             'customer_count' => $customers->count(),
             'visited_count' => collect($orderedCustomers)->where('visited', true)->count(),
             'visit_count' => $visits->count(),
@@ -525,7 +531,7 @@ class RouteTrackingController extends Controller
             'osrm_legs' => $osrmLegs,
             'fallback_legs' => $fallbackLegs,
             'used_fallback_geometry' => $fallbackLegs > 0,
-            'geometry_source' => $fallbackLegs > 0 ? ($osrmLegs > 0 ? 'mixed' : 'straight_line') : 'osrm_route',
+            'geometry_source' => $geometries === [] ? 'none' : ($fallbackLegs > 0 ? ($osrmLegs > 0 ? 'mixed' : 'straight_line') : 'osrm_route'),
         ];
     }
 
@@ -537,13 +543,6 @@ class RouteTrackingController extends Controller
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
             ->exists(), 403);
-    }
-
-    private function routesequenceCustomerStatusRouteCodes(): Collection
-    {
-        return DB::table('routesequencecustomerstatus')
-            ->distinct()
-            ->pluck('routecode');
     }
 
     private function findRouteDay(int $routecode, string $date): ?object
@@ -565,6 +564,21 @@ class RouteTrackingController extends Controller
             return $routeDay;
         }
 
+        $visitRouteKey = DB::table('customervisitlog')
+            ->where('routecode', $routecode)
+            ->whereDate('logstartdate', $date)
+            ->max('routekey');
+
+        if ($visitRouteKey !== null) {
+            return (object) [
+                'routekey' => (int) $visitRouteKey,
+                'routecode' => $routecode,
+                'routestartdate' => $date,
+                'routeenddate' => $date,
+                'routeclosed' => 0,
+            ];
+        }
+
         $statusRouteKey = DB::table('routesequencecustomerstatus')
             ->where('routecode', $routecode)
             ->where('seqweekday', $this->legacySeqWeekday($date))
@@ -582,6 +596,29 @@ class RouteTrackingController extends Controller
             'routestartdate' => $date,
             'routeenddate' => $date,
             'routeclosed' => 0,
+        ];
+    }
+
+    private function emptyPlannedRoute(string $dayKey): array
+    {
+        return [
+            'day' => $dayKey,
+            'routekey' => null,
+            'route_closed' => false,
+            'has_planned_data' => false,
+            'customer_count' => 0,
+            'visited_count' => 0,
+            'visit_count' => 0,
+            'distance' => 0,
+            'duration' => 0,
+            'geometries' => [],
+            'customers' => [],
+            'customer_visits' => [],
+            'chunks_failed' => 0,
+            'osrm_legs' => 0,
+            'fallback_legs' => 0,
+            'used_fallback_geometry' => false,
+            'geometry_source' => 'none',
         ];
     }
 

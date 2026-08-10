@@ -147,10 +147,6 @@ function trackUrl(routecode) {
     return `/route-tracking?routecode=${routecode}&date=${selectedDate.value}`;
 }
 
-function replayUrl(routecode) {
-    return `/route-replay?routecode=${routecode}&date=${selectedDate.value}`;
-}
-
 function focusRoute(routecode) {
     const marker = routeMarkers[routecode];
     if (!marker) {
@@ -282,14 +278,6 @@ function resetFilters() {
                                     >
                                         <i class="fa fa-route"></i>
                                     </a>
-                                    <a
-                                        :href="replayUrl(route.routecode)"
-                                        class="route-location-replay-btn"
-                                        title="Replay in Route Replay"
-                                        @click.stop
-                                    >
-                                        <i class="fa fa-play"></i>
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -408,23 +396,6 @@ function resetFilters() {
 
     &:hover {
         background: #4338ca;
-        color: #fff;
-    }
-}
-
-.route-location-replay-btn {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #ecfdf5;
-    color: #047857;
-
-    &:hover {
-        background: #047857;
         color: #fff;
     }
 }

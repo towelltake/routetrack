@@ -58,7 +58,7 @@ Each visit uses the first acceptable location in this order:
 
 1. `customeroperationscontrol.latitude/longitude`, linked where `customeroperationscontrol.log_id = customervisitlog.logkey` for the same `routekey`.
 2. `customermaster.fixedlatitude/fixedlongitude`.
-3. The nearest `trac_routetrack` GPS point to the visit start timestamp, limited to 15 minutes.
+3. The nearest `trac_routetrack` GPS point to the visit start timestamp, limited to 5 minutes.
 
 Coordinates must be non-zero and inside the configured Oman bounds. If no acceptable location is found, the visit still appears in the Customer Visits list but has no map marker.
 
@@ -81,6 +81,8 @@ The first GPS point is Route Start. The final GPS point is Last Known Location.
 - Customer Visits: one green marker and one list entry per `customervisitlog` row; repeated customers appear repeatedly. This layer is initially off.
 - Planned Not Visited: an on/off highlight that changes the existing unvisited planned markers to grey and filters the list. It does not create duplicate markers.
 - Planned and actual route lines are visible initially and can be toggled independently.
+- If no scheduled planner rows exist, a Route Sequence Data Not Available/Uploaded warning is shown. Planned Route, Planned Visits, and Planned Not Visited are disabled while actual GPS and Customer Visits continue to load; Customer Visits becomes the active list and marker layer.
+- If fewer than two usable GPS points exist, a Route Track Data Not Available warning is shown. Actual Route, Route Start, and Last Known Location are disabled while planned and visit data remain available.
 
 ## Deployment
 

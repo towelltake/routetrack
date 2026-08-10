@@ -44,7 +44,7 @@ const filteredCustomerList = computed(() => {
 
     return numberedCustomers.value.filter(
         (customer) =>
-            customer.customername.toLowerCase().includes(search) || String(customer.customercode).includes(search),
+            customer.customername.toLowerCase().includes(search) || String(customer.alternatecode ?? "").toLowerCase().includes(search),
     );
 });
 
@@ -106,7 +106,7 @@ async function loadLocations() {
 
         data.forEach((customer) => {
             const marker = L.marker([customer.lat, customer.lng]).bindPopup(
-                `<strong>${customer.customername}</strong> (${customer.customercode})<br>${customer.address || ""}`,
+                `<strong>${customer.customername}</strong> (${customer.alternatecode ?? ""})<br>${customer.address || ""}`,
             );
             customerMarkers[customer.customercode] = marker;
             clusterGroup.addLayer(marker);
@@ -212,7 +212,7 @@ async function resetFilters() {
                         v-model="selectedCustomer"
                         :options="customers"
                         :reduce="(customer) => customer.customercode"
-                        :get-option-label="(customer) => `${customer.customercode} - ${customer.customername}`"
+                        :get-option-label="(customer) => `${customer.alternatecode ?? ''} - ${customer.customername}`"
                         :filter-by="(customer, label, search) => label.toLowerCase().includes(search.toLowerCase())"
                         placeholder="Jump to a customer..."
                     />
@@ -277,7 +277,7 @@ async function resetFilters() {
                                     <span class="customer-location-customer-info">
                                         <span class="d-block fw-semibold small">{{ customer.customername }}</span>
                                         <span class="d-block text-muted small">
-                                            {{ customer.customercode }} &middot; {{ customer.address || "No address" }}
+                                            {{ customer.alternatecode }} &middot; {{ customer.address || "No address" }}
                                         </span>
                                     </span>
                                 </button>

@@ -144,9 +144,10 @@ class CustomerLocationController extends Controller
             ->whereNotNull('fixedlongitude')
             ->where('fixedlatitude', '!=', 0)
             ->where('fixedlongitude', '!=', 0)
-            ->get(['customercode', 'customername', 'customeraddress1', 'customeraddress2', 'fixedlatitude', 'fixedlongitude'])
+            ->get(['customercode', 'alternatecode', 'customername', 'customeraddress1', 'customeraddress2', 'fixedlatitude', 'fixedlongitude'])
             ->map(fn (CustomerMaster $customer) => [
                 'customercode' => $customer->customercode,
+                'alternatecode' => $customer->alternatecode,
                 'customername' => $customer->customername,
                 'address' => trim($customer->customeraddress1.' '.$customer->customeraddress2),
                 'lat' => (float) $customer->fixedlatitude,

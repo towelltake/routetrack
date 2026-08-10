@@ -27,6 +27,9 @@ const customerSearch = ref("");
 const customerListTab = ref("all");
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
+const plannedCustomersVisible = ref(true);
+const customerVisitsVisible = ref(false);
+const plannedNotVisitedVisible = ref(false);
 
 const numberedCustomers = computed(() =>
     (result.value?.planned?.customers ?? []).map((customer, index) => ({
@@ -97,6 +100,8 @@ const visitMarkers = {};
 let resultLayer = null;
 let plannedLineLayer = null;
 let actualLineLayer = null;
+let plannedCustomerLayer = null;
+let customerVisitLayer = null;
 let startMarker = null;
 let endMarker = null;
 
@@ -167,11 +172,11 @@ function flagIcon(color, label) {
 }
 
 function customerStatusColor(customer) {
-    if (customer.type === "visit" || customer.visited) {
+    if (customer.type === "visit") {
         return "#16a34a";
     }
 
-    return "#9ca3af";
+    return plannedNotVisitedVisible.value && !customer.visited ? "#9ca3af" : "#2563eb";
 }
 
 function visitIcon(sequence) {
@@ -184,7 +189,7 @@ function visitIcon(sequence) {
 }
 
 function numberedIcon(sequence, customer) {
-    const color = customerStatusColor(customer);
+    const color = plannedNotVisitedVisible.value && !customer.visited ? "#9ca3af" : "#2563eb";
     return L.divIcon({
         className: "route-tracking-customer-marker",
         html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${sequence}</div>`,
@@ -251,6 +256,8 @@ async function runComparison() {
 
     plannedLineLayer = null;
     actualLineLayer = null;
+    plannedCustomerLayer = null;
+    customerVisitLayer = null;
     startMarker = null;
     endMarker = null;
     Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
@@ -259,6 +266,9 @@ async function runComparison() {
     customerListTab.value = "all";
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
+    plannedCustomersVisible.value = true;
+    customerVisitsVisible.value = false;
+    plannedNotVisitedVisible.value = false;
 
     const params = {
         routecode: selectedRoute.value,
@@ -271,6 +281,8 @@ async function runComparison() {
 
         resultLayer = L.featureGroup().addTo(map);
         const actualLayer = L.featureGroup().addTo(resultLayer);
+        plannedCustomerLayer = L.featureGroup().addTo(resultLayer);
+        customerVisitLayer = L.featureGroup();
 
         plannedLineLayer = L.featureGroup().addTo(resultLayer);
         result.value.planned.geometries.forEach((geometry) => {
@@ -282,7 +294,7 @@ async function runComparison() {
                 .bindPopup(
                     `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customer.customercode}<br>${customerVisitStatus(customer)}`,
                 )
-                .addTo(resultLayer);
+                .addTo(plannedCustomerLayer);
             customerMarkers[customer.customercode] = marker;
         });
 
@@ -295,7 +307,7 @@ async function runComparison() {
                 .bindPopup(
                     `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${visit.customercode}<br>Customer Visit${customerVisitDetails(visit)}`,
                 )
-                .addTo(resultLayer);
+                .addTo(customerVisitLayer);
             visitMarkers[visit.logkey] = marker;
         });
 
@@ -337,6 +349,9 @@ function resetFilters() {
     customerListTab.value = "all";
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
+    plannedCustomersVisible.value = true;
+    customerVisitsVisible.value = false;
+    plannedNotVisitedVisible.value = false;
 
     if (resultLayer) {
         map.removeLayer(resultLayer);
@@ -381,27 +396,77 @@ function fitToCustomers(predicate) {
     map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
 }
 
-function focusCustomerVisits() {
-    customerListTab.value = "visits";
+function fitToVisitMarkers() {
     const markers = Object.values(visitMarkers);
     if (markers.length) {
         map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
     }
 }
 
-function focusNotVisitedCustomers() {
-    customerListTab.value = "planned_not_visited";
-    fitToCustomers((customer) => !customer.visited);
+function updatePlannedCustomerIcons() {
+    numberedCustomers.value.forEach((customer) => {
+        customerMarkers[customer.customercode]?.setIcon(numberedIcon(customer.displayNumber, customer));
+    });
+}
+
+function showPlannedCustomers() {
+    if (!plannedCustomersVisible.value) {
+        resultLayer.addLayer(plannedCustomerLayer);
+        plannedCustomersVisible.value = true;
+    }
+}
+
+function togglePlannedCustomers() {
+    plannedCustomersVisible.value = !plannedCustomersVisible.value;
+    plannedCustomersVisible.value
+        ? resultLayer.addLayer(plannedCustomerLayer)
+        : resultLayer.removeLayer(plannedCustomerLayer);
+    customerListTab.value = "all";
+}
+
+function toggleCustomerVisits() {
+    customerVisitsVisible.value = !customerVisitsVisible.value;
+    customerVisitsVisible.value ? resultLayer.addLayer(customerVisitLayer) : resultLayer.removeLayer(customerVisitLayer);
+    customerListTab.value = customerVisitsVisible.value ? "visits" : "all";
+
+    if (customerVisitsVisible.value) {
+        fitToVisitMarkers();
+    } else {
+        showPlannedCustomers();
+    }
+}
+
+function togglePlannedNotVisited() {
+    plannedNotVisitedVisible.value = !plannedNotVisitedVisible.value;
+    if (plannedNotVisitedVisible.value) {
+        showPlannedCustomers();
+    }
+    updatePlannedCustomerIcons();
+    customerListTab.value = plannedNotVisitedVisible.value ? "planned_not_visited" : "all";
+
+    if (plannedNotVisitedVisible.value) {
+        fitToCustomers((customer) => !customer.visited);
+    }
 }
 
 function selectCustomerTab(tab) {
     customerListTab.value = tab;
 
     if (tab === "visits") {
-        focusCustomerVisits();
+        if (!customerVisitsVisible.value) {
+            customerVisitsVisible.value = true;
+            resultLayer.addLayer(customerVisitLayer);
+        }
+        fitToVisitMarkers();
     } else if (tab === "planned_not_visited") {
+        plannedNotVisitedVisible.value = true;
+        showPlannedCustomers();
+        updatePlannedCustomerIcons();
         fitToCustomers((customer) => !customer.visited);
     } else {
+        plannedNotVisitedVisible.value = false;
+        showPlannedCustomers();
+        updatePlannedCustomerIcons();
         fitToCustomers(() => true);
     }
 }
@@ -558,10 +623,31 @@ function focusEnd() {
                     <span class="text-primary">&#9632;</span>
                     {{ result?.planned?.used_fallback_geometry ? "Planned Approx." : "Planned Route" }}
                 </button>
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusCustomerVisits">
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :class="{ active: plannedCustomersVisible }"
+                    :disabled="!result"
+                    @click="togglePlannedCustomers"
+                >
+                    <span style="color: #2563eb">&#9679;</span> Planned Visits
+                </button>
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :class="{ active: customerVisitsVisible }"
+                    :disabled="!result"
+                    @click="toggleCustomerVisits"
+                >
                     <span style="color: #16a34a">&#9679;</span> Customer Visits
                 </button>
-                <button type="button" class="route-tracking-legend-item" :disabled="!result" @click="focusNotVisitedCustomers">
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :class="{ active: plannedNotVisitedVisible }"
+                    :disabled="!result"
+                    @click="togglePlannedNotVisited"
+                >
                     <span style="color: #9ca3af">&#9679;</span> Planned Not Visited
                 </button>
                 <button
@@ -612,7 +698,7 @@ function focusEnd() {
                                 :disabled="!result"
                                 @click="selectCustomerTab('all')"
                             >
-                                Planned Customer
+                                Planned Visits
                             </button>
                             <button
                                 type="button"

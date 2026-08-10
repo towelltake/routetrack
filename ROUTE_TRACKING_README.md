@@ -77,9 +77,9 @@ The first GPS point is Route Start. The final GPS point is Last Known Location.
 
 ## UI behavior
 
-- Planned Customer: one entry per planned customer.
-- Customer Visits: one entry per `customervisitlog` row; repeated customers appear repeatedly.
-- Planned Not Visited: planned customers with no visit log for the route.
+- Planned Visits: one blue marker and one list entry per planned customer. This layer is visible initially.
+- Customer Visits: one green marker and one list entry per `customervisitlog` row; repeated customers appear repeatedly. This layer is initially off.
+- Planned Not Visited: an on/off highlight that changes the existing unvisited planned markers to grey and filters the list. It does not create duplicate markers.
 - Planned and actual route lines are visible initially and can be toggled independently.
 
 ## Deployment

@@ -27,6 +27,7 @@ const customerSearch = ref("");
 const customerListTab = ref("all");
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
+const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
 const plannedNotVisitedVisible = ref(false);
@@ -63,9 +64,7 @@ const routeQualityWarnings = computed(() => {
     }
 
     if (result.value.actual?.used_fallback_geometry) {
-        warnings.push(
-            `Actual route includes ${result.value.actual.fallback_geometry_count ?? 0} raw GPS fallback section(s).`,
-        );
+        warnings.push("Actual route is raw GPS trail because OSRM map matching failed.");
     }
 
     if (!result.value.planned?.has_planned_data) {
@@ -110,6 +109,7 @@ const visitMarkers = {};
 let resultLayer = null;
 let plannedLineLayer = null;
 let actualLineLayer = null;
+let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
 let startMarker = null;
@@ -216,21 +216,21 @@ function plannedRouteStyle() {
     return { color: "#3b82f6", weight: 4 };
 }
 
-function actualRouteStyle(source) {
-    if (source === "raw_gps") {
-        return { color: "#f59e0b", weight: 3, opacity: 0.85, dashArray: "8 8" };
+function actualRouteStyle() {
+    if (result.value?.actual?.used_fallback_geometry) {
+        return { color: "#ef4444", weight: 3, opacity: 0.75, dashArray: "8 8" };
     }
 
     return { color: "#ef4444", weight: 4 };
 }
 
-function actualRouteLabel() {
+function rawCoordinatesStyle() {
     return {
-        osrm_match: "Actual Matched GPS Route",
-        mixed: "Actual GPS Route (partially map matched)",
-        raw_gps: "Actual Raw GPS",
-        none: "Actual GPS Route",
-    }[result.value?.actual?.geometry_source ?? "none"];
+        color: "#b45309",
+        weight: 3,
+        opacity: 0.9,
+        dashArray: "10 8",
+    };
 }
 
 function customerVisitStatus(customer) {
@@ -279,6 +279,7 @@ async function runComparison() {
 
     plannedLineLayer = null;
     actualLineLayer = null;
+    rawCoordinatesLayer = null;
     plannedCustomerLayer = null;
     customerVisitLayer = null;
     startMarker = null;
@@ -289,6 +290,7 @@ async function runComparison() {
     customerListTab.value = "all";
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
+    rawCoordinatesVisible.value = false;
     plannedCustomersVisible.value = true;
     customerVisitsVisible.value = false;
     plannedNotVisitedVisible.value = false;
@@ -305,6 +307,7 @@ async function runComparison() {
         const hasTrackingData = data.actual.has_tracking_data;
         plannedRouteVisible.value = hasPlannedData;
         actualRouteVisible.value = hasTrackingData;
+        rawCoordinatesVisible.value = false;
         plannedCustomersVisible.value = hasPlannedData;
         plannedNotVisitedVisible.value = false;
         customerVisitsVisible.value = !hasPlannedData;
@@ -355,9 +358,14 @@ async function runComparison() {
         if (hasTrackingData) {
             actualLineLayer.addTo(resultLayer);
         }
-        result.value.actual.geometries.forEach((geometry, index) => {
-            L.geoJSON(geometry, { style: actualRouteStyle(result.value.actual.geometry_sources?.[index]) }).addTo(actualLineLayer);
+        result.value.actual.geometries.forEach((geometry) => {
+            L.geoJSON(geometry, { style: actualRouteStyle() }).addTo(actualLineLayer);
         });
+
+        rawCoordinatesLayer = L.featureGroup();
+        if (result.value.actual.raw_geometry) {
+            L.geoJSON(result.value.actual.raw_geometry, { style: rawCoordinatesStyle() }).addTo(rawCoordinatesLayer);
+        }
 
         const { start, end } = result.value.actual;
         if (start && end) {
@@ -396,6 +404,7 @@ function resetFilters() {
     customerListTab.value = "all";
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
+    rawCoordinatesVisible.value = false;
     plannedCustomersVisible.value = true;
     customerVisitsVisible.value = false;
     plannedNotVisitedVisible.value = false;
@@ -550,6 +559,22 @@ function toggleActualRoute() {
     }
 }
 
+function toggleRawCoordinates() {
+    if (!rawCoordinatesLayer || !resultLayer || !map) {
+        return;
+    }
+
+    rawCoordinatesVisible.value = !rawCoordinatesVisible.value;
+    rawCoordinatesVisible.value
+        ? resultLayer.addLayer(rawCoordinatesLayer)
+        : resultLayer.removeLayer(rawCoordinatesLayer);
+
+    const bounds = rawCoordinatesLayer.getBounds();
+    if (rawCoordinatesVisible.value && bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [60, 60] });
+    }
+}
+
 function focusStart() {
     if (!startMarker || !map) {
         return;
@@ -645,15 +670,15 @@ function focusEnd() {
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="fw-bold text-danger">{{ actualRouteLabel() }}</div>
+                    <div class="fw-bold text-danger">Actual (matched GPS)</div>
                     <div>{{ km(result.actual.distance) }} km</div>
                     <div>{{ minutes(result.actual.duration) }} min</div>
                     <div class="text-muted small">
                         {{ result.actual.point_count }}
-                        GPS points; {{ result.actual.matched_point_count }} matched, {{ result.actual.unmatched_point_count }} unmatched
+                        {{ result.actual.used_fallback_geometry ? "raw GPS points" : "GPS points matched to roads" }}
                     </div>
                     <div v-if="result.actual.used_fallback_geometry" class="text-warning small">
-                        {{ result.actual.fallback_geometry_count }} raw fallback section(s)
+                        Approximate fallback, not map matched
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -709,7 +734,17 @@ function focusEnd() {
                     @click="toggleActualRoute"
                 >
                     <span class="text-danger">&#9632;</span>
-                    {{ actualRouteLabel() }}
+                    {{ result?.actual?.used_fallback_geometry ? "Actual Raw GPS" : "Actual Matched GPS Route" }}
+                </button>
+                <button
+                    type="button"
+                    class="route-tracking-legend-item"
+                    :class="{ active: rawCoordinatesVisible }"
+                    :disabled="!result || !result.actual.raw_geometry"
+                    @click="toggleRawCoordinates"
+                >
+                    <span style="color: #b45309">&#9632;</span>
+                    Raw Coordinates
                 </button>
                 <button
                     type="button"

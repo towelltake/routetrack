@@ -232,6 +232,7 @@ class RouteTrackingController extends Controller
                 'distance' => 0,
                 'duration' => 0,
                 'geometries' => [],
+                'geometry_sources' => [],
                 'start' => null,
                 'end' => null,
                 'point_count' => $pointCount,
@@ -315,15 +316,18 @@ class RouteTrackingController extends Controller
                 continue;
             }
 
-            $tracepoints = array_pad(array_slice($response->json('tracepoints') ?? [], 0, $chunkCount), $chunkCount, null);
+            $responseTracepoints = $response->json('tracepoints');
+            $hasTracepoints = is_array($responseTracepoints);
+            $tracepoints = array_pad(array_slice($responseTracepoints ?? [], 0, $chunkCount), $chunkCount, null);
+            $responseMatchings = $response->json('matchings') ?? [];
             $usableMatchings = [];
 
-            foreach ($response->json('matchings') ?? [] as $matchingIndex => $matching) {
+            foreach ($responseMatchings as $matchingIndex => $matching) {
                 $geometry = $matching['geometry'] ?? null;
                 $localPointIndexes = [];
 
                 foreach ($tracepoints as $localIndex => $tracepoint) {
-                    if (is_array($tracepoint) && ($tracepoint['matchings_index'] ?? null) === $matchingIndex) {
+                    if (is_array($tracepoint) && (int) ($tracepoint['matchings_index'] ?? -1) === (int) $matchingIndex) {
                         $localPointIndexes[] = $localIndex;
                     }
                 }
@@ -332,8 +336,7 @@ class RouteTrackingController extends Controller
                     || ($matching['distance'] ?? 0) < self::MIN_MATCH_DISTANCE_METERS
                     || ! is_array($geometry)
                     || ($geometry['type'] ?? null) !== 'LineString'
-                    || count($geometry['coordinates'] ?? []) < 2
-                    || $localPointIndexes === []) {
+                    || count($geometry['coordinates'] ?? []) < 2) {
                     continue;
                 }
 
@@ -342,9 +345,12 @@ class RouteTrackingController extends Controller
                 $totalDuration += (float) ($matching['duration'] ?? 0);
                 $matchedGeometryCount++;
                 $sections[] = [
-                    'order' => $offset + min($localPointIndexes),
+                    'order' => $offset + ($localPointIndexes !== []
+                        ? min($localPointIndexes)
+                        : (int) floor(((int) $matchingIndex / max(1, count($responseMatchings))) * ($chunkCount - 1))),
                     'sequence' => $sectionSequence++,
                     'geometry' => $geometry,
+                    'source' => 'osrm_match',
                 ];
 
                 foreach ($localPointIndexes as $localIndex) {
@@ -370,9 +376,16 @@ class RouteTrackingController extends Controller
             }
 
             $matchedLocalIndexes = array_fill(0, $chunkCount, false);
-            foreach ($usableMatchings as $localPointIndexes) {
-                foreach ($localPointIndexes as $localIndex) {
-                    $matchedLocalIndexes[$localIndex] = true;
+            if (! $hasTracepoints) {
+                $matchedLocalIndexes = array_fill(0, $chunkCount, true);
+                foreach (range(0, $chunkCount - 1) as $localIndex) {
+                    $matchedPointIndexes[$offset + $localIndex] = true;
+                }
+            } else {
+                foreach ($usableMatchings as $localPointIndexes) {
+                    foreach ($localPointIndexes as $localIndex) {
+                        $matchedLocalIndexes[$localIndex] = true;
+                    }
                 }
             }
 
@@ -423,6 +436,7 @@ class RouteTrackingController extends Controller
             'distance' => $totalDistance,
             'duration' => $totalDuration,
             'geometries' => array_column($sections, 'geometry'),
+            'geometry_sources' => array_column($sections, 'source'),
             'start' => ['lat' => (float) $start->latitude, 'lng' => (float) $start->longitude, 'time' => $start->effective_timestamp],
             'end' => ['lat' => (float) $end->latitude, 'lng' => (float) $end->longitude, 'time' => $end->effective_timestamp],
             'point_count' => $pointCount,
@@ -505,6 +519,7 @@ class RouteTrackingController extends Controller
                         $geometryPoints,
                     ),
                 ],
+                'source' => 'raw_gps',
             ];
             $fallbackGeometryCount++;
         }

@@ -216,9 +216,9 @@ function plannedRouteStyle() {
     return { color: "#3b82f6", weight: 4 };
 }
 
-function actualRouteStyle() {
-    if (result.value?.actual?.geometry_source === "raw_gps") {
-        return { color: "#ef4444", weight: 3, opacity: 0.75, dashArray: "8 8" };
+function actualRouteStyle(source) {
+    if (source === "raw_gps") {
+        return { color: "#f59e0b", weight: 3, opacity: 0.85, dashArray: "8 8" };
     }
 
     return { color: "#ef4444", weight: 4 };
@@ -355,8 +355,8 @@ async function runComparison() {
         if (hasTrackingData) {
             actualLineLayer.addTo(resultLayer);
         }
-        result.value.actual.geometries.forEach((geometry) => {
-            L.geoJSON(geometry, { style: actualRouteStyle() }).addTo(actualLineLayer);
+        result.value.actual.geometries.forEach((geometry, index) => {
+            L.geoJSON(geometry, { style: actualRouteStyle(result.value.actual.geometry_sources?.[index]) }).addTo(actualLineLayer);
         });
 
         const { start, end } = result.value.actual;

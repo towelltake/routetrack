@@ -55,6 +55,7 @@ it('matches overlapping chunks without double counting points or metrics', funct
         ->unmatched_point_count->toBe(0)
         ->matched_geometry_count->toBe(2)
         ->fallback_geometry_count->toBe(0)
+        ->geometry_sources->toBe(['osrm_match', 'osrm_match'])
         ->distance->toBe(1200.0)
         ->duration->toBe(120.0);
 
@@ -82,6 +83,7 @@ it('keeps successful chunks around a completely failed chunk', function () {
         ->chunks_failed->toBe(1)
         ->matched_geometry_count->toBe(2)
         ->fallback_geometry_count->toBe(1)
+        ->geometry_sources->toBe(['osrm_match', 'raw_gps', 'osrm_match'])
         ->duration->toBe(249.0)
         ->and($fallbackCoordinates[0])->toBe([(float) $points[99]->longitude, (float) $points[99]->latitude])
         ->and($fallbackCoordinates[count($fallbackCoordinates) - 1])->toBe([(float) $points[198]->longitude, (float) $points[198]->latitude]);
@@ -124,6 +126,7 @@ it('interleaves raw geometry for unmatched tracepoints in a successful response'
         ->unmatched_point_count->toBe(2)
         ->matched_geometry_count->toBe(2)
         ->fallback_geometry_count->toBe(1)
+        ->geometry_sources->toBe(['osrm_match', 'raw_gps', 'osrm_match'])
         ->chunks_partially_matched->toBe(1)
         ->used_fallback_geometry->toBeTrue()
         ->duration->toBe(23.0)
@@ -146,9 +149,27 @@ it('uses raw gps when a chunk has no usable matching', function () {
         ->unmatched_point_count->toBe(4)
         ->matched_geometry_count->toBe(0)
         ->fallback_geometry_count->toBe(1)
+        ->geometry_sources->toBe(['raw_gps'])
         ->chunks_failed->toBe(1)
         ->duration->toBe(3.0)
         ->and($result['geometries'][0]['coordinates'])->toHaveCount(4);
+});
+
+it('keeps usable osrm geometry when a compatible server omits tracepoints', function () {
+    $response = osrmMatchingResponse(3, 300, 30);
+    unset($response['tracepoints']);
+    Http::fake(['*' => Http::response($response)]);
+
+    $result = actualMatchController()->matchPoints(gpsPoints(3));
+
+    expect($result)
+        ->geometry_source->toBe('osrm_match')
+        ->chunks_failed->toBe(0)
+        ->matched_point_count->toBe(3)
+        ->unmatched_point_count->toBe(0)
+        ->matched_geometry_count->toBe(1)
+        ->fallback_geometry_count->toBe(0)
+        ->geometry_sources->toBe(['osrm_match']);
 });
 
 it('does not draw or measure raw fallback across a long gps time gap', function () {
@@ -182,6 +203,7 @@ it('returns none without requesting osrm when fewer than two points exist', func
         ->unmatched_point_count->toBe(1)
         ->matched_geometry_count->toBe(0)
         ->fallback_geometry_count->toBe(0)
+        ->geometry_sources->toBe([])
         ->geometries->toBe([]);
 
     Http::assertNothingSent();

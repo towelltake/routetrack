@@ -70,6 +70,8 @@ OSRM `tracepoints` identify input points omitted as outliers. Successful OSRM ma
 
 Actual-route `geometry_source` is `osrm_match`, `mixed`, `raw_gps`, or `none`. Diagnostics also report matched/unmatched point counts, matched/fallback geometry counts, partially matched chunks, and failed chunks.
 
+The parallel `geometry_sources` array identifies every returned geometry. OSRM sections render as solid red lines; raw-GPS fallback sections render as dashed orange lines.
+
 The first GPS point is Route Start. The final GPS point is Last Known Location.
 
 ## Route status

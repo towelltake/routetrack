@@ -64,7 +64,11 @@ Coordinates must be non-zero and inside the configured Oman bounds. If no accept
 
 ## Actual GPS route
 
-The actual trail comes from PostgreSQL `trac_routetrack`, filtered by `routecode` and operation date. Invalid and duplicate GPS points are removed, implausible speed jumps are filtered, and the remaining points are sent to OSRM Map Matching. If map matching fails, the cleaned raw GPS trail is displayed.
+The actual trail comes from PostgreSQL `trac_routetrack`, filtered by `routecode` and operation date. Invalid and duplicate GPS points are removed and implausible speed jumps are filtered. The remaining points are sent to OSRM Map Matching in overlapping requests of at most 100 points, where each request after the first reuses the preceding request's final point.
+
+OSRM `tracepoints` identify input points omitted as outliers. Successful OSRM matching geometries and raw-GPS fallback sections are interleaved in travel order. A failed request falls back only for its own chunk; successful chunks remain map matched. Raw fallback is split rather than drawing across a GPS time gap over 60 seconds or an implausible jump.
+
+Actual-route `geometry_source` is `osrm_match`, `mixed`, `raw_gps`, or `none`. Diagnostics also report matched/unmatched point counts, matched/fallback geometry counts, partially matched chunks, and failed chunks.
 
 The first GPS point is Route Start. The final GPS point is Last Known Location.
 

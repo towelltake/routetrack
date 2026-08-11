@@ -280,7 +280,6 @@ class RouteTrackingController extends Controller
                         'timestamps' => $timestamps,
                         'geometries' => 'geojson',
                         'overview' => 'full',
-                        'gaps' => 'split',
                     ]);
             } catch (ConnectionException) {
                 $chunksFailed++;

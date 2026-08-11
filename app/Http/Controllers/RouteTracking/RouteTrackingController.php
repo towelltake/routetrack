@@ -7,8 +7,8 @@ use App\Models\AreaMaster;
 use App\Models\CompanyMaster;
 use App\Models\RouteMaster;
 use App\Models\SubAreaMaster;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,18 +19,28 @@ use Inertia\Response;
 class RouteTrackingController extends Controller
 {
     private const MATCH_CHUNK_SIZE = 100;
+
+    private const MAX_RAW_GAP_SECONDS = 60;
+
     private const MIN_DOWNSAMPLE_METERS = 20;
+
     private const MAX_PLAUSIBLE_SPEED_KMH = 150;
+
     private const VISIT_GPS_FALLBACK_MINUTES = 5;
+
     private const MIN_MATCH_CONFIDENCE = 0.0;
+
     private const MIN_MATCH_DISTANCE_METERS = 50;
 
     // Matches the OMAN_BOUNDS used on the map UI — guards against bad
     // customermaster coordinates (e.g. a mistyped digit) sending a
     // roundtrip trip hundreds of km outside Oman.
     private const OMAN_MIN_LAT = 16.0;
+
     private const OMAN_MAX_LAT = 27.0;
+
     private const OMAN_MIN_LNG = 51.5;
+
     private const OMAN_MAX_LNG = 60.5;
 
     private const CARBON_DAYOFWEEK_TO_KEY = [
@@ -209,7 +219,14 @@ class RouteTrackingController extends Controller
     {
         $points = $this->fetchCleanTrail($routecode, $date);
 
-        if (count($points) < 2) {
+        return $this->matchActualPoints($points);
+    }
+
+    protected function matchActualPoints(array $points): array
+    {
+        $pointCount = count($points);
+
+        if ($pointCount < 2) {
             return [
                 'has_tracking_data' => false,
                 'distance' => 0,
@@ -217,9 +234,14 @@ class RouteTrackingController extends Controller
                 'geometries' => [],
                 'start' => null,
                 'end' => null,
-                'point_count' => count($points),
+                'point_count' => $pointCount,
                 'chunks_attempted' => 0,
                 'chunks_failed' => 0,
+                'matched_point_count' => 0,
+                'unmatched_point_count' => $pointCount,
+                'matched_geometry_count' => 0,
+                'fallback_geometry_count' => 0,
+                'chunks_partially_matched' => 0,
                 'used_fallback_geometry' => false,
                 'geometry_source' => 'none',
             ];
@@ -227,15 +249,19 @@ class RouteTrackingController extends Controller
 
         $totalDistance = 0;
         $totalDuration = 0;
-        $geometries = [];
+        $sections = [];
         $chunksAttempted = 0;
         $chunksFailed = 0;
-        $usedFallbackGeometry = false;
+        $chunksPartiallyMatched = 0;
+        $matchedGeometryCount = 0;
+        $fallbackGeometryCount = 0;
+        $matchedPointIndexes = [];
+        $countedFallbackEdges = [];
+        $sectionSequence = 0;
 
-        foreach (array_chunk($points, self::MATCH_CHUNK_SIZE) as $chunk) {
-            if (count($chunk) < 2) {
-                continue;
-            }
+        for ($offset = 0; $offset < $pointCount - 1; $offset += self::MATCH_CHUNK_SIZE - 1) {
+            $chunk = array_slice($points, $offset, self::MATCH_CHUNK_SIZE);
+            $chunkCount = count($chunk);
 
             $chunksAttempted++;
 
@@ -254,52 +280,235 @@ class RouteTrackingController extends Controller
                         'timestamps' => $timestamps,
                         'geometries' => 'geojson',
                         'overview' => 'full',
+                        'gaps' => 'split',
                     ]);
             } catch (ConnectionException) {
                 $chunksFailed++;
+                $this->appendRawFallbackSections(
+                    $sections,
+                    $chunk,
+                    $offset,
+                    range(0, $chunkCount - 2),
+                    $countedFallbackEdges,
+                    $totalDistance,
+                    $totalDuration,
+                    $fallbackGeometryCount,
+                    $sectionSequence,
+                );
+
                 continue;
             }
 
             if (! $response->successful() || $response->json('code') !== 'Ok') {
                 $chunksFailed++;
+                $this->appendRawFallbackSections(
+                    $sections,
+                    $chunk,
+                    $offset,
+                    range(0, $chunkCount - 2),
+                    $countedFallbackEdges,
+                    $totalDistance,
+                    $totalDuration,
+                    $fallbackGeometryCount,
+                    $sectionSequence,
+                );
+
                 continue;
             }
 
-            foreach ($response->json('matchings') ?? [] as $matching) {
-                if ($matching['confidence'] < self::MIN_MATCH_CONFIDENCE || $matching['distance'] < self::MIN_MATCH_DISTANCE_METERS) {
+            $tracepoints = array_pad(array_slice($response->json('tracepoints') ?? [], 0, $chunkCount), $chunkCount, null);
+            $usableMatchings = [];
+
+            foreach ($response->json('matchings') ?? [] as $matchingIndex => $matching) {
+                $geometry = $matching['geometry'] ?? null;
+                $localPointIndexes = [];
+
+                foreach ($tracepoints as $localIndex => $tracepoint) {
+                    if (is_array($tracepoint) && ($tracepoint['matchings_index'] ?? null) === $matchingIndex) {
+                        $localPointIndexes[] = $localIndex;
+                    }
+                }
+
+                if (($matching['confidence'] ?? -1) < self::MIN_MATCH_CONFIDENCE
+                    || ($matching['distance'] ?? 0) < self::MIN_MATCH_DISTANCE_METERS
+                    || ! is_array($geometry)
+                    || ($geometry['type'] ?? null) !== 'LineString'
+                    || count($geometry['coordinates'] ?? []) < 2
+                    || $localPointIndexes === []) {
                     continue;
                 }
 
-                $totalDistance += $matching['distance'];
-                $totalDuration += $matching['duration'];
-                $geometries[] = $matching['geometry'];
+                $usableMatchings[$matchingIndex] = $localPointIndexes;
+                $totalDistance += (float) $matching['distance'];
+                $totalDuration += (float) ($matching['duration'] ?? 0);
+                $matchedGeometryCount++;
+                $sections[] = [
+                    'order' => $offset + min($localPointIndexes),
+                    'sequence' => $sectionSequence++,
+                    'geometry' => $geometry,
+                ];
+
+                foreach ($localPointIndexes as $localIndex) {
+                    $matchedPointIndexes[$offset + $localIndex] = true;
+                }
+            }
+
+            if ($usableMatchings === []) {
+                $chunksFailed++;
+                $this->appendRawFallbackSections(
+                    $sections,
+                    $chunk,
+                    $offset,
+                    range(0, $chunkCount - 2),
+                    $countedFallbackEdges,
+                    $totalDistance,
+                    $totalDuration,
+                    $fallbackGeometryCount,
+                    $sectionSequence,
+                );
+
+                continue;
+            }
+
+            $matchedLocalIndexes = array_fill(0, $chunkCount, false);
+            foreach ($usableMatchings as $localPointIndexes) {
+                foreach ($localPointIndexes as $localIndex) {
+                    $matchedLocalIndexes[$localIndex] = true;
+                }
+            }
+
+            $fallbackEdges = [];
+            foreach ($matchedLocalIndexes as $localIndex => $matched) {
+                if ($matched) {
+                    continue;
+                }
+
+                if ($localIndex > 0) {
+                    $fallbackEdges[$localIndex - 1] = true;
+                }
+                if ($localIndex < $chunkCount - 1) {
+                    $fallbackEdges[$localIndex] = true;
+                }
+            }
+
+            if ($fallbackEdges !== []) {
+                $chunksPartiallyMatched++;
+                $this->appendRawFallbackSections(
+                    $sections,
+                    $chunk,
+                    $offset,
+                    array_keys($fallbackEdges),
+                    $countedFallbackEdges,
+                    $totalDistance,
+                    $totalDuration,
+                    $fallbackGeometryCount,
+                    $sectionSequence,
+                );
             }
         }
 
-        $start = $points[0];
-        $end = $points[count($points) - 1];
+        usort($sections, fn (array $a, array $b) => [$a['order'], $a['sequence']] <=> [$b['order'], $b['sequence']]);
 
-        if ($geometries === []) {
-            $fallback = $this->rawTrailFallback($points);
-            $totalDistance = $fallback['distance'];
-            $totalDuration = $fallback['duration'];
-            $geometries[] = $fallback['geometry'];
-            $usedFallbackGeometry = true;
-        }
+        $start = $points[0];
+        $end = $points[$pointCount - 1];
+        $usedFallbackGeometry = $fallbackGeometryCount > 0;
+        $geometrySource = match (true) {
+            $matchedGeometryCount > 0 && $usedFallbackGeometry => 'mixed',
+            $matchedGeometryCount > 0 => 'osrm_match',
+            $usedFallbackGeometry => 'raw_gps',
+            default => 'none',
+        };
 
         return [
             'has_tracking_data' => true,
             'distance' => $totalDistance,
             'duration' => $totalDuration,
-            'geometries' => $geometries,
+            'geometries' => array_column($sections, 'geometry'),
             'start' => ['lat' => (float) $start->latitude, 'lng' => (float) $start->longitude, 'time' => $start->effective_timestamp],
             'end' => ['lat' => (float) $end->latitude, 'lng' => (float) $end->longitude, 'time' => $end->effective_timestamp],
-            'point_count' => count($points),
+            'point_count' => $pointCount,
             'chunks_attempted' => $chunksAttempted,
             'chunks_failed' => $chunksFailed,
+            'matched_point_count' => count($matchedPointIndexes),
+            'unmatched_point_count' => $pointCount - count($matchedPointIndexes),
+            'matched_geometry_count' => $matchedGeometryCount,
+            'fallback_geometry_count' => $fallbackGeometryCount,
+            'chunks_partially_matched' => $chunksPartiallyMatched,
             'used_fallback_geometry' => $usedFallbackGeometry,
-            'geometry_source' => $usedFallbackGeometry ? 'raw_gps' : 'osrm_match',
+            'geometry_source' => $geometrySource,
         ];
+    }
+
+    private function appendRawFallbackSections(
+        array &$sections,
+        array $chunk,
+        int $offset,
+        array $localEdgeIndexes,
+        array &$countedEdges,
+        float &$totalDistance,
+        float &$totalDuration,
+        int &$fallbackGeometryCount,
+        int &$sectionSequence,
+    ): void {
+        sort($localEdgeIndexes);
+        $runs = [];
+        $run = [];
+
+        foreach ($localEdgeIndexes as $localEdgeIndex) {
+            $globalEdgeIndex = $offset + $localEdgeIndex;
+            $from = $chunk[$localEdgeIndex];
+            $to = $chunk[$localEdgeIndex + 1];
+            $seconds = abs(strtotime($to->effective_timestamp) - strtotime($from->effective_timestamp));
+            $safe = $seconds <= self::MAX_RAW_GAP_SECONDS
+                && $this->impliedSpeedKmh($from, $to) <= self::MAX_PLAUSIBLE_SPEED_KMH;
+
+            if (! $safe || isset($countedEdges[$globalEdgeIndex])) {
+                if ($run !== []) {
+                    $runs[] = $run;
+                    $run = [];
+                }
+
+                continue;
+            }
+
+            if ($run !== [] && $localEdgeIndex !== end($run) + 1) {
+                $runs[] = $run;
+                $run = [];
+            }
+
+            $run[] = $localEdgeIndex;
+            $countedEdges[$globalEdgeIndex] = true;
+            $totalDistance += $this->haversineMeters(
+                (float) $from->latitude,
+                (float) $from->longitude,
+                (float) $to->latitude,
+                (float) $to->longitude,
+            );
+            $totalDuration += $seconds;
+        }
+
+        if ($run !== []) {
+            $runs[] = $run;
+        }
+
+        foreach ($runs as $edgeRun) {
+            $firstEdge = $edgeRun[0];
+            $lastEdge = $edgeRun[count($edgeRun) - 1];
+            $geometryPoints = array_slice($chunk, $firstEdge, $lastEdge - $firstEdge + 2);
+
+            $sections[] = [
+                'order' => $offset + $firstEdge,
+                'sequence' => $sectionSequence++,
+                'geometry' => [
+                    'type' => 'LineString',
+                    'coordinates' => array_map(
+                        fn (object $point) => [(float) $point->longitude, (float) $point->latitude],
+                        $geometryPoints,
+                    ),
+                ],
+            ];
+            $fallbackGeometryCount++;
+        }
     }
 
     private function fetchCleanTrail(int $routecode, string $date): array
@@ -464,6 +673,7 @@ class RouteTrackingController extends Controller
                 $totalDistance += $fallback['distance'];
                 $totalDuration += $fallback['duration'];
                 $geometries[] = $fallback['geometry'];
+
                 continue;
             }
 
@@ -474,6 +684,7 @@ class RouteTrackingController extends Controller
                 $totalDistance += $fallback['distance'];
                 $totalDuration += $fallback['duration'];
                 $geometries[] = $fallback['geometry'];
+
                 continue;
             }
 
@@ -485,6 +696,7 @@ class RouteTrackingController extends Controller
                 $totalDistance += $fallback['distance'];
                 $totalDuration += $fallback['duration'];
                 $geometries[] = $fallback['geometry'];
+
                 continue;
             }
 

@@ -63,7 +63,9 @@ const routeQualityWarnings = computed(() => {
     }
 
     if (result.value.actual?.used_fallback_geometry) {
-        warnings.push("Actual route is raw GPS trail because OSRM map matching failed.");
+        warnings.push(
+            `Actual route includes ${result.value.actual.fallback_geometry_count ?? 0} raw GPS fallback section(s).`,
+        );
     }
 
     if (!result.value.planned?.has_planned_data) {
@@ -215,11 +217,20 @@ function plannedRouteStyle() {
 }
 
 function actualRouteStyle() {
-    if (result.value?.actual?.used_fallback_geometry) {
+    if (result.value?.actual?.geometry_source === "raw_gps") {
         return { color: "#ef4444", weight: 3, opacity: 0.75, dashArray: "8 8" };
     }
 
     return { color: "#ef4444", weight: 4 };
+}
+
+function actualRouteLabel() {
+    return {
+        osrm_match: "Actual Matched GPS Route",
+        mixed: "Actual GPS Route (partially map matched)",
+        raw_gps: "Actual Raw GPS",
+        none: "Actual GPS Route",
+    }[result.value?.actual?.geometry_source ?? "none"];
 }
 
 function customerVisitStatus(customer) {
@@ -634,15 +645,15 @@ function focusEnd() {
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="fw-bold text-danger">Actual (matched GPS)</div>
+                    <div class="fw-bold text-danger">{{ actualRouteLabel() }}</div>
                     <div>{{ km(result.actual.distance) }} km</div>
                     <div>{{ minutes(result.actual.duration) }} min</div>
                     <div class="text-muted small">
                         {{ result.actual.point_count }}
-                        {{ result.actual.used_fallback_geometry ? "raw GPS points" : "GPS points matched to roads" }}
+                        GPS points; {{ result.actual.matched_point_count }} matched, {{ result.actual.unmatched_point_count }} unmatched
                     </div>
                     <div v-if="result.actual.used_fallback_geometry" class="text-warning small">
-                        Approximate fallback, not map matched
+                        {{ result.actual.fallback_geometry_count }} raw fallback section(s)
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -698,7 +709,7 @@ function focusEnd() {
                     @click="toggleActualRoute"
                 >
                     <span class="text-danger">&#9632;</span>
-                    {{ result?.actual?.used_fallback_geometry ? "Actual Raw GPS" : "Actual Matched GPS Route" }}
+                    {{ actualRouteLabel() }}
                 </button>
                 <button
                     type="button"

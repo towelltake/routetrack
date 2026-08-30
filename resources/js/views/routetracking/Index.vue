@@ -56,6 +56,29 @@ const customerVisits = computed(() => {
     }));
 });
 
+const customerVisitSummary = computed(() => {
+    const plannedCustomers = result.value?.planned?.customers ?? [];
+    const plannedCodes = new Set(plannedCustomers.map((customer) => String(customer.customercode)));
+    const plannedVisitedCodes = new Set(
+        customerVisits.value.filter((visit) => visit.planned).map((visit) => String(visit.customercode)),
+    );
+    const unplannedVisitedCodes = new Set(
+        customerVisits.value.filter((visit) => !visit.planned).map((visit) => String(visit.customercode)),
+    );
+
+    return {
+        planned: plannedCustomers.length,
+        plannedVisited: plannedVisitedCodes.size,
+        unplannedVisited: unplannedVisitedCodes.size,
+        plannedNotVisited: [...plannedCodes].filter((code) => !plannedVisitedCodes.has(code)).length,
+    };
+});
+
+function plannedDayLabel(day) {
+    const days = { sun: "Sunday", mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday" };
+    return days[String(day ?? "").toLowerCase()] ?? day;
+}
+
 const routeQualityWarnings = computed(() => {
     if (!result.value) {
         return [];
@@ -680,13 +703,17 @@ function focusEnd() {
                     </div>
                     <div>{{ km(result.planned.distance) }} km</div>
                     <div>{{ minutes(result.planned.duration) }} min</div>
-                    <div class="text-muted small">{{ result.planned.customer_count }} customers ({{ result.planned.day }})</div>
+                    <div class="text-muted small">
+                        Total Planned Customers ({{ plannedDayLabel(result.planned.day) }}): {{ customerVisitSummary.planned }}
+                    </div>
                     <div v-if="result.planned.used_fallback_geometry" class="text-warning small">
                         Approximate fallback, not road routed
                     </div>
-                    <div class="text-success small">
-                        {{ result.planned.visit_count }} customer visits; {{ result.planned.visited_count }} distinct planned customers visited
+                    <div class="text-success small">Planned Customers Visited: {{ customerVisitSummary.plannedVisited }}</div>
+                    <div class="small" style="color: #f97316">
+                        Unplanned Customers Visited: {{ customerVisitSummary.unplannedVisited }}
                     </div>
+                    <div class="text-muted small">Planned But Not Visited: {{ customerVisitSummary.plannedNotVisited }}</div>
                 </div>
                 <div class="col-md-4">
                     <div class="fw-bold text-danger">Actual (matched GPS)</div>

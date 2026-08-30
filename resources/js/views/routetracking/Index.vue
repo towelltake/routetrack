@@ -25,6 +25,7 @@ const result = ref(null);
 const isFullscreen = ref(false);
 const customerSearch = ref("");
 const customerListTab = ref("all");
+const customerVisitTab = ref("all");
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
@@ -41,14 +42,19 @@ const numberedCustomers = computed(() =>
     })),
 );
 
-const customerVisits = computed(() =>
-    (result.value?.planned?.customer_visits ?? []).map((visit, index) => ({
+const customerVisits = computed(() => {
+    const plannedCustomerCodes = new Set(
+        (result.value?.planned?.customers ?? []).map((customer) => String(customer.customercode)),
+    );
+
+    return (result.value?.planned?.customer_visits ?? []).map((visit, index) => ({
         ...visit,
         displayNumber: index + 1,
         listKey: `visit-${visit.logkey}`,
         type: "visit",
-    })),
-);
+        planned: plannedCustomerCodes.has(String(visit.customercode)),
+    }));
+});
 
 const routeQualityWarnings = computed(() => {
     if (!result.value) {
@@ -80,7 +86,9 @@ const routeQualityWarnings = computed(() => {
 
 const tabCustomers = computed(() => {
     if (customerListTab.value === "visits") {
-        return customerVisits.value;
+        return customerVisitTab.value === "all"
+            ? customerVisits.value
+            : customerVisits.value.filter((visit) => customerVisitTab.value === (visit.planned ? "planned" : "unplanned"));
     }
 
     if (customerListTab.value === "planned_not_visited") {
@@ -183,16 +191,17 @@ function flagIcon(color, label) {
 
 function customerStatusColor(customer) {
     if (customer.type === "visit") {
-        return "#16a34a";
+        return customer.planned ? "#16a34a" : "#f97316";
     }
 
     return plannedNotVisitedVisible.value && !customer.visited ? "#9ca3af" : "#2563eb";
 }
 
-function visitIcon(sequence) {
+function visitIcon(sequence, planned) {
+    const color = planned ? "#16a34a" : "#f97316";
     return L.divIcon({
         className: "route-tracking-customer-marker",
-        html: `<div style="background:#16a34a;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${sequence}</div>`,
+        html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${sequence}</div>`,
         iconSize: [22, 22],
         iconAnchor: [11, 11],
     });
@@ -288,6 +297,7 @@ async function runComparison() {
     Object.keys(visitMarkers).forEach((key) => delete visitMarkers[key]);
     customerSearch.value = "";
     customerListTab.value = "all";
+    customerVisitTab.value = "all";
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -341,14 +351,18 @@ async function runComparison() {
             customerMarkers[customer.customercode] = marker;
         });
 
+        const plannedCustomerCodes = new Set(
+            result.value.planned.customers.map((customer) => String(customer.customercode)),
+        );
         result.value.planned.customer_visits.forEach((visit, index) => {
             if (visit.lat === null || visit.lng === null) {
                 return;
             }
 
-            const marker = L.marker([visit.lat, visit.lng], { icon: visitIcon(index + 1) })
+            const planned = plannedCustomerCodes.has(String(visit.customercode));
+            const marker = L.marker([visit.lat, visit.lng], { icon: visitIcon(index + 1, planned) })
                 .bindPopup(
-                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${customerDisplayCode(visit)}<br>Customer Visit${customerVisitDetails(visit)}`,
+                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${customerDisplayCode(visit)}<br>${planned ? "Planned" : "Unplanned"} Customer Visit${customerVisitDetails(visit)}`,
                 )
                 .addTo(customerVisitLayer);
             visitMarkers[visit.logkey] = marker;
@@ -402,6 +416,7 @@ function resetFilters() {
     result.value = null;
     customerSearch.value = "";
     customerListTab.value = "all";
+    customerVisitTab.value = "all";
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -529,6 +544,10 @@ function selectCustomerTab(tab) {
         updatePlannedCustomerIcons();
         fitToCustomers(() => true);
     }
+}
+
+function selectCustomerVisitTab(tab) {
+    customerVisitTab.value = tab;
 }
 
 function togglePlannedRoute() {
@@ -815,6 +834,18 @@ function focusEnd() {
                                 Planned Not Visited
                             </button>
                         </div>
+                        <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
+                            <button
+                                v-for="tab in ['all', 'planned', 'unplanned']"
+                                :key="tab"
+                                type="button"
+                                class="route-tracking-visit-tab"
+                                :class="{ active: customerVisitTab === tab, unplanned: tab === 'unplanned' }"
+                                @click="selectCustomerVisitTab(tab)"
+                            >
+                                {{ tab }}
+                            </button>
+                        </div>
                         <div class="route-tracking-customer-search p-2">
                             <input
                                 v-model="customerSearch"
@@ -972,6 +1003,37 @@ function focusEnd() {
 
 .route-tracking-customer-search {
     border-bottom: 1px solid #e5e7eb;
+}
+
+.route-tracking-visit-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.route-tracking-visit-tab {
+    flex: 1;
+    border: 1px solid #dbe1e8;
+    border-radius: 4px;
+    background: #fff;
+    padding: 0.25rem;
+    color: #6c757d;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: capitalize;
+
+    &.active {
+        border-color: #16a34a;
+        color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    &.unplanned.active {
+        border-color: #f97316;
+        color: #f97316;
+        background: #fff7ed;
+    }
 }
 
 .route-tracking-customer-list-card .card-body {

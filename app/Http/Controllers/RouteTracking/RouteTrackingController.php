@@ -60,12 +60,14 @@ class RouteTrackingController extends Controller
     {
         $routedCmpyCodes = RouteMaster::query()
             ->whereIn('routecode', session('user_access.route_codes', []))
+            ->where('activestatus', 1)
             ->distinct()
             ->pluck('cmpycode');
 
         $companies = CompanyMaster::query()
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('cmpycode', $routedCmpyCodes)
+            ->where('activestatus', 1)
             ->orderBy('name')
             ->get(['cmpycode', 'name']);
 
@@ -132,6 +134,7 @@ class RouteTrackingController extends Controller
             ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
+            ->where('activestatus', 1)
             ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
             ->when($validated['subareacode'] ?? null, fn ($query, $subareacode) => $query->where('subareacode', $subareacode))
             ->orderBy('routename')
@@ -668,7 +671,7 @@ class RouteTrackingController extends Controller
                 'rscs.sequencenumber',
                 'rscs.servicedflag',
                 'rscs.scannedflag',
-                'cm.customername',
+                'cm.customeraddress1',
                 'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
@@ -676,7 +679,7 @@ class RouteTrackingController extends Controller
             ->map(fn (object $customer) => [
                 'customercode' => $customer->customercode,
                 'alternatecode' => $customer->alternatecode,
-                'customername' => $customer->customername,
+                'customername' => $customer->customeraddress1 ?? "Customer {$customer->customercode}",
                 'lat' => (float) $customer->fixedlatitude,
                 'lng' => (float) $customer->fixedlongitude,
                 'scheduled_sequence' => (int) ($customer->sequencenumber ?? 0),
@@ -706,7 +709,7 @@ class RouteTrackingController extends Controller
                 'cvl.logstarttime',
                 'cvl.logenddate',
                 'cvl.logendtime',
-                'cm.customername',
+                'cm.customeraddress1',
                 'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
@@ -726,7 +729,7 @@ class RouteTrackingController extends Controller
                     'logkey' => (int) $visit->logkey,
                     'customercode' => (int) $visit->customercode,
                     'alternatecode' => $visit->alternatecode,
-                    'customername' => $visit->customername ?? "Customer {$visit->customercode}",
+                    'customername' => $visit->customeraddress1 ?? "Customer {$visit->customercode}",
                     'visit_start_date' => $startDate,
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,

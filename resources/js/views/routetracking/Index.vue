@@ -407,7 +407,7 @@ async function runComparison() {
         const { start, end } = result.value.actual;
         if (start && end) {
             startMarker = L.marker([start.lat, start.lng], { icon: flagIcon("#16a34a", "S") })
-                .bindPopup(`<strong>Route Start</strong><br>${start.time ?? ""}`)
+                .bindPopup(`<strong>Route Start</strong><br>${start.time ?? "Not Available"}`)
                 .addTo(actualLayer);
             endMarker = L.marker([end.lat, end.lng], { icon: flagIcon("#dc2626", "L") })
                 .bindPopup(`<strong>Last Known Location</strong><br>${end.time ?? ""}`)
@@ -718,7 +718,15 @@ function focusEnd() {
                 <div class="col-md-4">
                     <div class="fw-bold text-danger">Actual (matched GPS)</div>
                     <div>{{ km(result.actual.distance) }} km</div>
-                    <div>{{ minutes(result.actual.duration) }} min</div>
+                    <div>
+                        Actual Time:
+                        {{ result.actual.duration === null ? "Not Available" : `${minutes(result.actual.duration)} min` }}
+                    </div>
+                    <div>Total Customer Face Time: {{ minutes(result.actual.face_time) }} min</div>
+                    <div>
+                        Total Travel Time:
+                        {{ result.actual.travel_time === null ? "Not Available" : `${minutes(result.actual.travel_time)} min` }}
+                    </div>
                     <div class="text-muted small">
                         {{ result.actual.point_count }}
                         {{ result.actual.used_fallback_geometry ? "raw GPS points" : "GPS points matched to roads" }}

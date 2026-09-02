@@ -200,7 +200,14 @@ class RouteTrackingController extends Controller
         }
 
         $distanceRatio = $planned['distance'] > 0 ? $actual['distance'] / $planned['distance'] : null;
-        $durationRatio = $planned['duration'] > 0 ? $actual['duration'] / $planned['duration'] : null;
+        $durationRatio = $planned['duration'] > 0 && $actual['duration'] !== null
+            ? $actual['duration'] / $planned['duration']
+            : null;
+        $actual['face_time'] = collect($planned['customer_visits'])
+            ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
+        $actual['travel_time'] = $actual['duration'] === null
+            ? null
+            : max(0, $actual['duration'] - $actual['face_time']);
 
         return response()->json([
             'planned' => $planned,
@@ -238,7 +245,6 @@ class RouteTrackingController extends Controller
         }
 
         $totalDistance = 0;
-        $totalDuration = 0;
         $geometries = [];
         $chunksAttempted = 0;
         $chunksFailed = 0;
@@ -285,7 +291,6 @@ class RouteTrackingController extends Controller
                 }
 
                 $totalDistance += $matching['distance'];
-                $totalDuration += $matching['duration'];
                 $geometries[] = $matching['geometry'];
             }
         }
@@ -293,10 +298,12 @@ class RouteTrackingController extends Controller
         $start = $points[0];
         $end = $points[count($points) - 1];
         $rawTrail = $this->rawTrailFallback($points);
+        $routeStartTimestamp = $this->routeStartTimestamp($routecode, $date);
+        $lastKnownTimestamp = strtotime($end->effective_timestamp);
+        $totalDuration = $routeStartTimestamp === null ? null : max(0, $lastKnownTimestamp - $routeStartTimestamp);
 
         if ($geometries === []) {
             $totalDistance = $rawTrail['distance'];
-            $totalDuration = $rawTrail['duration'];
             $geometries[] = $rawTrail['geometry'];
             $usedFallbackGeometry = true;
         }
@@ -307,7 +314,12 @@ class RouteTrackingController extends Controller
             'duration' => $totalDuration,
             'geometries' => $geometries,
             'raw_geometry' => $rawTrail['geometry'],
-            'start' => ['lat' => (float) $start->latitude, 'lng' => (float) $start->longitude, 'time' => $start->effective_timestamp],
+            'start' => [
+                'lat' => (float) $start->latitude,
+                'lng' => (float) $start->longitude,
+                'time' => $routeStartTimestamp ? date('Y-m-d H:i:s', $routeStartTimestamp) : null,
+                'time_source' => $routeStartTimestamp ? 'route_start' : 'unavailable',
+            ],
             'end' => ['lat' => (float) $end->latitude, 'lng' => (float) $end->longitude, 'time' => $end->effective_timestamp],
             'point_count' => count($points),
             'chunks_attempted' => $chunksAttempted,
@@ -577,7 +589,7 @@ class RouteTrackingController extends Controller
                     });
             })
             ->orderByDesc('routekey')
-            ->first(['routekey', 'routecode', 'routestartdate', 'routeenddate', 'routeclosed']);
+            ->first(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeclosed']);
 
         if ($routeDay !== null) {
             return $routeDay;
@@ -593,6 +605,7 @@ class RouteTrackingController extends Controller
                 'routekey' => (int) $visitRouteKey,
                 'routecode' => $routecode,
                 'routestartdate' => $date,
+                'routestarttime' => null,
                 'routeenddate' => $date,
                 'routeclosed' => 0,
             ];
@@ -613,9 +626,22 @@ class RouteTrackingController extends Controller
             'routekey' => (int) $statusRouteKey,
             'routecode' => $routecode,
             'routestartdate' => $date,
+            'routestarttime' => null,
             'routeenddate' => $date,
             'routeclosed' => 0,
         ];
+    }
+
+    private function routeStartTimestamp(int $routecode, string $date): ?int
+    {
+        $routeDay = $this->findRouteDay($routecode, $date);
+        if (! $routeDay?->routestartdate || ! $routeDay?->routestarttime) {
+            return null;
+        }
+
+        $timestamp = strtotime(substr((string) $routeDay->routestartdate, 0, 10).' '.$routeDay->routestarttime);
+
+        return $timestamp === false ? null : $timestamp;
     }
 
     private function emptyPlannedRoute(string $dayKey): array

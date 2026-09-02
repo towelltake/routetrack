@@ -105,13 +105,34 @@ class RouteLocationController extends Controller
             ->get(['salesmancode', 'salesmanname1'])
             ->keyBy('salesmancode');
 
-        $results = $points->map(function ($point) use ($routes, $salesmen) {
+        $routeDays = DB::table('startendday')
+            ->whereIn('routecode', $routes->keys())
+            ->where(function ($query) use ($validated) {
+                $query->whereDate('routestartdate', $validated['date'])
+                    ->orWhereDate('routeenddate', $validated['date'])
+                    ->orWhere(function ($query) use ($validated) {
+                        $query->whereDate('routestartdate', '<=', $validated['date'])
+                            ->whereDate('routeenddate', '>=', $validated['date']);
+                    });
+            })
+            ->orderByDesc('routekey')
+            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
+            ->unique('routecode')
+            ->keyBy('routecode');
+
+        $results = $points->map(function ($point) use ($routes, $salesmen, $routeDays) {
             $route = $routes->get($point->routecode);
+            $routeDay = $routeDays->get($point->routecode);
+            $closed = (int) ($routeDay?->routeclosed ?? 0) === 1;
 
             return [
                 'routecode' => $point->routecode,
                 'routename' => $route?->routename,
                 'salesmanname' => $salesmen->get($point->salesmancode)?->salesmanname1,
+                'status' => $closed ? 'Route End' : 'LIVE',
+                'closed' => $closed,
+                'route_start_time' => $this->routeDateTime($routeDay?->routestartdate, $routeDay?->routestarttime),
+                'route_end_time' => $this->routeDateTime($routeDay?->routeenddate, $routeDay?->routeendtime),
                 'lat' => (float) $point->latitude,
                 'lng' => (float) $point->longitude,
                 'time' => $point->effective_timestamp,
@@ -119,5 +140,14 @@ class RouteLocationController extends Controller
         })->values();
 
         return response()->json($results);
+    }
+
+    private function routeDateTime(mixed $date, mixed $time): ?string
+    {
+        if (! $date || ! $time) {
+            return null;
+        }
+
+        return substr((string) $date, 0, 10).' '.$time;
     }
 }

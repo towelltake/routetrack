@@ -82,10 +82,10 @@ function toggleFullscreen() {
     }
 }
 
-function locationIcon() {
+function locationIcon(closed) {
     return L.divIcon({
         className: "route-location-marker",
-        html: `<div style="background:#10b981;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)"><i class="fa fa-user" style="font-size:11px"></i></div>`,
+        html: `<div class="route-location-marker-dot ${closed ? "closed" : "live"}"><i class="fa fa-user"></i></div>`,
         iconSize: [24, 24],
         iconAnchor: [12, 12],
     });
@@ -120,12 +120,15 @@ async function showAllLocations() {
         const markerLatLngs = [];
 
         data.forEach((point) => {
-            const marker = L.marker([point.lat, point.lng], { icon: locationIcon() }).bindPopup(
+            const marker = L.marker([point.lat, point.lng], { icon: locationIcon(point.closed) }).bindPopup(
                 `<div class="route-location-popup">
                     <strong>${point.routecode} - ${point.routename ?? ""}</strong>
                     <a href="${trackUrl(point.routecode)}" class="route-location-popup-track-btn" title="Track in Route Tracking">
                         <i class="fa fa-route"></i>
                     </a>
+                    <br>Status: <strong style="color:${point.closed ? "#dc2626" : "#10b981"}">${point.status}</strong>
+                    <br>Route Start: ${point.route_start_time ?? "Not Available"}
+                    <br>Route End: ${point.route_end_time ?? "Not Available"}
                     <br>Salesman: ${point.salesmanname ?? "N/A"}<br>Last known location at ${point.time ?? ""}
                 </div>`,
             );
@@ -264,10 +267,15 @@ function resetFilters() {
                                     tabindex="0"
                                     @click="focusRoute(route.routecode)"
                                 >
-                                    <span class="route-location-route-dot"><i class="fa fa-user"></i></span>
+                                    <span class="route-location-route-dot" :class="route.closed ? 'closed' : 'live'">
+                                        <i class="fa fa-user"></i>
+                                    </span>
                                     <span class="route-location-route-info">
                                         <span class="d-block fw-semibold small">{{ route.routecode }} - {{ route.routename }}</span>
                                         <span class="d-block text-muted small">{{ route.salesmanname || "N/A" }}</span>
+                                        <span class="d-block small" :class="route.closed ? 'text-danger' : 'text-success'">
+                                            {{ route.status }}
+                                        </span>
                                         <span class="d-block text-muted small">Last seen at {{ route.time }}</span>
                                     </span>
                                     <a
@@ -370,6 +378,61 @@ function resetFilters() {
     align-items: center;
     justify-content: center;
     font-size: 11px;
+
+    &.closed {
+        background: #dc2626;
+    }
+}
+
+.route-location-marker-dot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #10b981;
+    color: #fff;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
+
+    i {
+        font-size: 11px;
+    }
+
+    &.closed {
+        background: #dc2626;
+    }
+
+    &.live::before {
+        position: absolute;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: #10b981;
+        content: "";
+        animation: route-location-pulse 1.5s ease-out infinite;
+    }
+}
+
+@keyframes route-location-pulse {
+    from {
+        opacity: 0.75;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(2.4);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .route-location-marker-dot.live::before {
+        animation: none;
+    }
 }
 
 .route-location-route-info {

@@ -303,6 +303,20 @@ function customerDisplayCode(customer) {
     return customer.alternatecode ?? "";
 }
 
+function faceTimeLabel(customer) {
+    return customer.visit_duration_minutes === null
+        ? "Not Available"
+        : `${customer.visit_duration_minutes} min`;
+}
+
+function faceTimeVariance(customer) {
+    if (customer.visit_duration_minutes === null || customer.default_face_time_minutes == null) {
+        return null;
+    }
+
+    return customer.visit_duration_minutes - customer.default_face_time_minutes;
+}
+
 function customerVisitDetails(customer) {
     const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
@@ -968,6 +982,15 @@ function focusEnd() {
                                         >
                                             Not included in journey plan
                                         </span>
+                                        <span v-if="customer.type === 'visit'" class="d-block small route-tracking-face-time">
+                                            Face Time: {{ faceTimeLabel(customer) }}
+                                            <template v-if="faceTimeVariance(customer) !== null">
+                                                &middot; Default {{ customer.default_face_time_minutes }} min
+                                                <strong :class="faceTimeVariance(customer) > 0 ? 'text-danger' : 'text-success'">
+                                                    ({{ faceTimeVariance(customer) > 0 ? "+" : "" }}{{ faceTimeVariance(customer) }} min)
+                                                </strong>
+                                            </template>
+                                        </span>
                                     </span>
                                 </button>
                             </div>
@@ -1227,5 +1250,9 @@ function focusEnd() {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.route-tracking-face-time {
+    color: #495057;
 }
 </style>

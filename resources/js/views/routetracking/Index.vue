@@ -765,6 +765,7 @@ function focusEnd() {
                 </div>
             </div>
 
+            <div ref="mapWrapperEl" class="route-tracking-view">
             <div class="route-tracking-legend small">
                 <button
                     type="button"
@@ -843,7 +844,7 @@ function focusEnd() {
 
             <div class="row g-3">
                 <div class="col-md-9">
-                    <div ref="mapWrapperEl" class="route-tracking-map-wrapper" style="position: relative; height: 600px; width: 100%">
+                    <div class="route-tracking-map-wrapper" style="position: relative; height: 600px; width: 100%">
                         <button
                             type="button"
                             class="btn btn-light route-tracking-fullscreen-btn"
@@ -974,6 +975,7 @@ function focusEnd() {
                     </div>
                 </div>
             </div>
+            </div>
         </BaseBlock>
     </div>
 </template>
@@ -1045,8 +1047,27 @@ function focusEnd() {
     }
 }
 
-.route-tracking-map-wrapper:fullscreen {
-    height: 100vh !important;
+.route-tracking-view:fullscreen {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    padding: 0.75rem;
+    background: #fff;
+
+    > .row {
+        flex: 1;
+        min-height: 0;
+    }
+
+    > .row > [class*="col-"] {
+        height: 100%;
+    }
+
+    .route-tracking-map-wrapper,
+    .route-tracking-customer-list-card {
+        height: 100% !important;
+    }
 }
 
 .route-tracking-fullscreen-btn {

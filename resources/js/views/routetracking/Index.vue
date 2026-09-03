@@ -227,10 +227,12 @@ function customerStatusColor(customer) {
 
 function visitIcon(sequence, visit) {
     const color = customerStatusColor({ ...visit, type: "visit" });
-    const label = ["out_of_sequence", "duplicate_visit"].includes(visit.journey_status) ? "!" : sequence;
+    const warning = ["out_of_sequence", "duplicate_visit"].includes(visit.journey_status)
+        ? '<span class="route-tracking-marker-warning">!</span>'
+        : "";
     return L.divIcon({
         className: "route-tracking-customer-marker",
-        html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${label}</div>`,
+        html: `<div class="route-tracking-visit-marker" style="background:${color}">${sequence}${warning}</div>`,
         iconSize: [22, 22],
         iconAnchor: [11, 11],
     });
@@ -1318,6 +1320,38 @@ function focusEnd() {
     justify-content: center;
     font-size: 11px;
     font-weight: bold;
+}
+
+.route-tracking-visit-marker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    color: #fff;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.route-tracking-marker-warning {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    background: #dc2626;
+    color: #fff;
+    font-size: 9px;
+    line-height: 1;
 }
 
 .route-tracking-customer-info {

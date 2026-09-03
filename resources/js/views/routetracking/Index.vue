@@ -979,7 +979,7 @@ function focusEnd() {
             </div>
 
             <div class="row g-3">
-                <div class="col-md-9">
+                <div class="col-md-9 route-tracking-map-column">
                     <div class="route-tracking-map-wrapper" style="position: relative; height: 600px; width: 100%">
                         <button
                             type="button"
@@ -992,7 +992,7 @@ function focusEnd() {
                         <div ref="mapEl" style="height: 100%; width: 100%"></div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 route-tracking-panel-column">
                     <div class="card route-tracking-customer-list-card" style="height: 600px">
                         <div class="card-header">
                             <strong>Customers</strong>
@@ -1388,6 +1388,16 @@ function focusEnd() {
     .route-tracking-map-wrapper,
     .route-tracking-customer-list-card {
         height: 100% !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .route-tracking-map-column {
+        width: 70%;
+    }
+
+    .route-tracking-panel-column {
+        width: 30%;
     }
 }
 

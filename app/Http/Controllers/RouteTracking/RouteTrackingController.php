@@ -454,14 +454,17 @@ class RouteTrackingController extends Controller
             return $this->emptyPlannedRoute($dayKey);
         }
 
+        $journeyPlan = $this->fetchJourneyPlan((int) $routeDay->routekey);
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
-        $hasPlannedData = DB::table('routesequencecustomerstatus')
-            ->where('routekey', $routeDay->routekey)
-            ->where('schelduledflag', 1)
-            ->exists();
-
-        $visits = $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode);
+        $hasPlannedData = $journeyPlan->isNotEmpty();
+        $visits = $this->annotateJourneyPlanStatus(
+            $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
+            $journeyPlan,
+        );
         $visitCounts = $visits->countBy('customercode');
+        $plannedCodes = $journeyPlan->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
+        $visitedCodes = $visits->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
+        $plannedVisitedCount = $plannedCodes->intersect($visitedCodes)->count();
 
         $totalDistance = 0;
         $totalDuration = 0;
@@ -550,8 +553,10 @@ class RouteTrackingController extends Controller
             'routekey' => (int) $routeDay->routekey,
             'route_closed' => (int) $routeDay->routeclosed === 1,
             'has_planned_data' => $hasPlannedData,
-            'customer_count' => $customers->count(),
-            'visited_count' => collect($orderedCustomers)->where('visited', true)->count(),
+            'customer_count' => $plannedCodes->count(),
+            'visited_count' => $plannedVisitedCount,
+            'unplanned_visited_count' => $visitedCodes->diff($plannedCodes)->count(),
+            'planned_not_visited_count' => $plannedCodes->count() - $plannedVisitedCount,
             'visit_count' => $visits->count(),
             'distance' => $totalDistance,
             'duration' => $totalDuration,
@@ -653,6 +658,8 @@ class RouteTrackingController extends Controller
             'has_planned_data' => false,
             'customer_count' => 0,
             'visited_count' => 0,
+            'unplanned_visited_count' => 0,
+            'planned_not_visited_count' => 0,
             'visit_count' => 0,
             'distance' => 0,
             'duration' => 0,
@@ -714,6 +721,62 @@ class RouteTrackingController extends Controller
             ]);
     }
 
+    private function fetchJourneyPlan(int $routekey): Collection
+    {
+        return DB::table('routesequencecustomerstatus')
+            ->where('routekey', $routekey)
+            ->where('schelduledflag', 1)
+            ->orderByRaw('CASE WHEN COALESCE(sequencenumber, 0) > 0 THEN 0 ELSE 1 END')
+            ->orderBy('sequencenumber')
+            ->orderBy('customercode')
+            ->get(['customercode', 'sequencenumber'])
+            ->unique('customercode')
+            ->values();
+    }
+
+    private function annotateJourneyPlanStatus(Collection $visits, Collection $journeyPlan): Collection
+    {
+        $planByCustomer = $journeyPlan->keyBy(fn ($customer) => (string) $customer->customercode);
+        $pending = $journeyPlan
+            ->filter(fn ($customer) => (int) ($customer->sequencenumber ?? 0) > 0)
+            ->map(fn ($customer) => (string) $customer->customercode)
+            ->values();
+        $visited = [];
+
+        return $visits->values()->map(function (array $visit, int $index) use ($planByCustomer, &$pending, &$visited) {
+            $code = (string) $visit['customercode'];
+            $plannedCustomer = $planByCustomer->get($code);
+            $plannedSequence = (int) ($plannedCustomer?->sequencenumber ?? 0);
+            $expectedCode = $pending->first();
+            $expectedSequence = (int) ($planByCustomer->get($expectedCode)?->sequencenumber ?? 0);
+
+            if ($plannedCustomer === null) {
+                $status = 'unplanned';
+            } elseif (isset($visited[$code])) {
+                $status = 'repeat';
+            } elseif ($plannedSequence <= 0) {
+                $status = 'sequence_unavailable';
+            } elseif ($code !== $expectedCode) {
+                $status = 'out_of_sequence';
+            } else {
+                $status = 'according_to_plan';
+            }
+
+            if ($plannedCustomer !== null && ! isset($visited[$code])) {
+                $visited[$code] = true;
+                $pending = $pending->reject(fn ($pendingCode) => $pendingCode === $code)->values();
+            }
+
+            return $visit + [
+                'planned' => $plannedCustomer !== null,
+                'journey_status' => $status,
+                'planned_sequence' => $plannedSequence > 0 ? $plannedSequence : null,
+                'expected_sequence' => $expectedSequence > 0 ? $expectedSequence : null,
+                'actual_visit_position' => $index + 1,
+            ];
+        });
+    }
+
     private function fetchCustomerVisits(int $routekey, int $routecode): Collection
     {
         $operations = DB::table('customeroperationscontrol')
@@ -727,6 +790,8 @@ class RouteTrackingController extends Controller
         $visits = DB::table('customervisitlog as cvl')
             ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
             ->where('cvl.routekey', $routekey)
+            ->orderBy('cvl.logstartdate')
+            ->orderBy('cvl.logstarttime')
             ->orderBy('cvl.logkey')
             ->get([
                 'cvl.logkey',

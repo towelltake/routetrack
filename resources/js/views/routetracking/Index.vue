@@ -27,6 +27,11 @@ const customerSearch = ref("");
 const customerListTab = ref("all");
 const customerVisitTab = ref("all");
 const selectedOtpVisit = ref(null);
+const selectedTransactionVisit = ref(null);
+const selectedTransactionType = ref("sales");
+const selectedTransaction = ref(null);
+const transactionDetails = ref([]);
+const transactionDetailsLoading = ref(false);
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
@@ -109,6 +114,9 @@ const tabCustomers = computed(() => {
         }
         if (customerVisitTab.value === "otp") {
             return customerVisits.value.filter((visit) => visit.otp_logs?.length);
+        }
+        if (customerVisitTab.value === "transactions") {
+            return customerVisits.value.filter((visit) => transactionCount(visit) > 0);
         }
         return customerVisits.value;
     }
@@ -336,6 +344,57 @@ function closeOtpDetails() {
     selectedOtpVisit.value = null;
 }
 
+function transactionCount(visit, type = null) {
+    if (type) {
+        return visit.transactions?.[type]?.length ?? 0;
+    }
+
+    return ["sales", "orders", "collections"].reduce((total, key) => total + transactionCount(visit, key), 0);
+}
+
+function openTransactions(visit) {
+    selectedTransactionVisit.value = visit;
+    selectedTransactionType.value = ["sales", "orders", "collections"].find((type) => transactionCount(visit, type)) ?? "sales";
+    selectedTransaction.value = null;
+    transactionDetails.value = [];
+}
+
+function closeTransactions() {
+    selectedTransactionVisit.value = null;
+    selectedTransaction.value = null;
+    transactionDetails.value = [];
+}
+
+function selectTransactionType(type) {
+    selectedTransactionType.value = type;
+    selectedTransaction.value = null;
+    transactionDetails.value = [];
+}
+
+async function showTransactionDetails(transaction) {
+    transactionDetailsLoading.value = true;
+    selectedTransaction.value = transaction;
+    transactionDetails.value = [];
+
+    try {
+        const { data } = await axios.get("/route-tracking/transaction-details.json", {
+            params: {
+                type: transaction.type,
+                transactionkey: transaction.transactionkey,
+                routekey: selectedTransactionVisit.value.routekey,
+                visitkey: selectedTransactionVisit.value.visitkey,
+            },
+        });
+        transactionDetails.value = data;
+    } finally {
+        transactionDetailsLoading.value = false;
+    }
+}
+
+function money(value) {
+    return Number(value ?? 0).toFixed(3);
+}
+
 function customerVisitDetails(customer) {
     const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
@@ -377,6 +436,7 @@ async function runComparison() {
     customerListTab.value = "all";
     customerVisitTab.value = "all";
     selectedOtpVisit.value = null;
+    closeTransactions();
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -493,6 +553,7 @@ function resetFilters() {
     customerListTab.value = "all";
     customerVisitTab.value = "all";
     selectedOtpVisit.value = null;
+    closeTransactions();
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -930,7 +991,7 @@ function focusEnd() {
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
                             <button
-                                v-for="tab in ['all', 'planned', 'unplanned', 'out_of_sequence', 'otp']"
+                                v-for="tab in ['all', 'planned', 'unplanned', 'out_of_sequence', 'otp', 'transactions']"
                                 :key="tab"
                                 type="button"
                                 class="route-tracking-visit-tab"
@@ -939,6 +1000,7 @@ function focusEnd() {
                                     unplanned: tab === 'unplanned',
                                     'out-of-sequence': tab === 'out_of_sequence',
                                     otp: tab === 'otp',
+                                    transactions: tab === 'transactions',
                                 }"
                                 @click="selectCustomerVisitTab(tab)"
                             >
@@ -1022,7 +1084,21 @@ function focusEnd() {
                                         >
                                             Not included in journey plan
                                         </span>
+                                        <span v-if="customer.type === 'visit' && transactionCount(customer)" class="route-tracking-transaction-badges">
+                                            <span v-if="transactionCount(customer, 'sales')" class="sales">S {{ transactionCount(customer, "sales") }}</span>
+                                            <span v-if="transactionCount(customer, 'orders')" class="orders">O {{ transactionCount(customer, "orders") }}</span>
+                                            <span v-if="transactionCount(customer, 'collections')" class="collections">C {{ transactionCount(customer, "collections") }}</span>
+                                        </span>
                                     </span>
+                                    <button
+                                        v-if="customer.type === 'visit' && transactionCount(customer)"
+                                        type="button"
+                                        class="btn btn-sm route-tracking-transactions-btn"
+                                        title="View transactions"
+                                        @click.stop="openTransactions(customer)"
+                                    >
+                                        <i class="fa fa-receipt"></i>
+                                    </button>
                                     <button
                                         v-if="customer.type === 'visit' && customer.otp_logs?.length"
                                         type="button"
@@ -1069,6 +1145,111 @@ function focusEnd() {
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" @click="closeOtpDetails">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                v-if="selectedTransactionVisit"
+                class="modal fade show d-block route-tracking-otp-modal"
+                tabindex="-1"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="transaction-details-title"
+                @click.self="closeTransactions"
+            >
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div>
+                                <h5 id="transaction-details-title" class="modal-title">Customer Transactions</h5>
+                                <div class="small text-muted">
+                                    {{ selectedTransactionVisit.customername }} &middot;
+                                    Visit {{ selectedTransactionVisit.visit_start_time }}–{{ selectedTransactionVisit.visit_end_time || "Open" }}
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" aria-label="Close" @click="closeTransactions"></button>
+                        </div>
+                        <div class="modal-body">
+                            <template v-if="!selectedTransaction">
+                                <div class="nav nav-tabs mb-3">
+                                    <button
+                                        v-for="type in ['sales', 'orders', 'collections']"
+                                        :key="type"
+                                        type="button"
+                                        class="nav-link text-capitalize"
+                                        :class="{ active: selectedTransactionType === type }"
+                                        @click="selectTransactionType(type)"
+                                    >
+                                        {{ type }} ({{ transactionCount(selectedTransactionVisit, type) }})
+                                    </button>
+                                </div>
+                                <div v-if="!transactionCount(selectedTransactionVisit, selectedTransactionType)" class="text-muted">
+                                    No {{ selectedTransactionType }} for this visit.
+                                </div>
+                                <div
+                                    v-for="transaction in selectedTransactionVisit.transactions[selectedTransactionType]"
+                                    :key="transaction.transactionkey"
+                                    class="route-tracking-transaction-record"
+                                >
+                                    <div>
+                                        <strong>Document {{ transaction.documentnumber }}</strong>
+                                        <span v-if="transaction.voided" class="badge bg-danger ms-2">Voided</span>
+                                        <div class="small text-muted">{{ transaction.date }} {{ transaction.time }}</div>
+                                    </div>
+                                    <div class="route-tracking-transaction-amount">{{ money(transaction.amount) }}</div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="showTransactionDetails(transaction)">
+                                        View Details
+                                    </button>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <button type="button" class="btn btn-sm btn-light mb-3" @click="selectTransactionType(selectedTransactionType)">
+                                    <i class="fa fa-arrow-left me-1"></i> Back
+                                </button>
+                                <h6>Document {{ selectedTransaction.documentnumber }}</h6>
+                                <div v-if="transactionDetailsLoading" class="text-muted">Loading details...</div>
+                                <div v-else-if="!transactionDetails.length" class="text-muted">No detail records available.</div>
+                                <div v-else class="table-responsive">
+                                    <table class="table table-sm table-striped align-middle">
+                                        <thead>
+                                            <tr v-if="selectedTransaction.type === 'collections'">
+                                                <th>Invoice</th><th>Date</th><th>Reference</th><th class="text-end">Invoice</th><th class="text-end">Paid</th><th class="text-end">Balance</th>
+                                            </tr>
+                                            <tr v-else>
+                                                <th>Item</th><th>Description</th><th class="text-end">Sales Qty</th><th class="text-end">Return Qty</th><th class="text-end">Damaged</th><th class="text-end">Free</th><th class="text-end">Price</th><th class="text-end">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template v-if="selectedTransaction.type === 'collections'">
+                                                <tr v-for="(detail, index) in transactionDetails" :key="index">
+                                                    <td>{{ detail.alternateinvoicenumber || detail.invoicenumber }}</td>
+                                                    <td>{{ detail.invoicedate }}</td>
+                                                    <td>{{ detail.referenceno || "-" }}</td>
+                                                    <td class="text-end">{{ money(detail.totalinvoiceamount) }}</td>
+                                                    <td class="text-end">{{ money(detail.amountpaid) }}</td>
+                                                    <td class="text-end">{{ money(detail.invoicebalance) }}</td>
+                                                </tr>
+                                            </template>
+                                            <template v-else>
+                                                <tr v-for="detail in transactionDetails" :key="detail.itemcode">
+                                                    <td>{{ detail.alternatecode || detail.itemcode }}</td>
+                                                    <td>{{ detail.itemdescription || "-" }}</td>
+                                                    <td class="text-end">{{ detail.salesqty }}</td>
+                                                    <td class="text-end">{{ detail.returnqty }}</td>
+                                                    <td class="text-end">{{ detail.damagedqty }}</td>
+                                                    <td class="text-end">{{ detail.freesampleqty }}</td>
+                                                    <td class="text-end">{{ money(detail.salesprice) }}</td>
+                                                    <td class="text-end">{{ money(detail.sales_amount) }}</td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @click="closeTransactions">Close</button>
                         </div>
                     </div>
                 </div>
@@ -1254,6 +1435,12 @@ function focusEnd() {
         color: #7c3aed;
         background: #f5f3ff;
     }
+
+    &.transactions.active {
+        border-color: #0f766e;
+        color: #0f766e;
+        background: #f0fdfa;
+    }
 }
 
 .route-tracking-visit-legend {
@@ -1370,6 +1557,59 @@ function focusEnd() {
         background: #7c3aed;
         color: #fff;
     }
+}
+
+.route-tracking-transactions-btn {
+    flex-shrink: 0;
+    border: 1px solid #0f766e;
+    color: #0f766e;
+
+    &:hover {
+        background: #0f766e;
+        color: #fff;
+    }
+}
+
+.route-tracking-transaction-badges {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.2rem;
+
+    span {
+        padding: 0.05rem 0.3rem;
+        border-radius: 3px;
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 700;
+    }
+
+    .sales {
+        background: #16a34a;
+    }
+
+    .orders {
+        background: #2563eb;
+    }
+
+    .collections {
+        background: #7c3aed;
+    }
+}
+
+.route-tracking-transaction-record {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+}
+
+.route-tracking-transaction-amount {
+    font-weight: 700;
+    text-align: right;
 }
 
 .route-tracking-otp-modal {

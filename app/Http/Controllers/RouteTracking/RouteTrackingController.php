@@ -217,6 +217,46 @@ class RouteTrackingController extends Controller
         ]);
     }
 
+    public function transactionDetails(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', 'in:sales,orders,collections'],
+            'transactionkey' => ['required', 'integer'],
+            'routekey' => ['required', 'integer'],
+            'visitkey' => ['required', 'integer'],
+        ]);
+
+        $headers = [
+            'sales' => 'invoiceheader',
+            'orders' => 'salesorderheader',
+            'collections' => 'arheader',
+        ];
+        $header = DB::table($headers[$validated['type']])
+            ->where('transactionkey', $validated['transactionkey'])
+            ->where('routekey', $validated['routekey'])
+            ->where('visitkey', $validated['visitkey'])
+            ->first(['routecode']);
+
+        abort_unless($header, 404);
+        $this->ensureRouteAllowed((int) $header->routecode);
+
+        if ($validated['type'] === 'collections') {
+            $details = DB::table('ardetail')
+                ->where('transactionkey', $validated['transactionkey'])
+                ->orderBy('primary_key')
+                ->get(['invoicenumber', 'alternateinvoicenumber', 'invoicedate', 'totalinvoiceamount', 'amountpaid', 'invoicebalance', 'arcollectiontype', 'referenceno']);
+        } else {
+            $detailTable = $validated['type'] === 'sales' ? 'invoicedetail' : 'salesorderdetail';
+            $details = DB::table("{$detailTable} as d")
+                ->leftJoin('itemmaster as im', 'im.actualitemcode', '=', 'd.itemcode')
+                ->where('d.transactionkey', $validated['transactionkey'])
+                ->orderBy('d.primary_key')
+                ->get(['d.itemcode', 'im.alternatecode', 'im.itemdescription', 'd.salesqty', 'd.returnqty', 'd.damagedqty', 'd.freesampleqty', 'd.salesprice', 'd.sales_amount']);
+        }
+
+        return response()->json($details);
+    }
+
     /**
      * Reconstructs the real driven path from raw routetrack GPS pings via
      * OSRM Map Matching. Pings are heavily duplicated (the same coordinate
@@ -459,7 +499,10 @@ class RouteTrackingController extends Controller
         $hasPlannedData = $journeyPlan->isNotEmpty();
         $visits = $this->annotateJourneyPlanStatus(
             $this->attachGpsOtpLogs(
-                $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
+                $this->attachVisitTransactions(
+                    $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
+                    (int) $routeDay->routekey,
+                ),
                 $routecode,
                 $date,
             ),
@@ -816,13 +859,54 @@ class RouteTrackingController extends Controller
         return collect($visitRows);
     }
 
+    private function attachVisitTransactions(Collection $visits, int $routekey): Collection
+    {
+        $visitKeys = $visits->pluck('visitkey')->filter()->unique();
+        $transactions = collect([
+            'sales' => ['table' => 'invoiceheader', 'amount' => 'totalinvoiceamount'],
+            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalinvoiceamount'],
+            'collections' => ['table' => 'arheader', 'amount' => 'amountpaid'],
+        ])->map(function (array $config, string $type) use ($routekey, $visitKeys) {
+            if ($visitKeys->isEmpty()) {
+                return collect();
+            }
+
+            return DB::table($config['table'])
+                ->where('routekey', $routekey)
+                ->whereIn('visitkey', $visitKeys)
+                ->orderBy('transactiondate')
+                ->orderBy('transactiontime')
+                ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), 'voidflag'])
+                ->map(fn (object $transaction) => [
+                    'type' => $type,
+                    'transactionkey' => (int) $transaction->transactionkey,
+                    'visitkey' => (int) $transaction->visitkey,
+                    'documentnumber' => (string) $transaction->documentnumber,
+                    'date' => $transaction->transactiondate,
+                    'time' => $transaction->transactiontime,
+                    'amount' => (float) ($transaction->amount ?? 0),
+                    'voided' => (int) ($transaction->voidflag ?? 0) === 1,
+                ])
+                ->groupBy('visitkey');
+        });
+
+        return $visits->map(function (array $visit) use ($transactions) {
+            $visitKey = (int) ($visit['visitkey'] ?? 0);
+            $visit['transactions'] = collect(['sales', 'orders', 'collections'])
+                ->mapWithKeys(fn (string $type) => [$type => $transactions[$type]->get($visitKey, collect())->values()])
+                ->all();
+
+            return $visit;
+        });
+    }
+
     private function fetchCustomerVisits(int $routekey, int $routecode): Collection
     {
         $operations = DB::table('customeroperationscontrol')
             ->where('routekey', $routekey)
             ->where('log_id', '>', 0)
             ->orderByDesc('primary_id')
-            ->get(['log_id', 'latitude', 'longitude'])
+            ->get(['log_id', 'visitkey', 'latitude', 'longitude'])
             ->unique('log_id')
             ->keyBy('log_id');
 
@@ -844,7 +928,7 @@ class RouteTrackingController extends Controller
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
             ])
-            ->map(function (object $visit) use ($operations) {
+            ->map(function (object $visit) use ($operations, $routekey) {
                 $operation = $operations->get($visit->logkey);
                 $coordinates = $this->validOmanCoordinates($operation?->latitude, $operation?->longitude)
                     ?? $this->validOmanCoordinates($visit->fixedlatitude, $visit->fixedlongitude);
@@ -857,6 +941,8 @@ class RouteTrackingController extends Controller
 
                 return [
                     'logkey' => (int) $visit->logkey,
+                    'routekey' => $routekey,
+                    'visitkey' => $operation?->visitkey ? (int) $operation->visitkey : null,
                     'customercode' => (int) $visit->customercode,
                     'alternatecode' => $visit->alternatecode,
                     'customername' => $visit->customeraddress1 ?? "Customer {$visit->customercode}",

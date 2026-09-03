@@ -991,7 +991,7 @@ function focusEnd() {
 
             <div class="row g-3">
                 <div class="col-md-9 route-tracking-map-column">
-                    <div class="route-tracking-map-wrapper" style="position: relative; height: 600px; width: 100%">
+                    <div class="route-tracking-map-wrapper" style="position: relative; height: 680px; width: 100%">
                         <button
                             type="button"
                             class="btn btn-light route-tracking-fullscreen-btn"
@@ -1004,7 +1004,7 @@ function focusEnd() {
                     </div>
                 </div>
                 <div class="col-md-3 route-tracking-panel-column">
-                    <div class="card route-tracking-customer-list-card" style="height: 600px">
+                    <div class="card route-tracking-customer-list-card" style="height: 680px">
                         <div class="card-header">
                             <strong>Customers</strong>
                             <span v-if="result" class="text-muted small">
@@ -1399,11 +1399,11 @@ function focusEnd() {
 
 @media (min-width: 768px) {
     .route-tracking-map-column {
-        width: 70%;
+        width: 72%;
     }
 
     .route-tracking-panel-column {
-        width: 30%;
+        width: 28%;
     }
 }
 
@@ -1528,9 +1528,9 @@ function focusEnd() {
     align-items: center;
     gap: 8px;
     border: 1px solid #e5e7eb !important;
-    border-left-width: 4px !important;
     border-radius: 6px !important;
     background: #fff;
+    padding: 0.7rem 0.75rem;
     text-align: left;
     transition: box-shadow 0.15s ease, transform 0.15s ease;
 
@@ -1538,22 +1538,15 @@ function focusEnd() {
         box-shadow: 0 3px 9px rgba(15, 23, 42, 0.09);
     }
 
-    &.journey-according {
-        border-left-color: #16a34a !important;
-    }
-
     &.journey-out-of-sequence {
-        border-left-color: #f59e0b !important;
         background: #fffbeb;
     }
 
     &.journey-unplanned {
-        border-left-color: #f97316 !important;
         background: #fff7ed;
     }
 
     &.journey-duplicate {
-        border-left-color: #7c3aed !important;
         background: #f5f3ff;
     }
 
@@ -1639,15 +1632,21 @@ function focusEnd() {
 
 .route-tracking-transaction-badges {
     display: flex;
-    gap: 0.25rem;
-    margin-top: 0.2rem;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+    padding-bottom: 0.35rem;
 
     span {
-        padding: 0.05rem 0.3rem;
-        border-radius: 3px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        padding: 0.2rem 0.45rem;
+        border-radius: 4px;
         color: #fff;
         font-size: 0.6rem;
         font-weight: 700;
+        line-height: 1.2;
     }
 
     .sales {

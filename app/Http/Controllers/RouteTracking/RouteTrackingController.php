@@ -458,7 +458,11 @@ class RouteTrackingController extends Controller
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
         $hasPlannedData = $journeyPlan->isNotEmpty();
         $visits = $this->annotateJourneyPlanStatus(
-            $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
+            $this->attachGpsOtpLogs(
+                $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
+                $routecode,
+                $date,
+            ),
             $journeyPlan,
         );
         $visitCounts = $visits->countBy('customercode');
@@ -766,6 +770,50 @@ class RouteTrackingController extends Controller
                 'customer_visit_number' => $visitCounts[$code],
             ];
         });
+    }
+
+    private function attachGpsOtpLogs(Collection $visits, int $routecode, string $date): Collection
+    {
+        $visitRows = $visits->values()->map(fn (array $visit) => $visit + ['otp_logs' => []])->all();
+        $otpLogs = DB::table('otplogdetail')
+            ->where('routecode', $routecode)
+            ->whereDate('otpdate', $date)
+            ->where('otptype', 'GPS IN')
+            ->orderBy('otpdate')
+            ->orderBy('otptime')
+            ->orderBy('otplogid')
+            ->get(['otplogid', 'username', 'customercode', 'otptype', 'otpdate', 'otptime', 'comments', 'otpreason']);
+
+        foreach ($otpLogs as $otp) {
+            $matchingIndexes = collect($visitRows)
+                ->keys()
+                ->filter(fn (int $index) => (string) $visitRows[$index]['customercode'] === (string) $otp->customercode);
+
+            if ($matchingIndexes->isEmpty()) {
+                continue;
+            }
+
+            $otpTimestamp = strtotime($otp->otpdate.' '.$otp->otptime);
+            $visitIndex = $matchingIndexes
+                ->sortBy(function (int $index) use ($visitRows, $otpTimestamp) {
+                    $visitTimestamp = strtotime($visitRows[$index]['visit_start_date'].' '.$visitRows[$index]['visit_start_time']);
+
+                    return $otpTimestamp === false || $visitTimestamp === false ? $index : abs($visitTimestamp - $otpTimestamp);
+                })
+                ->first();
+
+            $visitRows[$visitIndex]['otp_logs'][] = [
+                'id' => (int) $otp->otplogid,
+                'approved_by' => $otp->username,
+                'type' => $otp->otptype,
+                'date' => $otp->otpdate,
+                'time' => $otp->otptime,
+                'reason' => $otp->otpreason,
+                'comments' => $otp->comments,
+            ];
+        }
+
+        return collect($visitRows);
     }
 
     private function fetchCustomerVisits(int $routekey, int $routecode): Collection

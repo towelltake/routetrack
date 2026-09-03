@@ -26,6 +26,7 @@ const isFullscreen = ref(false);
 const customerSearch = ref("");
 const customerListTab = ref("all");
 const customerVisitTab = ref("all");
+const selectedOtpVisit = ref(null);
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
@@ -105,6 +106,9 @@ const tabCustomers = computed(() => {
         }
         if (customerVisitTab.value === "out_of_sequence") {
             return customerVisits.value.filter((visit) => ["out_of_sequence", "duplicate_visit"].includes(visit.journey_status));
+        }
+        if (customerVisitTab.value === "otp") {
+            return customerVisits.value.filter((visit) => visit.otp_logs?.length);
         }
         return customerVisits.value;
     }
@@ -322,6 +326,14 @@ function faceTimeVariance(customer) {
     return customer.visit_duration_minutes - customer.default_face_time_minutes;
 }
 
+function openOtpDetails(visit) {
+    selectedOtpVisit.value = visit;
+}
+
+function closeOtpDetails() {
+    selectedOtpVisit.value = null;
+}
+
 function customerVisitDetails(customer) {
     const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
@@ -362,6 +374,7 @@ async function runComparison() {
     customerSearch.value = "";
     customerListTab.value = "all";
     customerVisitTab.value = "all";
+    selectedOtpVisit.value = null;
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -477,6 +490,7 @@ function resetFilters() {
     customerSearch.value = "";
     customerListTab.value = "all";
     customerVisitTab.value = "all";
+    selectedOtpVisit.value = null;
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -914,11 +928,16 @@ function focusEnd() {
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
                             <button
-                                v-for="tab in ['all', 'planned', 'unplanned', 'out_of_sequence']"
+                                v-for="tab in ['all', 'planned', 'unplanned', 'out_of_sequence', 'otp']"
                                 :key="tab"
                                 type="button"
                                 class="route-tracking-visit-tab"
-                                :class="{ active: customerVisitTab === tab, unplanned: tab === 'unplanned' }"
+                                :class="{
+                                    active: customerVisitTab === tab,
+                                    unplanned: tab === 'unplanned',
+                                    'out-of-sequence': tab === 'out_of_sequence',
+                                    otp: tab === 'otp',
+                                }"
                                 @click="selectCustomerVisitTab(tab)"
                             >
                                 {{ tab.replaceAll("_", " ") }}
@@ -943,17 +962,19 @@ function focusEnd() {
                             <div class="route-tracking-customer-list">
                                 <p v-if="!result" class="text-muted small px-1">Run a comparison to see customers.</p>
                                 <p v-else-if="!filteredCustomers.length" class="text-muted small px-1">No customers match.</p>
-                                <button
+                                <div
                                     v-for="customer in filteredCustomers"
                                     :key="customer.listKey"
-                                    type="button"
                                     class="list-group-item list-group-item-action route-tracking-customer-item"
                                     :class="{
                                         'journey-out-of-sequence': customer.journey_status === 'out_of_sequence',
                                         'journey-unplanned': customer.journey_status === 'unplanned',
                                         'journey-duplicate': customer.journey_status === 'duplicate_visit',
                                     }"
+                                    role="button"
+                                    tabindex="0"
                                     @click="focusCustomer(customer)"
+                                    @keydown.enter="focusCustomer(customer)"
                                 >
                                     <span
                                         class="route-tracking-customer-dot"
@@ -1000,8 +1021,52 @@ function focusEnd() {
                                             Not included in journey plan
                                         </span>
                                     </span>
-                                </button>
+                                    <button
+                                        v-if="customer.type === 'visit' && customer.otp_logs?.length"
+                                        type="button"
+                                        class="btn btn-sm route-tracking-otp-btn"
+                                        title="View GPS override OTP details"
+                                        @click.stop="openOtpDetails(customer)"
+                                    >
+                                        OTP
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                v-if="selectedOtpVisit"
+                class="modal fade show d-block route-tracking-otp-modal"
+                tabindex="-1"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="otp-details-title"
+                @click.self="closeOtpDetails"
+            >
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 id="otp-details-title" class="modal-title">GPS Override OTP</h5>
+                            <button type="button" class="btn-close" aria-label="Close" @click="closeOtpDetails"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="fw-semibold mb-2">{{ selectedOtpVisit.customername }}</div>
+                            <div
+                                v-for="otp in selectedOtpVisit.otp_logs"
+                                :key="otp.id"
+                                class="route-tracking-otp-record"
+                            >
+                                <div><strong>Approved By:</strong> {{ otp.approved_by || "Not Available" }}</div>
+                                <div><strong>OTP Type:</strong> {{ otp.type }}</div>
+                                <div><strong>Reason:</strong> {{ otp.reason || "Not Available" }}</div>
+                                <div><strong>Comments:</strong> {{ otp.comments || "Not Available" }}</div>
+                                <div><strong>Date &amp; Time:</strong> {{ otp.date }} {{ otp.time }}</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @click="closeOtpDetails">Close</button>
                         </div>
                     </div>
                 </div>
@@ -1176,10 +1241,16 @@ function focusEnd() {
         background: #fff7ed;
     }
 
-    &:last-child.active {
+    &.out-of-sequence.active {
         border-color: #f59e0b;
         color: #b45309;
         background: #fffbeb;
+    }
+
+    &.otp.active {
+        border-color: #7c3aed;
+        color: #7c3aed;
+        background: #f5f3ff;
     }
 }
 
@@ -1252,6 +1323,34 @@ function focusEnd() {
 .route-tracking-customer-info {
     min-width: 0;
     overflow: hidden;
+}
+
+.route-tracking-otp-btn {
+    flex-shrink: 0;
+    border: 1px solid #7c3aed;
+    color: #7c3aed;
+    font-size: 0.65rem;
+    font-weight: 700;
+
+    &:hover {
+        background: #7c3aed;
+        color: #fff;
+    }
+}
+
+.route-tracking-otp-modal {
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.route-tracking-otp-record {
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #e5e7eb;
+
+    &:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
 }
 
 .route-tracking-customer-info span {

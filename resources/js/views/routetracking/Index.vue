@@ -304,9 +304,14 @@ function customerDisplayCode(customer) {
 }
 
 function faceTimeLabel(customer) {
-    return customer.visit_duration_minutes === null
-        ? "Not Available"
-        : `${customer.visit_duration_minutes} min`;
+    if (customer.visit_duration_minutes === null) {
+        return "Not Available";
+    }
+
+    const hours = Math.floor(customer.visit_duration_minutes / 60);
+    const minutes = customer.visit_duration_minutes % 60;
+
+    return hours ? `${hours}h : ${String(minutes).padStart(2, "0")} min` : `${minutes} min`;
 }
 
 function faceTimeVariance(customer) {
@@ -957,7 +962,19 @@ function focusEnd() {
                                         {{ customer.displayNumber }}
                                     </span>
                                     <span class="route-tracking-customer-info">
-                                        <span class="d-block fw-semibold small">{{ customer.customername }}</span>
+                                        <span class="route-tracking-customer-name-row">
+                                            <span class="fw-semibold small">{{ customer.customername }}</span>
+                                            <span v-if="customer.type === 'visit'" class="route-tracking-face-time small">
+                                                <i class="fa fa-clock" title="Customer face time"></i>
+                                                {{ faceTimeLabel(customer) }}
+                                                <strong
+                                                    v-if="faceTimeVariance(customer) !== null"
+                                                    :class="faceTimeVariance(customer) > 0 ? 'text-danger' : 'text-success'"
+                                                >
+                                                    ({{ faceTimeVariance(customer) > 0 ? "+" : "" }}{{ faceTimeVariance(customer) }} min)
+                                                </strong>
+                                            </span>
+                                        </span>
                                         <span class="d-block text-muted small">
                                             {{ customerDisplayCode(customer) }} &middot;
                                             {{ customerVisitStatus(customer) }}
@@ -981,15 +998,6 @@ function focusEnd() {
                                             style="color: #f97316"
                                         >
                                             Not included in journey plan
-                                        </span>
-                                        <span v-if="customer.type === 'visit'" class="d-block small route-tracking-face-time">
-                                            Face Time: {{ faceTimeLabel(customer) }}
-                                            <template v-if="faceTimeVariance(customer) !== null">
-                                                &middot; Default {{ customer.default_face_time_minutes }} min
-                                                <strong :class="faceTimeVariance(customer) > 0 ? 'text-danger' : 'text-success'">
-                                                    ({{ faceTimeVariance(customer) > 0 ? "+" : "" }}{{ faceTimeVariance(customer) }} min)
-                                                </strong>
-                                            </template>
                                         </span>
                                     </span>
                                 </button>
@@ -1252,7 +1260,23 @@ function focusEnd() {
     white-space: nowrap;
 }
 
+.route-tracking-customer-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    > :first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
 .route-tracking-face-time {
+    flex-shrink: 0;
     color: #495057;
+    text-align: right;
 }
 </style>

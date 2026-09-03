@@ -100,8 +100,11 @@ const tabCustomers = computed(() => {
         if (customerVisitTab.value === "planned") {
             return customerVisits.value.filter((visit) => visit.planned);
         }
-        if (customerVisitTab.value === "unplanned" || customerVisitTab.value === "out_of_sequence") {
+        if (customerVisitTab.value === "unplanned") {
             return customerVisits.value.filter((visit) => visit.journey_status === customerVisitTab.value);
+        }
+        if (customerVisitTab.value === "out_of_sequence") {
+            return customerVisits.value.filter((visit) => ["out_of_sequence", "duplicate_visit"].includes(visit.journey_status));
         }
         return customerVisits.value;
     }
@@ -209,6 +212,9 @@ function customerStatusColor(customer) {
         if (customer.journey_status === "out_of_sequence") {
             return "#f59e0b";
         }
+        if (customer.journey_status === "duplicate_visit") {
+            return "#7c3aed";
+        }
         return customer.planned ? "#16a34a" : "#f97316";
     }
 
@@ -217,7 +223,7 @@ function customerStatusColor(customer) {
 
 function visitIcon(sequence, visit) {
     const color = customerStatusColor({ ...visit, type: "visit" });
-    const label = visit.journey_status === "out_of_sequence" ? "!" : sequence;
+    const label = ["out_of_sequence", "duplicate_visit"].includes(visit.journey_status) ? "!" : sequence;
     return L.divIcon({
         className: "route-tracking-customer-marker",
         html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${label}</div>`,
@@ -267,7 +273,7 @@ function customerVisitStatus(customer) {
             according_to_plan: "According to Journey Plan",
             out_of_sequence: "Out of Sequence",
             unplanned: "Unplanned Visit",
-            repeat: "Repeat Planned Visit",
+            duplicate_visit: "Duplicate Visit · Out of Sequence",
             sequence_unavailable: "Planned · Sequence Not Available",
         }[customer.journey_status] ?? "Customer Visit";
     }
@@ -286,8 +292,8 @@ function journeyPlanDetails(visit) {
 
     const details = [
         visit.planned_sequence && `Planned Sequence: ${visit.planned_sequence}`,
-        visit.journey_status === "out_of_sequence" && visit.expected_sequence && `Expected Sequence: ${visit.expected_sequence}`,
         `Actual Visit Position: ${visit.actual_visit_position}`,
+        visit.journey_status === "duplicate_visit" && `Visit Number for This Customer: ${visit.customer_visit_number}`,
     ].filter(Boolean);
 
     return details.map((line) => `<br>${line}`).join("");
@@ -846,14 +852,6 @@ function focusEnd() {
                         >
                             <i :class="isFullscreen ? 'fa fa-compress' : 'fa fa-expand'"></i>
                         </button>
-                        <div v-if="result" class="route-tracking-map-legend">
-                            <strong>Customer Status</strong>
-                            <span><i style="background: #2563eb"></i> Planned</span>
-                            <span><i style="background: #16a34a"></i> According to plan</span>
-                            <span><i style="background: #f59e0b"></i> Out of sequence</span>
-                            <span><i style="background: #f97316"></i> Unplanned visit</span>
-                            <span><i style="background: #9ca3af"></i> Planned not visited</span>
-                        </div>
                         <div ref="mapEl" style="height: 100%; width: 100%"></div>
                     </div>
                 </div>
@@ -910,6 +908,7 @@ function focusEnd() {
                             <span><i style="background: #16a34a"></i> According to plan</span>
                             <span><i style="background: #f59e0b"></i> Out of sequence</span>
                             <span><i style="background: #f97316"></i> Unplanned</span>
+                            <span><i style="background: #7c3aed"></i> Duplicate visit</span>
                         </div>
                         <div class="route-tracking-customer-search p-2">
                             <input
@@ -932,6 +931,7 @@ function focusEnd() {
                                     :class="{
                                         'journey-out-of-sequence': customer.journey_status === 'out_of_sequence',
                                         'journey-unplanned': customer.journey_status === 'unplanned',
+                                        'journey-duplicate': customer.journey_status === 'duplicate_visit',
                                     }"
                                     @click="focusCustomer(customer)"
                                 >
@@ -951,7 +951,14 @@ function focusEnd() {
                                             v-if="customer.type === 'visit' && customer.journey_status === 'out_of_sequence'"
                                             class="d-block small text-warning"
                                         >
-                                            Planned {{ customer.planned_sequence }} &middot; Expected {{ customer.expected_sequence }}
+                                            Planned {{ customer.planned_sequence }} &middot; Actual {{ customer.actual_visit_position }}
+                                        </span>
+                                        <span
+                                            v-else-if="customer.type === 'visit' && customer.journey_status === 'duplicate_visit'"
+                                            class="d-block small"
+                                            style="color: #7c3aed"
+                                        >
+                                            Visit {{ customer.customer_visit_number }} to this customer
                                         </span>
                                         <span
                                             v-else-if="customer.type === 'visit' && customer.journey_status === 'unplanned'"
@@ -1048,35 +1055,6 @@ function focusEnd() {
     left: 10px;
     z-index: 1000;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-.route-tracking-map-legend {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    z-index: 1000;
-    display: grid;
-    gap: 0.25rem;
-    min-width: 155px;
-    padding: 0.5rem 0.65rem;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    color: #495057;
-    font-size: 0.7rem;
-
-    span {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-
-    i {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-    }
 }
 
 .route-tracking-customer-list-card {
@@ -1199,6 +1177,10 @@ function focusEnd() {
 
     &.journey-unplanned {
         background: #fff7ed;
+    }
+
+    &.journey-duplicate {
+        background: #f5f3ff;
     }
 }
 

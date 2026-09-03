@@ -737,42 +737,33 @@ class RouteTrackingController extends Controller
     private function annotateJourneyPlanStatus(Collection $visits, Collection $journeyPlan): Collection
     {
         $planByCustomer = $journeyPlan->keyBy(fn ($customer) => (string) $customer->customercode);
-        $pending = $journeyPlan
-            ->filter(fn ($customer) => (int) ($customer->sequencenumber ?? 0) > 0)
-            ->map(fn ($customer) => (string) $customer->customercode)
-            ->values();
-        $visited = [];
+        $visitCounts = [];
 
-        return $visits->values()->map(function (array $visit, int $index) use ($planByCustomer, &$pending, &$visited) {
+        return $visits->values()->map(function (array $visit, int $index) use ($planByCustomer, &$visitCounts) {
             $code = (string) $visit['customercode'];
             $plannedCustomer = $planByCustomer->get($code);
             $plannedSequence = (int) ($plannedCustomer?->sequencenumber ?? 0);
-            $expectedCode = $pending->first();
-            $expectedSequence = (int) ($planByCustomer->get($expectedCode)?->sequencenumber ?? 0);
+            $actualPosition = $index + 1;
+            $visitCounts[$code] = ($visitCounts[$code] ?? 0) + 1;
 
             if ($plannedCustomer === null) {
                 $status = 'unplanned';
-            } elseif (isset($visited[$code])) {
-                $status = 'repeat';
+            } elseif ($visitCounts[$code] > 1) {
+                $status = 'duplicate_visit';
             } elseif ($plannedSequence <= 0) {
                 $status = 'sequence_unavailable';
-            } elseif ($code !== $expectedCode) {
+            } elseif ($plannedSequence !== $actualPosition) {
                 $status = 'out_of_sequence';
             } else {
                 $status = 'according_to_plan';
-            }
-
-            if ($plannedCustomer !== null && ! isset($visited[$code])) {
-                $visited[$code] = true;
-                $pending = $pending->reject(fn ($pendingCode) => $pendingCode === $code)->values();
             }
 
             return $visit + [
                 'planned' => $plannedCustomer !== null,
                 'journey_status' => $status,
                 'planned_sequence' => $plannedSequence > 0 ? $plannedSequence : null,
-                'expected_sequence' => $expectedSequence > 0 ? $expectedSequence : null,
-                'actual_visit_position' => $index + 1,
+                'actual_visit_position' => $actualPosition,
+                'customer_visit_number' => $visitCounts[$code],
             ];
         });
     }

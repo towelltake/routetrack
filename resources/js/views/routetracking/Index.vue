@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Head } from "@inertiajs/vue3";
 import { useTemplateStore } from "@/stores/template";
 import axios from "axios";
@@ -32,6 +32,7 @@ const selectedTransactionType = ref("sales");
 const selectedTransaction = ref(null);
 const transactionDetails = ref([]);
 const transactionDetailsLoading = ref(false);
+const selectedCustomerKey = ref(null);
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
@@ -144,6 +145,7 @@ const filteredCustomers = computed(() => {
 let map = null;
 const customerMarkers = {};
 const visitMarkers = {};
+const customerItemEls = {};
 let resultLayer = null;
 let plannedLineLayer = null;
 let actualLineLayer = null;
@@ -437,6 +439,7 @@ async function runComparison() {
     customerVisitTab.value = "all";
     selectedOtpVisit.value = null;
     closeTransactions();
+    selectedCustomerKey.value = null;
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -487,6 +490,12 @@ async function runComparison() {
                     `<strong>${index + 1}. ${customer.customername}</strong><br>Customer ${customerDisplayCode(customer)}<br>${customerVisitStatus(customer)}`,
                 )
                 .addTo(plannedCustomerLayer);
+            marker.on("click", () => revealCustomerInList({
+                ...customer,
+                displayNumber: index + 1,
+                listKey: `planned-${customer.customercode}`,
+                type: "planned",
+            }));
             customerMarkers[customer.customercode] = marker;
         });
 
@@ -500,6 +509,12 @@ async function runComparison() {
                     `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${customerDisplayCode(visit)}<br>Journey Plan Status: <strong>${customerVisitStatus({ ...visit, type: "visit" })}</strong>${journeyPlanDetails(visit)}${customerVisitDetails(visit)}`,
                 )
                 .addTo(customerVisitLayer);
+            marker.on("click", () => revealCustomerInList({
+                ...visit,
+                displayNumber: index + 1,
+                listKey: `visit-${visit.logkey}`,
+                type: "visit",
+            }));
             visitMarkers[visit.logkey] = marker;
         });
 
@@ -554,6 +569,7 @@ function resetFilters() {
     customerVisitTab.value = "all";
     selectedOtpVisit.value = null;
     closeTransactions();
+    selectedCustomerKey.value = null;
     plannedRouteVisible.value = true;
     actualRouteVisible.value = true;
     rawCoordinatesVisible.value = false;
@@ -582,6 +598,7 @@ function pct(ratio) {
 }
 
 function focusCustomer(customer) {
+    selectedCustomerKey.value = customer.listKey;
     const marker = customer.type === "visit" ? visitMarkers[customer.logkey] : customerMarkers[customer.customercode];
     if (!marker || !map) {
         return;
@@ -589,6 +606,29 @@ function focusCustomer(customer) {
 
     map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15));
     marker.openPopup();
+}
+
+function setCustomerItemRef(key, element) {
+    if (element) {
+        customerItemEls[key] = element;
+    } else {
+        delete customerItemEls[key];
+    }
+}
+
+async function revealCustomerInList(customer) {
+    customerSearch.value = "";
+    selectedCustomerKey.value = customer.listKey;
+
+    if (customer.type === "visit") {
+        customerListTab.value = "visits";
+        customerVisitTab.value = "all";
+    } else {
+        customerListTab.value = "all";
+    }
+
+    await nextTick();
+    customerItemEls[customer.listKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function fitToCustomers(predicate) {
@@ -1029,11 +1069,13 @@ function focusEnd() {
                                 <div
                                     v-for="customer in filteredCustomers"
                                     :key="customer.listKey"
+                                    :ref="(element) => setCustomerItemRef(customer.listKey, element)"
                                     class="list-group-item list-group-item-action route-tracking-customer-item"
                                     :class="{
                                         'journey-out-of-sequence': customer.journey_status === 'out_of_sequence',
                                         'journey-unplanned': customer.journey_status === 'unplanned',
                                         'journey-duplicate': customer.journey_status === 'duplicate_visit',
+                                        selected: selectedCustomerKey === customer.listKey,
                                     }"
                                     role="button"
                                     tabindex="0"
@@ -1493,6 +1535,12 @@ function focusEnd() {
 
     &.journey-duplicate {
         background: #f5f3ff;
+    }
+
+    &.selected {
+        outline: 2px solid #2563eb;
+        outline-offset: -2px;
+        background: #eff6ff;
     }
 }
 

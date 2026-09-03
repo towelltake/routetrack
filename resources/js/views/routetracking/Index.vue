@@ -732,6 +732,17 @@ function selectCustomerVisitTab(tab) {
     }
 }
 
+function customerVisitTabLabel(tab) {
+    return {
+        all: "All",
+        planned: "Planned",
+        unplanned: "Unplanned",
+        out_of_sequence: "Sequence Issues",
+        otp: "OTP",
+        transactions: "Transactions",
+    }[tab];
+}
+
 function togglePlannedRoute() {
     if (!plannedLineLayer || !resultLayer || !map) {
         return;
@@ -1008,7 +1019,7 @@ function focusEnd() {
                                 :disabled="!result || !result.planned.has_planned_data"
                                 @click="selectCustomerTab('all')"
                             >
-                                Planned Visits
+                                Planned
                             </button>
                             <button
                                 type="button"
@@ -1026,7 +1037,7 @@ function focusEnd() {
                                 :disabled="!result || !result.planned.has_planned_data"
                                 @click="selectCustomerTab('planned_not_visited')"
                             >
-                                Planned Not Visited
+                                Not Visited
                             </button>
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
@@ -1044,14 +1055,8 @@ function focusEnd() {
                                 }"
                                 @click="selectCustomerVisitTab(tab)"
                             >
-                                {{ tab.replaceAll("_", " ") }}
+                                {{ customerVisitTabLabel(tab) }}
                             </button>
-                        </div>
-                        <div v-if="customerListTab === 'visits'" class="route-tracking-visit-legend">
-                            <span><i style="background: #16a34a"></i> According to plan</span>
-                            <span><i style="background: #f59e0b"></i> Out of sequence</span>
-                            <span><i style="background: #f97316"></i> Unplanned</span>
-                            <span><i style="background: #7c3aed"></i> Duplicate visit</span>
                         </div>
                         <div class="route-tracking-customer-search p-2">
                             <input
@@ -1075,6 +1080,7 @@ function focusEnd() {
                                         'journey-out-of-sequence': customer.journey_status === 'out_of_sequence',
                                         'journey-unplanned': customer.journey_status === 'unplanned',
                                         'journey-duplicate': customer.journey_status === 'duplicate_visit',
+                                        'journey-according': customer.journey_status === 'according_to_plan',
                                         selected: selectedCustomerKey === customer.listKey,
                                     }"
                                     role="button"
@@ -1148,7 +1154,7 @@ function focusEnd() {
                                         title="View GPS override OTP details"
                                         @click.stop="openOtpDetails(customer)"
                                     >
-                                        OTP
+                                        <i class="fa fa-key"></i>
                                     </button>
                                 </div>
                             </div>
@@ -1416,14 +1422,17 @@ function focusEnd() {
 
 .route-tracking-customer-tabs {
     display: flex;
+    gap: 0.25rem;
+    padding: 0.4rem;
     border-bottom: 1px solid #e5e7eb;
+    background: #f8fafc;
 }
 
 .route-tracking-customer-tab {
     flex: 1;
     background: #fff;
-    border: none;
-    border-bottom: 2px solid transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
     padding: 0.5rem 0.25rem;
     font-size: 0.75rem;
     font-weight: 600;
@@ -1432,8 +1441,10 @@ function focusEnd() {
     text-align: center;
 
     &.active {
+        background: #fff;
+        border-color: #dbeafe;
         color: #3b82f6;
-        border-bottom-color: #3b82f6;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
     }
 
     &:disabled {
@@ -1448,17 +1459,18 @@ function focusEnd() {
 
 .route-tracking-visit-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
-    padding: 0.4rem 0.5rem;
+    padding: 0.5rem;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .route-tracking-visit-tab {
-    flex: 1;
+    flex: 0 0 auto;
     border: 1px solid #dbe1e8;
-    border-radius: 4px;
+    border-radius: 999px;
     background: #fff;
-    padding: 0.25rem;
+    padding: 0.25rem 0.55rem;
     color: #6c757d;
     font-size: 0.7rem;
     font-weight: 600;
@@ -1495,28 +1507,6 @@ function focusEnd() {
     }
 }
 
-.route-tracking-visit-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.65rem;
-    padding: 0.35rem 0.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    color: #6c757d;
-    font-size: 0.65rem;
-
-    span {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    i {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-    }
-}
-
 .route-tracking-customer-list-card .card-body {
     display: flex;
     flex-direction: column;
@@ -1525,32 +1515,51 @@ function focusEnd() {
 }
 
 .route-tracking-customer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
     overflow-y: auto;
     flex: 1;
+    padding: 1px;
 }
 
 .route-tracking-customer-item {
     display: flex;
     align-items: center;
     gap: 8px;
+    border: 1px solid #e5e7eb !important;
+    border-left-width: 4px !important;
+    border-radius: 6px !important;
+    background: #fff;
     text-align: left;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+        box-shadow: 0 3px 9px rgba(15, 23, 42, 0.09);
+    }
+
+    &.journey-according {
+        border-left-color: #16a34a !important;
+    }
 
     &.journey-out-of-sequence {
+        border-left-color: #f59e0b !important;
         background: #fffbeb;
     }
 
     &.journey-unplanned {
+        border-left-color: #f97316 !important;
         background: #fff7ed;
     }
 
     &.journey-duplicate {
+        border-left-color: #7c3aed !important;
         background: #f5f3ff;
     }
 
     &.selected {
-        outline: 2px solid #2563eb;
-        outline-offset: -2px;
-        background: #eff6ff;
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
     }
 }
 

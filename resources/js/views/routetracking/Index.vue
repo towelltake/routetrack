@@ -43,34 +43,22 @@ const numberedCustomers = computed(() =>
 );
 
 const customerVisits = computed(() => {
-    const plannedCustomerCodes = new Set(
-        (result.value?.planned?.customers ?? []).map((customer) => String(customer.customercode)),
-    );
-
     return (result.value?.planned?.customer_visits ?? []).map((visit, index) => ({
         ...visit,
         displayNumber: index + 1,
         listKey: `visit-${visit.logkey}`,
         type: "visit",
-        planned: plannedCustomerCodes.has(String(visit.customercode)),
     }));
 });
 
 const customerVisitSummary = computed(() => {
-    const plannedCustomers = result.value?.planned?.customers ?? [];
-    const plannedCodes = new Set(plannedCustomers.map((customer) => String(customer.customercode)));
-    const plannedVisitedCodes = new Set(
-        customerVisits.value.filter((visit) => visit.planned).map((visit) => String(visit.customercode)),
-    );
-    const unplannedVisitedCodes = new Set(
-        customerVisits.value.filter((visit) => !visit.planned).map((visit) => String(visit.customercode)),
-    );
+    const planned = result.value?.planned;
 
     return {
-        planned: plannedCustomers.length,
-        plannedVisited: plannedVisitedCodes.size,
-        unplannedVisited: unplannedVisitedCodes.size,
-        plannedNotVisited: [...plannedCodes].filter((code) => !plannedVisitedCodes.has(code)).length,
+        planned: planned?.customer_count ?? 0,
+        plannedVisited: planned?.visited_count ?? 0,
+        unplannedVisited: planned?.unplanned_visited_count ?? 0,
+        plannedNotVisited: planned?.planned_not_visited_count ?? 0,
     };
 });
 
@@ -109,9 +97,13 @@ const routeQualityWarnings = computed(() => {
 
 const tabCustomers = computed(() => {
     if (customerListTab.value === "visits") {
-        return customerVisitTab.value === "all"
-            ? customerVisits.value
-            : customerVisits.value.filter((visit) => customerVisitTab.value === (visit.planned ? "planned" : "unplanned"));
+        if (customerVisitTab.value === "planned") {
+            return customerVisits.value.filter((visit) => visit.planned);
+        }
+        if (customerVisitTab.value === "unplanned" || customerVisitTab.value === "out_of_sequence") {
+            return customerVisits.value.filter((visit) => visit.journey_status === customerVisitTab.value);
+        }
+        return customerVisits.value;
     }
 
     if (customerListTab.value === "planned_not_visited") {
@@ -214,17 +206,21 @@ function flagIcon(color, label) {
 
 function customerStatusColor(customer) {
     if (customer.type === "visit") {
+        if (customer.journey_status === "out_of_sequence") {
+            return "#f59e0b";
+        }
         return customer.planned ? "#16a34a" : "#f97316";
     }
 
     return plannedNotVisitedVisible.value && !customer.visited ? "#9ca3af" : "#2563eb";
 }
 
-function visitIcon(sequence, planned) {
-    const color = planned ? "#16a34a" : "#f97316";
+function visitIcon(sequence, visit) {
+    const color = customerStatusColor({ ...visit, type: "visit" });
+    const label = visit.journey_status === "out_of_sequence" ? "!" : sequence;
     return L.divIcon({
         className: "route-tracking-customer-marker",
-        html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${sequence}</div>`,
+        html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.4)">${label}</div>`,
         iconSize: [22, 22],
         iconAnchor: [11, 11],
     });
@@ -267,7 +263,13 @@ function rawCoordinatesStyle() {
 
 function customerVisitStatus(customer) {
     if (customer.type === "visit") {
-        return "Customer Visit";
+        return {
+            according_to_plan: "According to Journey Plan",
+            out_of_sequence: "Out of Sequence",
+            unplanned: "Unplanned Visit",
+            repeat: "Repeat Planned Visit",
+            sequence_unavailable: "Planned · Sequence Not Available",
+        }[customer.journey_status] ?? "Customer Visit";
     }
 
     if (customer.visited) {
@@ -275,6 +277,20 @@ function customerVisitStatus(customer) {
     }
 
     return "Planned Not Visited";
+}
+
+function journeyPlanDetails(visit) {
+    if (visit.journey_status === "unplanned") {
+        return "<br>Not included in the journey plan";
+    }
+
+    const details = [
+        visit.planned_sequence && `Planned Sequence: ${visit.planned_sequence}`,
+        visit.journey_status === "out_of_sequence" && visit.expected_sequence && `Expected Sequence: ${visit.expected_sequence}`,
+        `Actual Visit Position: ${visit.actual_visit_position}`,
+    ].filter(Boolean);
+
+    return details.map((line) => `<br>${line}`).join("");
 }
 
 function customerDisplayCode(customer) {
@@ -374,18 +390,14 @@ async function runComparison() {
             customerMarkers[customer.customercode] = marker;
         });
 
-        const plannedCustomerCodes = new Set(
-            result.value.planned.customers.map((customer) => String(customer.customercode)),
-        );
         result.value.planned.customer_visits.forEach((visit, index) => {
             if (visit.lat === null || visit.lng === null) {
                 return;
             }
 
-            const planned = plannedCustomerCodes.has(String(visit.customercode));
-            const marker = L.marker([visit.lat, visit.lng], { icon: visitIcon(index + 1, planned) })
+            const marker = L.marker([visit.lat, visit.lng], { icon: visitIcon(index + 1, visit) })
                 .bindPopup(
-                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${customerDisplayCode(visit)}<br>${planned ? "Planned" : "Unplanned"} Customer Visit${customerVisitDetails(visit)}`,
+                    `<strong>${index + 1}. ${visit.customername}</strong><br>Customer ${customerDisplayCode(visit)}<br>Journey Plan Status: <strong>${customerVisitStatus({ ...visit, type: "visit" })}</strong>${journeyPlanDetails(visit)}${customerVisitDetails(visit)}`,
                 )
                 .addTo(customerVisitLayer);
             visitMarkers[visit.logkey] = marker;
@@ -571,6 +583,11 @@ function selectCustomerTab(tab) {
 
 function selectCustomerVisitTab(tab) {
     customerVisitTab.value = tab;
+    const visibleVisits = tabCustomers.value;
+    const markers = visibleVisits.map((visit) => visitMarkers[visit.logkey]).filter(Boolean);
+    if (markers.length) {
+        map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
+    }
 }
 
 function togglePlannedRoute() {
@@ -829,6 +846,14 @@ function focusEnd() {
                         >
                             <i :class="isFullscreen ? 'fa fa-compress' : 'fa fa-expand'"></i>
                         </button>
+                        <div v-if="result" class="route-tracking-map-legend">
+                            <strong>Customer Status</strong>
+                            <span><i style="background: #2563eb"></i> Planned</span>
+                            <span><i style="background: #16a34a"></i> According to plan</span>
+                            <span><i style="background: #f59e0b"></i> Out of sequence</span>
+                            <span><i style="background: #f97316"></i> Unplanned visit</span>
+                            <span><i style="background: #9ca3af"></i> Planned not visited</span>
+                        </div>
                         <div ref="mapEl" style="height: 100%; width: 100%"></div>
                     </div>
                 </div>
@@ -871,15 +896,20 @@ function focusEnd() {
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
                             <button
-                                v-for="tab in ['all', 'planned', 'unplanned']"
+                                v-for="tab in ['all', 'planned', 'unplanned', 'out_of_sequence']"
                                 :key="tab"
                                 type="button"
                                 class="route-tracking-visit-tab"
                                 :class="{ active: customerVisitTab === tab, unplanned: tab === 'unplanned' }"
                                 @click="selectCustomerVisitTab(tab)"
                             >
-                                {{ tab }}
+                                {{ tab.replaceAll("_", " ") }}
                             </button>
+                        </div>
+                        <div v-if="customerListTab === 'visits'" class="route-tracking-visit-legend">
+                            <span><i style="background: #16a34a"></i> According to plan</span>
+                            <span><i style="background: #f59e0b"></i> Out of sequence</span>
+                            <span><i style="background: #f97316"></i> Unplanned</span>
                         </div>
                         <div class="route-tracking-customer-search p-2">
                             <input
@@ -899,6 +929,10 @@ function focusEnd() {
                                     :key="customer.listKey"
                                     type="button"
                                     class="list-group-item list-group-item-action route-tracking-customer-item"
+                                    :class="{
+                                        'journey-out-of-sequence': customer.journey_status === 'out_of_sequence',
+                                        'journey-unplanned': customer.journey_status === 'unplanned',
+                                    }"
                                     @click="focusCustomer(customer)"
                                 >
                                     <span
@@ -912,6 +946,19 @@ function focusEnd() {
                                         <span class="d-block text-muted small">
                                             {{ customerDisplayCode(customer) }} &middot;
                                             {{ customerVisitStatus(customer) }}
+                                        </span>
+                                        <span
+                                            v-if="customer.type === 'visit' && customer.journey_status === 'out_of_sequence'"
+                                            class="d-block small text-warning"
+                                        >
+                                            Planned {{ customer.planned_sequence }} &middot; Expected {{ customer.expected_sequence }}
+                                        </span>
+                                        <span
+                                            v-else-if="customer.type === 'visit' && customer.journey_status === 'unplanned'"
+                                            class="d-block small"
+                                            style="color: #f97316"
+                                        >
+                                            Not included in journey plan
                                         </span>
                                     </span>
                                 </button>
@@ -1003,6 +1050,35 @@ function focusEnd() {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
+.route-tracking-map-legend {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 1000;
+    display: grid;
+    gap: 0.25rem;
+    min-width: 155px;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    color: #495057;
+    font-size: 0.7rem;
+
+    span {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+}
+
 .route-tracking-customer-list-card {
     display: flex;
     flex-direction: column;
@@ -1069,6 +1145,34 @@ function focusEnd() {
         color: #f97316;
         background: #fff7ed;
     }
+
+    &:last-child.active {
+        border-color: #f59e0b;
+        color: #b45309;
+        background: #fffbeb;
+    }
+}
+
+.route-tracking-visit-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.65rem;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    color: #6c757d;
+    font-size: 0.65rem;
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
 }
 
 .route-tracking-customer-list-card .card-body {
@@ -1088,6 +1192,14 @@ function focusEnd() {
     align-items: center;
     gap: 8px;
     text-align: left;
+
+    &.journey-out-of-sequence {
+        background: #fffbeb;
+    }
+
+    &.journey-unplanned {
+        background: #fff7ed;
+    }
 }
 
 .route-tracking-customer-dot {

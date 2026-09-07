@@ -96,13 +96,15 @@ class DashboardController extends Controller
     }
 
     /**
-     * The last known GPS ping on this date for every route matching the
+     * The last known GPS ping for the latest journey started within the
      * selected filters — one marker per route, all at once.
      */
     public function lastLocations(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'date' => ['required', 'date_format:Y-m-d'],
+            'date' => ['required_without_all:from_date,to_date', 'date_format:Y-m-d'],
+            'from_date' => ['required_without:date', 'required_with:to_date', 'date_format:Y-m-d'],
+            'to_date' => ['required_without:date', 'required_with:from_date', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'companycode' => ['nullable', 'integer'],
             'routecode' => ['nullable', 'integer'],
             'entities' => ['sometimes', 'array', 'max:1000'],
@@ -132,39 +134,53 @@ class DashboardController extends Controller
             return response()->json([]);
         }
 
-        $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
+        $fromDate = $validated['from_date'] ?? $validated['date'];
+        $toDate = $validated['to_date'] ?? $validated['date'];
+        $routeDays = DB::table('startendday')
             ->whereIn('routecode', $routes->keys())
-            ->where('date', $validated['date'])
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->where('latitude', '!=', 0)
-            ->where('longitude', '!=', 0)
-            ->selectRaw('routecode, salesmancode, latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp')
-            ->orderByDesc('effective_timestamp')
-            ->orderByDesc('id')
-            ->get()
+            ->whereDate('routestartdate', '>=', $fromDate)
+            ->whereDate('routestartdate', '<=', $toDate)
+            ->orderByDesc('routestartdate')
+            ->orderByDesc('routestarttime')
+            ->orderByDesc('routekey')
+            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
             ->unique('routecode')
             ->keyBy('routecode');
+
+        if ($routeDays->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Match GPS records to the chosen journey, including journeys ending after midnight.
+        $points = collect();
+        foreach ($routeDays as $routeDay) {
+            $start = $this->routeDateTime($routeDay->routestartdate, $routeDay->routestarttime ?: '00:00:00');
+            $end = (int) $routeDay->routeclosed === 1
+                ? $this->routeDateTime($routeDay->routeenddate, $routeDay->routeendtime) : null;
+            $nextJourney = DB::table('startendday')
+                ->where('routecode', $routeDay->routecode)
+                ->whereRaw("CONCAT(SUBSTR(routestartdate, 1, 10), ' ', COALESCE(routestarttime, '00:00:00')) > ?", [$start])
+                ->orderBy('routestartdate')->orderBy('routestarttime')
+                ->first(['routestartdate', 'routestarttime']);
+            $nextStart = $nextJourney
+                ? $this->routeDateTime($nextJourney->routestartdate, $nextJourney->routestarttime ?: '00:00:00') : null;
+            $point = DB::connection('tracking_pgsql')->table('trac_routetrack')
+                ->where('routecode', $routeDay->routecode)
+                ->whereRaw('COALESCE(cdate, date + time) >= ?', [$start])
+                ->when($end, fn ($query) => $query->whereRaw('COALESCE(cdate, date + time) <= ?', [$end]))
+                ->when($nextStart, fn ($query) => $query->whereRaw('COALESCE(cdate, date + time) < ?', [$nextStart]))
+                ->whereNotNull('latitude')->whereNotNull('longitude')
+                ->where('latitude', '!=', 0)->where('longitude', '!=', 0)
+                ->selectRaw('routecode, salesmancode, latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp')
+                ->orderByDesc('effective_timestamp')->orderByDesc('id')
+                ->first();
+            if ($point) $points->put($routeDay->routecode, $point);
+        }
 
         $salesmen = AccountSalesman::query()
             ->whereIn('salesmancode', $points->pluck('salesmancode')->unique())
             ->get(['salesmancode', 'salesmanname1'])
             ->keyBy('salesmancode');
-
-        $routeDays = DB::table('startendday')
-            ->whereIn('routecode', $routes->keys())
-            ->where(function ($query) use ($validated) {
-                $query->whereDate('routestartdate', $validated['date'])
-                    ->orWhereDate('routeenddate', $validated['date'])
-                    ->orWhere(function ($query) use ($validated) {
-                        $query->whereDate('routestartdate', '<=', $validated['date'])
-                            ->whereDate('routeenddate', '>=', $validated['date']);
-                    });
-            })
-            ->orderByDesc('routekey')
-            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
-            ->unique('routecode')
-            ->keyBy('routecode');
 
         $results = $points->map(function ($point) use ($routes, $salesmen, $routeDays) {
             $route = $routes->get($point->routecode);
@@ -173,6 +189,8 @@ class DashboardController extends Controller
 
             return [
                 'routecode' => $point->routecode,
+                'routekey' => (int) $routeDay->routekey,
+                'route_date' => substr((string) $routeDay->routestartdate, 0, 10),
                 'routename' => $route?->routename,
                 'salesmanname' => $salesmen->get($point->salesmancode)?->salesmanname1,
                 'status' => $closed ? 'Route End' : 'LIVE',

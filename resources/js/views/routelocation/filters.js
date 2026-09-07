@@ -6,6 +6,21 @@ export const filterFields = [
     { key: "routes", label: "Route", value: "routecode", text: "routename" },
 ];
 
+export function dateRangeForPreset(preset, today) {
+    const start = new Date(`${today}T00:00:00Z`);
+    if (preset === "yesterday") start.setUTCDate(start.getUTCDate() - 1);
+    if (preset === "week") start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7);
+    if (preset === "month") start.setUTCDate(1);
+    const from = start.toISOString().slice(0, 10);
+    return { from, to: preset === "yesterday" ? from : today };
+}
+
+export function dateRangeError(from, to) {
+    if (!from || !to) return "Choose both From Date and To Date.";
+    if (from > to) return "From Date must be on or before To Date.";
+    return "";
+}
+
 export function filterOptions(rows, selected, field) {
     const matches = rows.filter((row) => filterFields.every((other) => {
         // Regions are independent of the company hierarchy; routes connect them.

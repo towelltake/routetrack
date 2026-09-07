@@ -5,7 +5,7 @@ import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
-import { filterFields, filterOptions } from "./filters";
+import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "./filters";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const now = new Date();
@@ -19,7 +19,10 @@ const filtersReady = ref(false);
 const options = computed(() => Object.fromEntries(filterFields.map((field) => [
     field.key, filterOptions(filterRows.value, selected.value, field),
 ])));
-const selectedDate = ref(DEFAULT_DATE);
+const datePreset = ref("today");
+const fromDate = ref(DEFAULT_DATE);
+const toDate = ref(DEFAULT_DATE);
+const dateError = computed(() => dateRangeError(fromDate.value, toDate.value));
 const loading = ref(false);
 const error = ref(null);
 const locations = ref([]);
@@ -46,9 +49,18 @@ let markersLayer = null;
 const routeMarkers = {};
 let locationRequest = 0;
 
-watch([selected, selectedDate], () => {
+watch([selected, fromDate, toDate], () => {
     if (filtersReady.value) showAllLocations();
 }, { deep: true });
+
+function applyDatePreset() {
+    if (datePreset.value === "custom") return;
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+    const range = dateRangeForPreset(datePreset.value, localDate);
+    fromDate.value = range.from;
+    toDate.value = range.to;
+}
 
 onMounted(async () => {
     map = L.map(mapEl.value, { maxBounds: OMAN_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 6 }).setView([20.5, 56], 8);
@@ -99,7 +111,8 @@ async function showAllLocations() {
     locations.value = [];
     markersLayer.clearLayers();
     Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
-    if (!selectedDate.value) {
+    error.value = null;
+    if (dateError.value) {
         loading.value = false;
         return;
     }
@@ -111,7 +124,8 @@ async function showAllLocations() {
     try {
         const { data } = await axios.get("/dashboard/last-locations.json", {
             params: {
-                date: selectedDate.value,
+                from_date: fromDate.value,
+                to_date: toDate.value,
                 ...selected.value,
             },
         });
@@ -119,7 +133,7 @@ async function showAllLocations() {
         locations.value = data;
 
         if (!data.length) {
-            error.value = "No GPS locations recorded for the selected filters on this date.";
+            error.value = "No GPS locations found for journeys started within the selected date range.";
             return;
         }
 
@@ -129,7 +143,7 @@ async function showAllLocations() {
             const marker = L.marker([point.lat, point.lng], { icon: locationIcon(point.closed) }).bindPopup(
                 `<div class="route-location-popup">
                     <strong>${point.routecode} - ${point.routename ?? ""}</strong>
-                    <a href="${trackUrl(point.routecode)}" class="route-location-popup-track-btn" title="Track in Route Tracking">
+                    <a href="${trackUrl(point.routecode, point.route_date)}" class="route-location-popup-track-btn" title="Track in Route Tracking">
                         <i class="fa fa-route"></i>
                     </a>
                     <br>Status: <strong style="color:${point.closed ? "#dc2626" : "#10b981"}">${point.status}</strong>
@@ -153,8 +167,8 @@ async function showAllLocations() {
     }
 }
 
-function trackUrl(routecode) {
-    return `/route-tracking?routecode=${routecode}&date=${selectedDate.value}`;
+function trackUrl(routecode, routeDate) {
+    return `/route-tracking?routecode=${routecode}&date=${routeDate}`;
 }
 
 function focusRoute(routecode) {
@@ -169,7 +183,8 @@ function focusRoute(routecode) {
 
 function resetFilters() {
     selected.value = Object.fromEntries(filterFields.map(({ key }) => [key, []]));
-    selectedDate.value = DEFAULT_DATE;
+    datePreset.value = "today";
+    applyDatePreset();
     locations.value = [];
     routeListSearch.value = "";
     markersLayer.clearLayers();
@@ -187,10 +202,30 @@ function resetFilters() {
             <h2 class="fs-base lh-base fw-medium text-muted mb-0">Last known GPS position for every route</h2>
         </div>
 
-        <BaseBlock title="Filters" class="route-location-filters">
-            <div class="row align-items-end g-3">
-                <div v-for="field in filterFields" :key="field.key" class="col-md-4">
-                    <label :for="`dashboard-${field.key}`" class="form-label">{{ field.label }}</label>
+        <section class="dashboard-filters" aria-labelledby="dashboard-filters-title">
+            <header class="dashboard-filters-header">
+                <div class="dashboard-filters-heading">
+                    <span class="dashboard-filter-icon"><i class="fa fa-sliders" aria-hidden="true"></i></span>
+                    <div>
+                        <h2 id="dashboard-filters-title">Explore your operations</h2>
+                        <p>Choose your teams and reporting period.</p>
+                    </div>
+                </div>
+                <div class="dashboard-filter-actions">
+                    <button type="button" class="dashboard-reset" :disabled="loading" @click="resetFilters">Reset filters</button>
+                    <button type="button" class="dashboard-refresh" :disabled="loading || !filtersReady || !!dateError" @click="showAllLocations">
+                        <i class="fa fa-arrow-rotate-right" :class="{ 'fa-spin': loading }" aria-hidden="true"></i>
+                        {{ loading ? "Refreshing..." : "Refresh" }}
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-scope-grid">
+                <div v-for="field in filterFields" :key="field.key" class="dashboard-filter-field">
+                    <label :for="`dashboard-${field.key}`">
+                        {{ field.label }}
+                        <span v-if="selected[field.key].length" class="dashboard-selection-count">{{ selected[field.key].length }}</span>
+                    </label>
                     <VueSelect
                         :input-id="`dashboard-${field.key}`"
                         v-model="selected[field.key]"
@@ -203,26 +238,49 @@ function resetFilters() {
                         :placeholder="`All ${field.label.toLowerCase()}...`"
                     />
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Operation Date</label>
-                    <input v-model="selectedDate" type="date" class="form-control" />
-                </div>
             </div>
-            <div class="row align-items-end g-3 mt-3">
-                <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !filtersReady || !selectedDate" @click="showAllLocations">
-                        {{ loading ? "..." : "Refresh" }}
-                    </button>
+
+            <div class="dashboard-period-panel">
+                <div class="dashboard-period-heading">
+                    <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Reporting period</span>
+                    <div class="dashboard-date-presets" role="group" aria-label="Date range presets">
+                        <button
+                            v-for="preset in [{ value: 'today', label: 'Today' }, { value: 'yesterday', label: 'Yesterday' }, { value: 'week', label: 'This week' }, { value: 'month', label: 'This month' }, { value: 'custom', label: 'Custom' }]"
+                            :key="preset.value"
+                            type="button"
+                            :aria-pressed="datePreset === preset.value"
+                            :class="{ active: datePreset === preset.value }"
+                            @click="datePreset = preset.value; applyDatePreset()"
+                        >{{ preset.label }}</button>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <button class="btn btn-light w-100" :disabled="loading" @click="resetFilters">Reset</button>
+                <div class="dashboard-date-grid">
+                    <div class="dashboard-range-inputs">
+                        <div class="dashboard-filter-field">
+                            <label for="dashboard-from">From date</label>
+                            <input id="dashboard-from" v-model="fromDate" type="date" :max="toDate || undefined" @input="datePreset = 'custom'" />
+                        </div>
+                        <span class="dashboard-date-arrow" aria-hidden="true">&rarr;</span>
+                        <div class="dashboard-filter-field">
+                            <label for="dashboard-to">To date</label>
+                            <input id="dashboard-to" v-model="toDate" type="date" :min="fromDate || undefined" @input="datePreset = 'custom'" />
+                        </div>
+                    </div>
+                    <div class="dashboard-map-date">
+                        <p><strong>Filtered by route start date</strong><br>Latest journey per route within the selected range.</p>
+                    </div>
                 </div>
+                <p v-if="dateError" class="dashboard-date-error" role="alert">{{ dateError }}</p>
             </div>
-        </BaseBlock>
+            <footer class="dashboard-filter-footer">
+                <span><i class="fa fa-bolt" aria-hidden="true"></i> Filters update automatically</span>
+                <span>Inclusive dates &middot; Week starts Monday</span>
+            </footer>
+        </section>
 
         <BaseBlock title="Dashboard" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
-            <p v-else-if="locations.length" class="text-muted small">Showing {{ locations.length }} route(s) on {{ selectedDate }}</p>
+            <p v-else-if="locations.length" class="text-muted small">Showing {{ locations.length }} route(s) started from {{ fromDate }} to {{ toDate }}</p>
 
             <div class="row g-3">
                 <div class="col-md-8">
@@ -277,7 +335,7 @@ function resetFilters() {
                                         <span class="d-block text-muted small">Last seen at {{ route.time }}</span>
                                     </span>
                                     <a
-                                        :href="trackUrl(route.routecode)"
+                                        :href="trackUrl(route.routecode, route.route_date)"
                                         class="route-location-track-btn"
                                         title="Track in Route Tracking"
                                         @click.stop
@@ -297,6 +355,84 @@ function resetFilters() {
 <style lang="scss">
 @import "vue-select/dist/vue-select.css";
 @import "@scss/vendor/vue-select";
+
+.dashboard-filters {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    color: #172b45;
+    box-shadow: 0 4px 20px rgba(23, 43, 69, 0.04);
+
+    button, input, .vs__dropdown-toggle { transition: border-color 0.15s, background-color 0.15s; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button { font: inherit; cursor: pointer; }
+    .vs__dropdown-toggle { min-height: 44px; border: 1px solid #d7e0e9; border-radius: 8px; background: #fff; padding: 4px 7px; }
+    .vs--open .vs__dropdown-toggle, .vs__dropdown-toggle:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px #eff6ff; }
+    .vs__selected { background: #eff6ff; border: 0; border-radius: 5px; color: #1e40af; font-size: 12px; max-width: 100%; overflow-wrap: anywhere; }
+    .vs__selected-options { min-width: 0; }
+    .vs__search { min-width: 0; font-size: 13px; color: #52657b; }
+    .vs__dropdown-menu { border: 1px solid #d7e0e9; border-radius: 8px; box-shadow: 0 8px 24px #172b451a; z-index: 1100; }
+    .vs__dropdown-option { white-space: normal; font-size: 13px; padding: 9px 12px; }
+    .vs__dropdown-option--highlight { background: #eff6ff; color: #1d4ed8; }
+}
+.dashboard-filters-header, .dashboard-filters-heading, .dashboard-filter-actions, .dashboard-period-heading, .dashboard-filter-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dashboard-filters-header { padding: 22px 24px; }
+.dashboard-filters-heading { justify-content: flex-start; }
+.dashboard-filters-heading h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.dashboard-filters-heading p { margin: 0; color: #64748b; font-size: 13px; }
+.dashboard-filter-icon { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; background: #eff6ff; color: #2563eb; }
+.dashboard-filter-actions button { border-radius: 8px; padding: 10px 15px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.dashboard-reset { border: 1px solid transparent; color: #52657b; background: transparent; }
+.dashboard-reset:hover { background: #f1f5f9; }
+.dashboard-refresh { border: 1px solid #172b45; background: #172b45; color: #fff; }
+.dashboard-refresh:hover { background: #274467; }
+.dashboard-refresh i { margin-right: 7px; }
+.dashboard-scope-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; padding: 0 24px 24px; }
+.dashboard-filter-field { min-width: 0; }
+.dashboard-filter-field label { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #475569; font-size: 12px; font-weight: 650; }
+.dashboard-selection-count { padding: 1px 6px; background: #dbeafe; border-radius: 5px; color: #1e40af; font-size: 10px; }
+.dashboard-filter-field input[type="date"] { width: 100%; min-width: 0; min-height: 44px; padding: 9px 12px; background: #fff; border: 1px solid #d7e0e9; border-radius: 8px; color: #172b45; font: inherit; font-size: 13px; }
+.dashboard-filter-field input:disabled { background: #f1f5f9; color: #64748b; }
+.dashboard-period-panel { padding: 20px 24px; background: #f8fafc; border-top: 1px solid #edf1f5; }
+.dashboard-period-heading { margin-bottom: 18px; flex-wrap: wrap; }
+.dashboard-period-heading > span { font-size: 12px; font-weight: 650; color: #475569; }
+.dashboard-period-heading i { margin-right: 7px; }
+.dashboard-date-presets { display: flex; gap: 4px; flex-wrap: wrap; padding: 4px; border: 1px solid #e2e8f0; border-radius: 9px; background: #eef2f6; }
+.dashboard-date-presets button { border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 12px; font-size: 12px; font-weight: 600; color: #52657b; }
+.dashboard-date-presets button:hover { color: #1d4ed8; background: #fff; }
+.dashboard-date-presets button.active { background: #fff; color: #1d4ed8; border-color: #dce4ee; box-shadow: 0 1px 3px #172b4510; }
+.dashboard-date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.dashboard-range-inputs { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); align-items: end; gap: 12px; }
+.dashboard-date-arrow { padding-bottom: 12px; color: #94a3b8; }
+.dashboard-map-date { display: flex; align-items: end; gap: 18px; border-left: 1px solid #dce4ee; padding-left: 32px; }
+.dashboard-map-date .dashboard-filter-field { flex: 1; }
+.dashboard-map-date p { flex: 1; color: #64748b; font-size: 12px; line-height: 1.6; margin: 0 0 3px; }
+.dashboard-date-error { margin: 14px 0 0; font-size: 13px; color: #b91c1c; }
+.dashboard-filter-footer { padding: 12px 24px; color: #64748b; font-size: 11px; border-top: 1px solid #edf1f5; flex-wrap: wrap; }
+.dashboard-filter-footer i { color: #0f766e; margin-right: 6px; }
+@media (max-width: 1199px) {
+    .dashboard-scope-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .dashboard-map-date { padding-left: 20px; gap: 12px; }
+    .dashboard-map-date p { display: block; }
+}
+@media (max-width: 767px) {
+    .dashboard-filters-header { align-items: flex-start; flex-wrap: wrap; }
+    .dashboard-filter-actions { margin-left: auto; }
+    .dashboard-scope-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dashboard-date-grid { grid-template-columns: 1fr; gap: 18px; }
+    .dashboard-map-date { border-left: 0; padding-left: 0; }
+    .dashboard-map-date p { display: block; }
+    .dashboard-filters-header, .dashboard-period-panel { padding: 18px; }
+    .dashboard-scope-grid { padding: 0 18px 18px; }
+    .dashboard-filter-footer { padding: 12px 18px; }
+}
+@media (max-width: 420px) {
+    .dashboard-scope-grid { grid-template-columns: 1fr; }
+    .dashboard-date-presets button { padding: 6px 8px; }
+    .dashboard-range-inputs { gap: 6px; }
+}
 
 // Rendered directly inside .route-location-content, so it already inherits
 // that div's 0.5rem side padding. The extra 1.25rem here matches the

@@ -44,6 +44,7 @@ beforeEach(function () {
     session(['user_access' => ['route_codes' => [1, 2, 3, 4, 6, 7], 'company_codes' => [1, 2, 3], 'subarea_codes' => [1]]]);
     DB::connection('tracking_pgsql')->statement('CREATE TABLE trac_routetrack (id integer, routecode integer, salesmancode integer, latitude real, longitude real, cdate text, date text, time text)');
     foreach (range(1, 7) as $code) {
+        DB::table('startendday')->insert(['routecode' => $code, 'routekey' => $code, 'routestartdate' => '2026-09-07', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
         DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
             'id' => $code, 'routecode' => $code, 'salesmancode' => 1, 'latitude' => 23.5, 'longitude' => 58.5,
             'cdate' => '2026-09-07 10:00:00', 'date' => '2026-09-07', 'time' => '10:00:00',
@@ -81,3 +82,47 @@ test('dashboard rejects malformed multi-select inputs', function () {
         'date' => '2026-09-07', 'regions' => ['not-a-code'],
     ]));
 })->throws(ValidationException::class);
+
+test('dashboard selects journeys by inclusive start date, not GPS date or end date', function () {
+    DB::table('startendday')->where('routecode', 1)->update(['routestartdate' => '2026-09-01']);
+    DB::table('startendday')->where('routecode', 2)->update(['routestartdate' => '2026-08-31', 'routeenddate' => '2026-09-07']);
+    $rows = app(DashboardController::class)->lastLocations(Request::create('/', 'GET', [
+        'from_date' => '2026-09-01', 'to_date' => '2026-09-07',
+    ]))->getData(true);
+    expect(array_column($rows, 'routecode'))->toEqualCanonicalizing([1, 3]);
+    expect(collect($rows)->firstWhere('routecode', 1)['route_date'])->toBe('2026-09-01');
+});
+
+test('dashboard excludes GPS from later journeys and includes overnight journey GPS', function () {
+    DB::table('startendday')->where('routecode', 1)->update([
+        'routestartdate' => '2026-09-06', 'routeenddate' => '2026-09-07', 'routeendtime' => '11:00:00', 'routeclosed' => 1,
+    ]);
+    DB::table('startendday')->insert(['routecode' => 1, 'routekey' => 99, 'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
+    DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
+        'id' => 99, 'routecode' => 1, 'salesmancode' => 1, 'latitude' => 24, 'longitude' => 58,
+        'date' => '2026-09-08', 'time' => '10:00:00', 'cdate' => '2026-09-08 10:00:00',
+    ]);
+    $rows = app(DashboardController::class)->lastLocations(Request::create('/', 'GET', [
+        'from_date' => '2026-09-06', 'to_date' => '2026-09-06',
+    ]))->getData(true);
+    expect($rows)->toHaveCount(1)->and($rows[0]['routekey'])->toBe(1)->and($rows[0]['time'])->toBe('2026-09-07 10:00:00');
+    DB::table('startendday')->where('routekey', 1)->update(['routeclosed' => 0]);
+    $rows = app(DashboardController::class)->lastLocations(Request::create('/', 'GET', [
+        'from_date' => '2026-09-06', 'to_date' => '2026-09-06',
+    ]))->getData(true);
+    expect($rows[0]['time'])->toBe('2026-09-07 10:00:00');
+    $rows = app(DashboardController::class)->lastLocations(Request::create('/', 'GET', [
+        'from_date' => '2026-09-06', 'to_date' => '2026-09-08', 'routes' => [1],
+    ]))->getData(true);
+    expect($rows)->toHaveCount(1)->and($rows[0]['routekey'])->toBe(99)
+        ->and($rows[0]['route_date'])->toBe('2026-09-08');
+});
+
+test('dashboard rejects invalid date ranges', function (array $dates) {
+    app(DashboardController::class)->lastLocations(Request::create('/', 'GET', $dates));
+})->with([
+    [['from_date' => '2026-09-08', 'to_date' => '2026-09-07']],
+    [['from_date' => '2026-09-01']],
+    [['to_date' => '2026-09-07']],
+    [['from_date' => '2026-02-30', 'to_date' => '2026-09-07']],
+])->throws(ValidationException::class);

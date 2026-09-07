@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterFields, filterOptions } from "../resources/js/views/routelocation/filters.js";
+import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "../resources/js/views/routelocation/filters.js";
 
 const rows = [
     { routecode: 1, routename: "One", entity: "A", clustercode: 10, cmpycode: 1, regionmstcode: 100 },
@@ -8,6 +8,23 @@ const rows = [
     { routecode: 3, routename: "Three", entity: "B", clustercode: 20, cmpycode: 2, regionmstcode: 100 },
     { routecode: 4, routename: "Four", entity: " ", clustercode: null, cmpycode: 3, regionmstcode: 300 },
 ];
+
+test("date presets handle month/year boundaries and Monday-based weeks", () => {
+    assert.deepEqual(dateRangeForPreset("today", "2026-09-07"), { from: "2026-09-07", to: "2026-09-07" });
+    assert.deepEqual(dateRangeForPreset("yesterday", "2026-01-01"), { from: "2025-12-31", to: "2025-12-31" });
+    assert.deepEqual(dateRangeForPreset("yesterday", "2024-03-01"), { from: "2024-02-29", to: "2024-02-29" });
+    assert.deepEqual(dateRangeForPreset("week", "2026-09-06"), { from: "2026-08-31", to: "2026-09-06" });
+    assert.deepEqual(dateRangeForPreset("week", "2026-09-07"), { from: "2026-09-07", to: "2026-09-07" });
+    assert.deepEqual(dateRangeForPreset("month", "2026-09-07"), { from: "2026-09-01", to: "2026-09-07" });
+});
+
+test("date range must be complete and ordered", () => {
+    assert.equal(dateRangeError("2026-09-01", "2026-09-07", "2026-09-01"), "");
+    assert.equal(dateRangeError("2026-09-01", "2026-09-07", "2026-09-07"), "");
+    assert.equal(dateRangeError("2026-09-07", "2026-09-07", "2026-09-07"), "");
+    assert.ok(dateRangeError("", "2026-09-07", "2026-09-07"));
+    assert.ok(dateRangeError("2026-09-08", "2026-09-07", "2026-09-07"));
+});
 const values = (key, selection = {}) => filterOptions(rows,
     { ...Object.fromEntries(filterFields.map(({ key }) => [key, []])), ...selection },
     filterFields.find((field) => field.key === key)).map(({ value }) => value);

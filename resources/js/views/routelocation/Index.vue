@@ -361,7 +361,7 @@ function resetFilters() {
     box-shadow: 0 4px 20px rgba(23, 43, 69, 0.04);
 
     button, input, .vs__dropdown-toggle { transition: border-color 0.15s, background-color 0.15s; }
-    button:focus-visible, input:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+    button:focus-visible, input:not(.vs__search):focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     button { font: inherit; cursor: pointer; }
     .vs__dropdown-toggle { min-height: 44px; border: 1px solid #d7e0e9; border-radius: 8px; background: #fff; padding: 4px 7px; }

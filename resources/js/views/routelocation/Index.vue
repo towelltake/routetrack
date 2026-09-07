@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { Head } from "@inertiajs/vue3";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
+import { filterFields, filterOptions } from "./filters";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const now = new Date();
@@ -12,10 +13,12 @@ const DEFAULT_DATE = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).
 
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
-const companies = ref([]);
-const routes = ref([]);
-const selectedCompany = ref(null);
-const selectedRoute = ref(null);
+const filterRows = ref([]);
+const selected = ref(Object.fromEntries(filterFields.map(({ key }) => [key, []])));
+const filtersReady = ref(false);
+const options = computed(() => Object.fromEntries(filterFields.map((field) => [
+    field.key, filterOptions(filterRows.value, selected.value, field),
+])));
 const selectedDate = ref(DEFAULT_DATE);
 const loading = ref(false);
 const error = ref(null);
@@ -41,6 +44,11 @@ const filteredLocations = computed(() => {
 let map = null;
 let markersLayer = null;
 const routeMarkers = {};
+let locationRequest = 0;
+
+watch([selected, selectedDate], () => {
+    if (filtersReady.value) showAllLocations();
+}, { deep: true });
 
 onMounted(async () => {
     map = L.map(mapEl.value, { maxBounds: OMAN_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 6 }).setView([20.5, 56], 8);
@@ -53,26 +61,21 @@ onMounted(async () => {
 
     markersLayer = L.layerGroup().addTo(map);
 
-    const [routesRes, companiesRes] = await Promise.all([
-        axios.get("/route-location/routes.json"),
-        axios.get("/route-location/companies.json"),
-    ]);
-    routes.value = routesRes.data;
-    companies.value = companiesRes.data;
+    try {
+        const { data } = await axios.get("/dashboard/filters.json");
+        filterRows.value = data;
+        filtersReady.value = true;
+    } catch {
+        error.value = "Unable to load Dashboard filters. Refresh the page to retry.";
+    }
 
     document.addEventListener("fullscreenchange", () => {
         isFullscreen.value = document.fullscreenElement === mapWrapperEl.value;
         setTimeout(() => map.invalidateSize(), 0);
     });
 
-    showAllLocations();
+    if (filtersReady.value) showAllLocations();
 });
-
-async function onCompanyChange(companycode) {
-    selectedRoute.value = null;
-    const { data } = await axios.get("/route-location/routes.json", { params: { companycode } });
-    routes.value = data;
-}
 
 function toggleFullscreen() {
     if (document.fullscreenElement) {
@@ -92,24 +95,27 @@ function locationIcon(closed) {
 }
 
 async function showAllLocations() {
+    const request = ++locationRequest;
+    locations.value = [];
+    markersLayer.clearLayers();
+    Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
     if (!selectedDate.value) {
+        loading.value = false;
         return;
     }
 
     loading.value = true;
     error.value = null;
     routeListSearch.value = "";
-    markersLayer.clearLayers();
-    Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
 
     try {
-        const { data } = await axios.get("/route-location/last-locations.json", {
+        const { data } = await axios.get("/dashboard/last-locations.json", {
             params: {
                 date: selectedDate.value,
-                companycode: selectedCompany.value,
-                routecode: selectedRoute.value,
+                ...selected.value,
             },
         });
+        if (request !== locationRequest) return;
         locations.value = data;
 
         if (!data.length) {
@@ -139,10 +145,11 @@ async function showAllLocations() {
 
         map.fitBounds(L.latLngBounds(markerLatLngs), { padding: [40, 40], maxZoom: 13 });
     } catch (e) {
+        if (request !== locationRequest) return;
         console.error(e);
         error.value = e.response?.data?.error || "Unable to load route locations.";
     } finally {
-        loading.value = false;
+        if (request === locationRequest) loading.value = false;
     }
 }
 
@@ -161,8 +168,7 @@ function focusRoute(routecode) {
 }
 
 function resetFilters() {
-    selectedCompany.value = null;
-    selectedRoute.value = null;
+    selected.value = Object.fromEntries(filterFields.map(({ key }) => [key, []]));
     selectedDate.value = DEFAULT_DATE;
     locations.value = [];
     routeListSearch.value = "";
@@ -183,26 +189,18 @@ function resetFilters() {
 
         <BaseBlock title="Filters" class="route-location-filters">
             <div class="row align-items-end g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Company</label>
+                <div v-for="field in filterFields" :key="field.key" class="col-md-4">
+                    <label :for="`dashboard-${field.key}`" class="form-label">{{ field.label }}</label>
                     <VueSelect
-                        v-model="selectedCompany"
-                        :options="companies"
-                        :reduce="(company) => company.cmpycode"
-                        label="name"
-                        placeholder="All companies..."
-                        @update:model-value="onCompanyChange"
-                    />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Route</label>
-                    <VueSelect
-                        v-model="selectedRoute"
-                        :options="routes"
-                        :reduce="(route) => route.routecode"
-                        :get-option-label="(route) => `${route.routecode} - ${route.routename}`"
-                        :disabled="!selectedCompany"
-                        placeholder="All routes..."
+                        :input-id="`dashboard-${field.key}`"
+                        v-model="selected[field.key]"
+                        :options="options[field.key]"
+                        :reduce="(option) => option.value"
+                        label="label"
+                        multiple
+                        :close-on-select="false"
+                        :disabled="!filtersReady"
+                        :placeholder="`All ${field.label.toLowerCase()}...`"
                     />
                 </div>
                 <div class="col-md-4">
@@ -212,8 +210,8 @@ function resetFilters() {
             </div>
             <div class="row align-items-end g-3 mt-3">
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !selectedCompany || !selectedDate" @click="showAllLocations">
-                        {{ loading ? "..." : "Apply" }}
+                    <button class="btn btn-primary w-100" :disabled="loading || !filtersReady || !selectedDate" @click="showAllLocations">
+                        {{ loading ? "..." : "Refresh" }}
                     </button>
                 </div>
                 <div class="col-md-4">

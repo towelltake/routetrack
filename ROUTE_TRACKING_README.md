@@ -1,5 +1,18 @@
 # Route Tracking
 
+## SFA Dashboard filters
+
+The Dashboard (`/dashboard`, routes in `routes/dashboard.php`, controller `Dashboard/DashboardController`) shows the latest GPS position per route and operation date. Its Legal Entity, Cluster, Division, Region, and Route filters allow multiple selections and automatically refresh the map. Values within a filter are combined with OR; separate filters are combined with AND. Empty selections mean all accessible values.
+
+- Legal Entity uses distinct nonblank `company.entity` values.
+- Cluster joins `company.clustercode` to `clustermaster.clustercode`.
+- Division uses active companies (`company.activestatus = 1`). Routes join through `routemaster.cmpycode`.
+- Region joins `routemaster.regionmstcode` to `regionmaster.regionmstcode`, displaying `regionmstname`. There is no region active-status column.
+- Region narrows Route options independently of the company hierarchy. Selected routes narrow the available Legal Entity, Cluster, Division, and Region options.
+- Each dropdown ignores its own selections when calculating options, allowing additional values to be selected. Clearing selections restores options; Reset restores all filters and today's date.
+
+Options and GPS results retain the existing session route/company/subarea access restrictions and the requirement for a route to appear in `routesequence`. Required company and cluster columns/tables must already exist in the legacy database; this change does not import SQL dumps or alter that schema.
+
 The Route Tracking page compares the planned customer sequence with the actual GPS trail and displays every recorded customer visit for a route journey.
 
 ## Data flow

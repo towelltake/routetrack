@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\RouteLocation;
+namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountSalesman;
@@ -9,15 +9,55 @@ use App\Models\RouteMaster;
 use App\Models\RouteSequence;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class RouteLocationController extends Controller
+class DashboardController extends Controller
 {
     public function index(): Response
     {
         return Inertia::render('routelocation/Index');
+    }
+
+    private function matchingRoutes(array $filters = []): Builder
+    {
+        $query = RouteMaster::query()
+            ->join('company', 'company.cmpycode', '=', 'routemaster.cmpycode')
+            ->leftJoin('clustermaster', 'clustermaster.clustercode', '=', 'company.clustercode')
+            ->leftJoin('regionmaster', 'regionmaster.regionmstcode', '=', 'routemaster.regionmstcode')
+            ->where('company.activestatus', 1)
+            ->whereIn('routemaster.routecode', session('user_access.route_codes', []))
+            ->whereIn('routemaster.cmpycode', session('user_access.company_codes', []))
+            ->whereIn('routemaster.subareacode', session('user_access.subarea_codes', []))
+            ->whereIn('routemaster.routecode', RouteSequence::query()->select('routecode'));
+
+        foreach ([
+            'entities' => 'company.entity',
+            'clusters' => 'company.clustercode',
+            'divisions' => 'routemaster.cmpycode',
+            'regions' => 'routemaster.regionmstcode',
+            'routes' => 'routemaster.routecode',
+        ] as $filter => $column) {
+            if (!empty($filters[$filter])) {
+                $query->whereIn($column, $filters[$filter]);
+            }
+        }
+
+        return $query;
+    }
+
+    public function filters(): JsonResponse
+    {
+        return response()->json($this->matchingRoutes()
+            ->orderBy('routemaster.routename')
+            ->get([
+                'routemaster.routecode', 'routemaster.routename',
+                'company.cmpycode', 'company.name', 'company.entity',
+                'clustermaster.clustercode', 'clustermaster.clustername',
+                'regionmaster.regionmstcode', 'regionmaster.regionmstname',
+            ]));
     }
 
     public function companies(): JsonResponse
@@ -57,24 +97,30 @@ class RouteLocationController extends Controller
 
     /**
      * The last known GPS ping on this date for every route matching the
-     * current Company/Area/Sub Area filter — one marker per route, all at once.
+     * selected filters — one marker per route, all at once.
      */
     public function lastLocations(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'date' => ['required', 'date_format:Y-m-d'],
-            'companycode' => ['required', 'integer'],
+            'companycode' => ['nullable', 'integer'],
             'routecode' => ['nullable', 'integer'],
+            'entities' => ['sometimes', 'array', 'max:1000'],
+            'entities.*' => ['string', 'max:100'],
+            'clusters' => ['sometimes', 'array', 'max:1000'],
+            'clusters.*' => ['integer'],
+            'divisions' => ['sometimes', 'array', 'max:1000'],
+            'divisions.*' => ['integer'],
+            'regions' => ['sometimes', 'array', 'max:1000'],
+            'regions.*' => ['integer'],
+            'routes' => ['sometimes', 'array', 'max:1000'],
+            'routes.*' => ['integer'],
         ]);
 
-        $matchingRouteCodes = RouteMaster::query()
-            ->whereIn('routecode', session('user_access.route_codes', []))
-            ->whereIn('cmpycode', session('user_access.company_codes', []))
-            ->whereIn('subareacode', session('user_access.subarea_codes', []))
-            ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
-            ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
-            ->when($validated['routecode'] ?? null, fn ($query, $routecode) => $query->where('routecode', $routecode))
-            ->pluck('routecode');
+        $matchingRouteCodes = $this->matchingRoutes($validated)
+            ->when($validated['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
+            ->when($validated['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
+            ->pluck('routemaster.routecode');
 
         $routes = RouteMaster::query()
             ->whereIn('routecode', $matchingRouteCodes)

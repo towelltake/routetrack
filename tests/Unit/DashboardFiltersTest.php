@@ -1,0 +1,83 @@
+<?php
+
+use App\Http\Controllers\Dashboard\DashboardController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+uses(Tests\TestCase::class);
+
+beforeEach(function () {
+    config(['database.default' => 'dashboard_test', 'database.connections.dashboard_test' => [
+        'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
+    ], 'database.connections.tracking_pgsql' => [
+        'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
+    ]]);
+    DB::purge('dashboard_test');
+    DB::purge('tracking_pgsql');
+
+    foreach ([
+        'company (cmpycode integer, name text, entity text, clustercode integer, activestatus integer)',
+        'clustermaster (clustercode integer, clustername text)',
+        'regionmaster (regionmstcode integer, regionmstname text)',
+        'routemaster (routecode integer, routename text, cmpycode integer, regionmstcode integer, subareacode integer)',
+        'routesequence (routecode integer)',
+        'salesman (salesmancode integer, salesmanname1 text)',
+        'startendday (routecode integer, routekey integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
+    ] as $table) DB::statement('CREATE TABLE '.$table);
+
+    DB::table('company')->insert([
+        ['cmpycode' => 1, 'name' => 'Division A', 'entity' => 'Entity A', 'clustercode' => 10, 'activestatus' => 1],
+        ['cmpycode' => 2, 'name' => 'Division B', 'entity' => 'Entity B', 'clustercode' => 20, 'activestatus' => 1],
+        ['cmpycode' => 3, 'name' => 'Inactive', 'entity' => 'Entity C', 'clustercode' => 20, 'activestatus' => 0],
+    ]);
+    DB::table('clustermaster')->insert([
+        ['clustercode' => 10, 'clustername' => 'Cluster A'], ['clustercode' => 20, 'clustername' => 'Cluster B'],
+    ]);
+    DB::table('regionmaster')->insert([
+        ['regionmstcode' => 100, 'regionmstname' => 'North'], ['regionmstcode' => 200, 'regionmstname' => 'South'],
+    ]);
+    foreach ([[1, 1, 100, 1], [2, 1, 200, 1], [3, 2, 100, 1], [4, 3, 100, 1], [5, 2, 100, 1], [6, 1, 100, 99], [7, 1, 100, 1]] as [$code, $company, $region, $subarea]) {
+        DB::table('routemaster')->insert(['routecode' => $code, 'routename' => 'Route '.$code, 'cmpycode' => $company, 'regionmstcode' => $region, 'subareacode' => $subarea]);
+        if ($code !== 7) DB::table('routesequence')->insert(['routecode' => $code]);
+    }
+    session(['user_access' => ['route_codes' => [1, 2, 3, 4, 6, 7], 'company_codes' => [1, 2, 3], 'subarea_codes' => [1]]]);
+    DB::connection('tracking_pgsql')->statement('CREATE TABLE trac_routetrack (id integer, routecode integer, salesmancode integer, latitude real, longitude real, cdate text, date text, time text)');
+    foreach (range(1, 7) as $code) {
+        DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
+            'id' => $code, 'routecode' => $code, 'salesmancode' => 1, 'latitude' => 23.5, 'longitude' => 58.5,
+            'cdate' => '2026-09-07 10:00:00', 'date' => '2026-09-07', 'time' => '10:00:00',
+        ]);
+    }
+});
+
+test('dashboard catalog respects active divisions and all existing access restrictions', function () {
+    $rows = app(DashboardController::class)->filters()->getData(true);
+    expect(array_column($rows, 'routecode'))->toBe([1, 2, 3]);
+    expect($rows[0])->toMatchArray(['entity' => 'Entity A', 'clustercode' => 10, 'regionmstcode' => 100]);
+    session(['user_access.company_codes' => [2]]);
+    expect(array_column(app(DashboardController::class)->filters()->getData(true), 'routecode'))->toBe([3]);
+});
+
+test('dashboard filters combine dimensions and allow multiple values without a required division', function (array $filters, array $expected) {
+    $request = Request::create('/', 'GET', ['date' => '2026-09-07', ...$filters]);
+    $rows = app(DashboardController::class)->lastLocations($request)->getData(true);
+    $codes = array_column($rows, 'routecode');
+    sort($codes);
+    expect($codes)->toBe($expected);
+})->with([
+    'all accessible routes' => [[], [1, 2, 3]],
+    'region alone across divisions' => [['regions' => [100]], [1, 3]],
+    'multiple divisions and region' => [['divisions' => [1, 2], 'regions' => [100]], [1, 3]],
+    'entity and cluster and region' => [['entities' => ['Entity A'], 'clusters' => [10], 'regions' => [200]], [2]],
+    'multiple routes' => [['routes' => [2, 3]], [2, 3]],
+    'conflicting dimensions' => [['entities' => ['Entity A'], 'clusters' => [20]], []],
+    'unauthorized route' => [['routes' => [5]], []],
+    'inactive division' => [['divisions' => [3]], []],
+]);
+
+test('dashboard rejects malformed multi-select inputs', function () {
+    app(DashboardController::class)->lastLocations(Request::create('/', 'GET', [
+        'date' => '2026-09-07', 'regions' => ['not-a-code'],
+    ]));
+})->throws(ValidationException::class);

@@ -57,6 +57,8 @@ Visit start, end, and duration use:
 
 If the end date or time is unavailable, Visit End and Visit Duration are omitted.
 
+Default customer face time (`default_face_time_minutes`) uses `customermaster.customerfacetime`. If it is null or zero, it falls back to `channelmaster.customercft`, joined by `channelcode`. If that value is also null or zero, or no matching channel exists, the default is zero. Values are minutes. Visit variance compares actual visit duration against this default; actual visit duration and total face time still use the recorded visit timestamps.
+
 ## Planned Not Visited
 
 The application takes the distinct `customercode` values in `customervisitlog` for the route and compares them with the planned customers from `routesequencecustomerstatus`.

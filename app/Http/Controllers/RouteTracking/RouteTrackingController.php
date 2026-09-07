@@ -912,6 +912,7 @@ class RouteTrackingController extends Controller
 
         $visits = DB::table('customervisitlog as cvl')
             ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
+            ->leftJoin('channelmaster as channel', 'channel.channelcode', '=', 'cm.channelcode')
             ->where('cvl.routekey', $routekey)
             ->orderBy('cvl.logstartdate')
             ->orderBy('cvl.logstarttime')
@@ -927,6 +928,7 @@ class RouteTrackingController extends Controller
                 'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
+                DB::raw('COALESCE(NULLIF(cm.customerfacetime, 0), NULLIF(channel.customercft, 0), 0) as default_face_time_minutes'),
             ])
             ->map(function (object $visit) use ($operations, $routekey) {
                 $operation = $operations->get($visit->logkey);
@@ -950,6 +952,7 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
+                    'default_face_time_minutes' => (int) $visit->default_face_time_minutes,
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? intdiv($endTimestamp - $startTimestamp, 60)
                         : null,

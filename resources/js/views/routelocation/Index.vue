@@ -173,11 +173,11 @@ function resetFilters() {
 </script>
 
 <template>
-    <Head title="Route Location" />
+    <Head title="Dashboard" />
 
     <div class="content route-location-content">
         <div class="route-location-page-heading">
-            <h1 class="h3 fw-bold mb-1">Route Location</h1>
+            <h1 class="h3 fw-bold mb-1">Dashboard</h1>
             <h2 class="fs-base lh-base fw-medium text-muted mb-0">Last known GPS position for every route</h2>
         </div>
 
@@ -222,7 +222,7 @@ function resetFilters() {
             </div>
         </BaseBlock>
 
-        <BaseBlock title="Route Location" :mode-loading="loading">
+        <BaseBlock title="Dashboard" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
             <p v-else-if="locations.length" class="text-muted small">Showing {{ locations.length }} route(s) on {{ selectedDate }}</p>
 

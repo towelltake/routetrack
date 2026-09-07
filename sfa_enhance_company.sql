@@ -1,0 +1,108 @@
+/*
+SQLyog Community v13.3.1 (64 bit)
+MySQL - 8.0.21 : Database - sfa_enhance
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`sfa_enhance` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+/*Table structure for table `company` */
+
+DROP TABLE IF EXISTS `company`;
+
+CREATE TABLE `company` (
+  `cmpycode` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL,
+  `address` varchar(150) DEFAULT NULL,
+  `telephone` varchar(50) DEFAULT NULL,
+  `fax` varchar(50) DEFAULT NULL,
+  `nationalsalesmanagercode` bigint DEFAULT NULL,
+  `contactname` varchar(40) DEFAULT NULL,
+  `city` varchar(25) DEFAULT NULL,
+  `country` varchar(25) DEFAULT NULL,
+  `arbcompanyname` varchar(100) DEFAULT NULL,
+  `alternatecmpycode` varchar(50) DEFAULT NULL,
+  `created` char(20) DEFAULT NULL,
+  `cdat` datetime DEFAULT NULL,
+  `modified` char(20) DEFAULT NULL,
+  `mdat` datetime DEFAULT NULL,
+  `zipcode` varchar(20) DEFAULT NULL,
+  `countrycode` bigint DEFAULT NULL,
+  `countryname` varchar(50) DEFAULT NULL,
+  `arbcountryname` varchar(50) DEFAULT NULL,
+  `distributorcode1` varchar(10) DEFAULT NULL,
+  `distributorcode2` varchar(10) DEFAULT NULL,
+  `activestatus` int DEFAULT '1',
+  `parentcompany` bigint DEFAULT NULL,
+  `txreg_number` varchar(20) DEFAULT NULL,
+  `enlabelfooternote` varchar(255) DEFAULT NULL,
+  `enfooternote` varchar(255) DEFAULT NULL,
+  `arblabelfooternote` varbinary(255) DEFAULT NULL,
+  `arbfooternote` varbinary(255) DEFAULT NULL,
+  `entity` varchar(100) DEFAULT NULL,
+  `clustercode` bigint DEFAULT NULL,
+  PRIMARY KEY (`cmpycode`),
+  KEY `FK_Company_NationalSalesManager` (`nationalsalesmanagercode`),
+  KEY `entity` (`entity`),
+  CONSTRAINT `FK_Company_NationalSalesManager` FOREIGN KEY (`nationalsalesmanagercode`) REFERENCES `nationalsalesmanager` (`nationalsalesmanagercode`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1112 DEFAULT CHARSET=latin1;
+
+/*Data for the table `company` */
+
+insert  into `company`(`cmpycode`,`name`,`address`,`telephone`,`fax`,`nationalsalesmanagercode`,`contactname`,`city`,`country`,`arbcompanyname`,`alternatecmpycode`,`created`,`cdat`,`modified`,`mdat`,`zipcode`,`countrycode`,`countryname`,`arbcountryname`,`distributorcode1`,`distributorcode2`,`activestatus`,`parentcompany`,`txreg_number`,`enlabelfooternote`,`enfooternote`,`arblabelfooternote`,`arbfooternote`,`entity`,`clustercode`) values 
+(1,'ENHANCE GROUP','Salalah','1234569','1234569',1,'ENHANCE',NULL,NULL,'ENHANCE GROUP','1','Admin','2015-10-07 12:41:22','admin','2026-08-11 00:00:00','1234',973,'OMAN','Default','','',1,1,'OM1200046982','','','','',NULL,1),
+(2,'CON','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','123','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','CON','admin','2017-03-12 00:00:00','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,2,'OM1200046982',NULL,NULL,NULL,NULL,NULL,1),
+(3,'WAT','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','123456','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','WAT','admin','2017-03-12 00:00:00','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,3,'OM1200046982',NULL,NULL,NULL,NULL,NULL,1),
+(4,'RB','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','12345','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','RB','admin','2017-03-12 00:00:00','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,4,'OM1200046982',NULL,NULL,NULL,NULL,NULL,1),
+(5,'BAT','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','123456','',NULL,'BAT',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','BAT','admin','2017-03-12 00:00:00','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,5,'OM1200046982',NULL,NULL,NULL,NULL,NULL,1),
+(101,'RB OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:',NULL,NULL,1,NULL,NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','101','admin','2017-10-23 16:59:40',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,101,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(102,'CA MCS OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8057328','24526333','24526334',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','102','admin','2017-10-23 16:59:40','admin','2019-02-02 00:00:00','PO 1811 PC 130',968,'SULTANATE OF OMAN',NULL,'','',1,102,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(103,'BVG OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','24526333','24526334',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','103','admin','2017-10-23 16:59:40','admin','2026-09-01 00:00:00','PO 1811 PC 130',968,'SULTANATE OF OMAN',NULL,'','',0,103,'OM1200046982','','','','','MCS Ledger',1),
+(104,'JNJ OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','24526377','24238311',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','104','admin','2017-10-23 16:59:40','admin','2021-03-10 00:00:00','1741,PC 130,AZAIBA',968,'SULTANATE OF OMAN',NULL,'','',1,104,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(105,'INDL OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','E','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','105','admin','2017-10-23 16:59:40','admin','2026-09-01 00:00:00','',0,'',NULL,'','',0,105,'OM1200046982','','','','','MCS Ledger',1),
+(106,'FSS OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','fsd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','106','admin','2017-10-23 16:59:40','admin','2024-07-09 00:00:00','',0,'',NULL,'','',1,106,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(107,'NOT OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$Division: Nestle','24526377','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','107','admin','2017-10-23 16:59:40','admin','2022-01-31 00:00:00','',0,'',NULL,'','',1,107,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(108,'RTA OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','123','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','108','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,108,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(109,'TEL OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','123','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','109','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,109,'OM1200046982',NULL,NULL,NULL,NULL,NULL,1),
+(110,'TELF OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','dasd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','110','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,110,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(111,'LOG MCS OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8057328','dasd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','111','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,111,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(112,'GM MCS OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8057328','dasd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','112','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,112,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(113,'CA MDC OU','1834,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059055','24526595','24501542',1,'',NULL,NULL,'Majan Distribution Company LLC','113','admin','2017-10-23 16:59:40','admin','2023-05-21 00:00:00','PO 1834 PC 130',968,'SULTANATE OF OMAN',NULL,'','',1,113,'OM1200046982',NULL,NULL,NULL,NULL,'MDC Ledger',1),
+(114,'LOG MDC OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059055','dasd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','114','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,114,'OM1200046982',NULL,NULL,NULL,NULL,'MDC Ledger',1),
+(115,'GM MDC OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059055','dasd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','115','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,115,'OM1200046982',NULL,NULL,NULL,NULL,'MDC Ledger',1),
+(116,'TUL OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','23219846','23229986',1,'',NULL,NULL,'COLD STORAGE & TRADING COMPANY LLC','116','admin','2017-10-23 16:59:40','admin','2026-08-11 00:00:00','PO 55 PC 211',968,'SULTANATE OF OMAN',NULL,'','',1,116,'OM1200046982','','','','','CSTC Ledger',1),
+(117,'BPCL OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','dasd','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','117','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,117,'OM1200046982',NULL,NULL,NULL,NULL,'CSTC Ledger',1),
+(118,'GM CSTC OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8057386','123','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','118','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,118,'OM1200046982',NULL,NULL,NULL,NULL,'CSTC Ledger',1),
+(119,'EGO OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','13','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','119','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,119,'OM1200046982',NULL,NULL,NULL,NULL,'EGO Ledger',1),
+(120,'LOG CST OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','1234','',1,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','120','admin','2017-10-23 16:59:40','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,120,'OM1200046982',NULL,NULL,NULL,NULL,'CSTC Ledger',1),
+(121,'Consumer Agencies 2','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','12345678','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','CA2 MCS','admin','2018-03-21 00:00:00','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,121,'OM1200046982',NULL,NULL,NULL,NULL,NULL,1),
+(242,'CA2 MCS','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8057328','12345678',NULL,NULL,NULL,NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','242',NULL,'2018-03-22 09:24:03',NULL,'2018-03-22 09:24:03',NULL,NULL,NULL,NULL,NULL,NULL,1,242,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(303,'LOG FT OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059036','12345678','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','303',NULL,'2018-08-15 20:35:01','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,303,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(304,'GM FT OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059036','12345678','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','304',NULL,'2018-08-15 20:35:02','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,304,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(305,'ASD OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','12345678','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','305',NULL,'2018-08-15 20:35:03','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,305,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(306,'BAY OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','12345678','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','306',NULL,'2018-08-15 20:35:03','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,306,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(307,'NAP OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','12345678','',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','307',NULL,'2018-08-15 20:35:04','admin','2021-04-25 00:00:00','',0,'',NULL,'','',0,307,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(308,'TUL FT OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059036','22063600','24238311',NULL,'',NULL,NULL,'Fairtrade LLC','308',NULL,'2018-08-15 20:35:05','admin','2021-04-19 00:00:00','1741,PC 130,AZAIBA',968,'SULTANATE OF OMAN',NULL,'','',1,308,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(309,'CAD FT OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059036','22063600','24238311',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','309',NULL,'2018-08-15 20:35:06','admin','2021-04-25 00:00:00','1741,PC 130,AZAIBA',968,'SULTANATE OF OMAN',NULL,'','',0,309,'OM1200046982',NULL,NULL,NULL,NULL,'Fairtrade LLC',1),
+(310,'MLZ OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','22063600','24238311',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','310',NULL,'2018-08-15 20:35:07','admin','2025-11-02 00:00:00','1741,PC 130,AZAIBA',968,'SULTANATE OF OMAN',NULL,'','',0,310,'OM1200046982','','','','','Fairtrade LLC',1),
+(688,'LOR OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','24526345','24526333',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','688',NULL,'2019-10-12 06:20:55','admin','2020-09-21 00:00:00','',0,'SULTANATE OF OMAN',NULL,'','',1,688,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(748,'DD OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','24526333','24526334',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','748',NULL,'2019-11-24 06:19:21','admin','2020-02-03 00:00:00','PO 1811 PC 130',968,'SULTANATE OF OMAN',NULL,'','',1,748,'OM1200046982',NULL,NULL,NULL,NULL,'MCS Ledger',1),
+(928,'ASD FT OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL: Tax Card No: 8059036','12345678','',NULL,'',NULL,NULL,'Fairtrade LLC','928',NULL,'2021-03-27 06:09:00','admin','2021-04-20 00:00:00','',0,'',NULL,'','',1,928,'OM1200046982',NULL,NULL,NULL,NULL,'FT ASD Ledger',1),
+(1008,'ALA OU','s','12345678','',NULL,'',NULL,NULL,'','1008',NULL,'2022-01-03 09:31:08','admin','2026-08-31 00:00:00','',0,'',NULL,'','',0,1008,NULL,'','','','','Fairtrade LLC',1),
+(1108,'CPD OU','P.O. Box 3308, Azaiba , P.C.130 , Tell 24526337','12345678','1100051019',NULL,'',NULL,NULL,'W.J Towell & Co. (L.L.C) C.R No:1003739','1108',NULL,'2021-12-28 09:58:59','admin','2022-10-31 00:00:00','P.O 3308, P.C 130',0,'SULTANATE OF OMAN',NULL,'','',1,1108,'OM1100015019',NULL,NULL,NULL,NULL,'WJT Ledger',1),
+(1109,'GM WJT OU','S','12345678','',NULL,'',NULL,NULL,'','1109',NULL,'2022-01-03 09:31:08','admin','2026-09-01 00:00:00','',0,'',NULL,'','',0,1109,NULL,'','','','','WJT Ledger',1),
+(1110,'LOG WJT OU','a','12345678','',NULL,'',NULL,NULL,'','1110',NULL,'2022-01-03 09:31:08','admin','2026-08-31 00:00:00','',0,'',NULL,'','',0,1110,NULL,'','','','','WJT Ledger',1),
+(1111,'MER OU','1741,PC 130,AZAIBA C.R.NO 1/02561/9$E-MAIL:','24526333','24526334',NULL,'',NULL,NULL,'Matrah Cold Stores LLC. C.R.No. 1005251','999','admin','2024-03-31 00:00:00','admin','2026-08-31 00:00:00','PO 1811 PC 130',968,'SULTANATE OF OMAN',NULL,'','',0,1111,NULL,'','','','',NULL,1);
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

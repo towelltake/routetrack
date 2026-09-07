@@ -229,7 +229,7 @@ function customerStatusColor(customer) {
         if (customer.journey_status === "duplicate_visit") {
             return "#7c3aed";
         }
-        return customer.planned ? "#16a34a" : "#f97316";
+        return customer.planned ? "#16a34a" : "#c2410c";
     }
 
     return plannedNotVisitedVisible.value && !customer.visited ? "#9ca3af" : "#2563eb";
@@ -880,7 +880,7 @@ function focusEnd() {
                         Approximate fallback, not road routed
                     </div>
                     <div class="text-success small">Planned Customers Visited: {{ customerVisitSummary.plannedVisited }}</div>
-                    <div class="small" style="color: #f97316">
+                    <div class="small" style="color: #c2410c">
                         Unplanned Customers Visited: {{ customerVisitSummary.unplannedVisited }}
                     </div>
                     <div class="text-muted small">Planned But Not Visited: {{ customerVisitSummary.plannedNotVisited }}</div>
@@ -1128,7 +1128,7 @@ function focusEnd() {
                                         <span
                                             v-else-if="customer.type === 'visit' && customer.journey_status === 'unplanned'"
                                             class="d-block small"
-                                            style="color: #f97316"
+                                            style="color: #c2410c"
                                         >
                                             Not included in journey plan
                                         </span>
@@ -1483,8 +1483,8 @@ function focusEnd() {
     }
 
     &.unplanned.active {
-        border-color: #f97316;
-        color: #f97316;
+        border-color: #c2410c;
+        color: #c2410c;
         background: #fff7ed;
     }
 

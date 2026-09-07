@@ -272,10 +272,6 @@ function resetFilters() {
                 </div>
                 <p v-if="dateError" class="dashboard-date-error" role="alert">{{ dateError }}</p>
             </div>
-            <footer class="dashboard-filter-footer">
-                <span><i class="fa fa-bolt" aria-hidden="true"></i> Filters update automatically</span>
-                <span>Inclusive dates &middot; Week starts Monday</span>
-            </footer>
         </section>
 
         <BaseBlock title="Dashboard" :mode-loading="loading">
@@ -377,7 +373,7 @@ function resetFilters() {
     .vs__dropdown-option { white-space: normal; font-size: 13px; padding: 9px 12px; }
     .vs__dropdown-option--highlight { background: #eff6ff; color: #1d4ed8; }
 }
-.dashboard-filters-header, .dashboard-filters-heading, .dashboard-filter-actions, .dashboard-period-heading, .dashboard-filter-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dashboard-filters-header, .dashboard-filters-heading, .dashboard-filter-actions, .dashboard-period-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .dashboard-filters-header { padding: 22px 24px; }
 .dashboard-filters-heading { justify-content: flex-start; }
 .dashboard-filters-heading h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
@@ -410,8 +406,6 @@ function resetFilters() {
 .dashboard-map-date .dashboard-filter-field { flex: 1; }
 .dashboard-map-date p { flex: 1; color: #64748b; font-size: 12px; line-height: 1.6; margin: 0 0 3px; }
 .dashboard-date-error { margin: 14px 0 0; font-size: 13px; color: #b91c1c; }
-.dashboard-filter-footer { padding: 12px 24px; color: #64748b; font-size: 11px; border-top: 1px solid #edf1f5; flex-wrap: wrap; }
-.dashboard-filter-footer i { color: #0f766e; margin-right: 6px; }
 @media (max-width: 1199px) {
     .dashboard-scope-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .dashboard-map-date { padding-left: 20px; gap: 12px; }
@@ -426,7 +420,6 @@ function resetFilters() {
     .dashboard-map-date p { display: block; }
     .dashboard-filters-header, .dashboard-period-panel { padding: 18px; }
     .dashboard-scope-grid { padding: 0 18px 18px; }
-    .dashboard-filter-footer { padding: 12px 18px; }
 }
 @media (max-width: 420px) {
     .dashboard-scope-grid { grid-template-columns: 1fr; }

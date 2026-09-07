@@ -9,12 +9,12 @@ const rows = [
     { routecode: 4, routename: "Four", entity: " ", clustercode: null, cmpycode: 3, regionmstcode: 300 },
 ];
 
-test("date presets handle month/year boundaries and Monday-based weeks", () => {
+test("date presets handle month/year boundaries and Sunday-based weeks", () => {
     assert.deepEqual(dateRangeForPreset("today", "2026-09-07"), { from: "2026-09-07", to: "2026-09-07" });
     assert.deepEqual(dateRangeForPreset("yesterday", "2026-01-01"), { from: "2025-12-31", to: "2025-12-31" });
     assert.deepEqual(dateRangeForPreset("yesterday", "2024-03-01"), { from: "2024-02-29", to: "2024-02-29" });
-    assert.deepEqual(dateRangeForPreset("week", "2026-09-06"), { from: "2026-08-31", to: "2026-09-06" });
-    assert.deepEqual(dateRangeForPreset("week", "2026-09-07"), { from: "2026-09-07", to: "2026-09-07" });
+    assert.deepEqual(dateRangeForPreset("week", "2026-09-06"), { from: "2026-09-06", to: "2026-09-06" });
+    assert.deepEqual(dateRangeForPreset("week", "2026-09-07"), { from: "2026-09-06", to: "2026-09-07" });
     assert.deepEqual(dateRangeForPreset("month", "2026-09-07"), { from: "2026-09-01", to: "2026-09-07" });
 });
 

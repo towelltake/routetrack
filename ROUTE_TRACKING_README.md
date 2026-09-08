@@ -130,7 +130,7 @@ The first GPS point is Route Start. The final GPS point is Last Known Location.
 
 ### Route tracking stationary markers
 
-Route Tracking shows light amber geographic circles and clickable centre dots for GPS-detected stationary periods. The legend toggles the layer. A Stationary tab in the side panel lists each period with duration, time range, visit overlap, and legacy accuracy status; selecting a row zooms to its marker, while selecting a marker reveals its row. Popups show the complete details. Stationary time can include customer service; it is not automatically non-working time.
+Route Tracking shows tinted geographic circles for GPS-detected stationary periods. The legend toggles the layer. A Stationary tab in the side panel lists each period with duration, time range, visit overlap, and legacy accuracy status; selecting a row zooms to its circle, while selecting a circle reveals its row. Popups show the complete details. Stationary time can include customer service; it is not automatically non-working time.
 
 Configuration is in `config/tracking.php`, with these optional environment overrides (defaults apply without editing `.env`):
 
@@ -146,6 +146,8 @@ After changing environment settings, run `php artisan config:clear` (or rebuild 
 Detection uses ordered device `date + time` readings for the selected route/date before distance downsampling. Points remain within the configured radius of the first point; two consecutive outside readings confirm departure. Duration ends at the last inside observation, never at the current clock time. A gap exceeding the configured limit between usable readings breaks the period. Duplicate timestamps cannot increase duration. The displayed path and visit GPS fallback also exclude known accuracy values greater than or equal to the maximum; null/missing accuracy and provider remain supported, including source tables without those columns. Provider is retained but is not used as a quality filter.
 
 Devices should send a fresh GPS heartbeat about every 30 seconds even while stationary. Movement-only uploads cannot establish stationary duration across silent intervals. Rejected low-quality readings cannot bridge gaps; no detected stops does not establish continuous movement. The five-minute default is a heuristic, and historical gaps remain unknown. This feature uses the existing Route Tracking calendar-date scope and does not modify Dashboard metrics.
+
+Consecutive usable readings separated by more than `TRACKING_STATIONARY_MAX_GAP_SECONDS` are also returned as bounded GPS-unavailable gaps. Route Tracking shows a red warning flag at the last usable coordinate and lists the gap in a GPS Gaps side-panel tab with the last-signal time, recovery time, and full interval duration. The application cannot determine whether a gap was caused by coverage, the device, permissions, GPS settings, or deliberate action. Gaps before the first reading and after the last reading are not inferred because they have no recovery boundary in the selected data.
 
 No database migration is included because the required tables and `log_id` column already exist in the source database.
 

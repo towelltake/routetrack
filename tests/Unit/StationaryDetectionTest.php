@@ -68,6 +68,22 @@ test('reporting gaps and rejected accuracy never become stationary duration', fu
     expect(array_column($stops, 'duration_seconds'))->toBe([300, 300]);
 });
 
+test('reporting gaps are returned only when bounded by usable GPS readings', function () {
+    $detector = new StationaryDetection;
+    $points = stationaryPoints(300);
+    $points[2]->effective_timestamp = '2026-09-08 08:04:00';
+    $points[3]->effective_timestamp = '2026-09-08 08:04:30';
+
+    $gaps = $detector->detectGaps($points);
+    expect($gaps)->toHaveCount(1)
+        ->and($gaps[0]['start_time'])->toBe('2026-09-08 08:00:30')
+        ->and($gaps[0]['end_time'])->toBe('2026-09-08 08:04:00')
+        ->and($gaps[0]['duration_seconds'])->toBe(210)
+        ->and($gaps[0]['lat'])->toBe(23.5);
+
+    expect($detector->detectGaps([$points[0]]))->toBe([]);
+});
+
 test('isolated jump is tolerated but successive outside readings end the stop', function () {
     $detector = new StationaryDetection;
     $points = stationaryPoints(600);

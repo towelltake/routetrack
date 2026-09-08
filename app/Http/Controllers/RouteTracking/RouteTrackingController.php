@@ -278,12 +278,16 @@ class RouteTrackingController extends Controller
     private function computeMatchedActual(int $routecode, string $date): array
     {
         $rawPoints = $this->fetchTrackingPoints($routecode, [$date]);
-        $stationary = app(StationaryDetection::class)->detect($rawPoints);
+        $detector = app(StationaryDetection::class);
+        $stationary = $detector->detect($rawPoints);
+        $gpsGaps = $detector->detectGaps($rawPoints);
         $stationaryData = [
             'stationary_periods' => $stationary,
             'stationary_seconds' => array_sum(array_column($stationary, 'duration_seconds')),
             'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
             'stationary_max_gap_seconds' => config('tracking.stationary_max_gap_seconds'),
+            'gps_gaps' => $gpsGaps,
+            'gps_gap_seconds' => array_sum(array_column($gpsGaps, 'duration_seconds')),
         ];
         $points = $this->removeSpeedAnomalies($this->downsampleByDistance($rawPoints));
 

@@ -82,6 +82,40 @@ class StationaryDetection
         return $stops;
     }
 
+    /** Returns only gaps bounded by a usable point before and after the outage. */
+    public function detectGaps(array $points): array
+    {
+        $gaps = [];
+        $previous = null;
+
+        foreach ($points as $point) {
+            if (! $this->usable($point) || strtotime($point->effective_timestamp ?? '') === false) {
+                continue;
+            }
+            if ($previous !== null) {
+                $start = strtotime($previous->effective_timestamp);
+                $end = strtotime($point->effective_timestamp);
+                if ($end <= $start) {
+                    continue;
+                }
+                if ($end > $start && $end - $start > config('tracking.stationary_max_gap_seconds')) {
+                    $gaps[] = [
+                        'lat' => (float) $previous->latitude,
+                        'lng' => (float) $previous->longitude,
+                        'resumed_lat' => (float) $point->latitude,
+                        'resumed_lng' => (float) $point->longitude,
+                        'start_time' => $previous->effective_timestamp,
+                        'end_time' => $point->effective_timestamp,
+                        'duration_seconds' => $end - $start,
+                    ];
+                }
+            }
+            $previous = $point;
+        }
+
+        return $gaps;
+    }
+
     private function distance(object $a, object $b): float
     {
         $lat = deg2rad((float) $b->latitude - (float) $a->latitude);

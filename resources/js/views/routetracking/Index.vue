@@ -40,6 +40,7 @@ const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
 const plannedNotVisitedVisible = ref(false);
 const stationaryVisible = ref(true);
+const gpsGapsVisible = ref(true);
 
 const numberedCustomers = computed(() =>
     (result.value?.planned?.customers ?? []).map((customer, index) => ({
@@ -64,6 +65,15 @@ const stationaryPeriods = computed(() =>
         ...period,
         displayNumber: index + 1,
         listKey: `stationary-${index}`,
+        markerIndex: index,
+    })),
+);
+
+const gpsGaps = computed(() =>
+    (result.value?.actual?.gps_gaps ?? []).map((gap, index) => ({
+        ...gap,
+        displayNumber: index + 1,
+        listKey: `gps-gap-${index}`,
         markerIndex: index,
     })),
 );
@@ -156,6 +166,7 @@ let map = null;
 const customerMarkers = {};
 const visitMarkers = {};
 const stationaryMarkers = [];
+const gpsGapMarkers = [];
 const customerItemEls = {};
 let resultLayer = null;
 let plannedLineLayer = null;
@@ -164,6 +175,7 @@ let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
 let stationaryLayer = null;
+let gpsGapLayer = null;
 let startMarker = null;
 let endMarker = null;
 
@@ -447,6 +459,7 @@ async function runComparison() {
     Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
     Object.keys(visitMarkers).forEach((key) => delete visitMarkers[key]);
     stationaryMarkers.length = 0;
+    gpsGapMarkers.length = 0;
     customerSearch.value = "";
     customerListTab.value = "all";
     customerVisitTab.value = "all";
@@ -459,6 +472,8 @@ async function runComparison() {
     plannedCustomersVisible.value = true;
     customerVisitsVisible.value = false;
     plannedNotVisitedVisible.value = false;
+    stationaryVisible.value = true;
+    gpsGapsVisible.value = true;
 
     const params = {
         routecode: selectedRoute.value,
@@ -491,27 +506,44 @@ async function runComparison() {
                 `From: ${period.start_time}`,
                 `To: ${period.end_time} (last observed stationary)`,
                 visits.length ? `Overlaps recorded customer visit: ${visits.map((visit) => visit.customername).join(', ')}` : 'No completed customer visit overlap recorded',
-                period.accuracy_unknown ? 'GPS accuracy unknown for some readings' : 'GPS accuracy checked',
-                'GPS estimate; reporting gaps are excluded.',
+                ...(period.accuracy_unknown ? ['GPS accuracy unknown for some readings'] : []),
             ];
             lines.forEach((text) => {
                 const line = document.createElement('div');
                 line.textContent = text;
                 popup.append(line);
             });
+            const outsideCustomerVisit = !visits.length;
             const circle = L.circle([period.lat, period.lng], {
-                radius: period.radius_m, color: '#b45309', weight: 2,
-                fillColor: '#fbbf24', fillOpacity: 0.2,
+                radius: period.radius_m, stroke: false,
+                fillColor: outsideCustomerVisit ? '#ef4444' : '#fbbf24', fillOpacity: 0.2,
             }).bindPopup(popup).addTo(stationaryLayer);
             circle.bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`);
             circle.on("click", () => revealStationaryInList(index));
-            // A small centre target keeps the geographic circle clickable when zoomed out.
-            const stationaryMarker = L.circleMarker([period.lat, period.lng], {
-                radius: 7, color: '#b45309', weight: 2, fillColor: '#fef3c7', fillOpacity: 0.9,
-            }).bindPopup(popup.cloneNode(true))
-                .bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`).addTo(stationaryLayer);
-            stationaryMarker.on("click", () => revealStationaryInList(index));
-            stationaryMarkers[index] = stationaryMarker;
+            stationaryMarkers[index] = circle;
+        });
+        gpsGapsVisible.value = true;
+        gpsGapLayer = L.featureGroup().addTo(resultLayer);
+        (data.actual.gps_gaps ?? []).forEach((gap, index) => {
+            const popup = document.createElement("div");
+            const heading = document.createElement("strong");
+            heading.textContent = `GPS unavailable: ${stationaryDuration(gap.duration_seconds)}`;
+            popup.append(heading);
+            [
+                `Last usable GPS: ${gap.start_time}`,
+                `GPS restored: ${gap.end_time}`,
+                "Reason unknown: coverage, device, permission, or GPS may have been unavailable.",
+            ].forEach((text) => {
+                const line = document.createElement("div");
+                line.textContent = text;
+                popup.append(line);
+            });
+            const marker = L.marker([gap.lat, gap.lng], { icon: flagIcon("#dc2626", "!") })
+                .bindPopup(popup)
+                .bindTooltip(`GPS unavailable ${stationaryDuration(gap.duration_seconds)}`)
+                .addTo(gpsGapLayer);
+            marker.on("click", () => revealGpsGapInList(index));
+            gpsGapMarkers[index] = marker;
         });
         const actualLayer = L.featureGroup().addTo(resultLayer);
         plannedCustomerLayer = L.featureGroup();
@@ -623,6 +655,10 @@ function resetFilters() {
     plannedCustomersVisible.value = true;
     customerVisitsVisible.value = false;
     plannedNotVisitedVisible.value = false;
+    stationaryVisible.value = true;
+    gpsGapsVisible.value = true;
+    stationaryMarkers.length = 0;
+    gpsGapMarkers.length = 0;
 
     if (resultLayer) {
         map.removeLayer(resultLayer);
@@ -655,6 +691,12 @@ function toggleStationary() {
     stationaryVisible.value ? resultLayer.addLayer(stationaryLayer) : resultLayer.removeLayer(stationaryLayer);
 }
 
+function toggleGpsGaps() {
+    if (!resultLayer || !gpsGapLayer) return;
+    gpsGapsVisible.value = !gpsGapsVisible.value;
+    gpsGapsVisible.value ? resultLayer.addLayer(gpsGapLayer) : resultLayer.removeLayer(gpsGapLayer);
+}
+
 function pct(ratio) {
     return ratio === null || ratio === undefined ? "n/a" : Math.round(ratio * 100) + "%";
 }
@@ -675,6 +717,15 @@ function focusStationary(period) {
     const marker = stationaryMarkers[period.markerIndex];
     if (!marker || !map) return;
     if (!stationaryVisible.value) toggleStationary();
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16));
+    marker.openPopup();
+}
+
+function focusGpsGap(gap) {
+    selectedCustomerKey.value = gap.listKey;
+    const marker = gpsGapMarkers[gap.markerIndex];
+    if (!marker || !map) return;
+    if (!gpsGapsVisible.value) toggleGpsGaps();
     map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16));
     marker.openPopup();
 }
@@ -707,6 +758,13 @@ async function revealStationaryInList(index) {
     selectedCustomerKey.value = `stationary-${index}`;
     await nextTick();
     customerItemEls[`stationary-${index}`]?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function revealGpsGapInList(index) {
+    customerListTab.value = "gps_gaps";
+    selectedCustomerKey.value = `gps-gap-${index}`;
+    await nextTick();
+    customerItemEls[`gps-gap-${index}`]?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function fitToCustomers(predicate) {
@@ -782,7 +840,13 @@ function togglePlannedNotVisited() {
 function selectCustomerTab(tab) {
     customerListTab.value = tab;
 
-    if (tab === "stationary") {
+    if (tab === "gps_gaps") {
+        if (!gpsGapsVisible.value) toggleGpsGaps();
+        const markers = gpsGapMarkers.filter(Boolean);
+        if (markers.length) {
+            map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
+        }
+    } else if (tab === "stationary") {
         if (!stationaryVisible.value) toggleStationary();
         const markers = stationaryMarkers.filter(Boolean);
         if (markers.length) {
@@ -979,6 +1043,10 @@ function focusEnd() {
                     <div>Total Customer Face Time: {{ minutes(result.actual.face_time) }} min</div>
                     <div>Detected Stationary Time: {{ minutes(result.actual.stationary_seconds ?? 0) }} min
                         ({{ result.actual.stationary_periods?.length ?? 0 }} stops)</div>
+                    <div class="text-danger">
+                        GPS Unavailable: {{ stationaryDuration(result.actual.gps_gap_seconds ?? 0) }}
+                        ({{ result.actual.gps_gaps?.length ?? 0 }} gaps)
+                    </div>
                     <div class="text-muted small">
                         Stops of {{ result.actual.stationary_minimum_minutes }}+ min. Reporting gaps are excluded;
                         no detected stop does not confirm continuous movement.
@@ -1011,6 +1079,14 @@ function focusEnd() {
                     @click="toggleStationary">
                     <span style="color: #b45309">&#9679;</span>
                     Stationary ({{ result?.actual?.stationary_periods?.length ?? 0 }})
+                </button>
+                <button type="button" class="route-tracking-legend-item"
+                    :class="{ active: gpsGapsVisible }"
+                    :aria-pressed="gpsGapsVisible"
+                    :disabled="!gpsGaps.length"
+                    @click="toggleGpsGaps">
+                    <span class="text-danger">&#9873;</span>
+                    GPS Unavailable ({{ gpsGaps.length }})
                 </button>
                 <button
                     type="button"
@@ -1104,9 +1180,9 @@ function focusEnd() {
                 <div class="col-md-3 route-tracking-panel-column">
                     <div class="card route-tracking-customer-list-card" style="height: 680px">
                         <div class="card-header">
-                            <strong>{{ customerListTab === 'stationary' ? 'Stationary periods' : 'Customers' }}</strong>
+                            <strong>{{ customerListTab === 'gps_gaps' ? 'GPS unavailable' : customerListTab === 'stationary' ? 'Stationary periods' : 'Customers' }}</strong>
                             <span v-if="result" class="text-muted small">
-                                ({{ customerListTab === 'stationary' ? `${stationaryPeriods.length} stops` : `${result.planned.visit_count} visits` }})
+                                ({{ customerListTab === 'gps_gaps' ? `${gpsGaps.length} gaps` : customerListTab === 'stationary' ? `${stationaryPeriods.length} stops` : `${result.planned.visit_count} visits` }})
                             </span>
                         </div>
                         <div class="route-tracking-customer-tabs">
@@ -1146,6 +1222,15 @@ function focusEnd() {
                             >
                                 Stationary
                             </button>
+                            <button
+                                type="button"
+                                class="route-tracking-customer-tab gps-gaps"
+                                :class="{ active: customerListTab === 'gps_gaps' }"
+                                :disabled="!gpsGaps.length"
+                                @click="selectCustomerTab('gps_gaps')"
+                            >
+                                GPS Gaps
+                            </button>
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
                             <button
@@ -1165,7 +1250,7 @@ function focusEnd() {
                                 {{ customerVisitTabLabel(tab) }}
                             </button>
                         </div>
-                        <div v-if="customerListTab !== 'stationary'" class="route-tracking-customer-search p-2">
+                        <div v-if="!['stationary', 'gps_gaps'].includes(customerListTab)" class="route-tracking-customer-search p-2">
                             <input
                                 v-model="customerSearch"
                                 type="text"
@@ -1176,7 +1261,30 @@ function focusEnd() {
                         </div>
                         <div class="card-body p-2">
                             <div class="route-tracking-customer-list">
-                                <template v-if="customerListTab === 'stationary'">
+                                <template v-if="customerListTab === 'gps_gaps'">
+                                    <p v-if="!gpsGaps.length" class="text-muted small px-1">No GPS gaps detected.</p>
+                                    <button
+                                        v-for="gap in gpsGaps"
+                                        :key="gap.listKey"
+                                        :ref="(element) => setCustomerItemRef(gap.listKey, element)"
+                                        type="button"
+                                        class="list-group-item list-group-item-action route-tracking-customer-item route-tracking-gps-gap-item"
+                                        :class="{ selected: selectedCustomerKey === gap.listKey }"
+                                        @click="focusGpsGap(gap)"
+                                    >
+                                        <span class="route-tracking-gps-gap-flag">!</span>
+                                        <span class="route-tracking-customer-info">
+                                            <span class="route-tracking-customer-name-row">
+                                                <span class="fw-semibold text-danger">{{ stationaryDuration(gap.duration_seconds) }}</span>
+                                                <span class="small text-muted">{{ stationaryTime(gap.start_time) }}–{{ stationaryTime(gap.end_time) }}</span>
+                                            </span>
+                                            <span class="d-block small">GPS unavailable between usable readings</span>
+                                            <span class="d-block small text-muted">Reason cannot be determined from GPS data</span>
+                                        </span>
+                                        <i class="fa fa-location-dot text-danger" aria-hidden="true"></i>
+                                    </button>
+                                </template>
+                                <template v-else-if="customerListTab === 'stationary'">
                                     <p v-if="!stationaryPeriods.length" class="text-muted small px-1">No stationary periods detected.</p>
                                     <button
                                         v-for="period in stationaryPeriods"
@@ -1184,10 +1292,15 @@ function focusEnd() {
                                         :ref="(element) => setCustomerItemRef(period.listKey, element)"
                                         type="button"
                                         class="list-group-item list-group-item-action route-tracking-customer-item route-tracking-stationary-item"
-                                        :class="{ selected: selectedCustomerKey === period.listKey }"
+                                        :class="{
+                                            selected: selectedCustomerKey === period.listKey,
+                                            'outside-customer': !period.customer_visits?.length,
+                                        }"
                                         @click="focusStationary(period)"
                                     >
-                                        <span class="route-tracking-stationary-dot">{{ period.displayNumber }}</span>
+                                        <span class="route-tracking-stationary-dot" :class="{ 'outside-customer': !period.customer_visits?.length }">
+                                            {{ period.displayNumber }}
+                                        </span>
                                         <span class="route-tracking-customer-info">
                                             <span class="route-tracking-customer-name-row">
                                                 <span class="fw-semibold">{{ stationaryDuration(period.duration_seconds) }}</span>
@@ -1200,7 +1313,11 @@ function focusEnd() {
                                             </span>
                                             <span v-if="period.accuracy_unknown" class="d-block small text-warning">GPS accuracy unknown</span>
                                         </span>
-                                        <i class="fa fa-location-dot text-warning" aria-hidden="true"></i>
+                                        <i
+                                            class="fa fa-location-dot"
+                                            :class="period.customer_visits?.length ? 'text-warning' : 'text-danger'"
+                                            aria-hidden="true"
+                                        ></i>
                                     </button>
                                 </template>
                                 <template v-else>
@@ -1590,6 +1707,12 @@ function focusEnd() {
         background: #fffbeb;
     }
 
+    &.gps-gaps.active {
+        border-color: #dc2626;
+        color: #b91c1c;
+        background: #fef2f2;
+    }
+
     &:disabled {
         cursor: not-allowed;
         opacity: 0.6;
@@ -1707,6 +1830,16 @@ function focusEnd() {
         border-color: #b45309 !important;
         box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.12);
     }
+
+    &.outside-customer {
+        border-color: #fecaca !important;
+        background: #fef2f2;
+
+        &.selected {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
+        }
+    }
 }
 
 .route-tracking-stationary-dot {
@@ -1722,6 +1855,36 @@ function focusEnd() {
     color: #92400e;
     font-size: 0.75rem;
     font-weight: 700;
+
+    &.outside-customer {
+        border-color: transparent;
+        background: #fecaca;
+        color: #b91c1c;
+    }
+}
+
+.route-tracking-gps-gap-item {
+    border-color: #fecaca !important;
+    background: #fef2f2;
+
+    &.selected {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
+    }
+}
+
+.route-tracking-gps-gap-flag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 800;
 }
 
 .route-tracking-customer-dot {

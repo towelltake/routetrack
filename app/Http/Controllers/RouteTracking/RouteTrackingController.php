@@ -7,6 +7,7 @@ use App\Models\AreaMaster;
 use App\Models\CompanyMaster;
 use App\Models\RouteMaster;
 use App\Models\SubAreaMaster;
+use App\Services\StationaryDetection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -208,6 +209,17 @@ class RouteTrackingController extends Controller
         $actual['travel_time'] = $actual['duration'] === null
             ? null
             : max(0, $actual['duration'] - $actual['face_time']);
+        foreach ($actual['stationary_periods'] as &$period) {
+            $period['customer_visits'] = array_values(array_filter($planned['customer_visits'], function (array $visit) use ($period) {
+                $start = strtotime(($visit['visit_start_date'] ?? '').' '.($visit['visit_start_time'] ?? ''));
+                $end = ! empty($visit['visit_end_date']) && ! empty($visit['visit_end_time'])
+                    ? strtotime($visit['visit_end_date'].' '.$visit['visit_end_time']) : false;
+
+                return $start !== false && $end !== false
+                    && $start < strtotime($period['end_time']) && $end > strtotime($period['start_time']);
+            }));
+        }
+        unset($period);
 
         return response()->json([
             'planned' => $planned,
@@ -265,11 +277,20 @@ class RouteTrackingController extends Controller
      */
     private function computeMatchedActual(int $routecode, string $date): array
     {
-        $points = $this->fetchCleanTrail($routecode, $date);
+        $rawPoints = $this->fetchTrackingPoints($routecode, [$date]);
+        $stationary = app(StationaryDetection::class)->detect($rawPoints);
+        $stationaryData = [
+            'stationary_periods' => $stationary,
+            'stationary_seconds' => array_sum(array_column($stationary, 'duration_seconds')),
+            'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
+            'stationary_max_gap_seconds' => config('tracking.stationary_max_gap_seconds'),
+        ];
+        $points = $this->removeSpeedAnomalies($this->downsampleByDistance($rawPoints));
 
         if (count($points) < 2) {
             return [
-                'has_tracking_data' => false,
+                ...$stationaryData,
+                'has_tracking_data' => count($points) > 0,
                 'distance' => 0,
                 'duration' => 0,
                 'geometries' => [],
@@ -349,6 +370,7 @@ class RouteTrackingController extends Controller
         }
 
         return [
+            ...$stationaryData,
             'has_tracking_data' => true,
             'distance' => $totalDistance,
             'duration' => $totalDuration,
@@ -369,25 +391,27 @@ class RouteTrackingController extends Controller
         ];
     }
 
-    private function fetchCleanTrail(int $routecode, string $date): array
+    private function fetchTrackingPoints(int $routecode, array $dates): array
     {
         // date + time is the actual tracking timestamp; cdate is only the
         // database audit/creation time and must not be sent to OSRM.
         $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
             ->where('routecode', $routecode)
-            ->where('date', $date)
+            ->whereIn('date', $dates)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('latitude', '!=', 0)
             ->where('longitude', '!=', 0)
-            ->selectRaw('latitude, longitude, date + time as effective_timestamp')
+            // Selecting the row also supports databases/devices without the optional columns.
+            ->selectRaw('trac_routetrack.*, date + time as effective_timestamp')
             ->orderBy('effective_timestamp')
             ->orderBy('id')
             ->get()
+            ->filter(fn ($point) => app(StationaryDetection::class)->usable($point))
             ->values()
             ->all();
 
-        return $this->removeSpeedAnomalies($this->downsampleByDistance($points));
+        return $points;
     }
 
     /**
@@ -413,6 +437,12 @@ class RouteTrackingController extends Controller
             if ($meters >= self::MIN_DOWNSAMPLE_METERS) {
                 $kept[] = $point;
             }
+        }
+
+        // Preserve the final observation even when the route never moved.
+        $lastPoint = $points[array_key_last($points)];
+        if ($lastPoint !== $kept[array_key_last($kept)]) {
+            $kept[] = $lastPoint;
         }
 
         return $kept;
@@ -967,16 +997,7 @@ class RouteTrackingController extends Controller
             return $visits;
         }
 
-        $trackingPoints = DB::connection('tracking_pgsql')->table('trac_routetrack')
-            ->where('routecode', $routecode)
-            ->whereIn('date', $missingLocations->pluck('visit_start_date')->unique())
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->where('latitude', '!=', 0)
-            ->where('longitude', '!=', 0)
-            ->selectRaw('latitude, longitude, date + time as effective_timestamp')
-            ->orderBy('effective_timestamp')
-            ->get();
+        $trackingPoints = collect($this->fetchTrackingPoints($routecode, $missingLocations->pluck('visit_start_date')->unique()->all()));
 
         return $visits->map(function (array $visit) use ($trackingPoints) {
             if ($visit['lat'] !== null) {

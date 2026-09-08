@@ -39,6 +39,7 @@ const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
 const plannedNotVisitedVisible = ref(false);
+const stationaryVisible = ref(true);
 
 const numberedCustomers = computed(() =>
     (result.value?.planned?.customers ?? []).map((customer, index) => ({
@@ -152,6 +153,7 @@ let actualLineLayer = null;
 let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
+let stationaryLayer = null;
 let startMarker = null;
 let endMarker = null;
 
@@ -466,6 +468,37 @@ async function runComparison() {
         customerListTab.value = hasPlannedData ? "all" : "visits";
 
         resultLayer = L.featureGroup().addTo(map);
+        stationaryVisible.value = true;
+        stationaryLayer = L.featureGroup().addTo(resultLayer);
+        (data.actual.stationary_periods ?? []).forEach((period) => {
+            const popup = document.createElement('div');
+            const heading = document.createElement('strong');
+            heading.textContent = `Stationary: ${minutes(period.duration_seconds)} min`;
+            popup.append(heading);
+            const visits = period.customer_visits ?? [];
+            const lines = [
+                `From: ${period.start_time}`,
+                `To: ${period.end_time} (last observed stationary)`,
+                visits.length ? `Overlaps recorded customer visit: ${visits.map((visit) => visit.customername).join(', ')}` : 'No completed customer visit overlap recorded',
+                period.accuracy_unknown ? 'GPS accuracy unknown for some readings' : 'GPS accuracy checked',
+                'GPS estimate; reporting gaps are excluded.',
+            ];
+            lines.forEach((text) => {
+                const line = document.createElement('div');
+                line.textContent = text;
+                popup.append(line);
+            });
+            const circle = L.circle([period.lat, period.lng], {
+                radius: period.radius_m, color: '#b45309', weight: 2,
+                fillColor: '#fbbf24', fillOpacity: 0.2,
+            }).bindPopup(popup).addTo(stationaryLayer);
+            circle.bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`);
+            // A small centre target keeps the geographic circle clickable when zoomed out.
+            L.circleMarker([period.lat, period.lng], {
+                radius: 7, color: '#b45309', weight: 2, fillColor: '#fef3c7', fillOpacity: 0.9,
+            }).bindPopup(popup.cloneNode(true))
+                .bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`).addTo(stationaryLayer);
+        });
         const actualLayer = L.featureGroup().addTo(resultLayer);
         plannedCustomerLayer = L.featureGroup();
         customerVisitLayer = L.featureGroup();
@@ -591,6 +624,12 @@ function km(meters) {
 
 function minutes(seconds) {
     return Math.round(seconds / 60);
+}
+
+function toggleStationary() {
+    if (!resultLayer || !stationaryLayer) return;
+    stationaryVisible.value = !stationaryVisible.value;
+    stationaryVisible.value ? resultLayer.addLayer(stationaryLayer) : resultLayer.removeLayer(stationaryLayer);
 }
 
 function pct(ratio) {
@@ -893,6 +932,12 @@ function focusEnd() {
                         {{ result.actual.duration === null ? "Not Available" : `${minutes(result.actual.duration)} min` }}
                     </div>
                     <div>Total Customer Face Time: {{ minutes(result.actual.face_time) }} min</div>
+                    <div>Detected Stationary Time: {{ minutes(result.actual.stationary_seconds ?? 0) }} min
+                        ({{ result.actual.stationary_periods?.length ?? 0 }} stops)</div>
+                    <div class="text-muted small">
+                        Stops of {{ result.actual.stationary_minimum_minutes }}+ min. Reporting gaps are excluded;
+                        no detected stop does not confirm continuous movement.
+                    </div>
                     <div>
                         Total Travel Time:
                         {{ result.actual.travel_time === null ? "Not Available" : `${minutes(result.actual.travel_time)} min` }}
@@ -914,6 +959,14 @@ function focusEnd() {
 
             <div ref="mapWrapperEl" class="route-tracking-view">
             <div class="route-tracking-legend small">
+                <button type="button" class="route-tracking-legend-item"
+                    :class="{ active: stationaryVisible }"
+                    :aria-pressed="stationaryVisible"
+                    :disabled="!result?.actual?.stationary_periods?.length"
+                    @click="toggleStationary">
+                    <span style="color: #b45309">&#9679;</span>
+                    Stationary ({{ result?.actual?.stationary_periods?.length ?? 0 }})
+                </button>
                 <button
                     type="button"
                     class="route-tracking-legend-item"

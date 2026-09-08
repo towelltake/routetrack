@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 const props = defineProps({ metrics: Object, loading: Boolean, error: String });
+const emit = defineEmits(["inspect"]);
 const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
 const cards = computed(() => {
@@ -45,7 +46,12 @@ const cards = computed(() => {
         </div>
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
         <div class="dashboard-metric-grid">
-            <article v-for="card in cards" :key="card.title" class="dashboard-metric-card" :class="`tone-${card.tone}`" :title="card.definition">
+            <article v-for="card in cards" :key="card.title" class="dashboard-metric-card" :class="`tone-${card.tone}`" :title="card.definition"
+                role="button" :tabindex="metrics && !loading ? 0 : -1" :aria-disabled="!metrics || loading"
+                :aria-label="`${card.title}. ${card.definition} View journey details.`"
+                @click="metrics && !loading && emit('inspect', card.title)"
+                @keydown.enter="metrics && !loading && emit('inspect', card.title)"
+                @keydown.space.prevent="metrics && !loading && emit('inspect', card.title)">
                 <div class="dashboard-metric-heading">
                     <h3>{{ card.title }}</h3>
                     <span class="dashboard-metric-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
@@ -73,6 +79,9 @@ const cards = computed(() => {
 .dashboard-overview-heading p, .dashboard-overview-heading > span { margin: 0; color: #64748b; font-size: 12px; }
 .dashboard-metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; min-width: 0; padding: 20px; border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; box-shadow: 0 3px 12px #172b4505; }
+.dashboard-metric-card[aria-disabled="false"] { cursor: pointer; }
+.dashboard-metric-card[aria-disabled="false"]:hover { border-color: #bfdbfe; box-shadow: 0 6px 20px #172b450c; }
+.dashboard-metric-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
 .tone-teal { --accent: #0f766e; --tint: #f0fdfa; }
 .tone-violet { --accent: #7c3aed; --tint: #f5f3ff; }
 .tone-amber { --accent: #b45309; --tint: #fffbeb; }

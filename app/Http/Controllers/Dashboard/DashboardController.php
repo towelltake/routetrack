@@ -222,7 +222,22 @@ class DashboardController extends Controller
             ->whereIn('routecode', $routeCodes)
             ->whereDate('routestartdate', '>=', $filters['from_date'] ?? $filters['date'])
             ->whereDate('routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
-            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed']);
+            ->get();
+
+        $metadata = $this->matchingRoutes($filters)->get([
+            'routemaster.routecode', 'routemaster.routename', 'company.cmpycode', 'company.name as division',
+            'company.entity', 'clustermaster.clustercode', 'clustermaster.clustername as cluster',
+            'regionmaster.regionmstcode', 'regionmaster.regionmstname as region',
+        ])->keyBy('routecode');
+        $salesmen = AccountSalesman::query()->whereIn('salesmancode', $journeys->pluck('salesmancode')->filter()->unique())
+            ->get(['salesmancode', 'salesmanname1'])->keyBy('salesmancode');
+        foreach ($journeys as $journey) {
+            $route = $metadata->get($journey->routecode);
+            foreach (['routename', 'cmpycode', 'division', 'entity', 'clustercode', 'cluster', 'regionmstcode', 'region'] as $field) {
+                $journey->$field = $route?->$field;
+            }
+            $journey->salesperson = $salesmen->get($journey->salesmancode ?? null)?->salesmanname1;
+        }
 
         return response()->json(app(\App\Services\DashboardMetrics::class)->summarize($journeys));
     }

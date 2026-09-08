@@ -13,11 +13,13 @@ class DashboardMetrics
         $byJourney = $journeys->keyBy('routekey');
         $plans = DB::table('routesequencecustomerstatus')
             ->whereIn('routekey', $keys)->where('schelduledflag', 1)
-            ->select('routekey', 'customercode')->distinct()->get();
+            ->select('routekey', 'customercode')->selectRaw('COALESCE(MIN(CASE WHEN sequencenumber > 0 THEN sequencenumber END), 0) as sequencenumber')
+            ->groupBy('routekey', 'customercode')->get();
         $visits = DB::table('customervisitlog as v')
             ->leftJoin('customermaster as c', 'c.customercode', '=', 'v.customercode')
             ->leftJoin('channelmaster as ch', 'ch.channelcode', '=', 'c.channelcode')
             ->whereIn('v.routekey', $keys)
+            ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
             ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime',
                 DB::raw('COALESCE(NULLIF(c.customerfacetime, 0), NULLIF(ch.customercft, 0), 0) as expected_minutes')]);
         $operations = DB::table('customeroperationscontrol')
@@ -28,12 +30,15 @@ class DashboardMetrics
 
         $transactions = [];
         $amounts = [];
+        $journeyAmounts = [];
         foreach (['sales' => ['invoiceheader', 'totalinvoiceamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $type => [$table, $amount]) {
             $query = DB::table($table)->whereIn('routekey', $keys)
                 ->where(fn ($query) => $query->whereNull('voidflag')->orWhere('voidflag', 0));
             $transactions[$type] = (clone $query)->where($amount, '>', 0)->whereNotNull('visitkey')->where('visitkey', '>', 0)
                 ->select('routekey', 'visitkey')->distinct()->get()
                 ->keyBy(fn ($row) => $row->routekey.':'.$row->visitkey);
+            $journeyAmounts[$type] = (clone $query)->selectRaw("routekey, COALESCE(currencycode, 0) as currencycode, SUM(COALESCE({$amount}, 0)) as amount")
+                ->groupBy('routekey')->groupByRaw('COALESCE(currencycode, 0)')->get();
             // Aggregate transaction headers before any visit joins to avoid multiplying amounts.
             $amounts[$type] = (clone $query)->selectRaw("COALESCE(currencycode, 0) as currencycode, SUM(COALESCE({$amount}, 0)) as amount, COUNT(*) as documents")
                 ->groupByRaw('COALESCE(currencycode, 0)')->orderBy('currencycode')->get();
@@ -85,6 +90,9 @@ class DashboardMetrics
             }
         }
 
+        $otp = $this->otp($journeys, $visits);
+        $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
+
         return [
             'journeys_started' => $journeys->count(),
             'unique_routes' => $journeys->pluck('routecode')->unique()->count(),
@@ -103,13 +111,14 @@ class DashboardMetrics
             'cft_variance_minutes' => $configuredVisits ? round($configuredSeconds / 60 - $expectedMinutes, 1) : null,
             'cft_configured_visits' => $configuredVisits,
             'amounts' => $amounts,
-            'otp' => $this->otp($journeys, $visits),
+            'otp' => ['events' => $otp['events'], 'visits' => $otp['visits']],
+            'analysis' => $analysis,
         ];
     }
 
     private function otp(Collection $journeys, Collection $visits): array
     {
-        if ($journeys->isEmpty()) return ['events' => 0, 'visits' => 0];
+        if ($journeys->isEmpty()) return ['events' => 0, 'visits' => 0, 'details' => []];
         // OTP has no verified journey key; associate it by route and journey time window.
         $starts = DB::table('startendday')->whereIn('routecode', $journeys->pluck('routecode')->unique())
             ->whereDate('routestartdate', '>=', substr((string) $journeys->min('routestartdate'), 0, 10))
@@ -127,7 +136,8 @@ class DashboardMetrics
         }
         $events = DB::table('otplogdetail')->whereIn('routecode', array_keys($windows))
             ->whereDate('otpdate', '>=', substr((string) $journeys->min('routestartdate'), 0, 10))
-            ->get(['otplogid', 'routecode', 'customercode', 'otpdate', 'otptime']);
+            ->get(['otplogid', 'routecode', 'customercode', 'otpdate', 'otptime', 'otptype', 'username', 'otpreason', 'comments']);
+        $details = [];
         $count = 0;
         $matchedVisits = [];
         $visitsByCustomer = $visits->groupBy(fn ($row) => $row->routekey.':'.$row->customercode);
@@ -137,6 +147,7 @@ class DashboardMetrics
             foreach ($windows[$event->routecode] as $window) {
                 if ($timestamp < $window['start'] || ($window['end'] !== null && $timestamp > $window['end']) || ($window['next'] !== null && $timestamp >= $window['next'])) continue;
                 $count++;
+                $details[] = (array) $event + ['routekey' => $window['key']];
                 foreach ($visitsByCustomer->get($window['key'].':'.$event->customercode, collect()) as $visit) {
                     $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
                     $end = $this->timestamp($visit->logenddate, $visit->logendtime);
@@ -148,7 +159,7 @@ class DashboardMetrics
                 break;
             }
         }
-        return ['events' => $count, 'visits' => count($matchedVisits)];
+        return ['events' => $count, 'visits' => count($matchedVisits), 'details' => $details];
     }
 
     private function timestamp(mixed $date, mixed $time): ?int

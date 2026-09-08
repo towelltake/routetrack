@@ -12,7 +12,7 @@ beforeEach(function () {
     DB::purge('metrics_test');
     foreach ([
         'startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
-        'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer)',
+        'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customermaster (customercode integer, channelcode integer, customerfacetime integer)',
         'channelmaster (channelcode integer, customercft integer)',
         'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text)',
@@ -21,7 +21,7 @@ beforeEach(function () {
         'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer)',
         'arheader (routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
         'currencymaster (currencycode integer, currencysymbol text)',
-        'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text)',
+        'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, otpreason text, comments text)',
     ] as $table) DB::statement('CREATE TABLE '.$table);
     DB::table('startendday')->insert([
         ['routekey' => 1, 'routecode' => 1, 'routestartdate' => '2026-09-01', 'routestarttime' => '08:00:00', 'routeenddate' => '2026-09-02', 'routeendtime' => '02:00:00', 'routeclosed' => 1],
@@ -90,4 +90,38 @@ test('a return-only invoice changes sales total but does not make a visit produc
     $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
     expect($result['productive_visits'])->toBe(2)
         ->and((float) $result['amounts']['sales'][0]['amount'])->toBe(140.0);
+});
+
+test('analysis exposes journey coverage, repeat visits, OTP details and missing data honestly', function () {
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    $rows = collect($result['analysis']['journeys'])->keyBy('routekey');
+    expect($rows[1])->toMatchArray(['planned' => 2, 'covered' => 1, 'missed' => 1, 'repeat' => 1, 'otp' => 3]);
+    expect($rows[2])->toMatchArray(['pending' => 1, 'unplanned' => 3, 'incomplete_visits' => 1, 'missing_cft' => 1, 'duration' => null, 'distance' => null, 'stationary_time' => null]);
+    expect($rows[1]['otp_events'])->toHaveCount(3)
+        ->and(collect($rows[1]['issues'])->pluck('label')->all())->toContain('Missed customers', 'Repeat visits');
+});
+
+test('time chart merges overlapping visit intervals and distance requires completed valid readings', function () {
+    DB::table('customervisitlog')->insert(['logkey' => 13, 'routekey' => 1, 'customercode' => 101,
+        'logstartdate' => '2026-09-01', 'logstarttime' => '10:10:00', 'logenddate' => '2026-09-01', 'logendtime' => '10:35:00']);
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    foreach ($journeys as $journey) {
+        $journey->routestartodometer = 1234;
+        $journey->routeendodometer = 1250;
+    }
+    $rows = collect(app(DashboardMetrics::class)->summarize($journeys)['analysis']['journeys'])->keyBy('routekey');
+    expect($rows[1]['actual_cft'])->toEqual(55)
+        ->and($rows[1]['visit_time'])->toEqual(40)
+        ->and($rows[1]['remaining_time'])->toEqual($rows[1]['duration'] - 40)
+        ->and($rows[1]['distance'])->toBe(16.0)
+        ->and($rows[2]['distance'])->toBeNull();
+});
+
+test('sequence exceptions use planned order and do not label missing-plan visits unplanned', function () {
+    DB::table('routesequencecustomerstatus')->where('routekey', 1)->where('customercode', 101)->update(['sequencenumber' => 2]);
+    DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
+    $rows = collect(app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get())['analysis']['journeys'])->keyBy('routekey');
+    expect($rows[1]['out_of_sequence'])->toBe(1)->and($rows[1]['repeat'])->toBe(1)
+        ->and($rows[2]['unplanned'])->toBe(0)
+        ->and(collect($rows[2]['issues'])->pluck('label')->all())->toContain('Journey plan unavailable');
 });

@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import DashboardCards from "./DashboardCards.vue";
+import DashboardAnalytics from "./DashboardAnalytics.vue";
 import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "./filters";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
@@ -28,6 +29,7 @@ const loading = ref(false);
 const metrics = ref(null);
 const metricsLoading = ref(true);
 const metricsError = ref(null);
+const analyticsView = ref(null);
 const error = ref(null);
 const locations = ref([]);
 const isFullscreen = ref(false);
@@ -223,7 +225,7 @@ function resetFilters() {
     <div class="content route-location-content">
         <div class="route-location-page-heading">
             <h1 class="h3 fw-bold mb-1">Dashboard</h1>
-            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Last known GPS position for every route</h2>
+            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Field performance across every route journey</h2>
         </div>
 
         <section class="dashboard-filters" aria-labelledby="dashboard-filters-title">
@@ -298,11 +300,12 @@ function resetFilters() {
             </div>
         </section>
 
-        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" />
+        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="analyticsView?.openOverview($event)" />
+        <DashboardAnalytics ref="analyticsView" :metrics="metrics" :loading="metricsLoading" />
 
-        <BaseBlock title="Dashboard" :mode-loading="loading">
+        <BaseBlock title="Route locations" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
-            <p v-else-if="locations.length" class="text-muted small">Showing {{ locations.length }} route(s) started from {{ fromDate }} to {{ toDate }}</p>
+            <p v-else-if="locations.length" class="text-muted small">Latest matching journey for each of {{ locations.length }} routes. Charts and tables above include all journeys started from {{ fromDate }} to {{ toDate }}.</p>
 
             <div class="row g-3">
                 <div class="col-md-8">

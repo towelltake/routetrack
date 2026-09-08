@@ -59,6 +59,15 @@ const customerVisits = computed(() => {
     }));
 });
 
+const stationaryPeriods = computed(() =>
+    (result.value?.actual?.stationary_periods ?? []).map((period, index) => ({
+        ...period,
+        displayNumber: index + 1,
+        listKey: `stationary-${index}`,
+        markerIndex: index,
+    })),
+);
+
 const customerVisitSummary = computed(() => {
     const planned = result.value?.planned;
 
@@ -146,6 +155,7 @@ const filteredCustomers = computed(() => {
 let map = null;
 const customerMarkers = {};
 const visitMarkers = {};
+const stationaryMarkers = [];
 const customerItemEls = {};
 let resultLayer = null;
 let plannedLineLayer = null;
@@ -436,6 +446,7 @@ async function runComparison() {
     endMarker = null;
     Object.keys(customerMarkers).forEach((key) => delete customerMarkers[key]);
     Object.keys(visitMarkers).forEach((key) => delete visitMarkers[key]);
+    stationaryMarkers.length = 0;
     customerSearch.value = "";
     customerListTab.value = "all";
     customerVisitTab.value = "all";
@@ -470,7 +481,7 @@ async function runComparison() {
         resultLayer = L.featureGroup().addTo(map);
         stationaryVisible.value = true;
         stationaryLayer = L.featureGroup().addTo(resultLayer);
-        (data.actual.stationary_periods ?? []).forEach((period) => {
+        (data.actual.stationary_periods ?? []).forEach((period, index) => {
             const popup = document.createElement('div');
             const heading = document.createElement('strong');
             heading.textContent = `Stationary: ${minutes(period.duration_seconds)} min`;
@@ -493,11 +504,14 @@ async function runComparison() {
                 fillColor: '#fbbf24', fillOpacity: 0.2,
             }).bindPopup(popup).addTo(stationaryLayer);
             circle.bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`);
+            circle.on("click", () => revealStationaryInList(index));
             // A small centre target keeps the geographic circle clickable when zoomed out.
-            L.circleMarker([period.lat, period.lng], {
+            const stationaryMarker = L.circleMarker([period.lat, period.lng], {
                 radius: 7, color: '#b45309', weight: 2, fillColor: '#fef3c7', fillOpacity: 0.9,
             }).bindPopup(popup.cloneNode(true))
                 .bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`).addTo(stationaryLayer);
+            stationaryMarker.on("click", () => revealStationaryInList(index));
+            stationaryMarkers[index] = stationaryMarker;
         });
         const actualLayer = L.featureGroup().addTo(resultLayer);
         plannedCustomerLayer = L.featureGroup();
@@ -626,6 +640,15 @@ function minutes(seconds) {
     return Math.round(seconds / 60);
 }
 
+function stationaryDuration(seconds) {
+    const total = minutes(seconds);
+    return total < 60 ? `${total} min` : `${Math.floor(total / 60)}h ${total % 60}m`;
+}
+
+function stationaryTime(timestamp) {
+    return String(timestamp ?? "").slice(11, 16) || "—";
+}
+
 function toggleStationary() {
     if (!resultLayer || !stationaryLayer) return;
     stationaryVisible.value = !stationaryVisible.value;
@@ -644,6 +667,15 @@ function focusCustomer(customer) {
     }
 
     map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15));
+    marker.openPopup();
+}
+
+function focusStationary(period) {
+    selectedCustomerKey.value = period.listKey;
+    const marker = stationaryMarkers[period.markerIndex];
+    if (!marker || !map) return;
+    if (!stationaryVisible.value) toggleStationary();
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16));
     marker.openPopup();
 }
 
@@ -668,6 +700,13 @@ async function revealCustomerInList(customer) {
 
     await nextTick();
     customerItemEls[customer.listKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function revealStationaryInList(index) {
+    customerListTab.value = "stationary";
+    selectedCustomerKey.value = `stationary-${index}`;
+    await nextTick();
+    customerItemEls[`stationary-${index}`]?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function fitToCustomers(predicate) {
@@ -743,7 +782,13 @@ function togglePlannedNotVisited() {
 function selectCustomerTab(tab) {
     customerListTab.value = tab;
 
-    if (tab === "visits") {
+    if (tab === "stationary") {
+        if (!stationaryVisible.value) toggleStationary();
+        const markers = stationaryMarkers.filter(Boolean);
+        if (markers.length) {
+            map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
+        }
+    } else if (tab === "visits") {
         if (!customerVisitsVisible.value) {
             customerVisitsVisible.value = true;
             resultLayer.addLayer(customerVisitLayer);
@@ -1059,9 +1104,9 @@ function focusEnd() {
                 <div class="col-md-3 route-tracking-panel-column">
                     <div class="card route-tracking-customer-list-card" style="height: 680px">
                         <div class="card-header">
-                            <strong>Customers</strong>
+                            <strong>{{ customerListTab === 'stationary' ? 'Stationary periods' : 'Customers' }}</strong>
                             <span v-if="result" class="text-muted small">
-                                ({{ result.planned.visit_count }} visits)
+                                ({{ customerListTab === 'stationary' ? `${stationaryPeriods.length} stops` : `${result.planned.visit_count} visits` }})
                             </span>
                         </div>
                         <div class="route-tracking-customer-tabs">
@@ -1092,6 +1137,15 @@ function focusEnd() {
                             >
                                 Not Visited
                             </button>
+                            <button
+                                type="button"
+                                class="route-tracking-customer-tab stationary"
+                                :class="{ active: customerListTab === 'stationary' }"
+                                :disabled="!stationaryPeriods.length"
+                                @click="selectCustomerTab('stationary')"
+                            >
+                                Stationary
+                            </button>
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
                             <button
@@ -1111,7 +1165,7 @@ function focusEnd() {
                                 {{ customerVisitTabLabel(tab) }}
                             </button>
                         </div>
-                        <div class="route-tracking-customer-search p-2">
+                        <div v-if="customerListTab !== 'stationary'" class="route-tracking-customer-search p-2">
                             <input
                                 v-model="customerSearch"
                                 type="text"
@@ -1122,9 +1176,37 @@ function focusEnd() {
                         </div>
                         <div class="card-body p-2">
                             <div class="route-tracking-customer-list">
-                                <p v-if="!result" class="text-muted small px-1">Run a comparison to see customers.</p>
-                                <p v-else-if="!filteredCustomers.length" class="text-muted small px-1">No customers match.</p>
-                                <div
+                                <template v-if="customerListTab === 'stationary'">
+                                    <p v-if="!stationaryPeriods.length" class="text-muted small px-1">No stationary periods detected.</p>
+                                    <button
+                                        v-for="period in stationaryPeriods"
+                                        :key="period.listKey"
+                                        :ref="(element) => setCustomerItemRef(period.listKey, element)"
+                                        type="button"
+                                        class="list-group-item list-group-item-action route-tracking-customer-item route-tracking-stationary-item"
+                                        :class="{ selected: selectedCustomerKey === period.listKey }"
+                                        @click="focusStationary(period)"
+                                    >
+                                        <span class="route-tracking-stationary-dot">{{ period.displayNumber }}</span>
+                                        <span class="route-tracking-customer-info">
+                                            <span class="route-tracking-customer-name-row">
+                                                <span class="fw-semibold">{{ stationaryDuration(period.duration_seconds) }}</span>
+                                                <span class="small text-muted">{{ stationaryTime(period.start_time) }}–{{ stationaryTime(period.end_time) }}</span>
+                                            </span>
+                                            <span class="d-block small text-muted">
+                                                {{ period.customer_visits?.length
+                                                    ? `At customer: ${period.customer_visits.map((visit) => visit.customername).join(', ')}`
+                                                    : 'Outside completed customer visits' }}
+                                            </span>
+                                            <span v-if="period.accuracy_unknown" class="d-block small text-warning">GPS accuracy unknown</span>
+                                        </span>
+                                        <i class="fa fa-location-dot text-warning" aria-hidden="true"></i>
+                                    </button>
+                                </template>
+                                <template v-else>
+                                    <p v-if="!result" class="text-muted small px-1">Run a comparison to see customers.</p>
+                                    <p v-else-if="!filteredCustomers.length" class="text-muted small px-1">No customers match.</p>
+                                    <div
                                     v-for="customer in filteredCustomers"
                                     :key="customer.listKey"
                                     :ref="(element) => setCustomerItemRef(customer.listKey, element)"
@@ -1209,7 +1291,8 @@ function focusEnd() {
                                     >
                                         <i class="fa fa-key"></i>
                                     </button>
-                                </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -1475,6 +1558,7 @@ function focusEnd() {
 
 .route-tracking-customer-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
     padding: 0.4rem;
     border-bottom: 1px solid #e5e7eb;
@@ -1482,7 +1566,7 @@ function focusEnd() {
 }
 
 .route-tracking-customer-tab {
-    flex: 1;
+    flex: 1 1 calc(50% - 0.25rem);
     background: #fff;
     border: 1px solid transparent;
     border-radius: 5px;
@@ -1498,6 +1582,12 @@ function focusEnd() {
         border-color: #dbeafe;
         color: #3b82f6;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    &.stationary.active {
+        border-color: #f59e0b;
+        color: #92400e;
+        background: #fffbeb;
     }
 
     &:disabled {
@@ -1607,6 +1697,31 @@ function focusEnd() {
         transform: translateX(3px);
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
     }
+}
+
+.route-tracking-stationary-item {
+    border-color: #fde68a !important;
+    background: #fffbeb;
+
+    &.selected {
+        border-color: #b45309 !important;
+        box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.12);
+    }
+}
+
+.route-tracking-stationary-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border: 2px solid #b45309;
+    border-radius: 50%;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.75rem;
+    font-weight: 700;
 }
 
 .route-tracking-customer-dot {

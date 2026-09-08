@@ -130,7 +130,7 @@ The first GPS point is Route Start. The final GPS point is Last Known Location.
 
 ### Route tracking stationary markers
 
-Route Tracking shows light amber geographic circles and clickable centre dots for GPS-detected stationary periods. The legend toggles the layer. Popups show duration, first/last observed stationary timestamps, completed customer visit overlaps, and unknown accuracy for legacy records. Stationary time can include customer service; it is not automatically non-working time.
+Route Tracking shows light amber geographic circles and clickable centre dots for GPS-detected stationary periods. The legend toggles the layer. A Stationary tab in the side panel lists each period with duration, time range, visit overlap, and legacy accuracy status; selecting a row zooms to its marker, while selecting a marker reveals its row. Popups show the complete details. Stationary time can include customer service; it is not automatically non-working time.
 
 Configuration is in `config/tracking.php`, with these optional environment overrides (defaults apply without editing `.env`):
 

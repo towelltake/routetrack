@@ -149,6 +149,8 @@ Devices should send a fresh GPS heartbeat about every 30 seconds even while stat
 
 Consecutive usable readings separated by more than `TRACKING_STATIONARY_MAX_GAP_SECONDS` are also returned as bounded GPS-unavailable gaps. Route Tracking shows a red warning flag at the last usable coordinate and lists the gap in a GPS Gaps side-panel tab with the last-signal time, recovery time, and full interval duration. The application cannot determine whether a gap was caused by coverage, the device, permissions, GPS settings, or deliberate action. Gaps before the first reading and after the last reading are not inferred because they have no recovery boundary in the selected data.
 
+Route Tracking uses the Dashboard's authorised Legal Entity, Cluster, Division, Region, and Route metadata for dynamic filters. Organisation filters allow multiple values; Route is a required single selection and Operation Date is a required single date. Its compact journey cards cover plan status and coverage, planned/actual distance and time, face/travel/stationary/GPS-gap time, unplanned visits, and Sales, Orders, Collections, and Returns. Transaction cards exclude voided documents and deduplicate transaction keys. Returns combine `invoiceheader.totalreturnamount` (good returns) with `invoiceheader.totaldamagedamount` (bad returns).
+
 No database migration is included because the required tables and `log_id` column already exist in the source database.
 
 ```bash

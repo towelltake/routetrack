@@ -221,9 +221,12 @@ class RouteTrackingController extends Controller
         }
         unset($period);
 
+        $transactionSummary = $this->summarizeTransactions(collect($planned['customer_visits']));
+
         return response()->json([
             'planned' => $planned,
             'actual' => $actual,
+            'transactions' => $transactionSummary,
             'distance_ratio' => $distanceRatio,
             'duration_ratio' => $durationRatio,
         ]);
@@ -897,9 +900,9 @@ class RouteTrackingController extends Controller
     {
         $visitKeys = $visits->pluck('visitkey')->filter()->unique();
         $transactions = collect([
-            'sales' => ['table' => 'invoiceheader', 'amount' => 'totalinvoiceamount'],
-            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalinvoiceamount'],
-            'collections' => ['table' => 'arheader', 'amount' => 'amountpaid'],
+            'sales' => ['table' => 'invoiceheader', 'amount' => 'totalinvoiceamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
+            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalinvoiceamount', 'returns' => '0'],
+            'collections' => ['table' => 'arheader', 'amount' => 'amountpaid', 'returns' => '0'],
         ])->map(function (array $config, string $type) use ($routekey, $visitKeys) {
             if ($visitKeys->isEmpty()) {
                 return collect();
@@ -910,7 +913,7 @@ class RouteTrackingController extends Controller
                 ->whereIn('visitkey', $visitKeys)
                 ->orderBy('transactiondate')
                 ->orderBy('transactiontime')
-                ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), 'voidflag'])
+                ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), DB::raw("{$config['returns']} as return_amount"), 'voidflag'])
                 ->map(fn (object $transaction) => [
                     'type' => $type,
                     'transactionkey' => (int) $transaction->transactionkey,
@@ -919,6 +922,7 @@ class RouteTrackingController extends Controller
                     'date' => $transaction->transactiondate,
                     'time' => $transaction->transactiontime,
                     'amount' => (float) ($transaction->amount ?? 0),
+                    'return_amount' => (float) ($transaction->return_amount ?? 0),
                     'voided' => (int) ($transaction->voidflag ?? 0) === 1,
                 ])
                 ->groupBy('visitkey');
@@ -932,6 +936,36 @@ class RouteTrackingController extends Controller
 
             return $visit;
         });
+    }
+
+    private function summarizeTransactions(Collection $visits): array
+    {
+        $summary = collect(['sales', 'orders', 'collections', 'returns'])
+            ->mapWithKeys(fn (string $type) => [$type => ['count' => 0, 'amount' => 0.0]])
+            ->all();
+        $seen = [];
+
+        foreach ($visits as $visit) {
+            foreach (['sales', 'orders', 'collections'] as $type) {
+                foreach ($visit['transactions'][$type] ?? [] as $transaction) {
+                    $key = $type.':'.$transaction['transactionkey'];
+                    if (($transaction['voided'] ?? false) || isset($seen[$key])) {
+                        continue;
+                    }
+                    $seen[$key] = true;
+                    $summary[$type]['count']++;
+                    $summary[$type]['amount'] += (float) ($transaction['amount'] ?? 0);
+
+                    $returnAmount = (float) ($transaction['return_amount'] ?? 0);
+                    if ($type === 'sales' && $returnAmount > 0) {
+                        $summary['returns']['count']++;
+                        $summary['returns']['amount'] += $returnAmount;
+                    }
+                }
+            }
+        }
+
+        return $summary;
     }
 
     private function fetchCustomerVisits(int $routekey, int $routecode): Collection

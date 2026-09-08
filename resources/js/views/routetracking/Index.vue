@@ -6,16 +6,27 @@ import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
+import { filterFields, filterOptions } from "@/views/routelocation/filters";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const store = useTemplateStore();
 
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
-const companies = ref([]);
-const routes = ref([]);
-const selectedCompany = ref(null);
+const scopeFields = filterFields.filter(({ key }) => key !== "routes");
+const routeField = filterFields.find(({ key }) => key === "routes");
+const filterRows = ref([]);
+const selectedScopes = ref(Object.fromEntries(scopeFields.map(({ key }) => [key, []])));
+const filtersReady = ref(false);
 const selectedRoute = ref(null);
+const filterSelection = computed(() => ({
+    ...selectedScopes.value,
+    routes: selectedRoute.value ? [selectedRoute.value] : [],
+}));
+const scopeOptions = computed(() => Object.fromEntries(scopeFields.map((field) => [
+    field.key, filterOptions(filterRows.value, filterSelection.value, field),
+])));
+const routeOptions = computed(() => filterOptions(filterRows.value, { ...selectedScopes.value, routes: [] }, routeField));
 const now = new Date();
 const DEFAULT_DATE = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 const selectedDate = ref(DEFAULT_DATE);
@@ -87,6 +98,38 @@ const customerVisitSummary = computed(() => {
         unplannedVisited: planned?.unplanned_visited_count ?? 0,
         plannedNotVisited: planned?.planned_not_visited_count ?? 0,
     };
+});
+
+const routeSummaryCards = computed(() => {
+    if (!result.value) return [];
+    const planned = result.value.planned;
+    const actual = result.value.actual;
+    const transactions = result.value.transactions ?? {};
+    const transactionCard = (label, type, icon, tone) => {
+        const count = transactions[type]?.count ?? 0;
+        return {
+            label, icon, tone,
+            value: money(transactions[type]?.amount),
+            meta: `${count} ${count === 1 ? "document" : "documents"}${type === "returns" ? " · good + bad" : ""}`,
+        };
+    };
+
+    return [
+        { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", value: planned.route_closed ? "Closed" : "Live", meta: `${plannedDayLabel(planned.day)} journey` },
+        { label: "Customer Coverage", icon: "fa-store", tone: "blue", value: `${customerVisitSummary.value.plannedVisited} / ${customerVisitSummary.value.planned}`, meta: `${customerVisitSummary.value.plannedNotVisited} not visited` },
+        { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: `${minutes(planned.duration)} min planned` },
+        { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
+        { label: "Actual Time", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: `${pct(result.value.duration_ratio)} of planned time` },
+        { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: "Completed visit time" },
+        { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: "Actual time less face time" },
+        { label: "Stationary", icon: "fa-pause", tone: "amber", value: stationaryDuration(actual.stationary_seconds), meta: `${actual.stationary_periods?.length ?? 0} stops · ${actual.stationary_minimum_minutes}+ min` },
+        { label: "GPS Unavailable", icon: "fa-satellite-dish", tone: "red", value: stationaryDuration(actual.gps_gap_seconds), meta: `${actual.gps_gaps?.length ?? 0} gaps` },
+        { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", value: customerVisitSummary.value.unplannedVisited, meta: "Outside journey plan" },
+        transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
+        transactionCard("Orders", "orders", "fa-cart-shopping", "blue"),
+        transactionCard("Collections", "collections", "fa-hand-holding-dollar", "navy"),
+        transactionCard("Returns", "returns", "fa-rotate-left", "red"),
+    ];
 });
 
 function plannedDayLabel(day) {
@@ -190,12 +233,9 @@ onMounted(async () => {
     }).addTo(map);
 
     try {
-        const [routesRes, companiesRes] = await Promise.all([
-            axios.get("/route-tracking/routes.json"),
-            axios.get("/route-tracking/companies.json"),
-        ]);
-        routes.value = routesRes.data;
-        companies.value = companiesRes.data;
+        const { data } = await axios.get("/route-tracking/filters.json");
+        filterRows.value = data;
+        filtersReady.value = true;
 
         // Deep-link support: Route Location's "Track" button sends a route + date
         // here via query params so the comparison runs immediately on arrival.
@@ -203,13 +243,15 @@ onMounted(async () => {
         const linkedRoute = params.get("routecode");
         const linkedDate = params.get("date");
 
-        if (linkedRoute && routes.value.some((route) => route.routecode === Number(linkedRoute))) {
+        if (linkedRoute && routeOptions.value.some((route) => String(route.value) === String(linkedRoute))) {
             selectedRoute.value = Number(linkedRoute);
             if (linkedDate) {
                 selectedDate.value = linkedDate;
             }
             await runComparison();
         }
+    } catch {
+        error.value = "Unable to load route filters. Refresh the page to retry.";
     } finally {
         store.pageLoader({ mode: "off" });
     }
@@ -222,11 +264,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => store.pageLoader({ mode: "off" }));
 
-watch(selectedCompany, async (companycode) => {
-    const { data: routeData } = await axios.get("/route-tracking/routes.json", { params: { companycode } });
-    routes.value = routeData;
-    selectedRoute.value = null;
-});
+watch(selectedScopes, () => {
+    if (selectedRoute.value && !routeOptions.value.some(({ value }) => String(value) === String(selectedRoute.value))) {
+        selectedRoute.value = null;
+    }
+}, { deep: true });
 
 function toggleFullscreen() {
     if (document.fullscreenElement) {
@@ -638,7 +680,7 @@ async function runComparison() {
 }
 
 function resetFilters() {
-    selectedCompany.value = null;
+    selectedScopes.value = Object.fromEntries(scopeFields.map(({ key }) => [key, []]));
     selectedRoute.value = null;
     selectedDate.value = DEFAULT_DATE;
     error.value = null;
@@ -907,45 +949,60 @@ function focusEnd() {
             <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual GPS points</h2>
         </div>
 
-        <BaseBlock title="Filters" class="route-tracking-filters">
-            <div class="row align-items-end g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Company</label>
-                    <VueSelect
-                        v-model="selectedCompany"
-                        :options="companies"
-                        :reduce="(company) => company.cmpycode"
-                        label="name"
-                        placeholder="All companies..."
-                    />
+        <section class="tracking-filters" aria-labelledby="tracking-filters-title">
+            <header class="tracking-filters-header">
+                <div class="tracking-filters-heading">
+                    <span class="tracking-filter-icon"><i class="fa fa-route" aria-hidden="true"></i></span>
+                    <div>
+                        <h2 id="tracking-filters-title">Choose a route journey</h2>
+                        <p>Narrow the organisation, then select one route and operation date.</p>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Route</label>
-                    <VueSelect
-                        v-model="selectedRoute"
-                        :options="routes"
-                        :reduce="(route) => route.routecode"
-                        :get-option-label="(route) => `${route.routecode} - ${route.routename}`"
-                        :filter-by="(route, label, search) => label.toLowerCase().includes(search.toLowerCase())"
-                        placeholder="Select a route..."
-                    />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Operation Date</label>
-                    <input v-model="selectedDate" type="date" class="form-control" />
-                </div>
-            </div>
-            <div class="row align-items-end g-3 mt-3">
-                <div class="col-md-4">
-                    <button class="btn btn-primary w-100" :disabled="loading || !selectedRoute || !selectedDate" @click="runComparison">
-                        {{ loading ? "..." : "Apply" }}
+                <div class="tracking-filter-actions">
+                    <button type="button" class="tracking-reset" :disabled="loading" @click="resetFilters">Reset</button>
+                    <button type="button" class="tracking-apply" :disabled="loading || !filtersReady || !selectedRoute || !selectedDate" @click="runComparison">
+                        <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
+                        {{ loading ? "Loading..." : "Show route" }}
                     </button>
                 </div>
-                <div class="col-md-4">
-                    <button class="btn btn-light w-100" :disabled="loading" @click="resetFilters">Reset</button>
+            </header>
+
+            <div class="tracking-filter-grid">
+                <div v-for="field in scopeFields" :key="field.key" class="tracking-filter-field">
+                    <label :for="`tracking-${field.key}`">
+                        {{ field.label }}
+                        <span v-if="selectedScopes[field.key].length" class="tracking-selection-count">{{ selectedScopes[field.key].length }}</span>
+                    </label>
+                    <VueSelect
+                        :input-id="`tracking-${field.key}`"
+                        v-model="selectedScopes[field.key]"
+                        :options="scopeOptions[field.key]"
+                        :reduce="(option) => option.value"
+                        label="label"
+                        multiple
+                        :close-on-select="false"
+                        :disabled="!filtersReady"
+                        :placeholder="`All ${field.label.toLowerCase()}...`"
+                    />
+                </div>
+                <div class="tracking-filter-field tracking-route-field">
+                    <label for="tracking-route">Route <span class="tracking-required">Required</span></label>
+                    <VueSelect
+                        input-id="tracking-route"
+                        v-model="selectedRoute"
+                        :options="routeOptions"
+                        :reduce="(option) => option.value"
+                        label="label"
+                        :disabled="!filtersReady"
+                        placeholder="Select one route..."
+                    />
+                </div>
+                <div class="tracking-filter-field">
+                    <label for="tracking-date">Operation Date <span class="tracking-required">Required</span></label>
+                    <input id="tracking-date" v-model="selectedDate" type="date" />
                 </div>
             </div>
-        </BaseBlock>
+        </section>
 
         <BaseBlock title="Route Tracking" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
@@ -954,65 +1011,16 @@ function focusEnd() {
                 <div v-for="warning in routeQualityWarnings" :key="warning">{{ warning }}</div>
             </div>
 
-            <div v-if="result" class="row mb-3 g-3">
-                <div class="col-md-4">
-                    <div class="fw-bold text-primary">Planned</div>
-                    <div>
-                        Status:
-                        <span :class="result.planned.route_closed ? 'text-danger' : 'text-success'">
-                            {{ result.planned.route_closed ? "Closed" : "Live" }}
-                        </span>
+            <section v-if="result" class="route-summary-cards" aria-label="Route journey summary">
+                <article v-for="card in routeSummaryCards" :key="card.label" class="route-summary-card" :class="`tone-${card.tone}`">
+                    <span class="route-summary-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
+                    <div class="route-summary-copy">
+                        <span class="route-summary-label">{{ card.label }}</span>
+                        <strong>{{ card.value }}</strong>
+                        <span>{{ card.meta }}</span>
                     </div>
-                    <div>{{ km(result.planned.distance) }} km</div>
-                    <div>{{ minutes(result.planned.duration) }} min</div>
-                    <div class="text-muted small">
-                        Total Planned Customers ({{ plannedDayLabel(result.planned.day) }}): {{ customerVisitSummary.planned }}
-                    </div>
-                    <div v-if="result.planned.used_fallback_geometry" class="text-warning small">
-                        Approximate fallback, not road routed
-                    </div>
-                    <div class="text-success small">Planned Customers Visited: {{ customerVisitSummary.plannedVisited }}</div>
-                    <div class="small" style="color: #c2410c">
-                        Unplanned Customers Visited: {{ customerVisitSummary.unplannedVisited }}
-                    </div>
-                    <div class="text-muted small">Planned But Not Visited: {{ customerVisitSummary.plannedNotVisited }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="fw-bold text-danger">Actual (matched GPS)</div>
-                    <div>{{ km(result.actual.distance) }} km</div>
-                    <div>
-                        Actual Time:
-                        {{ result.actual.duration === null ? "Not Available" : `${minutes(result.actual.duration)} min` }}
-                    </div>
-                    <div>Total Customer Face Time: {{ minutes(result.actual.face_time) }} min</div>
-                    <div>Detected Stationary Time: {{ minutes(result.actual.stationary_seconds ?? 0) }} min
-                        ({{ result.actual.stationary_periods?.length ?? 0 }} stops)</div>
-                    <div class="text-danger">
-                        GPS Unavailable: {{ stationaryDuration(result.actual.gps_gap_seconds ?? 0) }}
-                        ({{ result.actual.gps_gaps?.length ?? 0 }} gaps)
-                    </div>
-                    <div class="text-muted small">
-                        Stops of {{ result.actual.stationary_minimum_minutes }}+ min. Reporting gaps are excluded;
-                        no detected stop does not confirm continuous movement.
-                    </div>
-                    <div>
-                        Total Travel Time:
-                        {{ result.actual.travel_time === null ? "Not Available" : `${minutes(result.actual.travel_time)} min` }}
-                    </div>
-                    <div class="text-muted small">
-                        {{ result.actual.point_count }}
-                        {{ result.actual.used_fallback_geometry ? "raw GPS points" : "GPS points matched to roads" }}
-                    </div>
-                    <div v-if="result.actual.used_fallback_geometry" class="text-warning small">
-                        Approximate fallback, not map matched
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="fw-bold">Efficiency ratio</div>
-                    <div>Distance: {{ pct(result.distance_ratio) }}</div>
-                    <div>Time: {{ pct(result.duration_ratio) }}</div>
-                </div>
-            </div>
+                </article>
+            </section>
 
             <div ref="mapWrapperEl" class="route-tracking-view">
             <div class="route-tracking-legend small">
@@ -1507,6 +1515,102 @@ function focusEnd() {
 <style lang="scss">
 @import "vue-select/dist/vue-select.css";
 @import "@scss/vendor/vue-select";
+
+.tracking-filters {
+    margin-bottom: 1.5rem;
+    overflow: visible;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
+    color: #172b45;
+    box-shadow: 0 4px 20px rgba(23, 43, 69, 0.04);
+
+    button, input, .vs__dropdown-toggle { transition: border-color 0.15s, background-color 0.15s; }
+    button:focus-visible, input:not(.vs__search):focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .vs__dropdown-toggle { min-height: 42px; border: 1px solid #d7e0e9; border-radius: 8px; padding: 3px 6px; background: #fff; }
+    .vs--open .vs__dropdown-toggle, .vs__dropdown-toggle:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px #eff6ff; }
+    .vs__selected { max-width: 100%; overflow-wrap: anywhere; border: 0; border-radius: 5px; background: #eff6ff; color: #1e40af; font-size: 12px; }
+    .vs__selected-options { min-width: 0; }
+    .vs__search { min-width: 0; font-size: 13px; }
+    .vs__dropdown-menu { z-index: 1100; border: 1px solid #d7e0e9; border-radius: 8px; box-shadow: 0 8px 24px #172b451a; }
+    .vs__dropdown-option { padding: 9px 12px; white-space: normal; font-size: 13px; }
+    .vs__dropdown-option--highlight { background: #eff6ff; color: #1d4ed8; }
+}
+
+.tracking-filters-header, .tracking-filters-heading, .tracking-filter-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.tracking-filters-header { padding: 18px 22px; }
+.tracking-filters-heading { justify-content: flex-start; }
+.tracking-filters-heading h2 { margin: 0 0 3px; font-size: 17px; font-weight: 700; }
+.tracking-filters-heading p { margin: 0; color: #64748b; font-size: 13px; }
+.tracking-filter-icon { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border-radius: 11px; background: #eff6ff; color: #2563eb; }
+.tracking-filter-actions button { border-radius: 8px; padding: 9px 14px; border: 1px solid transparent; font: inherit; font-size: 13px; font-weight: 650; white-space: nowrap; }
+.tracking-reset { background: transparent; color: #52657b; }
+.tracking-reset:hover { background: #f1f5f9; }
+.tracking-apply { background: #172b45; color: #fff; }
+.tracking-apply:hover { background: #274467; }
+.tracking-apply i { margin-right: 6px; }
+.tracking-filter-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; padding: 0 22px 20px; }
+.tracking-filter-field { min-width: 0; }
+.tracking-filter-field label { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; color: #475569; font-size: 12px; font-weight: 650; }
+.tracking-filter-field input[type="date"] { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid #d7e0e9; border-radius: 8px; background: #fff; color: #172b45; font: inherit; font-size: 13px; }
+.tracking-selection-count { padding: 1px 6px; border-radius: 5px; background: #dbeafe; color: #1e40af; font-size: 10px; }
+.tracking-required { padding: 1px 6px; border-radius: 999px; background: #fef2f2; color: #b91c1c; font-size: 9px; text-transform: uppercase; }
+
+.route-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.route-summary-card {
+    --tone: #475569;
+    --wash: #f1f5f9;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 86px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+
+    &.tone-blue { --tone: #2563eb; --wash: #eff6ff; }
+    &.tone-green { --tone: #15803d; --wash: #f0fdf4; }
+    &.tone-red { --tone: #dc2626; --wash: #fef2f2; }
+    &.tone-amber { --tone: #b45309; --wash: #fffbeb; }
+    &.tone-orange { --tone: #c2410c; --wash: #fff7ed; }
+    &.tone-navy { --tone: #172b45; --wash: #eef2f6; }
+}
+
+.route-summary-icon { display: grid; width: 29px; height: 29px; flex: 0 0 29px; place-items: center; border-radius: 8px; background: var(--wash); color: var(--tone); font-size: 12px; }
+.route-summary-copy { min-width: 0; }
+.route-summary-label, .route-summary-copy > span:last-child { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
+.route-summary-copy strong { display: block; margin: 3px 0 2px; color: var(--tone); font-size: 17px; line-height: 1.15; overflow-wrap: anywhere; }
+
+@media (max-width: 1199px) {
+    .tracking-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+    .tracking-filters-header { align-items: flex-start; flex-wrap: wrap; }
+    .tracking-filter-actions { width: 100%; justify-content: flex-end; }
+    .tracking-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 18px 18px; }
+    .tracking-filters-header { padding: 18px; }
+}
+
+@media (max-width: 480px) {
+    .tracking-filter-grid { grid-template-columns: 1fr; }
+    .route-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 .route-tracking-legend {
     display: flex;

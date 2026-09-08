@@ -153,12 +153,12 @@ const routeSummaryGroups = computed(() => {
             { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
         ] },
         { key: "distance", title: "Distance", cards: [
-            { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: `${stationaryDuration(planned.duration)} planned` },
+            { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
             { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
-            { label: "Actual Time", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: `${pct(result.value.duration_ratio)} of planned time` },
-            { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `${pct(actualSeconds ? actual.face_time / actualSeconds : null)} of actual time` },
+            { label: "Actual Time", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "" },
+            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `${pct(actualSeconds ? actual.face_time / actualSeconds : null)} of actual time` },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
             { label: "Idle Time", icon: "fa-pause", tone: "red", value: stationaryDuration(actual.idle_seconds), meta: `${actual.idle_periods?.length ?? 0} stops outside customer visits · ${pct(actualSeconds ? actual.idle_seconds / actualSeconds : null)}` },
         ] },
@@ -1087,7 +1087,7 @@ function focusEnd() {
                             <span class="route-summary-copy">
                                 <span class="route-summary-label">{{ card.label }}</span>
                                 <strong>{{ card.value }}</strong>
-                                <span>{{ card.meta }}</span>
+                                <span v-if="card.meta">{{ card.meta }}</span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
                         </button>
@@ -1097,22 +1097,6 @@ function focusEnd() {
 
             <div ref="mapWrapperEl" class="route-tracking-view">
             <div class="route-tracking-legend small">
-                <button type="button" class="route-tracking-legend-item"
-                    :class="{ active: stationaryVisible }"
-                    :aria-pressed="stationaryVisible"
-                    :disabled="!result?.actual?.stationary_periods?.length"
-                    @click="toggleStationary">
-                    <span style="color: #b45309">&#9679;</span>
-                    Stationary ({{ result?.actual?.stationary_periods?.length ?? 0 }})
-                </button>
-                <button type="button" class="route-tracking-legend-item"
-                    :class="{ active: gpsGapsVisible }"
-                    :aria-pressed="gpsGapsVisible"
-                    :disabled="!gpsGaps.length"
-                    @click="toggleGpsGaps">
-                    <span class="text-danger">&#9873;</span>
-                    GPS Unavailable ({{ gpsGaps.length }})
-                </button>
                 <button
                     type="button"
                     class="route-tracking-legend-item"
@@ -1185,6 +1169,22 @@ function focusEnd() {
                     @click="focusEnd"
                 >
                     <span style="color: #dc2626">&#9632;</span> Last Known Location (L)
+                </button>
+                <button type="button" class="route-tracking-legend-item"
+                    :class="{ active: stationaryVisible }"
+                    :aria-pressed="stationaryVisible"
+                    :disabled="!result?.actual?.stationary_periods?.length"
+                    @click="toggleStationary">
+                    <span style="color: #b45309">&#9679;</span>
+                    Stationary
+                </button>
+                <button type="button" class="route-tracking-legend-item"
+                    :class="{ active: gpsGapsVisible }"
+                    :aria-pressed="gpsGapsVisible"
+                    :disabled="!gpsGaps.length"
+                    @click="toggleGpsGaps">
+                    <span class="text-danger">&#9873;</span>
+                    GPS Unavailable
                 </button>
             </div>
 

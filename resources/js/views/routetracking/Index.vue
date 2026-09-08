@@ -767,26 +767,6 @@ async function revealGpsGapInList(index) {
     customerItemEls[`gps-gap-${index}`]?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-function fitToCustomers(predicate) {
-    const markers = (result.value?.planned?.customers ?? [])
-        .filter(predicate)
-        .map((customer) => customerMarkers[customer.customercode])
-        .filter(Boolean);
-
-    if (!markers.length || !map) {
-        return;
-    }
-
-    map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
-}
-
-function fitToVisitMarkers() {
-    const markers = Object.values(visitMarkers);
-    if (markers.length) {
-        map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
-    }
-}
-
 function updatePlannedCustomerIcons() {
     numberedCustomers.value.forEach((customer) => {
         customerMarkers[customer.customercode]?.setIcon(numberedIcon(customer.displayNumber, customer));
@@ -817,9 +797,7 @@ function toggleCustomerVisits() {
     customerVisitsVisible.value ? resultLayer.addLayer(customerVisitLayer) : resultLayer.removeLayer(customerVisitLayer);
     customerListTab.value = customerVisitsVisible.value ? "visits" : "all";
 
-    if (customerVisitsVisible.value) {
-        fitToVisitMarkers();
-    } else {
+    if (!customerVisitsVisible.value) {
         showPlannedCustomers();
     }
 }
@@ -832,9 +810,6 @@ function togglePlannedNotVisited() {
     updatePlannedCustomerIcons();
     customerListTab.value = plannedNotVisitedVisible.value ? "planned_not_visited" : "all";
 
-    if (plannedNotVisitedVisible.value) {
-        fitToCustomers((customer) => !customer.visited);
-    }
 }
 
 function selectCustomerTab(tab) {
@@ -842,42 +817,26 @@ function selectCustomerTab(tab) {
 
     if (tab === "gps_gaps") {
         if (!gpsGapsVisible.value) toggleGpsGaps();
-        const markers = gpsGapMarkers.filter(Boolean);
-        if (markers.length) {
-            map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
-        }
     } else if (tab === "stationary") {
         if (!stationaryVisible.value) toggleStationary();
-        const markers = stationaryMarkers.filter(Boolean);
-        if (markers.length) {
-            map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
-        }
     } else if (tab === "visits") {
         if (!customerVisitsVisible.value) {
             customerVisitsVisible.value = true;
             resultLayer.addLayer(customerVisitLayer);
         }
-        fitToVisitMarkers();
     } else if (tab === "planned_not_visited") {
         plannedNotVisitedVisible.value = true;
         showPlannedCustomers();
         updatePlannedCustomerIcons();
-        fitToCustomers((customer) => !customer.visited);
     } else {
         plannedNotVisitedVisible.value = false;
         showPlannedCustomers();
         updatePlannedCustomerIcons();
-        fitToCustomers(() => true);
     }
 }
 
 function selectCustomerVisitTab(tab) {
     customerVisitTab.value = tab;
-    const visibleVisits = tabCustomers.value;
-    const markers = visibleVisits.map((visit) => visitMarkers[visit.logkey]).filter(Boolean);
-    if (markers.length) {
-        map.fitBounds(L.latLngBounds(markers.map((marker) => marker.getLatLng())), { padding: [60, 60] });
-    }
 }
 
 function customerVisitTabLabel(tab) {
@@ -898,11 +857,6 @@ function togglePlannedRoute() {
 
     plannedRouteVisible.value = !plannedRouteVisible.value;
     plannedRouteVisible.value ? resultLayer.addLayer(plannedLineLayer) : resultLayer.removeLayer(plannedLineLayer);
-
-    const bounds = plannedLineLayer.getBounds();
-    if (plannedRouteVisible.value && bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [60, 60] });
-    }
 }
 
 function toggleActualRoute() {
@@ -912,11 +866,6 @@ function toggleActualRoute() {
 
     actualRouteVisible.value = !actualRouteVisible.value;
     actualRouteVisible.value ? resultLayer.addLayer(actualLineLayer) : resultLayer.removeLayer(actualLineLayer);
-
-    const bounds = actualLineLayer.getBounds();
-    if (actualRouteVisible.value && bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [60, 60] });
-    }
 }
 
 function toggleRawCoordinates() {
@@ -928,11 +877,6 @@ function toggleRawCoordinates() {
     rawCoordinatesVisible.value
         ? resultLayer.addLayer(rawCoordinatesLayer)
         : resultLayer.removeLayer(rawCoordinatesLayer);
-
-    const bounds = rawCoordinatesLayer.getBounds();
-    if (rawCoordinatesVisible.value && bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [60, 60] });
-    }
 }
 
 function focusStart() {

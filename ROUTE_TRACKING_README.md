@@ -128,6 +128,25 @@ The first GPS point is Route Start. The final GPS point is Last Known Location.
 
 ## Deployment
 
+### Route tracking stationary markers
+
+Route Tracking shows light amber geographic circles and clickable centre dots for GPS-detected stationary periods. The legend toggles the layer. Popups show duration, first/last observed stationary timestamps, completed customer visit overlaps, and unknown accuracy for legacy records. Stationary time can include customer service; it is not automatically non-working time.
+
+Configuration is in `config/tracking.php`, with these optional environment overrides (defaults apply without editing `.env`):
+
+```dotenv
+TRACKING_STATIONARY_MINUTES=5
+TRACKING_STATIONARY_RADIUS_M=30
+TRACKING_STATIONARY_MAX_GAP_SECONDS=120
+TRACKING_MAX_ACCURACY_M=50
+```
+
+After changing environment settings, run `php artisan config:clear` (or rebuild the configuration cache with `php artisan config:cache` in deployments that cache config). No settings table is required.
+
+Detection uses ordered device `date + time` readings for the selected route/date before distance downsampling. Points remain within the configured radius of the first point; two consecutive outside readings confirm departure. Duration ends at the last inside observation, never at the current clock time. A gap exceeding the configured limit between usable readings breaks the period. Duplicate timestamps cannot increase duration. The displayed path and visit GPS fallback also exclude known accuracy values greater than or equal to the maximum; null/missing accuracy and provider remain supported, including source tables without those columns. Provider is retained but is not used as a quality filter.
+
+Devices should send a fresh GPS heartbeat about every 30 seconds even while stationary. Movement-only uploads cannot establish stationary duration across silent intervals. Rejected low-quality readings cannot bridge gaps; no detected stops does not establish continuous movement. The five-minute default is a heuristic, and historical gaps remain unknown. This feature uses the existing Route Tracking calendar-date scope and does not modify Dashboard metrics.
+
 No database migration is included because the required tables and `log_id` column already exist in the source database.
 
 ```bash

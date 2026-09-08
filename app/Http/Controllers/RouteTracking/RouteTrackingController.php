@@ -210,14 +210,14 @@ class RouteTrackingController extends Controller
             ? null
             : max(0, $actual['duration'] - $actual['face_time']);
         foreach ($actual['stationary_periods'] as &$period) {
-            $period['customer_visits'] = array_values(array_filter($planned['customer_visits'], function (array $visit) use ($period) {
+            $period['customer_visits'] = collect($planned['customer_visits'])->filter(function (array $visit) use ($period) {
                 $start = strtotime(($visit['visit_start_date'] ?? '').' '.($visit['visit_start_time'] ?? ''));
                 $end = ! empty($visit['visit_end_date']) && ! empty($visit['visit_end_time'])
                     ? strtotime($visit['visit_end_date'].' '.$visit['visit_end_time']) : false;
 
                 return $start !== false && $end !== false
                     && $start < strtotime($period['end_time']) && $end > strtotime($period['start_time']);
-            }));
+            })->values()->all();
         }
         unset($period);
 
@@ -290,7 +290,7 @@ class RouteTrackingController extends Controller
         if (count($points) < 2) {
             return [
                 ...$stationaryData,
-                'has_tracking_data' => count($points) > 0,
+                'has_tracking_data' => false,
                 'distance' => 0,
                 'duration' => 0,
                 'geometries' => [],

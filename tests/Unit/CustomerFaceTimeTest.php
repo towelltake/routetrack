@@ -50,3 +50,27 @@ test('customer face time uses customer then channel then zero in minutes', funct
     'missing channel defaults to zero' => [0, null, false, 0],
     'customer works without channel' => [12, null, false, 12],
 ]);
+
+test('planned face time totals targets for every planned customer', function () {
+    config(['database.default' => 'planned_cft_test', 'database.connections.planned_cft_test' => [
+        'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
+    ]]);
+    DB::purge('planned_cft_test');
+    DB::statement('CREATE TABLE customermaster (customercode integer, channelcode integer, customerfacetime integer)');
+    DB::statement('CREATE TABLE channelmaster (channelcode integer, customercft integer)');
+    DB::table('channelmaster')->insert(['channelcode' => 10, 'customercft' => 20]);
+    DB::table('customermaster')->insert([
+        ['customercode' => 1, 'channelcode' => 10, 'customerfacetime' => 15],
+        ['customercode' => 2, 'channelcode' => 10, 'customerfacetime' => null],
+        ['customercode' => 3, 'channelcode' => null, 'customerfacetime' => 0],
+    ]);
+
+    $method = new ReflectionMethod(RouteTrackingController::class, 'plannedFaceTimeSeconds');
+    $seconds = $method->invoke(app(RouteTrackingController::class), collect([
+        (object) ['customercode' => 1],
+        (object) ['customercode' => 2],
+        (object) ['customercode' => 3],
+    ]));
+
+    expect($seconds)->toBe(35 * 60);
+});

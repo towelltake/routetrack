@@ -538,6 +538,7 @@ class RouteTrackingController extends Controller
         }
 
         $journeyPlan = $this->fetchJourneyPlan((int) $routeDay->routekey);
+        $plannedFaceTime = $this->plannedFaceTimeSeconds($journeyPlan);
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
         $hasPlannedData = $journeyPlan->isNotEmpty();
         $otpLogs = $this->fetchRouteOtpLogs($routecode, $date);
@@ -651,6 +652,7 @@ class RouteTrackingController extends Controller
             'visit_count' => $visits->count(),
             'distance' => $totalDistance,
             'duration' => $totalDuration,
+            'face_time' => $plannedFaceTime,
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
             'customer_visits' => $visits->values(),
@@ -780,6 +782,7 @@ class RouteTrackingController extends Controller
             'visit_count' => 0,
             'distance' => 0,
             'duration' => 0,
+            'face_time' => 0,
             'geometries' => [],
             'customers' => [],
             'customer_visits' => [],
@@ -837,6 +840,21 @@ class RouteTrackingController extends Controller
                 'serviced_flag' => (int) ($customer->servicedflag ?? 0),
                 'scanned_flag' => (int) ($customer->scannedflag ?? 0),
             ]);
+    }
+
+    private function plannedFaceTimeSeconds(Collection $journeyPlan): int
+    {
+        $customerCodes = $journeyPlan->pluck('customercode')->filter()->unique()->values();
+        if ($customerCodes->isEmpty()) {
+            return 0;
+        }
+
+        $minutes = DB::table('customermaster as customer')
+            ->leftJoin('channelmaster as channel', 'channel.channelcode', '=', 'customer.channelcode')
+            ->whereIn('customer.customercode', $customerCodes)
+            ->sum(DB::raw('COALESCE(NULLIF(customer.customerfacetime, 0), NULLIF(channel.customercft, 0), 0)'));
+
+        return (int) round((float) $minutes * 60);
     }
 
     private function fetchJourneyPlan(int $routekey): Collection

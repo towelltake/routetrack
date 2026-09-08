@@ -2,6 +2,18 @@
 
 ## SFA Dashboard filters
 
+### Headline cards
+
+`/dashboard/metrics.json` uses the same access and organisation filters as the map, but aggregates **all** eligible `startendday.routekey` values selected by inclusive `routestartdate`. It does not require GPS. The eight cards are Routes started, Planned coverage, Productive visits, Net sales, Order value, Collections, Customer Face Time, and OTP usage.
+
+- Routes started counts journeys, with distinct routes shown separately. Routes not started is unavailable until an expected operating schedule is agreed.
+- Coverage counts distinct planned `(routekey, customercode)` pairs with `schelduledflag = 1`. Repeated visits do not increase coverage. Unvisited customers are pending for open journeys and missed for closed journeys. Missing-plan journeys are identified separately.
+- Productivity uses completed visits with a positive-value, non-voided sale or order, linked through `customeroperationscontrol.log_id` and `(routekey, visitkey)`. A visit counts once even if it has both; collection-only visits do not qualify. Missing or invalid visit end timestamps are excluded from the denominator.
+- Net sales uses the recorded `invoiceheader.totalinvoiceamount`; Order value uses `salesorderheader.totalinvoiceamount`; Collections uses `arheader.amountpaid`. Voided documents are excluded. Totals are grouped by currency without currency conversion and never multiplied by visit joins. These are journey totals, not transaction-date totals; no additional deductions are applied to recorded invoice totals.
+- CFT sums actual completed visit seconds, displayed in minutes. Variance compares only completed visits with a positive customer/channel default; visits with no configured default are excluded from variance.
+- OTP includes all types. Since a direct journey key is not verified, events are associated by route and journey timestamps, bounded by recorded closure or the next journey start. Matched visits require the same customer and an event timestamp within the recorded visit. Multiple events in one visit count as multiple events but one matched visit. Events do not imply approval.
+- Empty denominators show an unavailable rate, not 0%. Cards have independent loading/error states and discard stale responses after filters change.
+
 The date presets default to Today; This Week runs Sunday through today and This Month runs from month start through today. From/To filter `startendday.routestartdate` inclusively. There is no separate Map Date. The map shows the latest journey started within the range for each accessible route, with GPS bounded by journey start, recorded end (for closed journeys), and the next journey start. Overnight GPS is included for eligible journeys. Tracking links use that journey's start date. Routes without a matching journey or valid GPS are omitted. Range totals and trends are not currently implemented. Legacy API `date` requests are interpreted as a single route-start day.
 
 The Dashboard (`/dashboard`, routes in `routes/dashboard.php`, controller `Dashboard/DashboardController`) shows the latest GPS position per route and operation date. Its Legal Entity, Cluster, Division, Region, and Route filters allow multiple selections and automatically refresh the map. Values within a filter are combined with OR; separate filters are combined with AND. Empty selections mean all accessible values.

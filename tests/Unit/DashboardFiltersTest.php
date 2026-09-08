@@ -83,6 +83,19 @@ test('dashboard rejects malformed multi-select inputs', function () {
     ]));
 })->throws(ValidationException::class);
 
+test('metric endpoint passes all and only authorized journeys started in the period', function () {
+    DB::table('startendday')->insert(['routekey' => 99, 'routecode' => 1, 'routestartdate' => '2026-09-06', 'routestarttime' => '08:00:00', 'routeclosed' => 1]);
+    DB::table('startendday')->insert(['routekey' => 100, 'routecode' => 1, 'routestartdate' => '2026-09-05', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
+    $service = Mockery::mock(App\Services\DashboardMetrics::class);
+    $service->shouldReceive('summarize')->once()->withArgs(function ($journeys) {
+        expect($journeys->pluck('routekey')->all())->toEqualCanonicalizing([1, 2, 3, 99]);
+        return true;
+    })->andReturn(['journeys_started' => 4]);
+    app()->instance(App\Services\DashboardMetrics::class, $service);
+    $response = app(DashboardController::class)->metrics(Request::create('/', 'GET', ['from_date' => '2026-09-06', 'to_date' => '2026-09-07']));
+    expect($response->getData(true))->toBe(['journeys_started' => 4]);
+});
+
 test('dashboard selects journeys by inclusive start date, not GPS date or end date', function () {
     DB::table('startendday')->where('routecode', 1)->update(['routestartdate' => '2026-09-01']);
     DB::table('startendday')->where('routecode', 2)->update(['routestartdate' => '2026-08-31', 'routeenddate' => '2026-09-07']);

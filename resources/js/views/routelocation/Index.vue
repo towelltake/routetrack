@@ -5,6 +5,7 @@ import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
+import DashboardCards from "./DashboardCards.vue";
 import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "./filters";
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
@@ -24,6 +25,9 @@ const fromDate = ref(DEFAULT_DATE);
 const toDate = ref(DEFAULT_DATE);
 const dateError = computed(() => dateRangeError(fromDate.value, toDate.value));
 const loading = ref(false);
+const metrics = ref(null);
+const metricsLoading = ref(true);
+const metricsError = ref(null);
 const error = ref(null);
 const locations = ref([]);
 const isFullscreen = ref(false);
@@ -79,6 +83,8 @@ onMounted(async () => {
         filtersReady.value = true;
     } catch {
         error.value = "Unable to load Dashboard filters. Refresh the page to retry.";
+        metricsLoading.value = false;
+        metricsError.value = "Unable to load dashboard filters.";
     }
 
     document.addEventListener("fullscreenchange", () => {
@@ -108,18 +114,22 @@ function locationIcon(closed) {
 
 async function showAllLocations() {
     const request = ++locationRequest;
+    metrics.value = null;
+    metricsError.value = null;
     locations.value = [];
     markersLayer.clearLayers();
     Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
     error.value = null;
     if (dateError.value) {
         loading.value = false;
+        metricsLoading.value = false;
         return;
     }
 
     loading.value = true;
     error.value = null;
     routeListSearch.value = "";
+    loadMetrics(request);
 
     try {
         const { data } = await axios.get("/dashboard/last-locations.json", {
@@ -164,6 +174,20 @@ async function showAllLocations() {
         error.value = e.response?.data?.error || "Unable to load route locations.";
     } finally {
         if (request === locationRequest) loading.value = false;
+    }
+}
+
+async function loadMetrics(request) {
+    metricsLoading.value = true;
+    try {
+        const { data } = await axios.get("/dashboard/metrics.json", {
+            params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value },
+        });
+        if (request === locationRequest) metrics.value = data;
+    } catch {
+        if (request === locationRequest) metricsError.value = "Unable to load the overview figures.";
+    } finally {
+        if (request === locationRequest) metricsLoading.value = false;
     }
 }
 
@@ -273,6 +297,8 @@ function resetFilters() {
                 <p v-if="dateError" class="dashboard-date-error" role="alert">{{ dateError }}</p>
             </div>
         </section>
+
+        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" />
 
         <BaseBlock title="Dashboard" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>

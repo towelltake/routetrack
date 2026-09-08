@@ -101,23 +101,7 @@ class DashboardController extends Controller
      */
     public function lastLocations(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'date' => ['required_without_all:from_date,to_date', 'date_format:Y-m-d'],
-            'from_date' => ['required_without:date', 'required_with:to_date', 'date_format:Y-m-d'],
-            'to_date' => ['required_without:date', 'required_with:from_date', 'date_format:Y-m-d', 'after_or_equal:from_date'],
-            'companycode' => ['nullable', 'integer'],
-            'routecode' => ['nullable', 'integer'],
-            'entities' => ['sometimes', 'array', 'max:1000'],
-            'entities.*' => ['string', 'max:100'],
-            'clusters' => ['sometimes', 'array', 'max:1000'],
-            'clusters.*' => ['integer'],
-            'divisions' => ['sometimes', 'array', 'max:1000'],
-            'divisions.*' => ['integer'],
-            'regions' => ['sometimes', 'array', 'max:1000'],
-            'regions.*' => ['integer'],
-            'routes' => ['sometimes', 'array', 'max:1000'],
-            'routes.*' => ['integer'],
-        ]);
+        $validated = $this->validateFilters($request);
 
         $matchingRouteCodes = $this->matchingRoutes($validated)
             ->when($validated['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
@@ -204,6 +188,43 @@ class DashboardController extends Controller
         })->values();
 
         return response()->json($results);
+    }
+
+    private function validateFilters(Request $request): array
+    {
+        return $request->validate([
+            'date' => ['required_without_all:from_date,to_date', 'date_format:Y-m-d'],
+            'from_date' => ['required_without:date', 'required_with:to_date', 'date_format:Y-m-d'],
+            'to_date' => ['required_without:date', 'required_with:from_date', 'date_format:Y-m-d', 'after_or_equal:from_date'],
+            'companycode' => ['nullable', 'integer'],
+            'routecode' => ['nullable', 'integer'],
+            'entities' => ['sometimes', 'array', 'max:1000'],
+            'entities.*' => ['string', 'max:100'],
+            'clusters' => ['sometimes', 'array', 'max:1000'],
+            'clusters.*' => ['integer'],
+            'divisions' => ['sometimes', 'array', 'max:1000'],
+            'divisions.*' => ['integer'],
+            'regions' => ['sometimes', 'array', 'max:1000'],
+            'regions.*' => ['integer'],
+            'routes' => ['sometimes', 'array', 'max:1000'],
+            'routes.*' => ['integer'],
+        ]);
+    }
+
+    public function metrics(Request $request): JsonResponse
+    {
+        $filters = $this->validateFilters($request);
+        $routeCodes = $this->matchingRoutes($filters)
+            ->when($filters['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
+            ->when($filters['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
+            ->select('routemaster.routecode');
+        $journeys = DB::table('startendday')
+            ->whereIn('routecode', $routeCodes)
+            ->whereDate('routestartdate', '>=', $filters['from_date'] ?? $filters['date'])
+            ->whereDate('routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
+            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed']);
+
+        return response()->json(app(\App\Services\DashboardMetrics::class)->summarize($journeys));
     }
 
     private function routeDateTime(mixed $date, mixed $time): ?string

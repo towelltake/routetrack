@@ -144,25 +144,25 @@ const routeSummaryGroups = computed(() => {
     const actualSeconds = Number(actual.duration) || 0;
 
     return [
-        { title: "Route", cards: [
+        { key: "route", title: "Route", cards: [
             { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", action: "route", value: planned.route_closed ? "Closed" : "Live", meta: "View journey details" },
         ] },
-        { title: "Customers", cards: [
+        { key: "customers", title: "Customers", cards: [
             { label: "Customer Coverage", icon: "fa-store", tone: "blue", action: "customers", value: pct(customerVisitSummary.value.planned ? customerVisitSummary.value.plannedVisited / customerVisitSummary.value.planned : null), meta: `${customerVisitSummary.value.plannedVisited} of ${customerVisitSummary.value.planned} visited · ${customerVisitSummary.value.plannedNotVisited} pending` },
             { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", action: "unplanned", value: customerVisitSummary.value.unplannedVisited, meta: "View customer list" },
             { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
         ] },
-        { title: "Distance", cards: [
+        { key: "distance", title: "Distance", cards: [
             { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: `${stationaryDuration(planned.duration)} planned` },
             { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
-        { title: "Time", cards: [
+        { key: "time", title: "Time", cards: [
             { label: "Actual Time", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: `${pct(result.value.duration_ratio)} of planned time` },
             { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `${pct(actualSeconds ? actual.face_time / actualSeconds : null)} of actual time` },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
             { label: "Idle Time", icon: "fa-pause", tone: "red", value: stationaryDuration(actual.idle_seconds), meta: `${actual.idle_periods?.length ?? 0} stops outside customer visits · ${pct(actualSeconds ? actual.idle_seconds / actualSeconds : null)}` },
         ] },
-        { title: "Transactions", cards: [
+        { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
             transactionCard("Orders", "orders", "fa-cart-shopping", "blue"),
             transactionCard("Collections", "collections", "fa-hand-holding-dollar", "navy"),
@@ -1071,7 +1071,7 @@ function focusEnd() {
             </div>
 
             <section v-if="result" class="route-summary-groups" aria-label="Route journey summary">
-                <div v-for="group in routeSummaryGroups" :key="group.title" class="route-summary-group">
+                <div v-for="group in routeSummaryGroups" :key="group.key" class="route-summary-group" :class="`route-summary-group-${group.key}`">
                     <h3>{{ group.title }}</h3>
                     <div class="route-summary-cards">
                         <button
@@ -1719,19 +1719,27 @@ function focusEnd() {
 
 .route-summary-groups {
     display: grid;
-    gap: 14px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 10px;
     margin-bottom: 1rem;
 }
 
 .route-summary-group {
-    padding: 11px;
+    min-width: 0;
+    padding: 9px;
     border: 1px solid #e8edf3;
-    border-radius: 12px;
+    border-radius: 10px;
     background: #f8fafc;
 }
 
+.route-summary-group-route { grid-column: span 2; }
+.route-summary-group-customers { grid-column: span 6; }
+.route-summary-group-distance { grid-column: span 4; }
+.route-summary-group-time { grid-column: span 6; }
+.route-summary-group-transactions { grid-column: span 6; }
+
 .route-summary-group h3 {
-    margin: 0 0 8px 2px;
+    margin: 0 0 6px 2px;
     color: #475569;
     font-size: 11px;
     font-weight: 750;
@@ -1741,8 +1749,8 @@ function focusEnd() {
 
 .route-summary-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(145px, 200px));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 8px;
 }
 
 .route-summary-card {
@@ -1750,9 +1758,9 @@ function focusEnd() {
     --wash: #f1f5f9;
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    min-height: 86px;
-    padding: 12px;
+    gap: 8px;
+    min-height: 72px;
+    padding: 9px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     background: #fff;
@@ -1775,10 +1783,10 @@ function focusEnd() {
     &.tone-purple { --tone: #7c3aed; --wash: #f5f3ff; }
 }
 
-.route-summary-icon { display: grid; width: 29px; height: 29px; flex: 0 0 29px; place-items: center; border-radius: 8px; background: var(--wash); color: var(--tone); font-size: 12px; }
+.route-summary-icon { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border-radius: 7px; background: var(--wash); color: var(--tone); font-size: 11px; }
 .route-summary-copy { min-width: 0; flex: 1; }
 .route-summary-label, .route-summary-copy > span:last-child { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
-.route-summary-copy strong { display: block; margin: 3px 0 2px; color: var(--tone); font-size: 17px; line-height: 1.15; overflow-wrap: anywhere; }
+.route-summary-copy strong { display: block; margin: 2px 0; color: var(--tone); font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
 .route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }
 
 .route-detail-grid {
@@ -1793,6 +1801,15 @@ function focusEnd() {
 
 @media (max-width: 1199px) {
     .tracking-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 991px) {
+    .route-summary-groups { grid-template-columns: 1fr; }
+    .route-summary-group-route,
+    .route-summary-group-customers,
+    .route-summary-group-distance,
+    .route-summary-group-time,
+    .route-summary-group-transactions { grid-column: auto; }
 }
 
 @media (max-width: 767px) {

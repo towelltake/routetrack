@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\RouteTracking;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountSalesman;
 use App\Models\AreaMaster;
 use App\Models\CompanyMaster;
 use App\Models\RouteMaster;
@@ -220,6 +221,11 @@ class RouteTrackingController extends Controller
             })->values()->all();
         }
         unset($period);
+        $actual['idle_periods'] = collect($actual['stationary_periods'])
+            ->filter(fn (array $period) => empty($period['customer_visits']))
+            ->values()
+            ->all();
+        $actual['idle_seconds'] = array_sum(array_column($actual['idle_periods'], 'duration_seconds'));
 
         $transactionSummary = $this->summarizeTransactions(collect($planned['customer_visits']));
 
@@ -534,14 +540,14 @@ class RouteTrackingController extends Controller
         $journeyPlan = $this->fetchJourneyPlan((int) $routeDay->routekey);
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
         $hasPlannedData = $journeyPlan->isNotEmpty();
+        $otpLogs = $this->fetchRouteOtpLogs($routecode, $date);
         $visits = $this->annotateJourneyPlanStatus(
             $this->attachGpsOtpLogs(
                 $this->attachVisitTransactions(
                     $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
                     (int) $routeDay->routekey,
                 ),
-                $routecode,
-                $date,
+                $otpLogs->where('type', 'GPS IN')->values(),
             ),
             $journeyPlan,
         );
@@ -636,6 +642,7 @@ class RouteTrackingController extends Controller
             'day' => $dayKey,
             'routekey' => (int) $routeDay->routekey,
             'route_closed' => (int) $routeDay->routeclosed === 1,
+            'route_details' => $this->routeDetails($routeDay, $routecode),
             'has_planned_data' => $hasPlannedData,
             'customer_count' => $plannedCodes->count(),
             'visited_count' => $plannedVisitedCount,
@@ -647,11 +654,36 @@ class RouteTrackingController extends Controller
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
             'customer_visits' => $visits->values(),
+            'otp_logs' => $otpLogs->values(),
             'chunks_failed' => $chunksFailed,
             'osrm_legs' => $osrmLegs,
             'fallback_legs' => $fallbackLegs,
             'used_fallback_geometry' => $fallbackLegs > 0,
             'geometry_source' => $geometries === [] ? 'none' : ($fallbackLegs > 0 ? ($osrmLegs > 0 ? 'mixed' : 'straight_line') : 'osrm_route'),
+        ];
+    }
+
+    private function routeDetails(object $routeDay, int $routecode): array
+    {
+        $route = RouteMaster::query()->find($routecode);
+        $salesman = ! empty($routeDay->salesmancode) ? AccountSalesman::query()->find($routeDay->salesmancode) : null;
+        $salesmanData = $salesman?->getAttributes() ?? [];
+        $phone = collect(['mobilenumber', 'mobile', 'phonenumber', 'telephone', 'contactno'])
+            ->map(fn (string $field) => trim((string) ($salesmanData[$field] ?? '')))
+            ->first(fn (string $value) => $value !== '' && $value !== '0');
+        $dateTime = fn ($date, $time) => $date && $time ? substr((string) $date, 0, 10).' '.$time : null;
+
+        return [
+            'routecode' => $routecode,
+            'routename' => $route?->routename,
+            'salesmancode' => isset($routeDay->salesmancode) ? (int) $routeDay->salesmancode : null,
+            'salesmanname' => $salesman?->salesmanname1,
+            'salesmanphone' => $phone,
+            'start_time' => $dateTime($routeDay->routestartdate ?? null, $routeDay->routestarttime ?? null),
+            'end_time' => $dateTime($routeDay->routeenddate ?? null, $routeDay->routeendtime ?? null),
+            'start_odometer' => isset($routeDay->routestartodometer) ? (float) $routeDay->routestartodometer : null,
+            'end_odometer' => isset($routeDay->routeendodometer) ? (float) $routeDay->routeendodometer : null,
+            'version' => $routeDay->versionno ?? null,
         ];
     }
 
@@ -678,7 +710,7 @@ class RouteTrackingController extends Controller
                     });
             })
             ->orderByDesc('routekey')
-            ->first(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeclosed']);
+            ->first(['routekey', 'routecode', 'salesmancode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routestartodometer', 'routeendodometer', 'routeclosed', 'versionno']);
 
         if ($routeDay !== null) {
             return $routeDay;
@@ -739,6 +771,7 @@ class RouteTrackingController extends Controller
             'day' => $dayKey,
             'routekey' => null,
             'route_closed' => false,
+            'route_details' => null,
             'has_planned_data' => false,
             'customer_count' => 0,
             'visited_count' => 0,
@@ -750,6 +783,7 @@ class RouteTrackingController extends Controller
             'geometries' => [],
             'customers' => [],
             'customer_visits' => [],
+            'otp_logs' => [],
             'chunks_failed' => 0,
             'osrm_legs' => 0,
             'fallback_legs' => 0,
@@ -852,28 +886,44 @@ class RouteTrackingController extends Controller
         });
     }
 
-    private function attachGpsOtpLogs(Collection $visits, int $routecode, string $date): Collection
+    private function fetchRouteOtpLogs(int $routecode, string $date): Collection
+    {
+        return DB::table('otplogdetail as otp')
+            ->leftJoin('customermaster as customer', 'customer.customercode', '=', 'otp.customercode')
+            ->where('otp.routecode', $routecode)
+            ->whereDate('otp.otpdate', $date)
+            ->orderBy('otp.otpdate')
+            ->orderBy('otp.otptime')
+            ->orderBy('otp.otplogid')
+            ->get(['otp.otplogid', 'otp.username', 'otp.customercode', 'otp.otptype', 'otp.otpdate', 'otp.otptime', 'otp.comments', 'otp.otpreason', 'customer.customeraddress1', 'customer.alternatecode'])
+            ->map(fn (object $otp) => [
+                'id' => (int) $otp->otplogid,
+                'approved_by' => $otp->username,
+                'customercode' => (int) $otp->customercode,
+                'customername' => $otp->customeraddress1 ?? "Customer {$otp->customercode}",
+                'alternatecode' => $otp->alternatecode,
+                'type' => $otp->otptype,
+                'date' => $otp->otpdate,
+                'time' => $otp->otptime,
+                'reason' => $otp->otpreason,
+                'comments' => $otp->comments,
+            ]);
+    }
+
+    private function attachGpsOtpLogs(Collection $visits, Collection $otpLogs): Collection
     {
         $visitRows = $visits->values()->map(fn (array $visit) => $visit + ['otp_logs' => []])->all();
-        $otpLogs = DB::table('otplogdetail')
-            ->where('routecode', $routecode)
-            ->whereDate('otpdate', $date)
-            ->where('otptype', 'GPS IN')
-            ->orderBy('otpdate')
-            ->orderBy('otptime')
-            ->orderBy('otplogid')
-            ->get(['otplogid', 'username', 'customercode', 'otptype', 'otpdate', 'otptime', 'comments', 'otpreason']);
 
         foreach ($otpLogs as $otp) {
             $matchingIndexes = collect($visitRows)
                 ->keys()
-                ->filter(fn (int $index) => (string) $visitRows[$index]['customercode'] === (string) $otp->customercode);
+                ->filter(fn (int $index) => (string) $visitRows[$index]['customercode'] === (string) $otp['customercode']);
 
             if ($matchingIndexes->isEmpty()) {
                 continue;
             }
 
-            $otpTimestamp = strtotime($otp->otpdate.' '.$otp->otptime);
+            $otpTimestamp = strtotime($otp['date'].' '.$otp['time']);
             $visitIndex = $matchingIndexes
                 ->sortBy(function (int $index) use ($visitRows, $otpTimestamp) {
                     $visitTimestamp = strtotime($visitRows[$index]['visit_start_date'].' '.$visitRows[$index]['visit_start_time']);
@@ -882,15 +932,7 @@ class RouteTrackingController extends Controller
                 })
                 ->first();
 
-            $visitRows[$visitIndex]['otp_logs'][] = [
-                'id' => (int) $otp->otplogid,
-                'approved_by' => $otp->username,
-                'type' => $otp->otptype,
-                'date' => $otp->otpdate,
-                'time' => $otp->otptime,
-                'reason' => $otp->otpreason,
-                'comments' => $otp->comments,
-            ];
+            $visitRows[$visitIndex]['otp_logs'][] = $otp;
         }
 
         return collect($visitRows);

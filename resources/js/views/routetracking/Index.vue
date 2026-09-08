@@ -38,6 +38,7 @@ const customerSearch = ref("");
 const customerListTab = ref("all");
 const customerVisitTab = ref("all");
 const selectedOtpVisit = ref(null);
+const summaryModal = ref(null);
 const selectedTransactionVisit = ref(null);
 const selectedTransactionType = ref("sales");
 const selectedTransaction = ref(null);
@@ -100,7 +101,34 @@ const customerVisitSummary = computed(() => {
     };
 });
 
-const routeSummaryCards = computed(() => {
+const routeHeading = computed(() => {
+    const details = result.value?.planned?.route_details;
+    if (!details) return selectedRoute.value ? `Route ${selectedRoute.value} · Salesman not available · Phone not available` : "Select a route to view tracking";
+    const salesman = details.salesmanname || (details.salesmancode ? `Salesman ${details.salesmancode}` : "Salesman not available");
+    return `Route ${details.routecode} · ${salesman} · ${details.salesmanphone || "Phone not available"}`;
+});
+
+const summaryTransactions = computed(() => {
+    const rows = { sales: [], orders: [], collections: [], returns: [] };
+    const seen = new Set();
+    for (const visit of customerVisits.value) {
+        for (const type of ["sales", "orders", "collections"]) {
+            for (const transaction of visit.transactions?.[type] ?? []) {
+                const key = `${type}:${transaction.transactionkey}`;
+                if (transaction.voided || seen.has(key)) continue;
+                seen.add(key);
+                const row = { ...transaction, customername: visit.customername, alternatecode: visit.alternatecode };
+                rows[type].push(row);
+                if (type === "sales" && Number(transaction.return_amount) > 0) {
+                    rows.returns.push({ ...row, amount: transaction.return_amount });
+                }
+            }
+        }
+    }
+    return rows;
+});
+
+const routeSummaryGroups = computed(() => {
     if (!result.value) return [];
     const planned = result.value.planned;
     const actual = result.value.actual;
@@ -108,34 +136,55 @@ const routeSummaryCards = computed(() => {
     const transactionCard = (label, type, icon, tone) => {
         const count = transactions[type]?.count ?? 0;
         return {
-            label, icon, tone,
+            label, icon, tone, action: type,
             value: money(transactions[type]?.amount),
-            meta: `${count} ${count === 1 ? "document" : "documents"}${type === "returns" ? " · good + bad" : ""}`,
+            meta: `${count} ${count === 1 ? "document" : "documents"}`,
         };
     };
+    const actualSeconds = Number(actual.duration) || 0;
 
     return [
-        { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", value: planned.route_closed ? "Closed" : "Live", meta: `${plannedDayLabel(planned.day)} journey` },
-        { label: "Customer Coverage", icon: "fa-store", tone: "blue", value: `${customerVisitSummary.value.plannedVisited} / ${customerVisitSummary.value.planned}`, meta: `${customerVisitSummary.value.plannedNotVisited} not visited` },
-        { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: `${minutes(planned.duration)} min planned` },
-        { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
-        { label: "Actual Time", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: `${pct(result.value.duration_ratio)} of planned time` },
-        { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: "Completed visit time" },
-        { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: "Actual time less face time" },
-        { label: "Stationary", icon: "fa-pause", tone: "amber", value: stationaryDuration(actual.stationary_seconds), meta: `${actual.stationary_periods?.length ?? 0} stops · ${actual.stationary_minimum_minutes}+ min` },
-        { label: "GPS Unavailable", icon: "fa-satellite-dish", tone: "red", value: stationaryDuration(actual.gps_gap_seconds), meta: `${actual.gps_gaps?.length ?? 0} gaps` },
-        { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", value: customerVisitSummary.value.unplannedVisited, meta: "Outside journey plan" },
-        transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
-        transactionCard("Orders", "orders", "fa-cart-shopping", "blue"),
-        transactionCard("Collections", "collections", "fa-hand-holding-dollar", "navy"),
-        transactionCard("Returns", "returns", "fa-rotate-left", "red"),
+        { title: "Route", cards: [
+            { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", action: "route", value: planned.route_closed ? "Closed" : "Live", meta: "View journey details" },
+        ] },
+        { title: "Customers", cards: [
+            { label: "Customer Coverage", icon: "fa-store", tone: "blue", action: "customers", value: pct(customerVisitSummary.value.planned ? customerVisitSummary.value.plannedVisited / customerVisitSummary.value.planned : null), meta: `${customerVisitSummary.value.plannedVisited} of ${customerVisitSummary.value.planned} visited · ${customerVisitSummary.value.plannedNotVisited} pending` },
+            { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", action: "unplanned", value: customerVisitSummary.value.unplannedVisited, meta: "View customer list" },
+            { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
+        ] },
+        { title: "Distance", cards: [
+            { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: `${stationaryDuration(planned.duration)} planned` },
+            { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
+        ] },
+        { title: "Time", cards: [
+            { label: "Actual Time", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: `${pct(result.value.duration_ratio)} of planned time` },
+            { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `${pct(actualSeconds ? actual.face_time / actualSeconds : null)} of actual time` },
+            { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
+            { label: "Idle Time", icon: "fa-pause", tone: "red", value: stationaryDuration(actual.idle_seconds), meta: `${actual.idle_periods?.length ?? 0} stops outside customer visits · ${pct(actualSeconds ? actual.idle_seconds / actualSeconds : null)}` },
+        ] },
+        { title: "Transactions", cards: [
+            transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
+            transactionCard("Orders", "orders", "fa-cart-shopping", "blue"),
+            transactionCard("Collections", "collections", "fa-hand-holding-dollar", "navy"),
+            transactionCard("Returns", "returns", "fa-rotate-left", "red"),
+        ] },
     ];
 });
 
-function plannedDayLabel(day) {
-    const days = { sun: "Sunday", mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday" };
-    return days[String(day ?? "").toLowerCase()] ?? day;
-}
+const summaryTitle = computed(() => ({
+    route: "Route Journey Details",
+    customers: "Customer Coverage",
+    unplanned: "Unplanned Visits",
+    otp: "OTP Requests",
+    sales: "Sales",
+    orders: "Orders",
+    collections: "Collections",
+    returns: "Returns",
+}[summaryModal.value] ?? "Route Summary"));
+
+const summaryCustomers = computed(() => summaryModal.value === "unplanned"
+    ? customerVisits.value.filter((visit) => visit.journey_status === "unplanned")
+    : numberedCustomers.value);
 
 const routeQualityWarnings = computed(() => {
     if (!result.value) {
@@ -412,6 +461,14 @@ function closeOtpDetails() {
     selectedOtpVisit.value = null;
 }
 
+function openSummary(action) {
+    if (action) summaryModal.value = action;
+}
+
+function closeSummary() {
+    summaryModal.value = null;
+}
+
 function transactionCount(visit, type = null) {
     if (type) {
         return visit.transactions?.[type]?.length ?? 0;
@@ -506,6 +563,7 @@ async function runComparison() {
     customerListTab.value = "all";
     customerVisitTab.value = "all";
     selectedOtpVisit.value = null;
+    closeSummary();
     closeTransactions();
     selectedCustomerKey.value = null;
     plannedRouteVisible.value = true;
@@ -689,6 +747,7 @@ function resetFilters() {
     customerListTab.value = "all";
     customerVisitTab.value = "all";
     selectedOtpVisit.value = null;
+    closeSummary();
     closeTransactions();
     selectedCustomerKey.value = null;
     plannedRouteVisible.value = true;
@@ -1004,22 +1063,36 @@ function focusEnd() {
             </div>
         </section>
 
-        <BaseBlock title="Route Tracking" :mode-loading="loading">
+        <BaseBlock :title="routeHeading" :mode-loading="loading">
             <p v-if="error" class="text-danger">{{ error }}</p>
 
             <div v-if="routeQualityWarnings.length" class="alert alert-warning py-2">
                 <div v-for="warning in routeQualityWarnings" :key="warning">{{ warning }}</div>
             </div>
 
-            <section v-if="result" class="route-summary-cards" aria-label="Route journey summary">
-                <article v-for="card in routeSummaryCards" :key="card.label" class="route-summary-card" :class="`tone-${card.tone}`">
-                    <span class="route-summary-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
-                    <div class="route-summary-copy">
-                        <span class="route-summary-label">{{ card.label }}</span>
-                        <strong>{{ card.value }}</strong>
-                        <span>{{ card.meta }}</span>
+            <section v-if="result" class="route-summary-groups" aria-label="Route journey summary">
+                <div v-for="group in routeSummaryGroups" :key="group.title" class="route-summary-group">
+                    <h3>{{ group.title }}</h3>
+                    <div class="route-summary-cards">
+                        <button
+                            v-for="card in group.cards"
+                            :key="card.label"
+                            type="button"
+                            class="route-summary-card"
+                            :class="[`tone-${card.tone}`, { clickable: card.action }]"
+                            :disabled="!card.action"
+                            @click="openSummary(card.action)"
+                        >
+                            <span class="route-summary-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
+                            <span class="route-summary-copy">
+                                <span class="route-summary-label">{{ card.label }}</span>
+                                <strong>{{ card.value }}</strong>
+                                <span>{{ card.meta }}</span>
+                            </span>
+                            <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
+                        </button>
                     </div>
-                </article>
+                </div>
             </section>
 
             <div ref="mapWrapperEl" class="route-tracking-view">
@@ -1368,6 +1441,87 @@ function focusEnd() {
                 </div>
             </div>
             <div
+                v-if="summaryModal && result"
+                class="modal fade show d-block route-tracking-otp-modal"
+                tabindex="-1"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="route-summary-modal-title"
+                @click.self="closeSummary"
+            >
+                <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div>
+                                <h5 id="route-summary-modal-title" class="modal-title">{{ summaryTitle }}</h5>
+                                <div class="small text-muted">{{ routeHeading }}</div>
+                            </div>
+                            <button type="button" class="btn-close" aria-label="Close" @click="closeSummary"></button>
+                        </div>
+                        <div class="modal-body">
+                            <dl v-if="summaryModal === 'route'" class="route-detail-grid mb-0">
+                                <div><dt>Route</dt><dd>{{ result.planned.route_details?.routecode }} - {{ result.planned.route_details?.routename || "Not available" }}</dd></div>
+                                <div><dt>Salesman</dt><dd>{{ result.planned.route_details?.salesmanname || "Not available" }} <span v-if="result.planned.route_details?.salesmancode" class="text-muted">({{ result.planned.route_details.salesmancode }})</span></dd></div>
+                                <div><dt>Phone Number</dt><dd>{{ result.planned.route_details?.salesmanphone || "Not available" }}</dd></div>
+                                <div><dt>Version Number</dt><dd>{{ result.planned.route_details?.version || "Not available" }}</dd></div>
+                                <div><dt>Route Start Time</dt><dd>{{ result.planned.route_details?.start_time || "Not available" }}</dd></div>
+                                <div><dt>Route End Time</dt><dd>{{ result.planned.route_details?.end_time || "Not available" }}</dd></div>
+                                <div><dt>Route Start Odometer</dt><dd>{{ result.planned.route_details?.start_odometer ?? "Not available" }}</dd></div>
+                                <div><dt>Route End Odometer</dt><dd>{{ result.planned.route_details?.end_odometer ?? "Not available" }}</dd></div>
+                            </dl>
+
+                            <div v-else-if="['customers', 'unplanned'].includes(summaryModal)" class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead><tr><th>#</th><th>Customer</th><th>Code</th><th>Status</th></tr></thead>
+                                    <tbody>
+                                        <tr v-for="(customer, index) in summaryCustomers" :key="customer.listKey || `${customer.customercode}-${index}`">
+                                            <td>{{ index + 1 }}</td>
+                                            <td>{{ customer.customername }}</td>
+                                            <td>{{ customer.alternatecode || customer.customercode }}</td>
+                                            <td>{{ customer.type === 'visit' ? customerVisitStatus(customer) : customer.visited ? `${customer.visit_count} visit${customer.visit_count === 1 ? '' : 's'}` : 'Not visited' }}</td>
+                                        </tr>
+                                        <tr v-if="!summaryCustomers.length"><td colspan="4" class="text-center text-muted py-4">No customers found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div v-else-if="summaryModal === 'otp'" class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead><tr><th>Customer</th><th>Type</th><th>Date & Time</th><th>Recorded By</th><th>Reason / Comments</th></tr></thead>
+                                    <tbody>
+                                        <tr v-for="otp in result.planned.otp_logs" :key="otp.id">
+                                            <td>{{ otp.customername }}<br><span class="small text-muted">{{ otp.alternatecode || otp.customercode }}</span></td>
+                                            <td>{{ otp.type }}</td>
+                                            <td>{{ otp.date }} {{ otp.time }}</td>
+                                            <td>{{ otp.approved_by || "Not available" }}</td>
+                                            <td>{{ [otp.reason, otp.comments].filter(Boolean).join(" · ") || "—" }}</td>
+                                        </tr>
+                                        <tr v-if="!result.planned.otp_logs?.length"><td colspan="5" class="text-center text-muted py-4">No OTP requests found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div v-else class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead><tr><th>Type</th><th>Document</th><th>Customer</th><th>Date & Time</th><th class="text-end">Amount</th></tr></thead>
+                                    <tbody>
+                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="`${summaryModal}-${transaction.transactionkey}`">
+                                            <td class="text-capitalize">{{ summaryModal === 'returns' ? 'Return' : summaryModal.slice(0, -1) }}</td>
+                                            <td>{{ transaction.documentnumber }}</td>
+                                            <td>{{ transaction.customername }}<br><span class="small text-muted">{{ transaction.alternatecode }}</span></td>
+                                            <td>{{ transaction.date }} {{ transaction.time }}</td>
+                                            <td class="text-end fw-semibold">{{ money(transaction.amount) }}</td>
+                                        </tr>
+                                        <tr v-if="!summaryTransactions[summaryModal]?.length"><td colspan="5" class="text-center text-muted py-4">No documents found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer"><button type="button" class="btn btn-secondary" @click="closeSummary">Close</button></div>
+                    </div>
+                </div>
+            </div>
+            <div
                 v-if="selectedOtpVisit"
                 class="modal fade show d-block route-tracking-otp-modal"
                 tabindex="-1"
@@ -1563,11 +1717,32 @@ function focusEnd() {
 .tracking-selection-count { padding: 1px 6px; border-radius: 5px; background: #dbeafe; color: #1e40af; font-size: 10px; }
 .tracking-required { padding: 1px 6px; border-radius: 999px; background: #fef2f2; color: #b91c1c; font-size: 9px; text-transform: uppercase; }
 
+.route-summary-groups {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 1rem;
+}
+
+.route-summary-group {
+    padding: 11px;
+    border: 1px solid #e8edf3;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.route-summary-group h3 {
+    margin: 0 0 8px 2px;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .route-summary-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(145px, 200px));
     gap: 10px;
-    margin-bottom: 1rem;
 }
 
 .route-summary-card {
@@ -1582,6 +1757,14 @@ function focusEnd() {
     border-radius: 10px;
     background: #fff;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: default;
+
+    &:disabled { opacity: 1; }
+    &.clickable { cursor: pointer; }
+    &.clickable:hover, &.clickable:focus-visible { border-color: var(--tone); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1); transform: translateY(-1px); }
 
     &.tone-blue { --tone: #2563eb; --wash: #eff6ff; }
     &.tone-green { --tone: #15803d; --wash: #f0fdf4; }
@@ -1589,12 +1772,24 @@ function focusEnd() {
     &.tone-amber { --tone: #b45309; --wash: #fffbeb; }
     &.tone-orange { --tone: #c2410c; --wash: #fff7ed; }
     &.tone-navy { --tone: #172b45; --wash: #eef2f6; }
+    &.tone-purple { --tone: #7c3aed; --wash: #f5f3ff; }
 }
 
 .route-summary-icon { display: grid; width: 29px; height: 29px; flex: 0 0 29px; place-items: center; border-radius: 8px; background: var(--wash); color: var(--tone); font-size: 12px; }
-.route-summary-copy { min-width: 0; }
+.route-summary-copy { min-width: 0; flex: 1; }
 .route-summary-label, .route-summary-copy > span:last-child { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
 .route-summary-copy strong { display: block; margin: 3px 0 2px; color: var(--tone); font-size: 17px; line-height: 1.15; overflow-wrap: anywhere; }
+.route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }
+
+.route-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+
+    > div { padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+    dt { margin-bottom: 4px; color: #64748b; font-size: 11px; font-weight: 650; }
+    dd { margin: 0; color: #172b45; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+}
 
 @media (max-width: 1199px) {
     .tracking-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1610,6 +1805,7 @@ function focusEnd() {
 @media (max-width: 480px) {
     .tracking-filter-grid { grid-template-columns: 1fr; }
     .route-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .route-detail-grid { grid-template-columns: 1fr; }
 }
 
 .route-tracking-legend {

@@ -191,6 +191,34 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function routeStatus(Request $request): JsonResponse
+    {
+        $filters = $this->validateFilters($request);
+        $routes = $this->matchingRoutes($filters, false)
+            ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
+            ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
+            ->orderBy('routemaster.routecode')
+            ->get(['routemaster.routecode', 'routemaster.routename', 'routemaster.salesmancode']);
+        $journeys = DB::table('startendday')->whereIn('routecode', $routes->pluck('routecode'))
+            ->whereDate('routestartdate', '>=', $filters['from_date'] ?? $filters['date'])
+            ->whereDate('routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
+            ->orderBy('routestartdate')->orderBy('routestarttime')->orderBy('routekey')
+            ->get(['routekey', 'routecode', 'salesmancode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed']);
+        $salesmen = AccountSalesman::query()->whereIn('salesmancode', $routes->pluck('salesmancode')->merge($journeys->pluck('salesmancode'))->filter()->unique())
+            ->pluck('salesmanname1', 'salesmancode');
+        return response()->json([
+            'routes' => $routes->map(fn ($route) => ['routecode' => $route->routecode, 'routename' => $route->routename, 'salesman' => $salesmen->get($route->salesmancode)]),
+            'journeys' => $journeys->map(fn ($journey) => [
+                'routekey' => $journey->routekey, 'routecode' => $journey->routecode,
+                'date' => substr((string) $journey->routestartdate, 0, 10),
+                'salesman' => $salesmen->get($journey->salesmancode),
+                'start' => $this->routeDateTime($journey->routestartdate, $journey->routestarttime),
+                'end' => $this->routeDateTime($journey->routeenddate, $journey->routeendtime),
+                'closed' => (int) $journey->routeclosed === 1,
+            ]),
+        ]);
+    }
+
     public function metrics(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);

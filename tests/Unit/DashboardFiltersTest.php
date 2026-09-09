@@ -7,6 +7,21 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('route status includes unstarted active routes and journey salesmen across selected dates', function () {
+    DB::table('salesman')->insert([['salesmancode' => 10, 'salesmanname1' => 'Assigned'], ['salesmancode' => 11, 'salesmanname1' => 'Journey salesman']]);
+    DB::table('routemaster')->update(['salesmancode' => 10]);
+    DB::table('routemaster')->where('routecode', 2)->update(['activestatus' => 0]);
+    DB::table('startendday')->where('routecode', 1)->update(['salesmancode' => 11]);
+    DB::table('startendday')->where('routecode', 7)->delete();
+    $result = app(DashboardController::class)->routeStatus(Request::create('/', 'GET', [
+        'from_date' => '2026-09-07', 'to_date' => '2026-09-08', 'divisions' => [1],
+    ]))->getData(true);
+    expect(array_column($result['routes'], 'routecode'))->toBe([1, 7])
+        ->and($result['routes'][1]['salesman'])->toBe('Assigned')
+        ->and($result['journeys'])->toHaveCount(1)
+        ->and($result['journeys'][0])->toMatchArray(['date' => '2026-09-07', 'routecode' => 1, 'salesman' => 'Journey salesman', 'start' => '2026-09-07 08:00:00', 'end' => null]);
+});
+
 test('GPS lookups use one remote query for a batch of journeys', function () {
     $connection = DB::connection('tracking_pgsql');
     $connection->enableQueryLog();
@@ -69,10 +84,10 @@ beforeEach(function () {
         'company (cmpycode integer, name text, entity text, clustercode integer, activestatus integer)',
         'clustermaster (clustercode integer, clustername text)',
         'regionmaster (regionmstcode integer, regionmstname text)',
-        'routemaster (routecode integer, routename text, cmpycode integer, regionmstcode integer, subareacode integer, activestatus integer default 1)',
+        'routemaster (routecode integer, routename text, cmpycode integer, regionmstcode integer, subareacode integer, activestatus integer default 1, salesmancode integer)',
         'routesequence (routecode integer)',
         'salesman (salesmancode integer, salesmanname1 text)',
-        'startendday (routecode integer, routekey integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
+        'startendday (routecode integer, routekey integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer, salesmancode integer)',
     ] as $table) DB::statement('CREATE TABLE '.$table);
 
     DB::table('company')->insert([

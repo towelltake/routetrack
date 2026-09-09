@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import DashboardCards from "./DashboardCards.vue";
+import RouteStatusDialog from "./RouteStatusDialog.vue";
 import DashboardAnalytics from "./DashboardAnalytics.vue";
 import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "./filters";
 
@@ -30,6 +31,11 @@ const metrics = ref(null);
 const metricsLoading = ref(true);
 const metricsError = ref(null);
 const analyticsView = ref(null);
+const routeStatusDialog = ref(null);
+function inspectCard(title) {
+    if (title === "Routes Started / Total") routeStatusDialog.value.open({ from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+    else analyticsView.value?.openOverview(title);
+}
 const error = ref(null);
 const locations = ref([]);
 const isFullscreen = ref(false);
@@ -308,7 +314,8 @@ function resetFilters() {
             </div>
         </section>
 
-        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="analyticsView?.openOverview($event)" />
+        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
+        <RouteStatusDialog ref="routeStatusDialog" />
         <DashboardAnalytics ref="analyticsView" :metrics="metrics" :loading="metricsLoading" />
 
         <BaseBlock title="Route locations" :mode-loading="loading">

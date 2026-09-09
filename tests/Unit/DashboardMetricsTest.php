@@ -6,6 +6,16 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('actual face time remains available when every planned CFT is zero or null', function () {
+    DB::table('customervisitlog')->update(['cft' => 0]);
+    DB::table('customervisitlog')->where('logkey', 11)->update(['cft' => null]);
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    expect($result['planned_cft_minutes'])->toEqual(0)
+        ->and($result['cft_minutes'])->toEqual(75)
+        ->and($result['completed_visits'])->toBe(5)
+        ->and($result['cft_variance_minutes'])->toBeNull();
+});
+
 test('face time details retain individual visits and handle missing plans incomplete timing and overnight visits', function () {
     DB::table('customervisitlog')->where('logkey', 12)->update(['cft' => 20]);
     DB::table('customervisitlog')->where('logkey', 23)->update(['cft' => null]);

@@ -233,8 +233,7 @@ function resetFilters() {
                 <div class="dashboard-filters-heading">
                     <span class="dashboard-filter-icon"><i class="fa fa-sliders" aria-hidden="true"></i></span>
                     <div>
-                        <h2 id="dashboard-filters-title">Explore your operations</h2>
-                        <p>Choose your teams and reporting period.</p>
+                        <h2 id="dashboard-filters-title">Filters</h2>
                     </div>
                 </div>
                 <div class="dashboard-filter-actions">
@@ -268,7 +267,6 @@ function resetFilters() {
 
             <div class="dashboard-period-panel">
                 <div class="dashboard-period-heading">
-                    <span><i class="fa-regular fa-calendar" aria-hidden="true"></i> Reporting period</span>
                     <div class="dashboard-date-presets" role="group" aria-label="Date range presets">
                         <button
                             v-for="preset in [{ value: 'today', label: 'Today' }, { value: 'yesterday', label: 'Yesterday' }, { value: 'week', label: 'This week' }, { value: 'month', label: 'This month' }, { value: 'custom', label: 'Custom' }]"
@@ -283,7 +281,7 @@ function resetFilters() {
                 <div class="dashboard-date-grid">
                     <div class="dashboard-range-inputs">
                         <div class="dashboard-filter-field">
-                            <label for="dashboard-from">From date</label>
+                            <label for="dashboard-from">Route start: from</label>
                             <input id="dashboard-from" v-model="fromDate" type="date" :max="toDate || undefined" @input="datePreset = 'custom'" />
                         </div>
                         <span class="dashboard-date-arrow" aria-hidden="true">&rarr;</span>
@@ -291,9 +289,6 @@ function resetFilters() {
                             <label for="dashboard-to">To date</label>
                             <input id="dashboard-to" v-model="toDate" type="date" :min="fromDate || undefined" @input="datePreset = 'custom'" />
                         </div>
-                    </div>
-                    <div class="dashboard-map-date">
-                        <p><strong>Filtered by route start date</strong><br>Latest journey per route within the selected range.</p>
                     </div>
                 </div>
                 <p v-if="dateError" class="dashboard-date-error" role="alert">{{ dateError }}</p>
@@ -393,7 +388,7 @@ function resetFilters() {
     button:focus-visible, input:not(.vs__search):focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     button { font: inherit; cursor: pointer; }
-    .vs__dropdown-toggle { min-height: 44px; border: 1px solid #d7e0e9; border-radius: 8px; background: #fff; padding: 4px 7px; }
+    .vs__dropdown-toggle { min-height: 36px; border: 1px solid #d7e0e9; border-radius: 8px; background: #fff; padding: 1px 7px; }
     .vs--open .vs__dropdown-toggle, .vs__dropdown-toggle:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px #eff6ff; }
     .vs__selected { background: #eff6ff; border: 0; border-radius: 5px; color: #1e40af; font-size: 12px; max-width: 100%; overflow-wrap: anywhere; }
     .vs__selected-options { min-width: 0; }
@@ -403,38 +398,38 @@ function resetFilters() {
     .vs__dropdown-option--highlight { background: #eff6ff; color: #1d4ed8; }
 }
 .dashboard-filters-header, .dashboard-filters-heading, .dashboard-filter-actions, .dashboard-period-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.dashboard-filters-header { padding: 22px 24px; }
+.dashboard-filters-header { padding: 10px 16px; }
 .dashboard-filters-heading { justify-content: flex-start; }
 .dashboard-filters-heading h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 .dashboard-filters-heading p { margin: 0; color: #64748b; font-size: 13px; }
-.dashboard-filter-icon { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; background: #eff6ff; color: #2563eb; }
-.dashboard-filter-actions button { border-radius: 8px; padding: 10px 15px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.dashboard-filter-icon { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px; background: #eff6ff; color: #2563eb; }
+.dashboard-filter-actions button { border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .dashboard-reset { border: 1px solid transparent; color: #52657b; background: transparent; }
 .dashboard-reset:hover { background: #f1f5f9; }
 .dashboard-refresh { border: 1px solid #172b45; background: #172b45; color: #fff; }
 .dashboard-refresh:hover { background: #274467; }
 .dashboard-refresh i { margin-right: 7px; }
-.dashboard-scope-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; padding: 0 24px 24px; }
+.dashboard-scope-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding: 0 16px 12px; }
 .dashboard-filter-field { min-width: 0; }
-.dashboard-filter-field label { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #475569; font-size: 12px; font-weight: 650; }
+.dashboard-filter-field label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #475569; font-size: 11px; font-weight: 650; }
 .dashboard-selection-count { padding: 1px 6px; background: #dbeafe; border-radius: 5px; color: #1e40af; font-size: 10px; }
-.dashboard-filter-field input[type="date"] { width: 100%; min-width: 0; min-height: 44px; padding: 9px 12px; background: #fff; border: 1px solid #d7e0e9; border-radius: 8px; color: #172b45; font: inherit; font-size: 13px; }
+.dashboard-filter-field input[type="date"] { width: 100%; min-width: 0; min-height: 36px; padding: 6px 10px; background: #fff; border: 1px solid #d7e0e9; border-radius: 8px; color: #172b45; font: inherit; font-size: 13px; }
 .dashboard-filter-field input:disabled { background: #f1f5f9; color: #64748b; }
-.dashboard-period-panel { padding: 20px 24px; background: #f8fafc; border-top: 1px solid #edf1f5; }
-.dashboard-period-heading { margin-bottom: 18px; flex-wrap: wrap; }
+.dashboard-period-panel { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 20px; padding: 10px 16px; background: #f8fafc; border-top: 1px solid #edf1f5; }
+.dashboard-period-heading { order: 1; margin-left: auto; flex-wrap: wrap; }
 .dashboard-period-heading > span { font-size: 12px; font-weight: 650; color: #475569; }
 .dashboard-period-heading i { margin-right: 7px; }
 .dashboard-date-presets { display: flex; gap: 4px; flex-wrap: wrap; padding: 4px; border: 1px solid #e2e8f0; border-radius: 9px; background: #eef2f6; }
 .dashboard-date-presets button { border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 12px; font-size: 12px; font-weight: 600; color: #52657b; }
 .dashboard-date-presets button:hover { color: #1d4ed8; background: #fff; }
 .dashboard-date-presets button.active { background: #fff; color: #1d4ed8; border-color: #dce4ee; box-shadow: 0 1px 3px #172b4510; }
-.dashboard-date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.dashboard-date-grid { width: 440px; max-width: 100%; }
 .dashboard-range-inputs { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); align-items: end; gap: 12px; }
 .dashboard-date-arrow { padding-bottom: 12px; color: #94a3b8; }
 .dashboard-map-date { display: flex; align-items: end; gap: 18px; border-left: 1px solid #dce4ee; padding-left: 32px; }
 .dashboard-map-date .dashboard-filter-field { flex: 1; }
 .dashboard-map-date p { flex: 1; color: #64748b; font-size: 12px; line-height: 1.6; margin: 0 0 3px; }
-.dashboard-date-error { margin: 14px 0 0; font-size: 13px; color: #b91c1c; }
+.dashboard-date-error { order: 2; flex-basis: 100%; margin: 0; font-size: 13px; color: #b91c1c; }
 @media (max-width: 1199px) {
     .dashboard-scope-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .dashboard-map-date { padding-left: 20px; gap: 12px; }
@@ -447,8 +442,8 @@ function resetFilters() {
     .dashboard-date-grid { grid-template-columns: 1fr; gap: 18px; }
     .dashboard-map-date { border-left: 0; padding-left: 0; }
     .dashboard-map-date p { display: block; }
-    .dashboard-filters-header, .dashboard-period-panel { padding: 18px; }
-    .dashboard-scope-grid { padding: 0 18px 18px; }
+    .dashboard-filters-header, .dashboard-period-panel { padding: 10px 12px; }
+    .dashboard-scope-grid { padding: 0 12px 12px; }
 }
 @media (max-width: 420px) {
     .dashboard-scope-grid { grid-template-columns: 1fr; }

@@ -45,9 +45,8 @@ class AuthenticatedSessionController extends Controller
             ->leftJoin('regionmaster as region', 'region.regionmstcode', '=', 'depot.regionmstcode')
             ->leftJoin('country', 'country.countrycode', '=', 'region.countrycode')
             ->where(function ($query) use ($rows) {
-                if ($rows->isEmpty()) {
-                    $query->whereRaw('1 = 0');
-                }
+                // Empty or unusable permission rows must never grant every route.
+                $query->whereRaw('1 = 0');
 
                 foreach ($rows as $row) {
                     $permission = collect([
@@ -61,7 +60,12 @@ class AuthenticatedSessionController extends Controller
                     $column = $permission->search(fn ($value) => filled($value));
 
                     if ($column !== false) {
-                        $query->orWhere($column, $permission[$column]);
+                        $query->orWhere(function ($scope) use ($row, $column, $permission) {
+                            $scope->where($column, $permission[$column]);
+                            // Geography can be shared by several companies. Keep the
+                            // company restriction attached to this permission row.
+                            if (filled($row->cmpycode)) $scope->where('route.cmpycode', $row->cmpycode);
+                        });
                     }
                 }
             })
@@ -88,7 +92,7 @@ class AuthenticatedSessionController extends Controller
             'subarea_codes' => $routes->pluck('subareacode')->filter()->unique()->values()->all(),
         ]);
 
-        return redirect()->intended(route('customer-location.index', absolute: false));
+        return redirect()->intended(route('dashboard.index', absolute: false));
     }
 
     /**

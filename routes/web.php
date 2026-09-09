@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/customer-location');
+Route::redirect('/', '/dashboard');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/customerlocation.php';

@@ -7,6 +7,16 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('filter catalog derives divisions clusters and entities only from permitted companies', function () {
+    session(['user_access.company_codes' => [1]]);
+    $rows = collect(app(DashboardController::class)->filters()->getData(true));
+    expect($rows->pluck('cmpycode')->unique()->values()->all())->toBe([1])
+        ->and($rows->pluck('entity')->unique()->values()->all())->toBe(['Entity A'])
+        ->and($rows->pluck('clustercode')->unique()->values()->all())->toBe([10]);
+    session(['user_access.company_codes' => []]);
+    expect(app(DashboardController::class)->filters()->getData(true))->toBe([]);
+});
+
 test('dashboard action cards receive counts without eagerly transferring table details', function () {
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => [

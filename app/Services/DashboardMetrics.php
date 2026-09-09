@@ -41,6 +41,20 @@ class DashboardMetrics
             $amounts[$type] = (clone $query)->selectRaw("COALESCE(currencycode, 0) as currencycode, SUM(COALESCE({$amount}, 0)) as amount, COUNT(*) as documents")
                 ->groupByRaw('COALESCE(currencycode, 0)')->orderBy('currencycode')->get();
         }
+        $returnSources = null;
+        foreach (['invoiceheader', 'salesorderheader'] as $table) {
+            $source = DB::table($table)->whereIn('routekey', $keys)->where('voidflag', 0)
+                ->whereRaw('COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0) > 0')
+                ->selectRaw('routekey, COALESCE(currencycode, 0) as currencycode, COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0) as amount');
+            if ($returnSources === null) $returnSources = $source;
+            else $returnSources->unionAll($source);
+        }
+        $journeyAmounts['returns'] = DB::query()->fromSub($returnSources, 'returns_documents')
+            ->selectRaw('routekey, currencycode, SUM(amount) as amount, COUNT(*) as documents')
+            ->groupBy('routekey', 'currencycode')->get();
+        $amounts['returns'] = $journeyAmounts['returns']->groupBy('currencycode')->map(fn ($rows, $currency) => (object) [
+            'currencycode' => $currency, 'amount' => $rows->sum('amount'), 'documents' => $rows->sum('documents'),
+        ])->values();
         $currencies = DB::table('currencymaster')->whereIn('currencycode', collect($amounts)->flatten(1)->pluck('currencycode')->unique())
             ->get(['currencycode', 'currencysymbol'])->keyBy('currencycode');
         foreach ($amounts as $type => $rows) {

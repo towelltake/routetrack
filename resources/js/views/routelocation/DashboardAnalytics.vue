@@ -39,7 +39,10 @@ async function openRows(title, journeys) {
     await nextTick();
     if (!detailDialog.value.open) detailDialog.value.showModal();
 }
-function openOverview(title) { if (rows.value.length) openRows(title, rows.value); }
+function openOverview(title) {
+    const details = title === "Returns" ? rows.value.filter((row) => row.amounts.returns?.some((amount) => Number(amount.amount) > 0)) : rows.value;
+    if (details.length) openRows(title, details);
+}
 defineExpose({ openOverview });
 function selectDay(index) {
     selectedDay.value = daily.value[index].id;
@@ -188,7 +191,7 @@ watch(() => props.metrics, () => {
                 <article v-for="row in visibleDetails" :key="row.routekey" class="analytics-journey-detail">
                     <div class="analytics-journey-title"><h3>{{ row.routecode }} - {{ row.route }} <small>{{ row.date }} · Journey {{ row.routekey }}</small></h3><a :href="trackUrl(row)">Open Route Tracking &rarr;</a></div>
                     <dl><div><dt>Coverage</dt><dd>{{ percent(row.covered, row.planned) }}</dd></div><div><dt>Productive visits</dt><dd>{{ row.productive }} / {{ row.completed }}</dd></div><div><dt>Actual CFT</dt><dd>{{ number(row.actual_cft, 1) }} min</dd></div><div><dt>CFT variance</dt><dd>{{ variance(row) }} min</dd></div><div><dt>Journey duration</dt><dd>{{ number(row.duration, 1) }} min</dd></div><div><dt>Recorded distance</dt><dd>{{ number(row.distance, 1) }} km</dd></div></dl>
-                    <div class="analytics-detail-money"><span v-for="type in ['sales', 'orders', 'collections']" :key="type"><strong>{{ type }}:</strong> {{ money(row.amounts[type]) }}</span></div>
+                    <div class="analytics-detail-money"><span v-for="type in ['sales', 'orders', 'collections', 'returns']" :key="type"><strong>{{ type }}:</strong> {{ money(type === 'returns' ? (row.amounts.returns ?? []).map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })) : row.amounts[type]) }}</span></div>
                     <p v-if="row.issues.length" class="analytics-detail-issues">{{ row.issues.map(i => `${i.label}: ${i.count}`).join(' · ') }}</p>
                     <details v-if="row.otp_events.length"><summary>{{ row.otp_events.length }} OTP events — view details</summary><div class="analytics-table-scroll"><table><thead><tr><th>Customer</th><th>Type</th><th>Date / time</th><th>Recorded user</th><th>Reason / comments</th></tr></thead><tbody><tr v-for="event in row.otp_events" :key="event.otplogid"><td>{{ event.customercode }}</td><td>{{ event.otptype }}</td><td>{{ event.otpdate }} {{ event.otptime }}</td><td>{{ event.username || '—' }}</td><td>{{ event.otpreason || '—' }}<small>{{ event.comments }}</small></td></tr></tbody></table></div></details>
                 </article>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Head } from "@inertiajs/vue3";
 import axios from "axios";
 import L from "leaflet";
@@ -55,6 +55,11 @@ let markersLayer = null;
 const routeMarkers = {};
 let locationRequest = 0;
 let dashboardRequestController = null;
+
+onBeforeUnmount(() => {
+    locationRequest++;
+    dashboardRequestController?.abort();
+});
 
 watch([selected, fromDate, toDate], () => {
     if (filtersReady.value) showAllLocations();
@@ -295,10 +300,10 @@ function resetFilters() {
                 <p v-if="dateError" class="dashboard-date-error" role="alert">{{ dateError }}</p>
             </div>
             <div class="dashboard-filter-actions">
-                <button type="button" class="dashboard-reset" :disabled="loading" @click="resetFilters">Reset filters</button>
-                <button type="button" class="dashboard-refresh" :disabled="loading || !filtersReady || !!dateError" @click="showAllLocations">
-                    <i class="fa fa-arrow-rotate-right" :class="{ 'fa-spin': loading }" aria-hidden="true"></i>
-                    {{ loading ? "Refreshing..." : "Refresh" }}
+                <button type="button" class="dashboard-reset" @click="resetFilters">Reset filters</button>
+                <button type="button" class="dashboard-refresh" :disabled="!filtersReady || !!dateError" @click="showAllLocations">
+                    <i class="fa fa-arrow-rotate-right" :class="{ 'fa-spin': loading || metricsLoading }" aria-hidden="true"></i>
+                    Refresh
                 </button>
             </div>
         </section>

@@ -5,6 +5,20 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('returns combine both document sources and retain currencies without void or out of scope documents', function () {
+    foreach (['invoiceheader', 'salesorderheader'] as $table) {
+        foreach ([[1, 1, 0, 10, 5], [1, 2, 0, null, 7], [1, 1, 1, 99, 99], [1, 1, null, 99, 99], [3, 1, 0, 99, 99]] as [$route, $currency, $void, $good, $bad]) {
+            DB::table($table)->insert(['routekey' => $route, 'currencycode' => $currency, 'voidflag' => $void, 'totalreturnamount' => $good, 'totaldamagedamount' => $bad]);
+        }
+    }
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->where('routekey', 1)->get());
+    $returns = collect($result['amounts']['returns'])->keyBy('currency');
+    expect($returns)->toHaveCount(2)
+        ->and((float) $returns['OMR']['amount'])->toBe(30.0)
+        ->and($returns['OMR']['documents'])->toBe(2)
+        ->and((float) $returns['USD']['amount'])->toBe(14.0);
+});
+
 test('older open journeys use last GPS cutoff and ongoing visits do not inflate outside time', function () {
     $journeys = DB::table('startendday')->where('routekey', 2)->get();
     $journeys->first()->last_location_time = '2026-09-03 12:00:00';
@@ -26,8 +40,8 @@ beforeEach(function () {
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
-        'invoiceheader (routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer)',
-        'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer)',
+        'invoiceheader (routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
+        'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'arheader (routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
         'currencymaster (currencycode integer, currencysymbol text)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, otpreason text, comments text)',

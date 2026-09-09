@@ -37,13 +37,15 @@ const cards = computed(() => {
             definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
         { title: "Time Outside Customer Visits", icon: "fa-car", tone: "blue", value: number(m?.outside_visit_minutes, 1), unit: "min",
             note: "Includes travel, idle time and breaks", definition: "Measured journey duration minus customer visit intervals. Overlapping intervals count once; ongoing visits on open routes stop at the last GPS timestamp." },
+        { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
+            note: "Invoice and order returns", definition: "Good and damaged returns from invoices and orders with voidflag = 0, belonging to selected journeys. Currencies are shown separately." },
     ];
 });
 const groups = computed(() => [
-    { key: "journeys", title: "Journeys", cards: [cards.value[0], cards.value[7]] },
-    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2]] },
+    { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
+    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2], cards.value[7]] },
     { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[10]] },
-    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5]] },
+    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
 ]);
 </script>
 
@@ -103,6 +105,7 @@ const groups = computed(() => [
 .tone-teal { --accent: #0f766e; --tint: #f0fdfa; }
 .tone-violet { --accent: #7c3aed; --tint: #f5f3ff; }
 .tone-amber { --accent: #b45309; --tint: #fffbeb; }
+.tone-red { --accent: #dc2626; --tint: #fef2f2; }
 .dashboard-metric-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 20px; }
 .dashboard-metric-heading h3 { margin: 0; color: #52657b; font-size: 13px; font-weight: 600; }
 .dashboard-metric-icon { display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; background: var(--tint); color: var(--accent); }
@@ -119,7 +122,8 @@ const groups = computed(() => [
 .dashboard-overview-heading { margin-bottom: 10px; }
 .dashboard-metric-groups { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
 .dashboard-metric-group { min-width: 0; padding: 9px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
-.group-journeys, .group-customers { grid-column: span 6; }
+.group-journeys { grid-column: span 3; }
+.group-customers { grid-column: span 9; }
 .group-time { grid-column: span 6; }
 .group-transactions { grid-column: span 6; }
 .dashboard-group-title { margin: 0 0 6px 2px; color: #475569; font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }

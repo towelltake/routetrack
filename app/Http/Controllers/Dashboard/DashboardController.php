@@ -28,6 +28,7 @@ class DashboardController extends Controller
             ->leftJoin('clustermaster', 'clustermaster.clustercode', '=', 'company.clustercode')
             ->leftJoin('regionmaster', 'regionmaster.regionmstcode', '=', 'routemaster.regionmstcode')
             ->where('company.activestatus', 1)
+            ->where('routemaster.activestatus', 1)
             ->whereIn('routemaster.routecode', session('user_access.route_codes', []))
             ->whereIn('routemaster.cmpycode', session('user_access.company_codes', []))
             ->whereIn('routemaster.subareacode', session('user_access.subarea_codes', []))
@@ -63,6 +64,7 @@ class DashboardController extends Controller
     public function companies(): JsonResponse
     {
         $routedCmpyCodes = RouteMaster::query()
+            ->where('activestatus', 1)
             ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
             ->distinct()
@@ -84,6 +86,7 @@ class DashboardController extends Controller
         ]);
 
         $routes = RouteMaster::query()
+            ->where('activestatus', 1)
             ->whereIn('routecode', session('user_access.route_codes', []))
             ->whereIn('cmpycode', session('user_access.company_codes', []))
             ->whereIn('subareacode', session('user_access.subarea_codes', []))
@@ -232,6 +235,26 @@ class DashboardController extends Controller
         $salesmen = AccountSalesman::query()->whereIn('salesmancode', $journeys->pluck('salesmancode')->filter()->unique())
             ->get(['salesmancode', 'salesmanname1'])->keyBy('salesmancode');
         foreach ($journeys as $journey) {
+            if ((int) $journey->routeclosed !== 1) {
+                $start = $this->routeDateTime($journey->routestartdate, $journey->routestarttime);
+                $journey->last_location_time = null;
+                if ($start) {
+                    $next = DB::table('startendday')->where('routecode', $journey->routecode)
+                        ->where(function ($query) use ($journey) {
+                            $query->whereDate('routestartdate', '>', $journey->routestartdate)
+                                ->orWhere(fn ($sameDay) => $sameDay->whereDate('routestartdate', $journey->routestartdate)->where('routestarttime', '>', $journey->routestarttime));
+                        })
+                        ->orderBy('routestartdate')->orderBy('routestarttime')->first();
+                    $nextStart = $next ? $this->routeDateTime($next->routestartdate, $next->routestarttime) : null;
+                    $point = DB::connection('tracking_pgsql')->table('trac_routetrack')
+                        ->where('routecode', $journey->routecode)
+                        ->whereRaw('COALESCE(cdate, date + time) >= ?', [$start])
+                        ->when($nextStart, fn ($query) => $query->whereRaw('COALESCE(cdate, date + time) < ?', [$nextStart]))
+                        ->selectRaw('COALESCE(cdate, date + time) as effective_timestamp')
+                        ->orderByDesc('effective_timestamp')->first();
+                    $journey->last_location_time = $point?->effective_timestamp;
+                }
+            }
             $route = $metadata->get($journey->routecode);
             foreach (['routename', 'cmpycode', 'division', 'entity', 'clustercode', 'cluster', 'regionmstcode', 'region'] as $field) {
                 $journey->$field = $route?->$field;

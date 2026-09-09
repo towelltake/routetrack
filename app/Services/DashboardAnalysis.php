@@ -20,6 +20,9 @@ class DashboardAnalysis
             $closed = (int) $journey->routeclosed === 1;
             $start = $this->timestamp($journey->routestartdate, $journey->routestarttime);
             $end = $closed ? $this->timestamp($journey->routeenddate, $journey->routeendtime) : null;
+            if (!$closed && !empty($journey->last_location_time)) {
+                $end = strtotime($journey->last_location_time) ?: null;
+            }
             $duration = $start !== null && $end !== null && $end >= $start ? ($end - $start) / 60 : null;
             $row = [
                 'routekey' => (string) $journey->routekey, 'routecode' => (string) $journey->routecode,
@@ -33,7 +36,7 @@ class DashboardAnalysis
                 'planned' => $plan->count(), 'covered' => 0, 'pending' => 0, 'missed' => 0,
                 'visits' => $journeyVisits->count(), 'customer_codes' => $journeyVisits->pluck('customercode')->map(fn ($code) => (string) $code)->unique()->values()->all(),
                 'completed' => 0, 'productive' => 0, 'nonproductive' => 0,
-                'unplanned' => 0, 'out_of_sequence' => 0, 'repeat' => 0,
+                'unplanned' => 0, 'unplanned_customers' => 0, 'out_of_sequence' => 0, 'repeat' => 0,
                 'actual_cft' => 0, 'expected_cft' => 0, 'configured_actual_cft' => 0, 'configured_visits' => 0,
                 'missing_cft' => 0, 'incomplete_visits' => 0,
                 'duration' => $duration, 'visit_time' => null, 'remaining_time' => null, 'stationary_time' => null,
@@ -50,12 +53,19 @@ class DashboardAnalysis
                 $seen[$customer] = ($seen[$customer] ?? 0) + 1;
                 if ($seen[$customer] > 1) $row['repeat']++;
                 if ($plan->isNotEmpty()) {
+                    if (!$plan->has($customer) && $seen[$customer] === 1) $row['unplanned_customers']++;
                     if (!$plan->has($customer)) $row['unplanned']++;
                     elseif ($seen[$customer] === 1 && $plan[$customer]->sequencenumber > 0 && (int) $plan[$customer]->sequencenumber !== $index + 1) $row['out_of_sequence']++;
                 }
                 if ($visit->expected_minutes <= 0) $row['missing_cft']++;
                 $visitStart = $this->timestamp($visit->logstartdate, $visit->logstarttime);
                 $visitEnd = $this->timestamp($visit->logenddate, $visit->logendtime);
+                if ($duration !== null && $visitStart !== null) {
+                    $cutoff = $visitEnd ?? (!$closed ? $end : null);
+                    if ($cutoff !== null && $cutoff > $start && $visitStart < $end && $cutoff >= $visitStart) {
+                        $intervals[] = [max($start, $visitStart), min($end, $cutoff)];
+                    }
+                }
                 if ($visitStart === null || $visitEnd === null || $visitEnd < $visitStart) {
                     $row['incomplete_visits']++;
                     continue;
@@ -71,7 +81,6 @@ class DashboardAnalysis
                 $operation = $operations->get($visit->routekey.':'.$visit->logkey);
                 $key = $visit->routekey.':'.($operation?->visitkey ?? '');
                 if ($transactions['sales']->has($key) || $transactions['orders']->has($key)) $row['productive']++;
-                if ($duration !== null && $visitEnd > $start && $visitStart < $end) $intervals[] = [max($start, $visitStart), min($end, $visitEnd)];
             }
             $row['covered'] = $plan->keys()->filter(fn ($code) => isset($seen[(string) $code]))->count();
             $row[$closed ? 'missed' : 'pending'] = $row['planned'] - $row['covered'];

@@ -7,6 +7,21 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('open route GPS cutoff stops before the next journey even beyond the selected dates', function () {
+    DB::table('startendday')->insert(['routekey' => 999, 'routecode' => 1, 'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
+    DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
+        ['id' => 100, 'routecode' => 1, 'cdate' => '2026-09-07 23:00:00'],
+        ['id' => 101, 'routecode' => 1, 'cdate' => '2026-09-08 09:00:00'],
+    ]);
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->once()->withArgs(function ($journeys) {
+            expect($journeys->first()->last_location_time)->toBe('2026-09-07 23:00:00');
+            return true;
+        })->andReturn([]);
+    });
+    app(DashboardController::class)->metrics(Request::create('/', 'GET', ['date' => '2026-09-07', 'routes' => [1]]));
+});
+
 test('route started card counts filtered route days inclusively without duplicate starts', function () {
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->andReturn([]);
@@ -42,7 +57,7 @@ beforeEach(function () {
         'company (cmpycode integer, name text, entity text, clustercode integer, activestatus integer)',
         'clustermaster (clustercode integer, clustername text)',
         'regionmaster (regionmstcode integer, regionmstname text)',
-        'routemaster (routecode integer, routename text, cmpycode integer, regionmstcode integer, subareacode integer)',
+        'routemaster (routecode integer, routename text, cmpycode integer, regionmstcode integer, subareacode integer, activestatus integer default 1)',
         'routesequence (routecode integer)',
         'salesman (salesmancode integer, salesmanname1 text)',
         'startendday (routecode integer, routekey integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
@@ -72,6 +87,18 @@ beforeEach(function () {
             'cdate' => '2026-09-07 10:00:00', 'date' => '2026-09-07', 'time' => '10:00:00',
         ]);
     }
+});
+
+test('inactive routes are excluded from catalog locations and route totals', function () {
+    DB::table('routemaster')->where('routecode', 1)->update(['activestatus' => 0]);
+    $controller = app(DashboardController::class);
+    expect(array_column($controller->filters()->getData(true), 'routecode'))->not->toContain(1);
+    $request = Request::create('/', 'GET', ['date' => '2026-09-07', 'routes' => [1]]);
+    expect($controller->lastLocations($request)->getData(true))->toBe([]);
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->once()->withArgs(fn ($journeys) => $journeys->isEmpty())->andReturn([]);
+    });
+    expect($controller->metrics($request)->getData(true))->toMatchArray(['route_count' => 0, 'total_routes' => 0, 'routes_started' => 0]);
 });
 
 test('dashboard catalog respects active divisions and all existing access restrictions', function () {

@@ -29,7 +29,7 @@ class DashboardMetrics
         $transactions = [];
         $amounts = [];
         $journeyAmounts = [];
-        foreach (['sales' => ['invoiceheader', 'totalinvoiceamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $type => [$table, $amount]) {
+        foreach (['sales' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $type => [$table, $amount]) {
             $query = DB::table($table)->whereIn('routekey', $keys)
                 ->where(fn ($query) => $query->whereNull('voidflag')->orWhere('voidflag', 0));
             $transactions[$type] = (clone $query)->where($amount, '>', 0)->whereNotNull('visitkey')->where('visitkey', '>', 0)
@@ -94,8 +94,16 @@ class DashboardMetrics
 
         $otp = $this->otp($journeys, $visits);
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
+        $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
 
         return [
+            'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
+            'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
+            'outside_visit_minutes' => $timed->isEmpty() ? null : $timed->sum('remaining_time'),
+            'duration_available_journeys' => $timed->count(),
+            'duration_missing_journeys' => $journeys->count() - $timed->count(),
+            'planned_cft_minutes' => $expectedMinutes,
+            'comparable_actual_cft_minutes' => $configuredSeconds / 60,
             'journeys_started' => $journeys->count(),
             'unique_routes' => $journeys->pluck('routecode')->unique()->count(),
             'routes_not_started' => null,

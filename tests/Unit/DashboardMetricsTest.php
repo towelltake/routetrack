@@ -5,6 +5,17 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('older open journeys use last GPS cutoff and ongoing visits do not inflate outside time', function () {
+    $journeys = DB::table('startendday')->where('routekey', 2)->get();
+    $journeys->first()->last_location_time = '2026-09-03 12:00:00';
+    $result = app(DashboardMetrics::class)->summarize($journeys);
+    // 08:00–12:00 journey; 09:00–09:30 completed and 11:00–12:00 ongoing visit.
+    expect($result['duration_minutes'])->toEqual(240)
+        ->and($result['outside_visit_minutes'])->toEqual(150)
+        ->and($result['duration_missing_journeys'])->toBe(0)
+        ->and($result['unplanned_customers'])->toBe(3);
+});
+
 beforeEach(function () {
     config(['database.default' => 'metrics_test', 'database.connections.metrics_test' => [
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
@@ -15,7 +26,7 @@ beforeEach(function () {
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
-        'invoiceheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer)',
+        'invoiceheader (routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer)',
         'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer)',
         'arheader (routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
         'currencymaster (currencycode integer, currencysymbol text)',
@@ -42,7 +53,7 @@ beforeEach(function () {
         DB::table('customeroperationscontrol')->insert(['primary_id' => $id, 'routekey' => $journey, 'log_id' => $log, 'visitkey' => $visit]);
     }
     foreach ([[1, 500, 100, 1, 0], [1, 500, 50, 1, 0], [2, 999, 20, 2, 0], [2, 500, 999, 1, 1], [3, 500, 777, 1, 0]] as [$journey, $visit, $amount, $currency, $void]) {
-        DB::table('invoiceheader')->insert(['routekey' => $journey, 'visitkey' => $visit, 'totalinvoiceamount' => $amount, 'currencycode' => $currency, 'voidflag' => $void]);
+        DB::table('invoiceheader')->insert(['routekey' => $journey, 'visitkey' => $visit, 'totalsalesamount' => $amount, 'totalinvoiceamount' => $amount + 10, 'currencycode' => $currency, 'voidflag' => $void]);
     }
     foreach ([[501, 40], [500, 20]] as [$visit, $amount]) {
         DB::table('salesorderheader')->insert(['routekey' => 1, 'visitkey' => $visit, 'totalinvoiceamount' => $amount, 'currencycode' => 1, 'voidflag' => 0]);
@@ -82,12 +93,12 @@ test('empty periods have zero totals and undefined rates rather than fabricated 
         ->and($result['amounts']['sales'])->toBe([]);
 });
 
-test('a return-only invoice changes sales total but does not make a visit productive', function () {
+test('a return-only invoice does not change gross sales or make a visit productive', function () {
     DB::table('customeroperationscontrol')->insert(['primary_id' => 9, 'routekey' => 2, 'log_id' => 23, 'visitkey' => 777]);
-    DB::table('invoiceheader')->insert(['routekey' => 2, 'visitkey' => 777, 'totalinvoiceamount' => -10, 'currencycode' => 1, 'voidflag' => 0]);
+    DB::table('invoiceheader')->insert(['routekey' => 2, 'visitkey' => 777, 'totalsalesamount' => 0, 'totalinvoiceamount' => -10, 'currencycode' => 1, 'voidflag' => 0]);
     $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
     expect($result['productive_visits'])->toBe(2)
-        ->and((float) $result['amounts']['sales'][0]['amount'])->toBe(140.0);
+        ->and((float) $result['amounts']['sales'][0]['amount'])->toBe(150.0);
 });
 
 test('analysis exposes journey coverage, repeat visits, OTP details and missing data honestly', function () {

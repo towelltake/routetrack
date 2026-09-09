@@ -120,7 +120,7 @@ watch(() => props.metrics, () => {
             <DashboardChart title="Expected vs actual face time" description="Top 10 routes by time spent on visits with configured CFT" :data="cft" :options="cftOptions" :loading="loading" note="Compares the same visits on both sides. Click a route for journey details." />
         </div>
         <div class="analytics-time-row">
-            <DashboardChart title="Where journey time goes" description="Top 10 routes by completed journey duration" :data="timeBreakdown" :options="timeOptions" :loading="loading" note="Overlapping visit intervals are counted once. Remaining time includes travel, breaks and other activity; it is not confirmed idle time." />
+            <DashboardChart title="Where journey time goes" description="Top 10 routes by measured journey duration" :data="timeBreakdown" :options="timeOptions" :loading="loading" note="Open journeys use their last reported location. Overlapping visits count once. Remaining time includes travel, breaks and other activity." />
             <aside class="analytics-operations">
                 <h3>Time &amp; distance</h3>
                 <div><span>Average completed journey</span><strong>{{ loading || !metrics ? '—' : number(averageDuration, 1) }} <small>min</small></strong><p>{{ number(durationRows.length) }} journeys with valid start/end times</p></div>

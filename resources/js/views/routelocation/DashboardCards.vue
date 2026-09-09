@@ -7,7 +7,6 @@ const number = (value, digits = 0) => value == null ? "—" : Number(value).toLo
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
 const cards = computed(() => {
     const m = props.metrics;
-    const variance = m?.cft_variance_minutes;
     return [
         { title: "Routes Started / Total Routes", icon: "fa-route", tone: "blue", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
             note: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
@@ -19,24 +18,31 @@ const cards = computed(() => {
         { title: "Productive visits", icon: "fa-check-double", tone: "teal", value: percent(m?.productivity_percent),
             note: m ? `${number(m.productive_visits)} / ${number(m.completed_visits)} completed visits · ${number(m.nonproductive_visits)} nonproductive` : "",
             definition: "Completed visits with a positive-value, non-voided sale or order, divided by completed visits. Each visit counts once. Collection-only and return-only visits do not count as productive." },
-        { title: "Net sales", icon: "fa-chart-line", tone: "blue", amounts: m?.amounts.sales,
-            note: "Non-voided invoice totals", definition: "Sum of final invoice totals belonging to selected journeys, including transactions after the period end. Currencies are shown separately." },
+        { title: "Sales", icon: "fa-chart-line", tone: "blue", amounts: m?.amounts.sales,
+            note: "Non-voided invoice sales", definition: "Sum of invoice sales amounts belonging to selected journeys, including transactions after the period end. Currencies are shown separately." },
         { title: "Order value", icon: "fa-file-invoice", tone: "violet", amounts: m?.amounts.orders,
             note: "Non-voided orders", definition: "Sum of order totals belonging to selected journeys. Orders and invoiced sales are separate measures and should not be added together." },
         { title: "Collections", icon: "fa-wallet", tone: "teal", amounts: m?.amounts.collections,
             note: "Non-voided collection receipts", definition: "Amount paid on collection receipts belonging to selected journeys. Invoice payments are not added again." },
-        { title: "Customer Face Time", icon: "fa-clock", tone: "violet", value: number(m?.cft_minutes, 1), unit: "min",
-            note: m ? (variance == null ? "Variance unavailable · No planned CFT" : `${variance > 0 ? "+" : ""}${number(variance, 1)} min vs planned · ${number(m.cft_configured_visits)} visits`) : "",
+        { title: "Planned / Actual Face Time", icon: "fa-clock", tone: "violet", value: m ? `${number(m.planned_cft_minutes, 1)} / ${number(m.comparable_actual_cft_minutes, 1)}` : "—", unit: "min",
+            note: m ? `${number(m.cft_configured_visits)} completed visits with planned CFT · All completed visits: ${number(m.cft_minutes, 1)} min actual` : "",
             definition: "Actual duration of completed visits. Variance includes only visits with a positive planned CFT recorded in the customer visit log." },
         { title: "OTP usage", icon: "fa-key", tone: "amber", value: number(m?.otp.events),
             note: m ? `${number(m.otp.visits)} visits matched · All OTP types` : "",
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
+        { title: "Unplanned Customers Visited", icon: "fa-location-dot", tone: "amber", value: number(m?.unplanned_customers),
+            note: "Counted once per customer per journey", definition: "Customers visited outside the journey plan. Journeys without a plan are excluded." },
+        { title: "Total Duration", icon: "fa-clock", tone: "blue", value: number(m?.duration_minutes, 1), unit: "min",
+            note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
+            definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
+        { title: "Time Outside Customer Visits", icon: "fa-car", tone: "blue", value: number(m?.outside_visit_minutes, 1), unit: "min",
+            note: "Includes travel, idle time and breaks", definition: "Measured journey duration minus customer visit intervals. Overlapping intervals count once; ongoing visits on open routes stop at the last GPS timestamp." },
     ];
 });
 const groups = computed(() => [
     { key: "journeys", title: "Journeys", cards: [cards.value[0], cards.value[7]] },
-    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[2]] },
-    { key: "time", title: "Face time", cards: [cards.value[6]] },
+    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2]] },
+    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[10]] },
     { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5]] },
 ]);
 </script>
@@ -114,8 +120,8 @@ const groups = computed(() => [
 .dashboard-metric-groups { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
 .dashboard-metric-group { min-width: 0; padding: 9px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
 .group-journeys, .group-customers { grid-column: span 6; }
-.group-time { grid-column: span 3; }
-.group-transactions { grid-column: span 9; }
+.group-time { grid-column: span 6; }
+.group-transactions { grid-column: span 6; }
 .dashboard-group-title { margin: 0 0 6px 2px; color: #475569; font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .dashboard-metric-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
 .dashboard-metric-card { display: flex; align-items: flex-start; gap: 8px; min-height: 80px; padding: 10px; border-radius: 10px; }

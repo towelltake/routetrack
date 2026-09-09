@@ -6,6 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import DashboardCards from "./DashboardCards.vue";
+import DashboardGraphs from "./DashboardGraphs.vue";
 import RouteStatusDialog from "./RouteStatusDialog.vue";
 import CustomerDetailsDialog from "./CustomerDetailsDialog.vue";
 import { defineAsyncComponent } from "vue";
@@ -402,12 +403,13 @@ function resetFilters() {
         <RouteStatusDialog ref="routeStatusDialog" />
         <CustomerDetailsDialog ref="customerDetailsDialog" />
         <div class="dashboard-actions">
-            <article><i class="fa fa-chart-column"></i><h2>Performance comparison</h2><strong>{{ summary.customers ?? '?' }} <small>customers visited</small></strong><p>{{ metrics?.journeys_started ?? '?' }} journeys ? Compare routes and teams</p><button :disabled="!metrics || !!dateError" @click="openAction('performance')">Compare performance <span>?</span></button></article>
-            <article class="attention"><i class="fa fa-flag"></i><h2>Journeys needing attention</h2><strong>{{ summary.review ?? '?' }} <small>journeys to review</small></strong><p>{{ summary.repeat ?? '?' }} repeat visits ? Execution and data issues</p><button :disabled="!metrics || !!dateError" @click="openAction('attention')">Review journeys <span>?</span></button></article>
-            <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.open ?? '?' }} <small>open journeys</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span>?</span></button></article>
+            <article><i class="fa fa-chart-column"></i><h2>Performance comparison</h2><strong>{{ summary.customers ?? '\u2014' }} <small>customers visited</small></strong><p>{{ metrics?.journeys_started ?? '\u2014' }} journeys &middot; Compare routes and teams</p><button :disabled="!metrics || !!dateError" @click="openAction('performance')">Compare performance <span aria-hidden="true">&rarr;</span></button></article>
+            <article class="attention"><i class="fa fa-flag"></i><h2>Journeys needing attention</h2><strong>{{ summary.review ?? '\u2014' }} <small>journeys to review</small></strong><p>{{ summary.repeat ?? '\u2014' }} repeat visits &middot; Execution and data issues</p><button :disabled="!metrics || !!dateError" @click="openAction('attention')">Review journeys <span aria-hidden="true">&rarr;</span></button></article>
+            <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.open ?? '\u2014' }} <small>open journeys</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span aria-hidden="true">&rarr;</span></button></article>
         </div>
+        <DashboardGraphs :metrics="metrics" :loading="metricsLoading" />
         <dialog ref="actionDialog" class="dashboard-action-dialog" @cancel.prevent="closeAction">
-            <header><h2>{{ activeView === 'live' ? 'Track your live routes' : activeView === 'attention' ? 'Journeys needing attention' : 'Performance comparison' }}</h2><button @click="closeAction" aria-label="Close">?</button></header>
+            <header><h2>{{ activeView === 'live' ? 'Track your live routes' : activeView === 'attention' ? 'Journeys needing attention' : 'Performance comparison' }}</h2><button @click="closeAction" aria-label="Close">&times;</button></header>
             <p v-if="detailError && activeView !== 'live'" role="alert">{{ detailError }}</p>
             <DashboardAnalytics v-if="activeView && activeView !== 'live'" ref="analyticsView" :metrics="detailMetrics" :loading="detailLoading" :view="activeView" :initial-state="restored?.analytics" />
 

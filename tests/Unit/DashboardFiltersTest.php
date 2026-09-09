@@ -10,14 +10,17 @@ uses(Tests\TestCase::class);
 test('dashboard action cards receive counts without eagerly transferring table details', function () {
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => [
-            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2],
-            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0],
+            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 2, 'duration' => 60],
+            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null],
         ]]]);
     });
     $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
     $summary = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['summary' => 1]))->getData(true);
     expect($summary)->not->toHaveKey('analysis')
-        ->and($summary['action_summary'])->toMatchArray(['customers' => 3, 'review' => 1, 'repeat' => 2]);
+        ->and($summary['action_summary'])->toMatchArray(['customers' => 3, 'review' => 1, 'repeat' => 2])
+        ->and($summary['charts']['daily'])->toHaveCount(1)
+        ->and($summary['charts']['routes'][0])->toMatchArray(['covered' => 3, 'duration' => 60, 'duration_count' => 1])
+        ->and($summary['charts']['daily'][0])->not->toHaveKey('customer_codes');
     $details = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['details' => 1]))->getData(true);
     expect($details['analysis']['journeys'])->toHaveCount(2);
 });

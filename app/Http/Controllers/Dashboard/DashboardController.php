@@ -292,7 +292,16 @@ class DashboardController extends Controller
             'repeat' => $analysis->sum('repeat'),
             'open' => $journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1)->count(),
         ];
-        if ($request->boolean('summary')) unset($metrics['analysis']);
+        if ($request->boolean('summary')) {
+            $chartGroups = fn ($field) => $analysis->groupBy($field)->map(function ($rows, $key) use ($field) {
+                $result = ['label' => $field === 'date' ? $key : $key.' - '.$rows->first()['route']];
+                foreach (['planned', 'covered', 'pending', 'missed', 'productive', 'nonproductive', 'unplanned', 'out_of_sequence', 'repeat', 'expected_cft', 'configured_actual_cft', 'configured_visits', 'duration', 'visit_time', 'remaining_time'] as $metric) $result[$metric] = $rows->sum($metric);
+                $result['duration_count'] = $rows->whereNotNull('duration')->count();
+                return $result;
+            })->values();
+            $metrics['charts'] = ['daily' => $chartGroups('date')->sortBy('label')->values(), 'routes' => $chartGroups('routecode')];
+            unset($metrics['analysis']);
+        }
 
         return response()->json($metrics);
     }

@@ -669,10 +669,6 @@ class RouteTrackingController extends Controller
     {
         $route = RouteMaster::query()->find($routecode);
         $salesman = ! empty($routeDay->salesmancode) ? AccountSalesman::query()->find($routeDay->salesmancode) : null;
-        $salesmanData = $salesman?->getAttributes() ?? [];
-        $phone = collect(['mobilenumber', 'mobile', 'phonenumber', 'telephone', 'contactno'])
-            ->map(fn (string $field) => trim((string) ($salesmanData[$field] ?? '')))
-            ->first(fn (string $value) => $value !== '' && $value !== '0');
         $dateTime = fn ($date, $time) => $date && $time ? substr((string) $date, 0, 10).' '.$time : null;
 
         return [
@@ -680,7 +676,6 @@ class RouteTrackingController extends Controller
             'routename' => $route?->routename,
             'salesmancode' => isset($routeDay->salesmancode) ? (int) $routeDay->salesmancode : null,
             'salesmanname' => $salesman?->salesmanname1,
-            'salesmanphone' => $phone,
             'start_time' => $dateTime($routeDay->routestartdate ?? null, $routeDay->routestarttime ?? null),
             'end_time' => $dateTime($routeDay->routeenddate ?? null, $routeDay->routeendtime ?? null),
             'start_odometer' => isset($routeDay->routestartodometer) ? (float) $routeDay->routestartodometer : null,

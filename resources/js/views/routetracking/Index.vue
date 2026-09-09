@@ -103,9 +103,9 @@ const customerVisitSummary = computed(() => {
 
 const routeHeading = computed(() => {
     const details = result.value?.planned?.route_details;
-    if (!details) return selectedRoute.value ? `Route ${selectedRoute.value} · Salesman not available · Phone not available` : "Select a route to view tracking";
+    if (!details) return selectedRoute.value ? `Route ${selectedRoute.value} · Salesman not available` : "Select a route to view tracking";
     const salesman = details.salesmanname || (details.salesmancode ? `Salesman ${details.salesmancode}` : "Salesman not available");
-    return `Route ${details.routecode} · ${salesman} · ${details.salesmanphone || "Phone not available"}`;
+    return `Route ${details.routecode} · ${salesman}`;
 });
 
 const summaryTransactions = computed(() => {
@@ -1462,7 +1462,6 @@ function focusEnd() {
                             <dl v-if="summaryModal === 'route'" class="route-detail-grid mb-0">
                                 <div><dt>Route</dt><dd>{{ result.planned.route_details?.routecode }} - {{ result.planned.route_details?.routename || "Not available" }}</dd></div>
                                 <div><dt>Salesman</dt><dd>{{ result.planned.route_details?.salesmanname || "Not available" }} <span v-if="result.planned.route_details?.salesmancode" class="text-muted">({{ result.planned.route_details.salesmancode }})</span></dd></div>
-                                <div><dt>Phone Number</dt><dd>{{ result.planned.route_details?.salesmanphone || "Not available" }}</dd></div>
                                 <div><dt>Version Number</dt><dd>{{ result.planned.route_details?.version || "Not available" }}</dd></div>
                                 <div><dt>Route Start Time</dt><dd>{{ result.planned.route_details?.start_time || "Not available" }}</dd></div>
                                 <div><dt>Route End Time</dt><dd>{{ result.planned.route_details?.end_time || "Not available" }}</dd></div>

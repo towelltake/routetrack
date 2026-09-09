@@ -31,9 +31,9 @@ test('route journey details expose route salesman times odometers version and op
     ]]);
     DB::purge('route_details_test');
     DB::statement('CREATE TABLE routemaster (routecode integer primary key, routename text)');
-    DB::statement('CREATE TABLE salesman (salesmancode integer primary key, salesmanname1 text, mobile text)');
+    DB::statement('CREATE TABLE salesman (salesmancode integer primary key, salesmanname1 text)');
     DB::table('routemaster')->insert(['routecode' => 7, 'routename' => 'Muscat Route']);
-    DB::table('salesman')->insert(['salesmancode' => 9, 'salesmanname1' => 'Ahmed', 'mobile' => '99112233']);
+    DB::table('salesman')->insert(['salesmancode' => 9, 'salesmanname1' => 'Ahmed']);
     $journey = (object) [
         'salesmancode' => 9, 'routestartdate' => '2026-09-08 00:00:00', 'routestarttime' => '08:00:00',
         'routeenddate' => '2026-09-08 00:00:00', 'routeendtime' => '17:00:00',
@@ -45,7 +45,7 @@ test('route journey details expose route salesman times odometers version and op
 
     expect($details)->toMatchArray([
         'routecode' => 7, 'routename' => 'Muscat Route', 'salesmancode' => 9,
-        'salesmanname' => 'Ahmed', 'salesmanphone' => '99112233',
+        'salesmanname' => 'Ahmed',
         'start_time' => '2026-09-08 08:00:00', 'end_time' => '2026-09-08 17:00:00',
         'start_odometer' => 100.0, 'end_odometer' => 240.0, 'version' => '5.2.1',
     ]);

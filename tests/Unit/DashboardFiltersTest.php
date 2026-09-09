@@ -7,6 +7,21 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('customer details respect active routes, access, divisions and route start dates', function () {
+    DB::table('routemaster')->where('routecode', 2)->update(['activestatus' => 0]);
+    DB::table('startendday')->insert(['routekey' => 999, 'routecode' => 1, 'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00']);
+    $this->mock(\App\Services\DashboardCustomerDetails::class, function ($mock) {
+        $mock->shouldReceive('build')->once()->withArgs(function ($journeys, $type) {
+            expect($type)->toBe('planned')->and($journeys->pluck('routecode')->all())->toBe([1, 7]);
+            return true;
+        })->andReturn(['groups' => []]);
+    });
+    $result = app(DashboardController::class)->customerDetails(Request::create('/', 'GET', [
+        'from_date' => '2026-09-07', 'to_date' => '2026-09-07', 'divisions' => [1], 'type' => 'planned',
+    ]))->getData(true);
+    expect($result)->toBe(['groups' => []]);
+});
+
 test('route status includes unstarted active routes and journey salesmen across selected dates', function () {
     DB::table('salesman')->insert([['salesmancode' => 10, 'salesmanname1' => 'Assigned'], ['salesmancode' => 11, 'salesmanname1' => 'Journey salesman']]);
     DB::table('routemaster')->update(['salesmancode' => 10]);

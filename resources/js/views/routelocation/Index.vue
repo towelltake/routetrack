@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import DashboardCards from "./DashboardCards.vue";
 import RouteStatusDialog from "./RouteStatusDialog.vue";
+import CustomerDetailsDialog from "./CustomerDetailsDialog.vue";
 import DashboardAnalytics from "./DashboardAnalytics.vue";
 import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "./filters";
 
@@ -32,7 +33,13 @@ const metricsLoading = ref(true);
 const metricsError = ref(null);
 const analyticsView = ref(null);
 const routeStatusDialog = ref(null);
+const customerDetailsDialog = ref(null);
 function inspectCard(title) {
+    const kind = { 'Planned coverage': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productive visits': 'productive' }[title];
+    if (kind) {
+        customerDetailsDialog.value.open(kind, { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+        return;
+    }
     if (title === "Routes Started / Total") routeStatusDialog.value.open({ from_date: fromDate.value, to_date: toDate.value, ...selected.value });
     else analyticsView.value?.openOverview(title);
 }
@@ -316,6 +323,7 @@ function resetFilters() {
 
         <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
         <RouteStatusDialog ref="routeStatusDialog" />
+        <CustomerDetailsDialog ref="customerDetailsDialog" />
         <DashboardAnalytics ref="analyticsView" :metrics="metrics" :loading="metricsLoading" />
 
         <BaseBlock title="Route locations" :mode-loading="loading">

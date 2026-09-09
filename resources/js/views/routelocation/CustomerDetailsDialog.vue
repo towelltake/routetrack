@@ -1,0 +1,93 @@
+<script setup>
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
+import axios from 'axios';
+
+const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits' };
+const dialog = ref(null);
+const type = ref('planned');
+const groups = ref([]);
+const day = ref('');
+const route = ref('');
+const status = ref('All');
+const search = ref('');
+const loading = ref(false);
+const error = ref('');
+const page = ref(1);
+let request;
+const dates = computed(() => [...new Set(groups.value.map((group) => group.date))]);
+const routes = computed(() => groups.value.filter((group) => group.date === day.value));
+const group = computed(() => routes.value.find((item) => String(item.routekey) === route.value));
+const statuses = computed(() => type.value === 'planned' ? ['All', 'Visited', 'Not visited'] : type.value === 'productive' ? ['All', 'Productive', 'Nonproductive'] : ['All']);
+const rows = computed(() => (group.value?.rows ?? []).filter((row) => (status.value === 'All' || row.status === status.value)
+    && `${row.customer_code} ${row.customercode} ${row.customer_name} ${row.otp_type ?? ''} ${row.recorded_by ?? ''} ${row.comments ?? ''}`.toLowerCase().includes(search.value.trim().toLowerCase())));
+const pages = computed(() => Math.max(1, Math.ceil(rows.value.length / 50)));
+const visibleRows = computed(() => rows.value.slice((page.value - 1) * 50, page.value * 50));
+function chooseDate() { route.value = String(routes.value[0]?.routekey ?? ''); page.value = 1; }
+function close() { request?.abort(); dialog.value?.close(); }
+async function open(kind, filters) {
+    request?.abort();
+    const current = new AbortController(); request = current;
+    type.value = kind; groups.value = []; status.value = kind === 'productive' ? 'Productive' : 'All';
+    search.value = ''; error.value = ''; loading.value = true; page.value = 1;
+    await nextTick();
+    if (!dialog.value.open) dialog.value.showModal();
+    try {
+        const { data } = await axios.get('/dashboard/customer-details.json', { params: { ...filters, type: kind }, signal: current.signal, timeout: 60000 });
+        if (request !== current || current.signal.aborted) return;
+        groups.value = data.groups; day.value = dates.value[0] ?? ''; chooseDate();
+    } catch (e) {
+        if (request === current && !axios.isCancel(e)) error.value = 'Unable to load details. Close and reopen to retry.';
+    } finally { if (request === current) loading.value = false; }
+}
+onBeforeUnmount(close);
+defineExpose({ open, close });
+</script>
+
+<template>
+    <dialog ref="dialog" class="customer-details-dialog" aria-labelledby="customer-details-title" @cancel="close" @click="($event.target === dialog) && close()">
+        <header><div><h2 id="customer-details-title">{{ titles[type] }}</h2><p>Grouped by route-start date and route</p></div><button type="button" aria-label="Close" @click="close">×</button></header>
+        <div class="details-body">
+            <p v-if="loading" role="status">Loading details…</p>
+            <p v-else-if="error" role="alert">{{ error }}</p>
+            <p v-else-if="!groups.length">No matching records in the selected period.</p>
+            <template v-else>
+                <div class="details-filters">
+                    <label>Date<select v-model="day" @change="chooseDate"><option v-for="date in dates" :key="date">{{ date }}</option></select></label>
+                    <label>Route / Journey<select v-model="route" @change="page = 1"><option v-for="item in routes" :key="item.routekey" :value="String(item.routekey)">{{ item.routecode }} · {{ item.routename }} · Journey {{ item.routekey }}</option></select></label>
+                    <label>Search<input v-model="search" placeholder="Customer or details…" @input="page = 1" /></label>
+                </div>
+                <h3>{{ day }} · {{ group?.routecode }} — {{ group?.routename }}</h3>
+                <p class="salesman">Salesman: {{ group?.salesman || 'Not available' }}</p>
+                <div v-if="statuses.length > 1" class="status-tabs" aria-label="Visit status">
+                    <button v-for="tab in statuses" :key="tab" type="button" :class="{ active: status === tab }" :aria-pressed="status === tab" @click="status = tab; page = 1">{{ tab }} ({{ (group?.rows ?? []).filter((row) => tab === 'All' || row.status === tab).length }})</button>
+                </div>
+                <div class="details-table"><table>
+                    <thead><tr><th>Date</th><th>Route code</th><th v-if="type === 'otp'">Salesman</th><th>Customer code</th><th>Customer name</th>
+                        <template v-if="type === 'otp'"><th>OTP type</th><th>Recorded by</th><th>Comments / Reason</th></template>
+                        <template v-else-if="type === 'productive'"><th>Visit time</th><th>Status</th><th>Orders</th><th>Collections</th><th>Invoices</th></template>
+                        <template v-else><th>Status</th><th>Visits</th></template>
+                    </tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="row.id"><td>{{ row.date || day }}<small v-if="type === 'otp'">{{ row.time }}</small></td><td>{{ group?.routecode }}</td><td v-if="type === 'otp'">{{ group?.salesman || 'Not available' }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}</td>
+                        <template v-if="type === 'otp'"><td>{{ row.otp_type }}</td><td>{{ row.recorded_by || '—' }}</td><td>{{ [row.comments, row.reason].filter(Boolean).join(' · ') || '—' }}</td></template>
+                        <template v-else-if="type === 'productive'"><td>{{ row.time }}</td><td>{{ row.status }}</td><td>{{ row.orders }}</td><td>{{ row.collections }}</td><td>{{ row.invoices }}</td></template>
+                        <template v-else><td :class="{ missed: row.status === 'Not visited' }">{{ row.status }}</td><td>{{ row.visit_count }}</td></template>
+                    </tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp' ? 8 : type === 'productive' ? 9 : 6">No matching records.</td></tr></tbody>
+                </table></div>
+                <footer><span>{{ rows.length }} records</span><div><button :disabled="page <= 1" @click="page--">Previous</button><span>{{ page }} / {{ pages }}</span><button :disabled="page >= pages" @click="page++">Next</button></div></footer>
+            </template>
+        </div>
+    </dialog>
+</template>
+
+<style scoped>
+.customer-details-dialog { width: min(1250px, 96vw); max-height: 88vh; padding: 0; border: 1px solid #e2e8f0; border-radius: 12px; color: #172b45; }
+.customer-details-dialog::backdrop { background: #0f172a88; }
+header, footer, footer > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; } h2 { font-size: 18px; margin: 0; }
+header p, .salesman { margin: 5px 0; color: #64748b; font-size: 12px; } header button { font-size: 24px; }
+button { padding: 5px 10px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; color: #334155; } button:disabled { opacity: .5; }
+.details-body { padding: 16px 20px; } .details-filters { display: flex; flex-wrap: wrap; gap: 12px; } label { display: grid; gap: 4px; font-size: 11px; flex: 1; min-width: 160px; }
+select, input { min-width: 0; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; color: #172b45; font-size: 12px; }
+h3 { margin: 18px 0 4px; font-size: 15px; } .status-tabs { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; } .active { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+.details-table { overflow-x: auto; margin-top: 12px; } table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { padding: 9px; text-align: left; border-bottom: 1px solid #e2e8f0; } th { white-space: nowrap; background: #f8fafc; } td { overflow-wrap: anywhere; } small { display: block; color: #64748b; } .missed { color: #b91c1c; } footer { margin-top: 14px; font-size: 12px; }
+</style>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\DashboardMetrics;
+use App\Services\DashboardCustomerDetails;
 use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
@@ -44,6 +45,7 @@ beforeEach(function () {
         'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'arheader (routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
         'currencymaster (currencycode integer, currencysymbol text)',
+        'customermaster (customercode integer, alternatecode text, customeraddress1 text)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, otpreason text, comments text)',
     ] as $table) {
         DB::statement('CREATE TABLE '.$table);
@@ -80,6 +82,43 @@ beforeEach(function () {
         [7, 1, 101, '2026-09-04', '09:00:00']] as [$id, $route, $customer, $date, $time]) {
         DB::table('otplogdetail')->insert(['otplogid' => $id, 'routecode' => $route, 'customercode' => $customer, 'otpdate' => $date, 'otptime' => $time, 'otptype' => $id % 2 ? 'GPS IN' : 'OTHER']);
     }
+});
+
+test('customer drilldowns separate planned visited and not visited and deduplicate unplanned customers', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    DB::table('customermaster')->insert(['customercode' => 101, 'alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
+    $service = app(DashboardCustomerDetails::class);
+    $planned = $service->build($journeys, 'planned')['groups'];
+    expect($planned)->toHaveCount(2)
+        ->and($planned[0]['rows'])->toHaveCount(2)
+        ->and($planned[0]['rows'][0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'Visited', 'visit_count' => 2])
+        ->and($planned[0]['rows'][1]['status'])->toBe('Not visited');
+    $unplanned = $service->build($journeys, 'unplanned')['groups'];
+    expect($unplanned)->toHaveCount(1)->and($unplanned[0]['rows'])->toHaveCount(3);
+    DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
+    expect($service->build($journeys, 'unplanned')['groups'])->toHaveCount(0);
+});
+
+test('productive drilldown counts documents per completed visit without mixing journeys or void invoices', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'productive')['groups'];
+    expect($groups[0]['rows'][0])->toMatchArray(['status' => 'Productive', 'invoices' => 2, 'orders' => 1, 'collections' => 0])
+        ->and($groups[0]['rows'][1])->toMatchArray(['status' => 'Productive', 'invoices' => 0, 'orders' => 1])
+        ->and($groups[1]['rows'])->toHaveCount(3)
+        ->and($groups[1]['rows'][0])->toMatchArray(['status' => 'Nonproductive', 'invoices' => 0, 'orders' => 0, 'collections' => 1]);
+});
+
+test('OTP drilldown preserves all types and records overnight events under their route start date', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    DB::table('otplogdetail')->where('otplogid', 3)->update(['username' => 'Manager', 'comments' => 'Approved']);
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'otp')['groups'];
+    expect($groups[0]['date'])->toBe('2026-09-01')->and($groups[0]['rows'])->toHaveCount(3)
+        ->and($groups[0]['rows'][1]['otp_type'])->toBe('OTHER')
+        ->and($groups[0]['rows'][2])->toMatchArray(['date' => '2026-09-02', 'recorded_by' => 'Manager', 'comments' => 'Approved'])
+        ->and($groups[1]['rows'])->toHaveCount(1);
 });
 
 test('cards aggregate every selected journey without multiplying customers or transaction totals', function () {

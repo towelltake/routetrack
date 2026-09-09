@@ -191,6 +191,25 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function customerDetails(Request $request): JsonResponse
+    {
+        $filters = $this->validateFilters($request);
+        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive']])['type'];
+        $routes = $this->matchingRoutes($filters, false)
+            ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
+            ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
+            ->select('routemaster.routecode');
+        $journeys = DB::table('startendday as journey')
+            ->join('routemaster as route', 'route.routecode', '=', 'journey.routecode')
+            ->leftJoin('salesman', 'salesman.salesmancode', '=', 'journey.salesmancode')
+            ->whereIn('journey.routecode', $routes)
+            ->whereDate('journey.routestartdate', '>=', $filters['from_date'] ?? $filters['date'])
+            ->whereDate('journey.routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
+            ->orderBy('journey.routestartdate')->orderBy('journey.routecode')->orderBy('journey.routekey')
+            ->get(['journey.*', 'route.routename', 'salesman.salesmanname1 as salesman']);
+        return response()->json(app(\App\Services\DashboardCustomerDetails::class)->build($journeys, $type));
+    }
+
     public function routeStatus(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);

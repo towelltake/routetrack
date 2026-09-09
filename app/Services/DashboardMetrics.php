@@ -140,7 +140,7 @@ class DashboardMetrics
         ];
     }
 
-    private function otp(Collection $journeys, Collection $visits): array
+    public function otp(Collection $journeys, Collection $visits): array
     {
         if ($journeys->isEmpty()) {
             return ['events' => 0, 'visits' => 0, 'details' => []];

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Head } from "@inertiajs/vue3";
 import axios from "axios";
 import L from "leaflet";
@@ -8,8 +8,65 @@ import VueSelect from "vue-select";
 import DashboardCards from "./DashboardCards.vue";
 import RouteStatusDialog from "./RouteStatusDialog.vue";
 import CustomerDetailsDialog from "./CustomerDetailsDialog.vue";
-import DashboardAnalytics from "./DashboardAnalytics.vue";
+import { defineAsyncComponent } from "vue";
+const DashboardAnalytics = defineAsyncComponent(() => import("./DashboardAnalytics.vue"));
 import { filterFields, filterOptions, dateRangeForPreset, dateRangeError } from "./filters";
+
+const activeView = ref(null);
+const actionDialog = ref(null);
+const detailMetrics = ref(null);
+const detailLoading = ref(false);
+const detailError = ref(null);
+let detailController;
+let mapController;
+let mapRequest = 0;
+let restored = null;
+if (new URLSearchParams(window.location.search).get('restore') === '1') {
+    try { restored = JSON.parse(sessionStorage.getItem('dashboard-return') || 'null'); } catch {}
+}
+const summary = computed(() => metrics.value?.action_summary ?? {});
+function saveDashboard(event) {
+    const link = event.target.closest('a');
+    if (!link || !link.getAttribute('href')?.startsWith('/route-tracking')) return;
+    try { sessionStorage.setItem('dashboard-return', JSON.stringify({ selected: selected.value, from: fromDate.value, to: toDate.value, preset: datePreset.value,
+        actionScroll: actionDialog.value?.scrollTop ?? 0, view: activeView.value, search: routeListSearch.value, scroll: window.scrollY,
+        map: map ? { center: [map.getCenter().lat, map.getCenter().lng], zoom: map.getZoom() } : null,
+        analytics: analyticsView.value?.getState() })); } catch {}
+}
+async function openAction(view) {
+    detailMetrics.value = null; detailError.value = null;
+    detailLoading.value = view !== 'live';
+    activeView.value = view;
+    await nextTick();
+    if (!actionDialog.value.open) actionDialog.value.showModal();
+    if (view === 'live') {
+        initializeMap();
+        await loadLocations(locationRequest, dashboardRequestController?.signal);
+        map?.invalidateSize();
+        if (restored?.map) map.setView(restored.map.center, restored.map.zoom);
+        if (restored?.search) routeListSearch.value = restored.search;
+    } else {
+        detailController?.abort();
+        const current = new AbortController(); detailController = current;
+        detailLoading.value = true; detailError.value = null; detailMetrics.value = null;
+        try {
+            const { data } = await axios.get('/dashboard/metrics.json', { params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value, details: 1 }, signal: current.signal, timeout: 60000 });
+            if (detailController !== current || current.signal.aborted) return;
+            detailMetrics.value = data;
+        } catch (e) { if (!axios.isCancel(e)) detailError.value = 'Unable to load details. Close and try again.'; }
+        finally { if (detailController === current) detailLoading.value = false; }
+    }
+    await nextTick();
+    if (actionDialog.value && restored) actionDialog.value.scrollTop = restored.actionScroll ?? 0;
+}
+function closeAction() {
+    mapController?.abort(); mapRequest++; loading.value = false;
+    detailController?.abort();
+    actionDialog.value?.close();
+    activeView.value = null;
+    if (map) { map.remove(); map = null; markersLayer = null; }
+    restored = null;
+}
 
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const now = new Date();
@@ -18,14 +75,14 @@ const DEFAULT_DATE = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).
 const mapWrapperEl = ref(null);
 const mapEl = ref(null);
 const filterRows = ref([]);
-const selected = ref(Object.fromEntries(filterFields.map(({ key }) => [key, []])));
+const selected = ref(restored?.selected ?? Object.fromEntries(filterFields.map(({ key }) => [key, []])));
 const filtersReady = ref(false);
 const options = computed(() => Object.fromEntries(filterFields.map((field) => [
     field.key, filterOptions(filterRows.value, selected.value, field),
 ])));
-const datePreset = ref("today");
-const fromDate = ref(DEFAULT_DATE);
-const toDate = ref(DEFAULT_DATE);
+const datePreset = ref(restored?.preset ?? "today");
+const fromDate = ref(restored?.from ?? DEFAULT_DATE);
+const toDate = ref(restored?.to ?? DEFAULT_DATE);
 const dateError = computed(() => dateRangeError(fromDate.value, toDate.value));
 const loading = ref(false);
 const metrics = ref(null);
@@ -35,7 +92,7 @@ const analyticsView = ref(null);
 const routeStatusDialog = ref(null);
 const customerDetailsDialog = ref(null);
 function inspectCard(title) {
-    const kind = { 'Planned coverage': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productive visits': 'productive' }[title];
+    const kind = { 'Planned coverage': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productive visits': 'productive', 'Sales': 'sales', 'Order value': 'orders', 'Collections': 'collections', 'Returns': 'returns', 'Total Duration': 'duration', 'Face Time: Planned / Actual': 'cft', 'Time Outside Visits': 'outside' }[title];
     if (kind) {
         customerDetailsDialog.value.open(kind, { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
         return;
@@ -72,10 +129,14 @@ let dashboardRequestController = null;
 onBeforeUnmount(() => {
     locationRequest++;
     dashboardRequestController?.abort();
+    detailController?.abort();
+    mapController?.abort();
+    document.removeEventListener("fullscreenchange", fullscreenChanged);
+    map?.remove();
 });
 
 watch([selected, fromDate, toDate], () => {
-    if (filtersReady.value) showAllLocations();
+    if (filtersReady.value) { closeAction(); restored = null; showAllLocations(); }
 }, { deep: true });
 
 function applyDatePreset() {
@@ -87,7 +148,8 @@ function applyDatePreset() {
     toDate.value = range.to;
 }
 
-onMounted(async () => {
+function initializeMap() {
+    if (map) return;
     map = L.map(mapEl.value, { maxBounds: OMAN_BOUNDS, maxBoundsViscosity: 1.0, minZoom: 6 }).setView([20.5, 56], 8);
     map.attributionControl.setPrefix("Maps powered by Towell-TAKE Solutions LLC");
 
@@ -97,7 +159,10 @@ onMounted(async () => {
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
+}
 
+onMounted(async () => {
+    document.addEventListener("fullscreenchange", fullscreenChanged);
     try {
         const { data } = await axios.get("/dashboard/filters.json", { timeout: 60000 });
         filterRows.value = data;
@@ -108,13 +173,18 @@ onMounted(async () => {
         metricsError.value = "Unable to load dashboard filters.";
     }
 
-    document.addEventListener("fullscreenchange", () => {
-        isFullscreen.value = document.fullscreenElement === mapWrapperEl.value;
-        setTimeout(() => map.invalidateSize(), 0);
-    });
+    if (filtersReady.value) {
+        showAllLocations();
+        if (restored?.view) await openAction(restored.view);
+        window.scrollTo(0, restored?.scroll ?? 0);
+    }
 
-    if (filtersReady.value) showAllLocations();
 });
+
+function fullscreenChanged() {
+    isFullscreen.value = document.fullscreenElement === mapWrapperEl.value;
+    setTimeout(() => map?.invalidateSize(), 0);
+}
 
 function toggleFullscreen() {
     if (document.fullscreenElement) {
@@ -141,7 +211,7 @@ async function showAllLocations() {
     metrics.value = null;
     metricsError.value = null;
     locations.value = [];
-    markersLayer.clearLayers();
+    markersLayer?.clearLayers();
     Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
     error.value = null;
     if (dateError.value) {
@@ -150,11 +220,18 @@ async function showAllLocations() {
         return;
     }
 
+    loadMetrics(request, signal);
+    if (activeView.value === 'live') loadLocations(request, signal);
+}
+
+async function loadLocations(request) {
+    mapController?.abort();
+    mapController = new AbortController();
+    const signal = mapController.signal;
+    const currentMapRequest = ++mapRequest;
     loading.value = true;
     error.value = null;
-    routeListSearch.value = "";
-    loadMetrics(request, signal);
-
+    markersLayer?.clearLayers();
     try {
         const { data } = await axios.get("/dashboard/last-locations.json", {
             signal,
@@ -165,7 +242,7 @@ async function showAllLocations() {
                 ...selected.value,
             },
         });
-        if (request !== locationRequest) return;
+        if (currentMapRequest !== mapRequest || request !== locationRequest || activeView.value !== 'live' || !map) return;
         locations.value = data;
 
         if (!data.length) {
@@ -193,13 +270,13 @@ async function showAllLocations() {
             markerLatLngs.push([point.lat, point.lng]);
         });
 
-        map.fitBounds(L.latLngBounds(markerLatLngs), { padding: [40, 40], maxZoom: 13 });
+        map?.fitBounds(L.latLngBounds(markerLatLngs), { padding: [40, 40], maxZoom: 13 });
     } catch (e) {
-        if (request !== locationRequest) return;
+        if (currentMapRequest !== mapRequest || request !== locationRequest || axios.isCancel(e)) return;
         console.error(e);
         error.value = e.response?.data?.error || "Unable to load route locations.";
     } finally {
-        if (request === locationRequest) loading.value = false;
+        if (currentMapRequest === mapRequest && request === locationRequest) loading.value = false;
     }
 }
 
@@ -209,7 +286,7 @@ async function loadMetrics(request, signal) {
         const { data } = await axios.get("/dashboard/metrics.json", {
             signal,
             timeout: 60000,
-            params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value },
+            params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value, summary: 1 },
         });
         if (request === locationRequest) metrics.value = data;
     } catch {
@@ -220,7 +297,7 @@ async function loadMetrics(request, signal) {
 }
 
 function trackUrl(routecode, routeDate) {
-    return `/route-tracking?routecode=${routecode}&date=${routeDate}`;
+    return `/route-tracking?routecode=${encodeURIComponent(routecode)}&date=${encodeURIComponent(routeDate)}&from=dashboard`;
 }
 
 function focusRoute(routecode) {
@@ -239,16 +316,16 @@ function resetFilters() {
     applyDatePreset();
     locations.value = [];
     routeListSearch.value = "";
-    markersLayer.clearLayers();
+    markersLayer?.clearLayers();
     Object.keys(routeMarkers).forEach((key) => delete routeMarkers[key]);
-    map.setView([20.5, 56], 8);
+    map?.setView([20.5, 56], 8);
 }
 </script>
 
 <template>
     <Head title="Dashboard" />
 
-    <div class="content route-location-content">
+    <div class="content route-location-content" @click.capture="saveDashboard">
         <div class="route-location-page-heading">
             <h1 class="h3 fw-bold mb-1">Dashboard</h1>
             <h2 class="fs-base lh-base fw-medium text-muted mb-0">Field performance across every route journey</h2>
@@ -324,11 +401,20 @@ function resetFilters() {
         <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
         <RouteStatusDialog ref="routeStatusDialog" />
         <CustomerDetailsDialog ref="customerDetailsDialog" />
-        <DashboardAnalytics ref="analyticsView" :metrics="metrics" :loading="metricsLoading" />
+        <div class="dashboard-actions">
+            <article><i class="fa fa-chart-column"></i><h2>Performance comparison</h2><strong>{{ summary.customers ?? '?' }} <small>customers visited</small></strong><p>{{ metrics?.journeys_started ?? '?' }} journeys ? Compare routes and teams</p><button :disabled="!metrics || !!dateError" @click="openAction('performance')">Compare performance <span>?</span></button></article>
+            <article class="attention"><i class="fa fa-flag"></i><h2>Journeys needing attention</h2><strong>{{ summary.review ?? '?' }} <small>journeys to review</small></strong><p>{{ summary.repeat ?? '?' }} repeat visits ? Execution and data issues</p><button :disabled="!metrics || !!dateError" @click="openAction('attention')">Review journeys <span>?</span></button></article>
+            <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.open ?? '?' }} <small>open journeys</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span>?</span></button></article>
+        </div>
+        <dialog ref="actionDialog" class="dashboard-action-dialog" @cancel.prevent="closeAction">
+            <header><h2>{{ activeView === 'live' ? 'Track your live routes' : activeView === 'attention' ? 'Journeys needing attention' : 'Performance comparison' }}</h2><button @click="closeAction" aria-label="Close">?</button></header>
+            <p v-if="detailError && activeView !== 'live'" role="alert">{{ detailError }}</p>
+            <DashboardAnalytics v-if="activeView && activeView !== 'live'" ref="analyticsView" :metrics="detailMetrics" :loading="detailLoading" :view="activeView" :initial-state="restored?.analytics" />
 
-        <BaseBlock title="Route locations" :mode-loading="loading">
+        <BaseBlock v-if="activeView === 'live'" title="Route locations" :mode-loading="loading">
+            <button type="button" class="btn btn-sm btn-light mb-2" :disabled="loading" @click="loadLocations(locationRequest)"><i class="fa fa-rotate-right me-1"></i> Refresh locations</button>
             <p v-if="error" class="text-danger">{{ error }}</p>
-            <p v-else-if="locations.length" class="text-muted small">Latest matching journey for each of {{ locations.length }} routes. Charts and tables above include all journeys started from {{ fromDate }} to {{ toDate }}.</p>
+            <p v-else-if="locations.length" class="text-muted small">Latest matching journey for each of {{ locations.length }} routes. Selected route-start period: {{ fromDate }} to {{ toDate }}.</p>
 
             <div class="row g-3">
                 <div class="col-md-8">
@@ -397,10 +483,20 @@ function resetFilters() {
                 </div>
             </div>
         </BaseBlock>
+        </dialog>
     </div>
 </template>
 
 <style lang="scss">
+.dashboard-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:20px 0; }
+.dashboard-actions article { padding:20px; border:1px solid #dce5f0; border-radius:12px; background:white; display:flex; flex-direction:column; gap:10px; color:#172b45; }
+.dashboard-actions i { color:#2563eb; font-size:22px; } .dashboard-actions .attention i { color:#b45309; } .dashboard-actions .live i { color:#0f766e; }
+.dashboard-actions h2 { font-size:16px; margin:0; } .dashboard-actions strong { font-size:26px; } .dashboard-actions small { font-size:12px; color:#64748b; font-weight:400; }
+.dashboard-actions p { font-size:12px; color:#64748b; flex:1; margin:0; }
+.dashboard-actions button { padding:9px 12px; background:#eff6ff; color:#1d4ed8; border:0; border-radius:7px; text-align:left; } .dashboard-actions button span { float:right; } .dashboard-actions button:disabled { opacity:.5; }
+.dashboard-action-dialog { width:96vw; max-width:1600px; max-height:92vh; padding:20px; border:0; border-radius:12px; color:#172b45; }
+.dashboard-action-dialog::backdrop { background:#0f172a88; } .dashboard-action-dialog > header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; } .dashboard-action-dialog > header h2 { font-size:20px; margin:0; } .dashboard-action-dialog > header button { border:0; background:#f1f5f9; font-size:24px; border-radius:6px; }
+@media(max-width:850px) { .dashboard-actions { grid-template-columns:1fr; } }
 @import "vue-select/dist/vue-select.css";
 @import "@scss/vendor/vue-select";
 

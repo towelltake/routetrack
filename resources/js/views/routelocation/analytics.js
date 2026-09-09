@@ -10,7 +10,7 @@ export const dimensions = [
 export const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 export const rate = (value, total) => total > 0 ? value / total * 100 : null;
 export const percent = (value, total) => total > 0 ? `${number(rate(value, total), 1)}%` : "—";
-export const trackUrl = (row) => `/route-tracking?routecode=${encodeURIComponent(row.routecode)}&date=${encodeURIComponent(row.date)}`;
+export const trackUrl = (row) => `/route-tracking?routecode=${encodeURIComponent(row.routecode)}&date=${encodeURIComponent(row.date)}&from=dashboard`;
 
 export function groupJourneys(rows, dimension = "route") {
     const field = dimensions.find((field) => field.key === dimension) ?? { key: "date", id: "date" };

@@ -6,6 +6,54 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('face time details retain individual visits and handle missing plans incomplete timing and overnight visits', function () {
+    DB::table('customervisitlog')->where('logkey', 12)->update(['cft' => 20]);
+    DB::table('customervisitlog')->where('logkey', 23)->update(['cft' => null]);
+    DB::table('customervisitlog')->insert(['logkey' => 99, 'routekey' => 1, 'customercode' => 101, 'cft' => 20,
+        'logstartdate' => '2026-09-01', 'logstarttime' => '23:50:00', 'logenddate' => '2026-09-02', 'logendtime' => '00:20:00']);
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'cft')['groups'];
+    expect($groups[0]['rows'])->toHaveCount(3)
+        ->and($groups[0]['rows'][0])->toMatchArray(['planned_cft' => 10, 'actual_cft' => 20, 'variance' => 10])
+        ->and($groups[0]['rows'][1]['variance'])->toEqual(-10)
+        ->and($groups[0]['rows'][2])->toMatchArray(['actual_cft' => 30, 'variance' => 10])
+        ->and($groups[1]['rows'][1])->toMatchArray(['actual_cft' => null, 'variance' => null])
+        ->and($groups[1]['rows'][2])->toMatchArray(['planned_cft' => 0, 'actual_cft' => 10, 'variance' => null])
+        ->and($groups[1]['rows'][3])->toMatchArray(['planned_cft' => 0, 'actual_cft' => 5, 'variance' => null]);
+});
+
+test('transaction drilldowns list headers once and returns only from both sources with negative amounts', function () {
+    foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
+        foreach (['customercode integer', 'transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
+        DB::table($table)->update(['customercode' => 101, 'transactionkey' => 1, 'documentnumber' => 'D1', 'transactiondate' => '2026-09-02', 'transactiontime' => '10:00:00']);
+    }
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $service = app(DashboardCustomerDetails::class);
+    $sales = $service->build($journeys, 'sales')['groups'][0]['rows'];
+    expect($sales)->toHaveCount(2)->and($sales->sum('amount'))->toEqual(150)->and($sales[0]['currency'])->toBe('OMR');
+    expect($service->build($journeys, 'orders')['groups'][0]['rows']->sum('amount'))->toEqual(60);
+    foreach (['invoiceheader', 'salesorderheader'] as $table) DB::table($table)->where('routekey', 1)->where('visitkey', 500)->update(['totalreturnamount' => 3, 'totaldamagedamount' => 2]);
+    DB::table('invoiceheader')->insert(['routekey' => 1, 'voidflag' => 1, 'totalreturnamount' => 99]);
+    $returns = $service->build($journeys, 'returns')['groups'][0]['rows'];
+    expect($returns)->toHaveCount(3)->and($returns->sum('amount'))->toEqual(-15)
+        ->and($returns->pluck('source')->unique()->values()->all())->toBe(['Invoice', 'Order']);
+    $journeys = DB::table('startendday')->where('routekey', 2)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    expect($service->build($journeys, 'collections')['groups'][0]['rows']->sum('amount'))->toEqual(75);
+});
+
+test('duration drilldown shares card timing for closed open and unavailable journeys', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2, 4])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $journeys[1]->last_location_time = '2026-09-03 12:00:00';
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'duration')['groups'];
+    expect($groups[0]['rows'][0])->toMatchArray(['status' => 'Closed', 'duration' => 1080, 'end' => '2026-09-02 02:00:00'])
+        ->and($groups[1]['rows'][0])->toMatchArray(['status' => 'Open', 'duration' => 240, 'end' => '2026-09-03 12:00:00'])
+        ->and($groups[2]['rows'][0])->toMatchArray(['status' => 'Open', 'duration' => null, 'end' => null]);
+});
+
 test('returns combine both document sources and retain currencies without void or out of scope documents', function () {
     foreach (['invoiceheader', 'salesorderheader'] as $table) {
         foreach ([[1, 1, 0, 10, 5], [1, 2, 0, null, 7], [1, 1, 1, 99, 99], [1, 1, null, 99, 99], [3, 1, 0, 99, 99]] as [$route, $currency, $void, $good, $bad]) {

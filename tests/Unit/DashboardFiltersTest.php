@@ -7,6 +7,21 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('dashboard action cards receive counts without eagerly transferring table details', function () {
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => [
+            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2],
+            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0],
+        ]]]);
+    });
+    $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
+    $summary = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['summary' => 1]))->getData(true);
+    expect($summary)->not->toHaveKey('analysis')
+        ->and($summary['action_summary'])->toMatchArray(['customers' => 3, 'review' => 1, 'repeat' => 2]);
+    $details = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['details' => 1]))->getData(true);
+    expect($details['analysis']['journeys'])->toHaveCount(2);
+});
+
 test('customer details respect active routes, access, divisions and route start dates', function () {
     DB::table('routemaster')->where('routecode', 2)->update(['activestatus' => 0]);
     DB::table('startendday')->insert(['routekey' => 999, 'routecode' => 1, 'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00']);

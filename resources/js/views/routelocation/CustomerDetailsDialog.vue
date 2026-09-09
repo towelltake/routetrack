@@ -2,7 +2,12 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import axios from 'axios';
 
-const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits' };
+const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', outside: 'Time Outside Visits' };
+const isRouteTime = computed(() => ['duration', 'outside'].includes(type.value));
+const signedDuration = (value) => value == null ? 'Unavailable' : `${value > 0 ? '+' : value < 0 ? '-' : ''}${duration(Math.abs(value))}`;
+const isTransaction = computed(() => ['sales', 'orders', 'collections', 'returns'].includes(type.value));
+const duration = (value) => value == null ? 'Unavailable' : `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, '0')}`;
+const money = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const dialog = ref(null);
 const type = ref('planned');
 const groups = ref([]);
@@ -18,8 +23,8 @@ const dates = computed(() => [...new Set(groups.value.map((group) => group.date)
 const routes = computed(() => groups.value.filter((group) => group.date === day.value));
 const group = computed(() => routes.value.find((item) => String(item.routekey) === route.value));
 const statuses = computed(() => type.value === 'planned' ? ['All', 'Visited', 'Not visited'] : type.value === 'productive' ? ['All', 'Productive', 'Nonproductive'] : ['All']);
-const rows = computed(() => (group.value?.rows ?? []).filter((row) => (status.value === 'All' || row.status === status.value)
-    && `${row.customer_code} ${row.customercode} ${row.customer_name} ${row.otp_type ?? ''} ${row.recorded_by ?? ''} ${row.comments ?? ''}`.toLowerCase().includes(search.value.trim().toLowerCase())));
+const rows = computed(() => (isRouteTime.value ? routes.value.flatMap((item) => item.rows) : (group.value?.rows ?? [])).filter((row) => (status.value === 'All' || row.status === status.value)
+    && `${row.customer_code} ${row.customercode} ${row.customer_name} ${row.otp_type ?? ''} ${row.recorded_by ?? ''} ${row.comments ?? ''} ${row.document ?? ''} ${row.routecode ?? ''} ${row.salesman ?? ''}`.toLowerCase().includes(search.value.trim().toLowerCase())));
 const pages = computed(() => Math.max(1, Math.ceil(rows.value.length / 50)));
 const visibleRows = computed(() => rows.value.slice((page.value - 1) * 50, page.value * 50));
 function chooseDate() { route.value = String(routes.value[0]?.routekey ?? ''); page.value = 1; }
@@ -53,25 +58,42 @@ defineExpose({ open, close });
             <template v-else>
                 <div class="details-filters">
                     <label>Date<select v-model="day" @change="chooseDate"><option v-for="date in dates" :key="date">{{ date }}</option></select></label>
-                    <label>Route / Journey<select v-model="route" @change="page = 1"><option v-for="item in routes" :key="item.routekey" :value="String(item.routekey)">{{ item.routecode }} · {{ item.routename }} · Journey {{ item.routekey }}</option></select></label>
+                    <label v-if="!isRouteTime">Route / Journey<select v-model="route" @change="page = 1"><option v-for="item in routes" :key="item.routekey" :value="String(item.routekey)">{{ item.routecode }} · {{ item.routename }} · Journey {{ item.routekey }}</option></select></label>
                     <label>Search<input v-model="search" placeholder="Customer or details…" @input="page = 1" /></label>
                 </div>
-                <h3>{{ day }} · {{ group?.routecode }} — {{ group?.routename }}</h3>
-                <p class="salesman">Salesman: {{ group?.salesman || 'Not available' }}</p>
+                <h3>{{ day }}<template v-if="!isRouteTime"> · {{ group?.routecode }} — {{ group?.routename }}</template></h3>
+                <p v-if="!isRouteTime" class="salesman">Salesman: {{ group?.salesman || 'Not available' }}</p>
+                <p v-else class="salesman">Open routes use the last known location time for duration.</p>
                 <div v-if="statuses.length > 1" class="status-tabs" aria-label="Visit status">
                     <button v-for="tab in statuses" :key="tab" type="button" :class="{ active: status === tab }" :aria-pressed="status === tab" @click="status = tab; page = 1">{{ tab }} ({{ (group?.rows ?? []).filter((row) => tab === 'All' || row.status === tab).length }})</button>
                 </div>
-                <div class="details-table"><table>
+                <div v-if="type === 'outside'" class="details-table">
+                    <p class="salesman">Times in h:mm. Customer CFT merges overlapping visits within the route. Stationary time excludes customer visits and GPS gaps. Estimated travel = route duration − customer CFT − detected stationary time; it can include unobserved stops and GPS gaps.</p>
+                    <table><thead><tr><th>Route code</th><th>Salesman name</th><th>Route start time</th><th>Route end time</th><th>Customer CFT</th><th>Travel time (estimated)</th><th>Stationary time</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="row.id"><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.customer_cft) }}</td><td>{{ duration(row.travel) }}</td><td>{{ duration(row.stationary) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody></table>
+                </div>
+                <div v-else-if="type === 'duration'" class="details-table"><table>
+                    <thead><tr><th>Date</th><th>Route code</th><th>Salesman name</th><th>Start time</th><th>End time</th><th>Duration (h:mm)</th><th>Route status</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="row.id"><td>{{ day }}</td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ row.status }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody>
+                </table></div>
+                <div v-else-if="type === 'cft'" class="details-table">
+                    <p class="salesman">Times in h:mm. Variance = actual minus planned. Variance is unavailable when planned CFT is missing or zero, or visit timing is incomplete.</p>
+                    <table><thead><tr><th>Date</th><th>Route code</th><th>Salesman</th><th>Customer code</th><th>Planned CFT</th><th>Actual CFT</th><th>Variance</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="row.id"><td>{{ row.date || day }}<small>{{ row.time }}</small></td><td>{{ group?.routecode }}</td><td>{{ group?.salesman || 'Not available' }}</td><td :title="row.customer_name">{{ row.customer_code }}</td><td>{{ duration(row.planned_cft) }}</td><td>{{ duration(row.actual_cft) }}</td><td>{{ signedDuration(row.variance) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody></table>
+                </div>
+                <div v-else class="details-table"><table>
                     <thead><tr><th>Date</th><th>Route code</th><th v-if="type === 'otp'">Salesman</th><th>Customer code</th><th>Customer name</th>
                         <template v-if="type === 'otp'"><th>OTP type</th><th>Recorded by</th><th>Comments / Reason</th></template>
+                        <template v-else-if="isTransaction"><th>Document type</th><th>Document number</th><th>Amount</th><th>Currency</th></template>
                         <template v-else-if="type === 'productive'"><th>Visit time</th><th>Status</th><th>Orders</th><th>Collections</th><th>Invoices</th></template>
                         <template v-else><th>Status</th><th>Visits</th></template>
                     </tr></thead>
                     <tbody><tr v-for="row in visibleRows" :key="row.id"><td>{{ row.date || day }}<small v-if="type === 'otp'">{{ row.time }}</small></td><td>{{ group?.routecode }}</td><td v-if="type === 'otp'">{{ group?.salesman || 'Not available' }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}</td>
                         <template v-if="type === 'otp'"><td>{{ row.otp_type }}</td><td>{{ row.recorded_by || '—' }}</td><td>{{ [row.comments, row.reason].filter(Boolean).join(' · ') || '—' }}</td></template>
+                        <template v-else-if="isTransaction"><td>{{ row.source }}</td><td>{{ row.document }}</td><td :class="{ missed: type === 'returns' }">{{ money(row.amount) }}</td><td>{{ row.currency }}</td></template>
                         <template v-else-if="type === 'productive'"><td>{{ row.time }}</td><td>{{ row.status }}</td><td>{{ row.orders }}</td><td>{{ row.collections }}</td><td>{{ row.invoices }}</td></template>
                         <template v-else><td :class="{ missed: row.status === 'Not visited' }">{{ row.status }}</td><td>{{ row.visit_count }}</td></template>
-                    </tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp' ? 8 : type === 'productive' ? 9 : 6">No matching records.</td></tr></tbody>
+                    </tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp' || isTransaction ? 8 : type === 'productive' ? 9 : 6">No matching records.</td></tr></tbody>
                 </table></div>
                 <footer><span>{{ rows.length }} records</span><div><button :disabled="page <= 1" @click="page--">Previous</button><span>{{ page }} / {{ pages }}</span><button :disabled="page >= pages" @click="page++">Next</button></div></footer>
             </template>

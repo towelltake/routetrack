@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import { filterFields, filterOptions } from "@/views/routelocation/filters";
 
+const fromDashboard = new URLSearchParams(window.location.search).get('from') === 'dashboard';
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const store = useTemplateStore();
 
@@ -1002,6 +1003,7 @@ function focusEnd() {
 
     <div class="content route-tracking-content">
         <div class="route-tracking-page-heading">
+            <a v-if="fromDashboard" href="/dashboard?restore=1" class="btn btn-sm btn-light mb-2"><i class="fa fa-arrow-left me-1"></i> Back to dashboard</a>
             <h1 class="h3 fw-bold mb-1">Route Tracking</h1>
             <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual GPS points</h2>
         </div>

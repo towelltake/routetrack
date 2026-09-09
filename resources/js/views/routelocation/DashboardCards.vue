@@ -55,14 +55,8 @@ const groups = computed(() => [
 </script>
 
 <template>
-    <section class="dashboard-overview" aria-labelledby="dashboard-overview-title" :aria-busy="loading">
-        <div class="dashboard-overview-heading">
-            <div>
-                <h2 id="dashboard-overview-title">Journey overview</h2>
-                <p>All journeys started in the selected period</p>
-            </div>
-            <span v-if="loading" role="status">Updating figures...</span>
-        </div>
+    <section class="dashboard-overview" aria-label="Dashboard metrics" :aria-busy="loading">
+        <span v-if="loading" class="visually-hidden" role="status">Updating figures...</span>
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
         <div class="dashboard-metric-groups">
             <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">

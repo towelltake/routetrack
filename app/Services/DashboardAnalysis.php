@@ -18,12 +18,7 @@ class DashboardAnalysis
             $plan = $plansByJourney->get($journey->routekey, collect())->keyBy('customercode');
             $journeyVisits = $visitsByJourney->get($journey->routekey, collect());
             $closed = (int) $journey->routeclosed === 1;
-            $start = $this->timestamp($journey->routestartdate, $journey->routestarttime);
-            $end = $closed ? $this->timestamp($journey->routeenddate, $journey->routeendtime) : null;
-            if (!$closed && !empty($journey->last_location_time)) {
-                $end = strtotime($journey->last_location_time) ?: null;
-            }
-            $duration = $start !== null && $end !== null && $end >= $start ? ($end - $start) / 60 : null;
+            ['start' => $start, 'end' => $end, 'duration' => $duration] = $this->journeyTiming($journey);
             $row = [
                 'routekey' => (string) $journey->routekey, 'routecode' => (string) $journey->routecode,
                 'route' => $journey->routename ?? 'Route '.$journey->routecode,
@@ -116,6 +111,15 @@ class DashboardAnalysis
             $rows[] = $row;
         }
         return ['journeys' => $rows, 'distance_source' => 'Recorded odometer difference', 'stationary_available' => false];
+    }
+
+    public function journeyTiming(object $journey): array
+    {
+        $start = $this->timestamp($journey->routestartdate, $journey->routestarttime);
+        $end = (int) $journey->routeclosed === 1
+            ? $this->timestamp($journey->routeenddate, $journey->routeendtime)
+            : (!empty($journey->last_location_time) ? (strtotime($journey->last_location_time) ?: null) : null);
+        return ['start' => $start, 'end' => $end, 'duration' => $start !== null && $end !== null && $end >= $start ? ($end - $start) / 60 : null];
     }
 
     private function timestamp(mixed $date, mixed $time): ?int

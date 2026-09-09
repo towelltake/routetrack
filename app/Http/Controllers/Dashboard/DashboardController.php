@@ -194,7 +194,7 @@ class DashboardController extends Controller
     public function customerDetails(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,sales,orders,collections,returns,duration,cft,outside']])['type'];
         $routes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
@@ -207,6 +207,10 @@ class DashboardController extends Controller
             ->whereDate('journey.routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
             ->orderBy('journey.routestartdate')->orderBy('journey.routecode')->orderBy('journey.routekey')
             ->get(['journey.*', 'route.routename', 'salesman.salesmanname1 as salesman']);
+        if (in_array($type, ['duration', 'outside'])) {
+            $points = $this->journeyLocations($journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1));
+            foreach ($journeys as $journey) $journey->last_location_time = $points->get($journey->routekey)?->effective_timestamp;
+        }
         return response()->json(app(\App\Services\DashboardCustomerDetails::class)->build($journeys, $type));
     }
 
@@ -280,6 +284,15 @@ class DashboardController extends Controller
         $metrics['period_days'] = $days;
         $metrics['total_routes'] = $routeCount * $days;
         $metrics['routes_not_started'] = max(0, $metrics['total_routes'] - $started);
+
+        $analysis = collect($metrics['analysis']['journeys'] ?? []);
+        $metrics['action_summary'] = [
+            'customers' => $analysis->flatMap(fn ($row) => $row['customer_codes'])->unique()->count(),
+            'review' => $analysis->filter(fn ($row) => count($row['issues']) > 0)->count(),
+            'repeat' => $analysis->sum('repeat'),
+            'open' => $journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1)->count(),
+        ];
+        if ($request->boolean('summary')) unset($metrics['analysis']);
 
         return response()->json($metrics);
     }

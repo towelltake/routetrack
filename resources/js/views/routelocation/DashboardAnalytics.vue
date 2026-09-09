@@ -1,9 +1,8 @@
 <script setup>
 import { computed, nextTick, ref, watch } from "vue";
-import DashboardChart from "./DashboardChart.vue";
-import { dimensions, groupJourneys, number, percent, rate, trackUrl, chartOptions, dataset } from "./analytics";
+import { dimensions, groupJourneys, number, percent, rate, trackUrl } from "./analytics";
 
-const props = defineProps({ metrics: Object, loading: Boolean });
+const props = defineProps({ metrics: Object, loading: Boolean, view: String, initialState: Object });
 const rows = computed(() => props.metrics?.analysis?.journeys ?? []);
 const grouping = ref("route");
 const search = ref("");
@@ -23,14 +22,7 @@ const detailPage = ref(1);
 const pageSize = 15;
 const detailPages = computed(() => Math.max(1, Math.ceil(detailRows.value.length / pageSize)));
 const visibleDetails = computed(() => detailRows.value.slice((detailPage.value - 1) * pageSize, detailPage.value * pageSize));
-const perRoute = computed(() => groupJourneys(rows.value, "route"));
-const daily = computed(() => groupJourneys(rows.value, "date"));
-const total = (key) => rows.value.reduce((sum, row) => sum + (Number(row[key]) || 0), 0);
-const uniqueCustomers = computed(() => new Set(rows.value.flatMap((row) => row.customer_codes)).size);
 const reviewRows = computed(() => rows.value.filter((row) => row.issues.length));
-const distanceRows = computed(() => rows.value.filter((row) => row.distance != null));
-const durationRows = computed(() => rows.value.filter((row) => row.duration != null));
-const averageDuration = computed(() => durationRows.value.length ? total("duration") / durationRows.value.length : null);
 
 async function openRows(title, journeys) {
     detailTitle.value = title;
@@ -43,42 +35,13 @@ function openOverview(title) {
     const details = title === "Returns" ? rows.value.filter((row) => row.amounts.returns?.some((amount) => Number(amount.amount) > 0)) : rows.value;
     if (details.length) openRows(title, details);
 }
-defineExpose({ openOverview });
-function selectDay(index) {
-    selectedDay.value = daily.value[index].id;
-    performanceSection.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+function getState() {
+    return { grouping: grouping.value, search: search.value, selectedDay: selectedDay.value, sortKey: sortKey.value, descending: descending.value,
+        page: page.value, extended: extended.value, issueFilter: issueFilter.value, attentionPage: attentionPage.value,
+        tableScroll: performanceSection.value?.querySelector('.analytics-table-scroll')?.scrollLeft ?? 0, detailScroll: detailDialog.value?.scrollTop ?? 0,
+        detailIds: detailDialog.value?.open ? detailRows.value.map(row => row.routekey) : [], detailTitle: detailTitle.value, detailPage: detailPage.value };
 }
-const dailyOptions = chartOptions({ stacked: true, onClick: selectDay });
-const coverage = computed(() => ({ labels: daily.value.map((row) => row.label), datasets: [
-    dataset("Visited", daily.value.map((row) => row.covered), "#14b8a6"),
-    dataset("Pending", daily.value.map((row) => row.pending), "#fbbf24"),
-    dataset("Missed", daily.value.map((row) => row.missed), "#fb7185"),
-] }));
-const productivity = computed(() => ({ labels: daily.value.map((row) => row.label), datasets: [
-    dataset("Productive", daily.value.map((row) => row.productive), "#3b82f6"),
-    dataset("No sale / order", daily.value.map((row) => row.nonproductive), "#cbd5e1"),
-] }));
-const exceptionLabels = ["Unplanned visits", "Out of sequence", "Repeat visits"];
-const exceptions = computed(() => ({ labels: rows.value.length ? exceptionLabels : [], datasets: [
-    { ...dataset("Visit events", [total("unplanned"), total("out_of_sequence"), total("repeat")], ["#c2410c", "#f59e0b", "#8b5cf6"]), },
-] }));
-const exceptionOptions = chartOptions({ horizontal: true, onClick: (index) => {
-    issueFilter.value = exceptionLabels[index];
-    attentionSection.value?.scrollIntoView({ behavior: "smooth", block: "start" });
-} });
-const cftRoutes = computed(() => [...perRoute.value].filter((row) => row.configured_visits).sort((a, b) => b.configured_actual_cft - a.configured_actual_cft).slice(0, 10));
-const cft = computed(() => ({ labels: cftRoutes.value.map((row) => row.label), datasets: [
-    dataset("Expected (min)", cftRoutes.value.map((row) => row.expected_cft), "#c4b5fd"),
-    dataset("Actual (min)", cftRoutes.value.map((row) => row.configured_actual_cft), "#7c3aed"),
-] }));
-const cftOptions = chartOptions({ horizontal: true, onClick: (index) => openRows(cftRoutes.value[index].label, cftRoutes.value[index].rows) });
-const timeRoutes = computed(() => [...perRoute.value].filter((row) => row.duration_count).sort((a, b) => b.duration - a.duration).slice(0, 10));
-const timeBreakdown = computed(() => ({ labels: timeRoutes.value.map((row) => row.label), datasets: [
-    dataset("Customer visit time (min)", timeRoutes.value.map((row) => row.visit_time), "#14b8a6"),
-    dataset("Remaining time (min)", timeRoutes.value.map((row) => row.remaining_time), "#cbd5e1"),
-] }));
-const timeOptions = chartOptions({ horizontal: true, stacked: true, onClick: (index) => openRows(timeRoutes.value[index].label, timeRoutes.value[index].rows) });
-
+defineExpose({ openOverview, getState });
 const comparison = computed(() => {
     const source = selectedDay.value ? rows.value.filter((row) => row.date === selectedDay.value) : rows.value;
     const groups = groupJourneys(source, grouping.value).filter((row) => row.label.toLowerCase().includes(search.value.trim().toLowerCase()));
@@ -101,38 +64,28 @@ const variance = (row) => row.configured_visits ? `${row.configured_actual_cft -
 function sortBy(key) { descending.value = sortKey.value === key ? !descending.value : key !== "label"; sortKey.value = key; }
 watch([grouping, search, selectedDay, sortKey, descending], () => page.value = 1);
 watch(issueFilter, () => attentionPage.value = 1);
-watch(() => props.metrics, () => {
+watch(() => props.metrics, async () => {
     page.value = 1; attentionPage.value = 1; selectedDay.value = ""; issueFilter.value = "";
     detailDialog.value?.close(); detailRows.value = [];
-});
+    const saved = props.initialState;
+    if (saved && props.metrics) {
+        grouping.value = saved.grouping; search.value = saved.search; selectedDay.value = saved.selectedDay; sortKey.value = saved.sortKey;
+        descending.value = saved.descending; extended.value = saved.extended; issueFilter.value = saved.issueFilter;
+        await nextTick(); page.value = saved.page; attentionPage.value = saved.attentionPage;
+        const table = performanceSection.value?.querySelector('.analytics-table-scroll');
+        if (table) table.scrollLeft = saved.tableScroll ?? 0;
+        if (saved.detailIds?.length) {
+            await openRows(saved.detailTitle, rows.value.filter(row => saved.detailIds.includes(row.routekey)));
+            detailPage.value = saved.detailPage;
+            await nextTick(); detailDialog.value.scrollTop = saved.detailScroll ?? 0;
+        }
+    }
+}, { immediate: true });
 </script>
 
 <template>
     <div class="dashboard-analytics" :aria-busy="loading">
-        <div class="analytics-section-heading"><div><h2>Performance insights</h2><p>Understand coverage, execution and time in the field.</p></div><span class="analytics-tag">By journey start date</span></div>
-        <div class="analytics-signals">
-            <div><span>Unique customers visited</span><strong>{{ loading || !metrics ? '—' : number(uniqueCustomers) }}</strong></div>
-            <div><span>Unplanned visits</span><strong>{{ loading || !metrics ? '—' : number(total('unplanned')) }}</strong></div>
-            <div><span>Repeat visits</span><strong>{{ loading || !metrics ? '—' : number(total('repeat')) }}</strong></div>
-            <div><span>Journeys to review</span><strong>{{ loading || !metrics ? '—' : number(reviewRows.length) }}</strong></div>
-        </div>
-        <div class="analytics-charts">
-            <DashboardChart title="Customer coverage" description="Planned customers per journey, grouped by start date" :data="coverage" :options="dailyOptions" :loading="loading" note="Click a date to inspect its performance. Journeys without a plan are excluded from coverage." />
-            <DashboardChart title="Visit productivity" description="Completed visits with and without a sale or order" :data="productivity" :options="dailyOptions" :loading="loading" note="Positive-value, non-voided sales or orders count once per visit." />
-            <DashboardChart title="Journey-plan exceptions" description="Where actual visits differ from the plan" :data="exceptions" :options="exceptionOptions" :loading="loading" note="Categories can overlap. Click a bar to filter the review queue." />
-            <DashboardChart title="Expected vs actual face time" description="Top 10 routes by time spent on visits with configured CFT" :data="cft" :options="cftOptions" :loading="loading" note="Compares the same visits on both sides. Click a route for journey details." />
-        </div>
-        <div class="analytics-time-row">
-            <DashboardChart title="Where journey time goes" description="Top 10 routes by measured journey duration" :data="timeBreakdown" :options="timeOptions" :loading="loading" note="Open journeys use their last reported location. Overlapping visits count once. Remaining time includes travel, breaks and other activity." />
-            <aside class="analytics-operations">
-                <h3>Time &amp; distance</h3>
-                <div><span>Average completed journey</span><strong>{{ loading || !metrics ? '—' : number(averageDuration, 1) }} <small>min</small></strong><p>{{ number(durationRows.length) }} journeys with valid start/end times</p></div>
-                <div><span>Recorded distance</span><strong>{{ loading || !metrics || !distanceRows.length ? '—' : number(total('distance'), 1) }} <small>km</small></strong><p>Odometer difference for {{ number(distanceRows.length) }} completed journeys</p></div>
-                <div class="analytics-unavailable"><span>Stationary time outside visits</span><strong>Not available</strong><p>Requires device stop events. GPS silence is not treated as idle time.</p></div>
-            </aside>
-        </div>
-
-        <section ref="performanceSection" class="analytics-table-panel" aria-labelledby="performance-title">
+        <section v-if="view === 'performance'" ref="performanceSection" class="analytics-table-panel" aria-labelledby="performance-title">
             <header class="analytics-table-header"><div><h2 id="performance-title">Performance comparison</h2><p>Compare every selected journey across your organisation.</p></div>
                 <div class="analytics-table-controls">
                     <label>Group by <select v-model="grouping"><option v-for="dimension in dimensions" :key="dimension.key" :value="dimension.key">{{ dimension.label }}</option></select></label>
@@ -148,7 +101,7 @@ watch(() => props.metrics, () => {
                     <th scope="col"><button @click="sortBy('coverage')">Coverage ↕</button></th>
                     <th scope="col"><button @click="sortBy('productivity')">Productive ↕</button></th>
                     <th scope="col">Customers</th><th scope="col"><button @click="sortBy('actual_cft')">CFT min ↕</button></th><th scope="col">CFT variance</th><th scope="col">Distance km</th>
-                    <th scope="col">Net sales</th><th scope="col">Orders</th><th scope="col">Collections</th><th scope="col"><button @click="sortBy('otp')">OTP ↕</button></th>
+                    <th scope="col">Sales</th><th scope="col">Orders</th><th scope="col">Collections</th><th scope="col"><button @click="sortBy('otp')">OTP ↕</button></th>
                     <template v-if="extended"><th scope="col">No sale/order</th><th scope="col">Unplanned</th><th scope="col">Out of sequence</th><th scope="col">Repeat</th><th scope="col">Avg duration min</th></template>
                     <th scope="col">Details</th>
                 </tr></thead><tbody>
@@ -169,7 +122,7 @@ watch(() => props.metrics, () => {
             <footer class="analytics-pagination"><span>{{ number(comparison.length) }} groups · Amounts stay in their recorded currencies</span><div><button :disabled="page <= 1" @click="page--">Previous</button><span>{{ page }} / {{ pages }}</span><button :disabled="page >= pages" @click="page++">Next</button></div></footer>
         </section>
 
-        <section ref="attentionSection" class="analytics-table-panel" aria-labelledby="attention-title">
+        <section v-if="view === 'attention'" ref="attentionSection" class="analytics-table-panel" aria-labelledby="attention-title">
             <header class="analytics-table-header"><div><h2 id="attention-title">Journeys needing attention <span class="analytics-count">{{ number(reviewRows.length) }}</span></h2><p>Review execution differences and incomplete data. Flags are not automatic violations.</p></div>
                 <label class="analytics-issue-select">Issue <select v-model="issueFilter"><option value="">All issues</option><option v-for="issue in issues" :key="issue">{{ issue }}</option></select></label>
             </header>

@@ -7,6 +7,18 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('GPS lookups use one remote query for a batch of journeys', function () {
+    $connection = DB::connection('tracking_pgsql');
+    $connection->enableQueryLog();
+    $connection->flushQueryLog();
+    $journeys = DB::table('startendday')->get();
+    $method = new ReflectionMethod(DashboardController::class, 'journeyLocations');
+    $points = $method->invoke(app(DashboardController::class), $journeys);
+    expect($points)->toHaveCount(7)
+        ->and($connection->getQueryLog())->toHaveCount(1);
+    $connection->disableQueryLog();
+});
+
 test('open route GPS cutoff stops before the next journey even beyond the selected dates', function () {
     DB::table('startendday')->insert(['routekey' => 999, 'routecode' => 1, 'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
     DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([

@@ -54,6 +54,7 @@ let map = null;
 let markersLayer = null;
 const routeMarkers = {};
 let locationRequest = 0;
+let dashboardRequestController = null;
 
 watch([selected, fromDate, toDate], () => {
     if (filtersReady.value) showAllLocations();
@@ -80,7 +81,7 @@ onMounted(async () => {
     markersLayer = L.layerGroup().addTo(map);
 
     try {
-        const { data } = await axios.get("/dashboard/filters.json");
+        const { data } = await axios.get("/dashboard/filters.json", { timeout: 60000 });
         filterRows.value = data;
         filtersReady.value = true;
     } catch {
@@ -116,6 +117,9 @@ function locationIcon(closed) {
 
 async function showAllLocations() {
     const request = ++locationRequest;
+    dashboardRequestController?.abort();
+    dashboardRequestController = new AbortController();
+    const signal = dashboardRequestController.signal;
     metrics.value = null;
     metricsError.value = null;
     locations.value = [];
@@ -131,10 +135,12 @@ async function showAllLocations() {
     loading.value = true;
     error.value = null;
     routeListSearch.value = "";
-    loadMetrics(request);
+    loadMetrics(request, signal);
 
     try {
         const { data } = await axios.get("/dashboard/last-locations.json", {
+            signal,
+            timeout: 60000,
             params: {
                 from_date: fromDate.value,
                 to_date: toDate.value,
@@ -179,10 +185,12 @@ async function showAllLocations() {
     }
 }
 
-async function loadMetrics(request) {
+async function loadMetrics(request, signal) {
     metricsLoading.value = true;
     try {
         const { data } = await axios.get("/dashboard/metrics.json", {
+            signal,
+            timeout: 60000,
             params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value },
         });
         if (request === locationRequest) metrics.value = data;
@@ -236,13 +244,6 @@ function resetFilters() {
                         <h2 id="dashboard-filters-title">Filters</h2>
                     </div>
                 </div>
-                <div class="dashboard-filter-actions">
-                    <button type="button" class="dashboard-reset" :disabled="loading" @click="resetFilters">Reset filters</button>
-                    <button type="button" class="dashboard-refresh" :disabled="loading || !filtersReady || !!dateError" @click="showAllLocations">
-                        <i class="fa fa-arrow-rotate-right" :class="{ 'fa-spin': loading }" aria-hidden="true"></i>
-                        {{ loading ? "Refreshing..." : "Refresh" }}
-                    </button>
-                </div>
             </header>
 
             <div class="dashboard-scope-grid">
@@ -292,6 +293,13 @@ function resetFilters() {
                     </div>
                 </div>
                 <p v-if="dateError" class="dashboard-date-error" role="alert">{{ dateError }}</p>
+            </div>
+            <div class="dashboard-filter-actions">
+                <button type="button" class="dashboard-reset" :disabled="loading" @click="resetFilters">Reset filters</button>
+                <button type="button" class="dashboard-refresh" :disabled="loading || !filtersReady || !!dateError" @click="showAllLocations">
+                    <i class="fa fa-arrow-rotate-right" :class="{ 'fa-spin': loading }" aria-hidden="true"></i>
+                    {{ loading ? "Refreshing..." : "Refresh" }}
+                </button>
             </div>
         </section>
 
@@ -399,6 +407,7 @@ function resetFilters() {
 }
 .dashboard-filters-header, .dashboard-filters-heading, .dashboard-filter-actions, .dashboard-period-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .dashboard-filters-header { padding: 10px 16px; }
+.dashboard-filter-actions { justify-content: flex-end; padding: 8px 16px 10px; }
 .dashboard-filters-heading { justify-content: flex-start; }
 .dashboard-filters-heading h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 .dashboard-filters-heading p { margin: 0; color: #64748b; font-size: 13px; }

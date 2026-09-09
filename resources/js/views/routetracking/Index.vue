@@ -375,18 +375,18 @@ function numberedIcon(sequence, customer) {
 
 function plannedRouteStyle() {
     if (result.value?.planned?.used_fallback_geometry) {
-        return { color: "#3b82f6", weight: 3, opacity: 0.7, dashArray: "8 8" };
+        return { color: "#64748b", weight: 3, opacity: 0.7, dashArray: "8 8" };
     }
 
-    return { color: "#3b82f6", weight: 4 };
+    return { color: "#64748b", weight: 4, dashArray: "8 8" };
 }
 
 function actualRouteStyle() {
     if (result.value?.actual?.used_fallback_geometry) {
-        return { color: "#ef4444", weight: 3, opacity: 0.75, dashArray: "8 8" };
+        return { color: "#2563eb", weight: 3, opacity: 0.75, dashArray: "8 8" };
     }
 
-    return { color: "#ef4444", weight: 4 };
+    return { color: "#2563eb", weight: 4 };
 }
 
 function rawCoordinatesStyle() {
@@ -1102,7 +1102,7 @@ function focusEnd() {
                     :disabled="!result || !result.planned.has_planned_data"
                     @click="togglePlannedRoute"
                 >
-                    <span class="text-primary">&#9632;</span>
+                    <span class="route-line-key planned" aria-hidden="true"></span>
                     {{ result?.planned?.used_fallback_geometry ? "Planned Approx." : "Planned Route" }}
                 </button>
                 <button
@@ -1139,7 +1139,7 @@ function focusEnd() {
                     :disabled="!result || !result.actual.has_tracking_data"
                     @click="toggleActualRoute"
                 >
-                    <span class="text-danger">&#9632;</span>
+                    <span class="route-line-key actual" :class="{ approximate: result?.actual?.used_fallback_geometry }" aria-hidden="true"></span>
                     {{ result?.actual?.used_fallback_geometry ? "Actual Raw GPS" : "Actual Matched GPS Route" }}
                 </button>
                 <button
@@ -1823,6 +1823,16 @@ function focusEnd() {
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1rem;
+}
+
+.route-line-key {
+    display: inline-block;
+    width: 20px;
+    flex-shrink: 0;
+    border-top: 3px solid #2563eb;
+
+    &.planned { border-top-color: #64748b; border-top-style: dashed; }
+    &.approximate { border-top-style: dashed; }
 }
 
 .route-tracking-legend-item {

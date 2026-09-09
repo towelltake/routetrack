@@ -51,8 +51,8 @@ const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
 const plannedNotVisitedVisible = ref(false);
-const stationaryVisible = ref(true);
-const gpsGapsVisible = ref(true);
+const stationaryVisible = ref(false);
+const gpsGapsVisible = ref(false);
 
 const numberedCustomers = computed(() =>
     (result.value?.planned?.customers ?? []).map((customer, index) => ({
@@ -119,7 +119,7 @@ const summaryTransactions = computed(() => {
                 seen.add(key);
                 const row = { ...transaction, customername: visit.customername, alternatecode: visit.alternatecode };
                 rows[type].push(row);
-                if (type === "sales" && Number(transaction.return_amount) > 0) {
+                if (["sales", "orders"].includes(type) && Number(transaction.return_amount) > 0) {
                     rows.returns.push({ ...row, amount: transaction.return_amount });
                 }
             }
@@ -137,7 +137,7 @@ const routeSummaryGroups = computed(() => {
         const count = transactions[type]?.count ?? 0;
         return {
             label, icon, tone, action: type,
-            value: money(transactions[type]?.amount),
+            value: money(type === "returns" ? -Math.abs(transactions[type]?.amount ?? 0) : transactions[type]?.amount),
             meta: `${count} ${count === 1 ? "document" : "documents"}`,
         };
     };
@@ -572,8 +572,8 @@ async function runComparison() {
     plannedCustomersVisible.value = true;
     customerVisitsVisible.value = false;
     plannedNotVisitedVisible.value = false;
-    stationaryVisible.value = true;
-    gpsGapsVisible.value = true;
+    stationaryVisible.value = false;
+    gpsGapsVisible.value = false;
 
     const params = {
         routecode: selectedRoute.value,
@@ -594,8 +594,7 @@ async function runComparison() {
         customerListTab.value = hasPlannedData ? "all" : "visits";
 
         resultLayer = L.featureGroup().addTo(map);
-        stationaryVisible.value = true;
-        stationaryLayer = L.featureGroup().addTo(resultLayer);
+        stationaryLayer = L.featureGroup();
         (data.actual.stationary_periods ?? []).forEach((period, index) => {
             const popup = document.createElement('div');
             const heading = document.createElement('strong');
@@ -622,8 +621,7 @@ async function runComparison() {
             circle.on("click", () => revealStationaryInList(index));
             stationaryMarkers[index] = circle;
         });
-        gpsGapsVisible.value = true;
-        gpsGapLayer = L.featureGroup().addTo(resultLayer);
+        gpsGapLayer = L.featureGroup();
         (data.actual.gps_gaps ?? []).forEach((gap, index) => {
             const popup = document.createElement("div");
             const heading = document.createElement("strong");
@@ -756,8 +754,8 @@ function resetFilters() {
     plannedCustomersVisible.value = true;
     customerVisitsVisible.value = false;
     plannedNotVisitedVisible.value = false;
-    stationaryVisible.value = true;
-    gpsGapsVisible.value = true;
+    stationaryVisible.value = false;
+    gpsGapsVisible.value = false;
     stationaryMarkers.length = 0;
     gpsGapMarkers.length = 0;
 
@@ -1499,12 +1497,12 @@ function focusEnd() {
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead><tr><th>Type</th><th>Document</th><th>Customer</th><th>Date & Time</th><th class="text-end">Amount</th></tr></thead>
                                     <tbody>
-                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="`${summaryModal}-${transaction.transactionkey}`">
-                                            <td class="text-capitalize">{{ summaryModal === 'returns' ? 'Return' : summaryModal.slice(0, -1) }}</td>
+                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="`${transaction.type}-${transaction.transactionkey}`">
+                                            <td>{{ transaction.type === 'sales' ? 'Invoice' : transaction.type === 'orders' ? 'Order' : 'Collection' }}</td>
                                             <td>{{ transaction.documentnumber }}</td>
                                             <td>{{ transaction.customername }}<br><span class="small text-muted">{{ transaction.alternatecode }}</span></td>
                                             <td>{{ transaction.date }} {{ transaction.time }}</td>
-                                            <td class="text-end fw-semibold">{{ money(transaction.amount) }}</td>
+                                            <td class="text-end fw-semibold">{{ money(summaryModal === 'returns' ? -Math.abs(transaction.amount) : transaction.amount) }}</td>
                                         </tr>
                                         <tr v-if="!summaryTransactions[summaryModal]?.length"><td colspan="5" class="text-center text-muted py-4">No documents found.</td></tr>
                                     </tbody>

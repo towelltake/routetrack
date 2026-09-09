@@ -955,8 +955,8 @@ class RouteTrackingController extends Controller
     {
         $visitKeys = $visits->pluck('visitkey')->filter()->unique();
         $transactions = collect([
-            'sales' => ['table' => 'invoiceheader', 'amount' => 'totalinvoiceamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
-            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalinvoiceamount', 'returns' => '0'],
+            'sales' => ['table' => 'invoiceheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
+            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
             'collections' => ['table' => 'arheader', 'amount' => 'amountpaid', 'returns' => '0'],
         ])->map(function (array $config, string $type) use ($routekey, $visitKeys) {
             if ($visitKeys->isEmpty()) {
@@ -966,6 +966,7 @@ class RouteTrackingController extends Controller
             return DB::table($config['table'])
                 ->where('routekey', $routekey)
                 ->whereIn('visitkey', $visitKeys)
+                ->when(in_array($type, ['sales', 'orders']), fn ($query) => $query->where('voidflag', 0))
                 ->orderBy('transactiondate')
                 ->orderBy('transactiontime')
                 ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), DB::raw("{$config['returns']} as return_amount"), 'voidflag'])
@@ -1012,7 +1013,7 @@ class RouteTrackingController extends Controller
                     $summary[$type]['amount'] += (float) ($transaction['amount'] ?? 0);
 
                     $returnAmount = (float) ($transaction['return_amount'] ?? 0);
-                    if ($type === 'sales' && $returnAmount > 0) {
+                    if (in_array($type, ['sales', 'orders']) && $returnAmount > 0) {
                         $summary['returns']['count']++;
                         $summary['returns']['amount'] += $returnAmount;
                     }

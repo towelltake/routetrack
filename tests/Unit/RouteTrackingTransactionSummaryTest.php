@@ -5,12 +5,46 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('sales and orders use gross sales and only zero void flags with returns from both sources', function () {
+    config(['database.default' => 'transaction_sources_test', 'database.connections.transaction_sources_test' => [
+        'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
+    ]]);
+    DB::purge('transaction_sources_test');
+    foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
+        DB::statement("CREATE TABLE {$table} (transactionkey integer, routekey integer, visitkey integer, documentnumber text, transactiondate text, transactiontime text, totalsalesamount real, totalinvoiceamount real, totalreturnamount real, totaldamagedamount real, amountpaid real, voidflag integer)");
+    }
+    foreach (['invoiceheader', 'salesorderheader'] as $table) {
+        foreach ([0, 1, null, 2] as $index => $flag) {
+            DB::table($table)->insert([
+                'transactionkey' => $index + 1, 'routekey' => 7, 'visitkey' => 8,
+                'documentnumber' => 'DOC'.$index, 'totalsalesamount' => 100,
+                'totalinvoiceamount' => 70, 'totalreturnamount' => 20,
+                'totaldamagedamount' => 10, 'voidflag' => $flag,
+            ]);
+        }
+        DB::table($table)->insert([
+            'transactionkey' => 5, 'routekey' => 7, 'visitkey' => 8,
+            'totalsalesamount' => 50, 'totalreturnamount' => null,
+            'totaldamagedamount' => null, 'voidflag' => 0,
+        ]);
+    }
+    $controller = app(RouteTrackingController::class);
+    $visits = (new ReflectionMethod(RouteTrackingController::class, 'attachVisitTransactions'))
+        ->invoke($controller, collect([['visitkey' => 8]]), 7);
+    $summary = (new ReflectionMethod(RouteTrackingController::class, 'summarizeTransactions'))
+        ->invoke($controller, $visits);
+
+    expect($summary['sales'])->toBe(['count' => 2, 'amount' => 150.0])
+        ->and($summary['orders'])->toBe(['count' => 2, 'amount' => 150.0])
+        ->and($summary['returns'])->toBe(['count' => 2, 'amount' => 60.0]);
+});
+
 test('route tracking totals non-voided documents once and combines good and bad returns', function () {
     $sale = ['transactionkey' => 11, 'amount' => 100, 'return_amount' => 15, 'voided' => false];
     $visits = collect([
         ['transactions' => [
             'sales' => [$sale, ['transactionkey' => 12, 'amount' => 50, 'return_amount' => 8, 'voided' => true]],
-            'orders' => [['transactionkey' => 21, 'amount' => 80, 'voided' => false]],
+            'orders' => [['transactionkey' => 11, 'amount' => 80, 'return_amount' => 5, 'voided' => false]],
             'collections' => [['transactionkey' => 31, 'amount' => 45, 'voided' => false]],
         ]],
         ['transactions' => ['sales' => [$sale]]],
@@ -22,7 +56,7 @@ test('route tracking totals non-voided documents once and combines good and bad 
     expect($summary['sales'])->toBe(['count' => 1, 'amount' => 100.0])
         ->and($summary['orders'])->toBe(['count' => 1, 'amount' => 80.0])
         ->and($summary['collections'])->toBe(['count' => 1, 'amount' => 45.0])
-        ->and($summary['returns'])->toBe(['count' => 1, 'amount' => 15.0]);
+        ->and($summary['returns'])->toBe(['count' => 2, 'amount' => 20.0]);
 });
 
 test('route journey details expose route salesman times odometers version and optional phone', function () {

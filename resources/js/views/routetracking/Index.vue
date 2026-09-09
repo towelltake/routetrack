@@ -1017,13 +1017,6 @@ function focusEnd() {
                         <p>Narrow the organisation, then select one route and operation date.</p>
                     </div>
                 </div>
-                <div class="tracking-filter-actions">
-                    <button type="button" class="tracking-reset" :disabled="loading" @click="resetFilters">Reset</button>
-                    <button type="button" class="tracking-apply" :disabled="loading || !filtersReady || !selectedRoute || !selectedDate" @click="runComparison">
-                        <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
-                        {{ loading ? "Loading..." : "Show route" }}
-                    </button>
-                </div>
             </header>
 
             <div class="tracking-filter-grid">
@@ -1060,6 +1053,13 @@ function focusEnd() {
                     <label for="tracking-date">Operation Date <span class="tracking-required">Required</span></label>
                     <input id="tracking-date" v-model="selectedDate" type="date" />
                 </div>
+            </div>
+            <div class="tracking-filter-actions">
+                <button type="button" class="tracking-reset" :disabled="loading" @click="resetFilters">Reset</button>
+                <button type="button" class="tracking-apply" :disabled="loading || !filtersReady || !selectedRoute || !selectedDate" @click="runComparison">
+                    <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
+                    {{ loading ? "Loading..." : "Show route" }}
+                </button>
             </div>
         </section>
 
@@ -1204,11 +1204,24 @@ function focusEnd() {
                 </div>
                 <div class="col-md-3 route-tracking-panel-column">
                     <div class="card route-tracking-customer-list-card" style="height: 680px">
-                        <div class="card-header">
+                        <div class="card-header route-tracking-panel-header">
+                            <div>
                             <strong>{{ customerListTab === 'gps_gaps' ? 'GPS unavailable' : customerListTab === 'stationary' ? 'Stationary periods' : 'Customers' }}</strong>
                             <span v-if="result" class="text-muted small">
                                 ({{ customerListTab === 'gps_gaps' ? `${gpsGaps.length} gaps` : customerListTab === 'stationary' ? `${stationaryPeriods.length} stops` : `${result.planned.visit_count} visits` }})
                             </span>
+                            </div>
+                            <select
+                                class="route-tracking-more"
+                                aria-label="More tracking details"
+                                :value="['stationary', 'gps_gaps'].includes(customerListTab) ? customerListTab : ''"
+                                :disabled="!result"
+                                @change="selectCustomerTab($event.target.value)"
+                            >
+                                <option value="" disabled>More</option>
+                                <option value="stationary" :disabled="!stationaryPeriods.length">Stationary</option>
+                                <option value="gps_gaps" :disabled="!gpsGaps.length">GPS Gaps</option>
+                            </select>
                         </div>
                         <div class="route-tracking-customer-tabs">
                             <button
@@ -1237,24 +1250,6 @@ function focusEnd() {
                                 @click="selectCustomerTab('planned_not_visited')"
                             >
                                 Not Visited
-                            </button>
-                            <button
-                                type="button"
-                                class="route-tracking-customer-tab stationary"
-                                :class="{ active: customerListTab === 'stationary' }"
-                                :disabled="!stationaryPeriods.length"
-                                @click="selectCustomerTab('stationary')"
-                            >
-                                Stationary
-                            </button>
-                            <button
-                                type="button"
-                                class="route-tracking-customer-tab gps-gaps"
-                                :class="{ active: customerListTab === 'gps_gaps' }"
-                                :disabled="!gpsGaps.length"
-                                @click="selectCustomerTab('gps_gaps')"
-                            >
-                                GPS Gaps
                             </button>
                         </div>
                         <div v-if="customerListTab === 'visits'" class="route-tracking-visit-tabs">
@@ -1699,6 +1694,7 @@ function focusEnd() {
 }
 
 .tracking-filters-header { padding: 18px 22px; }
+.tracking-filter-actions { justify-content: flex-end; padding: 0 22px 16px; }
 .tracking-filters-heading { justify-content: flex-start; }
 .tracking-filters-heading h2 { margin: 0 0 3px; font-size: 17px; font-weight: 700; }
 .tracking-filters-heading p { margin: 0; color: #64748b; font-size: 13px; }
@@ -1942,8 +1938,25 @@ function focusEnd() {
     background: #f8fafc;
 }
 
+.route-tracking-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.route-tracking-more {
+    max-width: 115px;
+    padding: 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    background: #fff;
+    color: #64748b;
+    font-size: 11px;
+}
+
 .route-tracking-customer-tab {
-    flex: 1 1 calc(50% - 0.25rem);
+    flex: 1 1 0;
     background: #fff;
     border: 1px solid transparent;
     border-radius: 5px;

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\RouteTracking;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountSalesman;
 use App\Models\AreaMaster;
 use App\Models\CompanyMaster;
 use App\Models\RouteMaster;
 use App\Models\SubAreaMaster;
+use App\Services\StationaryDetection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -208,13 +210,72 @@ class RouteTrackingController extends Controller
         $actual['travel_time'] = $actual['duration'] === null
             ? null
             : max(0, $actual['duration'] - $actual['face_time']);
+        foreach ($actual['stationary_periods'] as &$period) {
+            $period['customer_visits'] = collect($planned['customer_visits'])->filter(function (array $visit) use ($period) {
+                $start = strtotime(($visit['visit_start_date'] ?? '').' '.($visit['visit_start_time'] ?? ''));
+                $end = ! empty($visit['visit_end_date']) && ! empty($visit['visit_end_time'])
+                    ? strtotime($visit['visit_end_date'].' '.$visit['visit_end_time']) : false;
+
+                return $start !== false && $end !== false
+                    && $start < strtotime($period['end_time']) && $end > strtotime($period['start_time']);
+            })->values()->all();
+        }
+        unset($period);
+        $actual['idle_periods'] = collect($actual['stationary_periods'])
+            ->filter(fn (array $period) => empty($period['customer_visits']))
+            ->values()
+            ->all();
+        $actual['idle_seconds'] = array_sum(array_column($actual['idle_periods'], 'duration_seconds'));
+
+        $transactionSummary = $this->summarizeTransactions(collect($planned['customer_visits']));
 
         return response()->json([
             'planned' => $planned,
             'actual' => $actual,
+            'transactions' => $transactionSummary,
             'distance_ratio' => $distanceRatio,
             'duration_ratio' => $durationRatio,
         ]);
+    }
+
+    public function transactionDetails(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', 'in:sales,orders,collections'],
+            'transactionkey' => ['required', 'integer'],
+            'routekey' => ['required', 'integer'],
+            'visitkey' => ['required', 'integer'],
+        ]);
+
+        $headers = [
+            'sales' => 'invoiceheader',
+            'orders' => 'salesorderheader',
+            'collections' => 'arheader',
+        ];
+        $header = DB::table($headers[$validated['type']])
+            ->where('transactionkey', $validated['transactionkey'])
+            ->where('routekey', $validated['routekey'])
+            ->where('visitkey', $validated['visitkey'])
+            ->first(['routecode']);
+
+        abort_unless($header, 404);
+        $this->ensureRouteAllowed((int) $header->routecode);
+
+        if ($validated['type'] === 'collections') {
+            $details = DB::table('ardetail')
+                ->where('transactionkey', $validated['transactionkey'])
+                ->orderBy('primary_key')
+                ->get(['invoicenumber', 'alternateinvoicenumber', 'invoicedate', 'totalinvoiceamount', 'amountpaid', 'invoicebalance', 'arcollectiontype', 'referenceno']);
+        } else {
+            $detailTable = $validated['type'] === 'sales' ? 'invoicedetail' : 'salesorderdetail';
+            $details = DB::table("{$detailTable} as d")
+                ->leftJoin('itemmaster as im', 'im.actualitemcode', '=', 'd.itemcode')
+                ->where('d.transactionkey', $validated['transactionkey'])
+                ->orderBy('d.primary_key')
+                ->get(['d.itemcode', 'im.alternatecode', 'im.itemdescription', 'd.salesqty', 'd.returnqty', 'd.damagedqty', 'd.freesampleqty', 'd.salesprice', 'd.sales_amount']);
+        }
+
+        return response()->json($details);
     }
 
     /**
@@ -225,10 +286,23 @@ class RouteTrackingController extends Controller
      */
     private function computeMatchedActual(int $routecode, string $date): array
     {
-        $points = $this->fetchCleanTrail($routecode, $date);
+        $rawPoints = $this->fetchTrackingPoints($routecode, [$date]);
+        $detector = app(StationaryDetection::class);
+        $stationary = $detector->detect($rawPoints);
+        $gpsGaps = $detector->detectGaps($rawPoints);
+        $stationaryData = [
+            'stationary_periods' => $stationary,
+            'stationary_seconds' => array_sum(array_column($stationary, 'duration_seconds')),
+            'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
+            'stationary_max_gap_seconds' => config('tracking.stationary_max_gap_seconds'),
+            'gps_gaps' => $gpsGaps,
+            'gps_gap_seconds' => array_sum(array_column($gpsGaps, 'duration_seconds')),
+        ];
+        $points = $this->removeSpeedAnomalies($this->downsampleByDistance($rawPoints));
 
         if (count($points) < 2) {
             return [
+                ...$stationaryData,
                 'has_tracking_data' => false,
                 'distance' => 0,
                 'duration' => 0,
@@ -309,6 +383,7 @@ class RouteTrackingController extends Controller
         }
 
         return [
+            ...$stationaryData,
             'has_tracking_data' => true,
             'distance' => $totalDistance,
             'duration' => $totalDuration,
@@ -329,25 +404,27 @@ class RouteTrackingController extends Controller
         ];
     }
 
-    private function fetchCleanTrail(int $routecode, string $date): array
+    private function fetchTrackingPoints(int $routecode, array $dates): array
     {
         // date + time is the actual tracking timestamp; cdate is only the
         // database audit/creation time and must not be sent to OSRM.
         $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
             ->where('routecode', $routecode)
-            ->where('date', $date)
+            ->whereIn('date', $dates)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('latitude', '!=', 0)
             ->where('longitude', '!=', 0)
-            ->selectRaw('latitude, longitude, date + time as effective_timestamp')
+            // Selecting the row also supports databases/devices without the optional columns.
+            ->selectRaw('trac_routetrack.*, date + time as effective_timestamp')
             ->orderBy('effective_timestamp')
             ->orderBy('id')
             ->get()
+            ->filter(fn ($point) => app(StationaryDetection::class)->usable($point))
             ->values()
             ->all();
 
-        return $this->removeSpeedAnomalies($this->downsampleByDistance($points));
+        return $points;
     }
 
     /**
@@ -373,6 +450,12 @@ class RouteTrackingController extends Controller
             if ($meters >= self::MIN_DOWNSAMPLE_METERS) {
                 $kept[] = $point;
             }
+        }
+
+        // Preserve the final observation even when the route never moved.
+        $lastPoint = $points[array_key_last($points)];
+        if ($lastPoint !== $kept[array_key_last($kept)]) {
+            $kept[] = $lastPoint;
         }
 
         return $kept;
@@ -454,14 +537,25 @@ class RouteTrackingController extends Controller
             return $this->emptyPlannedRoute($dayKey);
         }
 
+        $journeyPlan = $this->fetchJourneyPlan((int) $routeDay->routekey);
+        $plannedFaceTime = $this->plannedFaceTimeSeconds((int) $routeDay->routekey, $journeyPlan);
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
-        $hasPlannedData = DB::table('routesequencecustomerstatus')
-            ->where('routekey', $routeDay->routekey)
-            ->where('schelduledflag', 1)
-            ->exists();
-
-        $visits = $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode);
+        $hasPlannedData = $journeyPlan->isNotEmpty();
+        $otpLogs = $this->fetchRouteOtpLogs($routecode, $date);
+        $visits = $this->annotateJourneyPlanStatus(
+            $this->attachGpsOtpLogs(
+                $this->attachVisitTransactions(
+                    $this->fetchCustomerVisits((int) $routeDay->routekey, $routecode),
+                    (int) $routeDay->routekey,
+                ),
+                $otpLogs->where('type', 'GPS IN')->values(),
+            ),
+            $journeyPlan,
+        );
         $visitCounts = $visits->countBy('customercode');
+        $plannedCodes = $journeyPlan->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
+        $visitedCodes = $visits->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
+        $plannedVisitedCount = $plannedCodes->intersect($visitedCodes)->count();
 
         $totalDistance = 0;
         $totalDuration = 0;
@@ -549,20 +643,44 @@ class RouteTrackingController extends Controller
             'day' => $dayKey,
             'routekey' => (int) $routeDay->routekey,
             'route_closed' => (int) $routeDay->routeclosed === 1,
+            'route_details' => $this->routeDetails($routeDay, $routecode),
             'has_planned_data' => $hasPlannedData,
-            'customer_count' => $customers->count(),
-            'visited_count' => collect($orderedCustomers)->where('visited', true)->count(),
+            'customer_count' => $plannedCodes->count(),
+            'visited_count' => $plannedVisitedCount,
+            'unplanned_visited_count' => $visitedCodes->diff($plannedCodes)->count(),
+            'planned_not_visited_count' => $plannedCodes->count() - $plannedVisitedCount,
             'visit_count' => $visits->count(),
             'distance' => $totalDistance,
             'duration' => $totalDuration,
+            'face_time' => $plannedFaceTime,
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
             'customer_visits' => $visits->values(),
+            'otp_logs' => $otpLogs->values(),
             'chunks_failed' => $chunksFailed,
             'osrm_legs' => $osrmLegs,
             'fallback_legs' => $fallbackLegs,
             'used_fallback_geometry' => $fallbackLegs > 0,
             'geometry_source' => $geometries === [] ? 'none' : ($fallbackLegs > 0 ? ($osrmLegs > 0 ? 'mixed' : 'straight_line') : 'osrm_route'),
+        ];
+    }
+
+    private function routeDetails(object $routeDay, int $routecode): array
+    {
+        $route = RouteMaster::query()->find($routecode);
+        $salesman = ! empty($routeDay->salesmancode) ? AccountSalesman::query()->find($routeDay->salesmancode) : null;
+        $dateTime = fn ($date, $time) => $date && $time ? substr((string) $date, 0, 10).' '.$time : null;
+
+        return [
+            'routecode' => $routecode,
+            'routename' => $route?->routename,
+            'salesmancode' => isset($routeDay->salesmancode) ? (int) $routeDay->salesmancode : null,
+            'salesmanname' => $salesman?->salesmanname1,
+            'start_time' => $dateTime($routeDay->routestartdate ?? null, $routeDay->routestarttime ?? null),
+            'end_time' => $dateTime($routeDay->routeenddate ?? null, $routeDay->routeendtime ?? null),
+            'start_odometer' => isset($routeDay->routestartodometer) ? (float) $routeDay->routestartodometer : null,
+            'end_odometer' => isset($routeDay->routeendodometer) ? (float) $routeDay->routeendodometer : null,
+            'version' => $routeDay->versionno ?? null,
         ];
     }
 
@@ -589,7 +707,7 @@ class RouteTrackingController extends Controller
                     });
             })
             ->orderByDesc('routekey')
-            ->first(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeclosed']);
+            ->first(['routekey', 'routecode', 'salesmancode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routestartodometer', 'routeendodometer', 'routeclosed', 'versionno']);
 
         if ($routeDay !== null) {
             return $routeDay;
@@ -650,15 +768,20 @@ class RouteTrackingController extends Controller
             'day' => $dayKey,
             'routekey' => null,
             'route_closed' => false,
+            'route_details' => null,
             'has_planned_data' => false,
             'customer_count' => 0,
             'visited_count' => 0,
+            'unplanned_visited_count' => 0,
+            'planned_not_visited_count' => 0,
             'visit_count' => 0,
             'distance' => 0,
             'duration' => 0,
+            'face_time' => 0,
             'geometries' => [],
             'customers' => [],
             'customer_visits' => [],
+            'otp_logs' => [],
             'chunks_failed' => 0,
             'osrm_legs' => 0,
             'fallback_legs' => 0,
@@ -714,19 +837,208 @@ class RouteTrackingController extends Controller
             ]);
     }
 
+    private function plannedFaceTimeSeconds(int $routekey, Collection $journeyPlan): int
+    {
+        $customerCodes = $journeyPlan->pluck('customercode')->filter()->unique()->values();
+        if ($customerCodes->isEmpty()) {
+            return 0;
+        }
+
+        $minutes = DB::table('customervisitlog')
+            ->where('routekey', $routekey)
+            ->whereIn('customercode', $customerCodes)
+            ->sum(DB::raw('COALESCE(cft, 0)'));
+
+        return (int) round((float) $minutes * 60);
+    }
+
+    private function fetchJourneyPlan(int $routekey): Collection
+    {
+        return DB::table('routesequencecustomerstatus')
+            ->where('routekey', $routekey)
+            ->where('schelduledflag', 1)
+            ->orderByRaw('CASE WHEN COALESCE(sequencenumber, 0) > 0 THEN 0 ELSE 1 END')
+            ->orderBy('sequencenumber')
+            ->orderBy('customercode')
+            ->get(['customercode', 'sequencenumber'])
+            ->unique('customercode')
+            ->values();
+    }
+
+    private function annotateJourneyPlanStatus(Collection $visits, Collection $journeyPlan): Collection
+    {
+        $planByCustomer = $journeyPlan->keyBy(fn ($customer) => (string) $customer->customercode);
+        $visitCounts = [];
+
+        return $visits->values()->map(function (array $visit, int $index) use ($planByCustomer, &$visitCounts) {
+            $code = (string) $visit['customercode'];
+            $plannedCustomer = $planByCustomer->get($code);
+            $plannedSequence = (int) ($plannedCustomer?->sequencenumber ?? 0);
+            $actualPosition = $index + 1;
+            $visitCounts[$code] = ($visitCounts[$code] ?? 0) + 1;
+
+            if ($plannedCustomer === null) {
+                $status = 'unplanned';
+            } elseif ($visitCounts[$code] > 1) {
+                $status = 'duplicate_visit';
+            } elseif ($plannedSequence <= 0) {
+                $status = 'sequence_unavailable';
+            } elseif ($plannedSequence !== $actualPosition) {
+                $status = 'out_of_sequence';
+            } else {
+                $status = 'according_to_plan';
+            }
+
+            return $visit + [
+                'planned' => $plannedCustomer !== null,
+                'journey_status' => $status,
+                'planned_sequence' => $plannedSequence > 0 ? $plannedSequence : null,
+                'actual_visit_position' => $actualPosition,
+                'customer_visit_number' => $visitCounts[$code],
+            ];
+        });
+    }
+
+    private function fetchRouteOtpLogs(int $routecode, string $date): Collection
+    {
+        return DB::table('otplogdetail as otp')
+            ->leftJoin('customermaster as customer', 'customer.customercode', '=', 'otp.customercode')
+            ->where('otp.routecode', $routecode)
+            ->whereDate('otp.otpdate', $date)
+            ->orderBy('otp.otpdate')
+            ->orderBy('otp.otptime')
+            ->orderBy('otp.otplogid')
+            ->get(['otp.otplogid', 'otp.username', 'otp.customercode', 'otp.otptype', 'otp.otpdate', 'otp.otptime', 'otp.comments', 'otp.otpreason', 'customer.customeraddress1', 'customer.alternatecode'])
+            ->map(fn (object $otp) => [
+                'id' => (int) $otp->otplogid,
+                'approved_by' => $otp->username,
+                'customercode' => (int) $otp->customercode,
+                'customername' => $otp->customeraddress1 ?? "Customer {$otp->customercode}",
+                'alternatecode' => $otp->alternatecode,
+                'type' => $otp->otptype,
+                'date' => $otp->otpdate,
+                'time' => $otp->otptime,
+                'reason' => $otp->otpreason,
+                'comments' => $otp->comments,
+            ]);
+    }
+
+    private function attachGpsOtpLogs(Collection $visits, Collection $otpLogs): Collection
+    {
+        $visitRows = $visits->values()->map(fn (array $visit) => $visit + ['otp_logs' => []])->all();
+
+        foreach ($otpLogs as $otp) {
+            $matchingIndexes = collect($visitRows)
+                ->keys()
+                ->filter(fn (int $index) => (string) $visitRows[$index]['customercode'] === (string) $otp['customercode']);
+
+            if ($matchingIndexes->isEmpty()) {
+                continue;
+            }
+
+            $otpTimestamp = strtotime($otp['date'].' '.$otp['time']);
+            $visitIndex = $matchingIndexes
+                ->sortBy(function (int $index) use ($visitRows, $otpTimestamp) {
+                    $visitTimestamp = strtotime($visitRows[$index]['visit_start_date'].' '.$visitRows[$index]['visit_start_time']);
+
+                    return $otpTimestamp === false || $visitTimestamp === false ? $index : abs($visitTimestamp - $otpTimestamp);
+                })
+                ->first();
+
+            $visitRows[$visitIndex]['otp_logs'][] = $otp;
+        }
+
+        return collect($visitRows);
+    }
+
+    private function attachVisitTransactions(Collection $visits, int $routekey): Collection
+    {
+        $visitKeys = $visits->pluck('visitkey')->filter()->unique();
+        $transactions = collect([
+            'sales' => ['table' => 'invoiceheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
+            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
+            'collections' => ['table' => 'arheader', 'amount' => 'amountpaid', 'returns' => '0'],
+        ])->map(function (array $config, string $type) use ($routekey, $visitKeys) {
+            if ($visitKeys->isEmpty()) {
+                return collect();
+            }
+
+            return DB::table($config['table'])
+                ->where('routekey', $routekey)
+                ->whereIn('visitkey', $visitKeys)
+                ->when(in_array($type, ['sales', 'orders']), fn ($query) => $query->where('voidflag', 0))
+                ->orderBy('transactiondate')
+                ->orderBy('transactiontime')
+                ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), DB::raw("{$config['returns']} as return_amount"), 'voidflag'])
+                ->map(fn (object $transaction) => [
+                    'type' => $type,
+                    'transactionkey' => (int) $transaction->transactionkey,
+                    'visitkey' => (int) $transaction->visitkey,
+                    'documentnumber' => (string) $transaction->documentnumber,
+                    'date' => $transaction->transactiondate,
+                    'time' => $transaction->transactiontime,
+                    'amount' => (float) ($transaction->amount ?? 0),
+                    'return_amount' => (float) ($transaction->return_amount ?? 0),
+                    'voided' => (int) ($transaction->voidflag ?? 0) === 1,
+                ])
+                ->groupBy('visitkey');
+        });
+
+        return $visits->map(function (array $visit) use ($transactions) {
+            $visitKey = (int) ($visit['visitkey'] ?? 0);
+            $visit['transactions'] = collect(['sales', 'orders', 'collections'])
+                ->mapWithKeys(fn (string $type) => [$type => $transactions[$type]->get($visitKey, collect())->values()])
+                ->all();
+
+            return $visit;
+        });
+    }
+
+    private function summarizeTransactions(Collection $visits): array
+    {
+        $summary = collect(['sales', 'orders', 'collections', 'returns'])
+            ->mapWithKeys(fn (string $type) => [$type => ['count' => 0, 'amount' => 0.0]])
+            ->all();
+        $seen = [];
+
+        foreach ($visits as $visit) {
+            foreach (['sales', 'orders', 'collections'] as $type) {
+                foreach ($visit['transactions'][$type] ?? [] as $transaction) {
+                    $key = $type.':'.$transaction['transactionkey'];
+                    if (($transaction['voided'] ?? false) || isset($seen[$key])) {
+                        continue;
+                    }
+                    $seen[$key] = true;
+                    $summary[$type]['count']++;
+                    $summary[$type]['amount'] += (float) ($transaction['amount'] ?? 0);
+
+                    $returnAmount = (float) ($transaction['return_amount'] ?? 0);
+                    if (in_array($type, ['sales', 'orders']) && $returnAmount > 0) {
+                        $summary['returns']['count']++;
+                        $summary['returns']['amount'] += $returnAmount;
+                    }
+                }
+            }
+        }
+
+        return $summary;
+    }
+
     private function fetchCustomerVisits(int $routekey, int $routecode): Collection
     {
         $operations = DB::table('customeroperationscontrol')
             ->where('routekey', $routekey)
             ->where('log_id', '>', 0)
             ->orderByDesc('primary_id')
-            ->get(['log_id', 'latitude', 'longitude'])
+            ->get(['log_id', 'visitkey', 'latitude', 'longitude'])
             ->unique('log_id')
             ->keyBy('log_id');
 
         $visits = DB::table('customervisitlog as cvl')
             ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
             ->where('cvl.routekey', $routekey)
+            ->orderBy('cvl.logstartdate')
+            ->orderBy('cvl.logstarttime')
             ->orderBy('cvl.logkey')
             ->get([
                 'cvl.logkey',
@@ -739,8 +1051,9 @@ class RouteTrackingController extends Controller
                 'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
+                DB::raw('COALESCE(cvl.cft, 0) as default_face_time_minutes'),
             ])
-            ->map(function (object $visit) use ($operations) {
+            ->map(function (object $visit) use ($operations, $routekey) {
                 $operation = $operations->get($visit->logkey);
                 $coordinates = $this->validOmanCoordinates($operation?->latitude, $operation?->longitude)
                     ?? $this->validOmanCoordinates($visit->fixedlatitude, $visit->fixedlongitude);
@@ -753,6 +1066,8 @@ class RouteTrackingController extends Controller
 
                 return [
                     'logkey' => (int) $visit->logkey,
+                    'routekey' => $routekey,
+                    'visitkey' => $operation?->visitkey ? (int) $operation->visitkey : null,
                     'customercode' => (int) $visit->customercode,
                     'alternatecode' => $visit->alternatecode,
                     'customername' => $visit->customeraddress1 ?? "Customer {$visit->customercode}",
@@ -760,6 +1075,7 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
+                    'default_face_time_minutes' => (int) $visit->default_face_time_minutes,
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? intdiv($endTimestamp - $startTimestamp, 60)
                         : null,
@@ -774,16 +1090,7 @@ class RouteTrackingController extends Controller
             return $visits;
         }
 
-        $trackingPoints = DB::connection('tracking_pgsql')->table('trac_routetrack')
-            ->where('routecode', $routecode)
-            ->whereIn('date', $missingLocations->pluck('visit_start_date')->unique())
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->where('latitude', '!=', 0)
-            ->where('longitude', '!=', 0)
-            ->selectRaw('latitude, longitude, date + time as effective_timestamp')
-            ->orderBy('effective_timestamp')
-            ->get();
+        $trackingPoints = collect($this->fetchTrackingPoints($routecode, $missingLocations->pluck('visit_start_date')->unique()->all()));
 
         return $visits->map(function (array $visit) use ($trackingPoints) {
             if ($visit['lat'] !== null) {

@@ -1,0 +1,247 @@
+<?php
+
+use App\Services\DashboardMetrics;
+use App\Services\DashboardCustomerDetails;
+use Illuminate\Support\Facades\DB;
+
+uses(Tests\TestCase::class);
+
+test('actual face time remains available when every planned CFT is zero or null', function () {
+    DB::table('customervisitlog')->update(['cft' => 0]);
+    DB::table('customervisitlog')->where('logkey', 11)->update(['cft' => null]);
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    expect($result['planned_cft_minutes'])->toEqual(0)
+        ->and($result['cft_minutes'])->toEqual(75)
+        ->and($result['completed_visits'])->toBe(5)
+        ->and($result['cft_variance_minutes'])->toBeNull();
+});
+
+test('face time details retain individual visits and handle missing plans incomplete timing and overnight visits', function () {
+    DB::table('customervisitlog')->where('logkey', 12)->update(['cft' => 20]);
+    DB::table('customervisitlog')->where('logkey', 23)->update(['cft' => null]);
+    DB::table('customervisitlog')->insert(['logkey' => 99, 'routekey' => 1, 'customercode' => 101, 'cft' => 20,
+        'logstartdate' => '2026-09-01', 'logstarttime' => '23:50:00', 'logenddate' => '2026-09-02', 'logendtime' => '00:20:00']);
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'cft')['groups'];
+    expect($groups[0]['rows'])->toHaveCount(3)
+        ->and($groups[0]['rows'][0])->toMatchArray(['planned_cft' => 10, 'actual_cft' => 20, 'variance' => 10])
+        ->and($groups[0]['rows'][1]['variance'])->toEqual(-10)
+        ->and($groups[0]['rows'][2])->toMatchArray(['actual_cft' => 30, 'variance' => 10])
+        ->and($groups[1]['rows'][1])->toMatchArray(['actual_cft' => null, 'variance' => null])
+        ->and($groups[1]['rows'][2])->toMatchArray(['planned_cft' => 0, 'actual_cft' => 10, 'variance' => null])
+        ->and($groups[1]['rows'][3])->toMatchArray(['planned_cft' => 0, 'actual_cft' => 5, 'variance' => null]);
+});
+
+test('transaction drilldowns list headers once and returns only from both sources with negative amounts', function () {
+    foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
+        foreach (['customercode integer', 'transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
+        DB::table($table)->update(['customercode' => 101, 'transactionkey' => 1, 'documentnumber' => 'D1', 'transactiondate' => '2026-09-02', 'transactiontime' => '10:00:00']);
+    }
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $service = app(DashboardCustomerDetails::class);
+    $sales = $service->build($journeys, 'sales')['groups'][0]['rows'];
+    expect($sales)->toHaveCount(2)->and($sales->sum('amount'))->toEqual(150)->and($sales[0]['currency'])->toBe('OMR');
+    expect($service->build($journeys, 'orders')['groups'][0]['rows']->sum('amount'))->toEqual(60);
+    foreach (['invoiceheader', 'salesorderheader'] as $table) DB::table($table)->where('routekey', 1)->where('visitkey', 500)->update(['totalreturnamount' => 3, 'totaldamagedamount' => 2]);
+    DB::table('invoiceheader')->insert(['routekey' => 1, 'voidflag' => 1, 'totalreturnamount' => 99]);
+    $returns = $service->build($journeys, 'returns')['groups'][0]['rows'];
+    expect($returns)->toHaveCount(3)->and($returns->sum('amount'))->toEqual(-15)
+        ->and($returns->pluck('source')->unique()->values()->all())->toBe(['Invoice', 'Order']);
+    $journeys = DB::table('startendday')->where('routekey', 2)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    expect($service->build($journeys, 'collections')['groups'][0]['rows']->sum('amount'))->toEqual(75);
+});
+
+test('duration drilldown shares card timing for closed open and unavailable journeys', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2, 4])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $journeys[1]->last_location_time = '2026-09-03 12:00:00';
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'duration')['groups'];
+    expect($groups[0]['rows'][0])->toMatchArray(['status' => 'Closed', 'duration' => 1080, 'end' => '2026-09-02 02:00:00'])
+        ->and($groups[1]['rows'][0])->toMatchArray(['status' => 'Open', 'duration' => 240, 'end' => '2026-09-03 12:00:00'])
+        ->and($groups[2]['rows'][0])->toMatchArray(['status' => 'Open', 'duration' => null, 'end' => null]);
+});
+
+test('returns combine both document sources and retain currencies without void or out of scope documents', function () {
+    foreach (['invoiceheader', 'salesorderheader'] as $table) {
+        foreach ([[1, 1, 0, 10, 5], [1, 2, 0, null, 7], [1, 1, 1, 99, 99], [1, 1, null, 99, 99], [3, 1, 0, 99, 99]] as [$route, $currency, $void, $good, $bad]) {
+            DB::table($table)->insert(['routekey' => $route, 'currencycode' => $currency, 'voidflag' => $void, 'totalreturnamount' => $good, 'totaldamagedamount' => $bad]);
+        }
+    }
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->where('routekey', 1)->get());
+    $returns = collect($result['amounts']['returns'])->keyBy('currency');
+    expect($returns)->toHaveCount(2)
+        ->and((float) $returns['OMR']['amount'])->toBe(30.0)
+        ->and($returns['OMR']['documents'])->toBe(2)
+        ->and((float) $returns['USD']['amount'])->toBe(14.0);
+});
+
+test('older open journeys use last GPS cutoff and ongoing visits do not inflate outside time', function () {
+    $journeys = DB::table('startendday')->where('routekey', 2)->get();
+    $journeys->first()->last_location_time = '2026-09-03 12:00:00';
+    $result = app(DashboardMetrics::class)->summarize($journeys);
+    // 08:00–12:00 journey; 09:00–09:30 completed and 11:00–12:00 ongoing visit.
+    expect($result['duration_minutes'])->toEqual(240)
+        ->and($result['outside_visit_minutes'])->toEqual(150)
+        ->and($result['duration_missing_journeys'])->toBe(0)
+        ->and($result['unplanned_customers'])->toBe(3);
+});
+
+beforeEach(function () {
+    config(['database.default' => 'metrics_test', 'database.connections.metrics_test' => [
+        'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
+    ]]);
+    DB::purge('metrics_test');
+    foreach ([
+        'startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
+        'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
+        'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
+        'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
+        'invoiceheader (routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
+        'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
+        'arheader (routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
+        'currencymaster (currencycode integer, currencysymbol text)',
+        'customermaster (customercode integer, alternatecode text, customeraddress1 text)',
+        'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, otpreason text, comments text)',
+    ] as $table) {
+        DB::statement('CREATE TABLE '.$table);
+    }
+    DB::table('startendday')->insert([
+        ['routekey' => 1, 'routecode' => 1, 'routestartdate' => '2026-09-01', 'routestarttime' => '08:00:00', 'routeenddate' => '2026-09-02', 'routeendtime' => '02:00:00', 'routeclosed' => 1],
+        ['routekey' => 2, 'routecode' => 1, 'routestartdate' => '2026-09-03', 'routestarttime' => '08:00:00', 'routeenddate' => null, 'routeendtime' => null, 'routeclosed' => 0],
+        ['routekey' => 3, 'routecode' => 2, 'routestartdate' => '2026-08-31', 'routestarttime' => '08:00:00', 'routeenddate' => null, 'routeendtime' => null, 'routeclosed' => 0],
+        ['routekey' => 4, 'routecode' => 1, 'routestartdate' => '2026-09-04', 'routestarttime' => '08:00:00', 'routeenddate' => null, 'routeendtime' => null, 'routeclosed' => 0],
+    ]);
+    foreach ([[1, 101], [1, 101], [1, 102], [2, 101], [2, 103], [3, 101]] as [$journey, $customer]) {
+        DB::table('routesequencecustomerstatus')->insert(['routekey' => $journey, 'customercode' => $customer, 'schelduledflag' => 1]);
+    }
+    foreach ([[11, 1, 101, '2026-09-01', '10:00:00', '10:20:00', 10], [12, 1, 101, '2026-09-01', '10:30:00', '10:40:00', 10],
+        [21, 2, 101, '2026-09-03', '09:00:00', '09:30:00', 10], [22, 2, 104, '2026-09-03', '11:00:00', null, 15],
+        [23, 2, 105, '2026-09-03', '12:00:00', '12:10:00', 15], [24, 2, 106, '2026-09-03', '13:00:00', '13:05:00', 0]] as [$id, $journey, $customer, $date, $start, $end, $cft]) {
+        DB::table('customervisitlog')->insert(['logkey' => $id, 'routekey' => $journey, 'customercode' => $customer,
+            'logstartdate' => $date, 'logstarttime' => $start, 'logenddate' => $end ? $date : null, 'logendtime' => $end, 'cft' => $cft]);
+    }
+    foreach ([[1, 1, 11, 500], [2, 1, 12, 501], [3, 2, 21, 500]] as [$id, $journey, $log, $visit]) {
+        DB::table('customeroperationscontrol')->insert(['primary_id' => $id, 'routekey' => $journey, 'log_id' => $log, 'visitkey' => $visit]);
+    }
+    foreach ([[1, 500, 100, 1, 0], [1, 500, 50, 1, 0], [2, 999, 20, 2, 0], [2, 500, 999, 1, 1], [3, 500, 777, 1, 0]] as [$journey, $visit, $amount, $currency, $void]) {
+        DB::table('invoiceheader')->insert(['routekey' => $journey, 'visitkey' => $visit, 'totalsalesamount' => $amount, 'totalinvoiceamount' => $amount + 10, 'currencycode' => $currency, 'voidflag' => $void]);
+    }
+    foreach ([[501, 40], [500, 20]] as [$visit, $amount]) {
+        DB::table('salesorderheader')->insert(['routekey' => 1, 'visitkey' => $visit, 'totalinvoiceamount' => $amount, 'currencycode' => 1, 'voidflag' => 0]);
+    }
+    DB::table('arheader')->insert(['routekey' => 2, 'visitkey' => 500, 'amountpaid' => 75, 'currencycode' => 1, 'voidflag' => 0]);
+    DB::table('currencymaster')->insert([['currencycode' => 1, 'currencysymbol' => 'OMR'], ['currencycode' => 2, 'currencysymbol' => 'USD']]);
+    foreach ([[1, 1, 101, '2026-09-01', '10:05:00'], [2, 1, 101, '2026-09-01', '10:06:00'],
+        [3, 1, 999, '2026-09-02', '01:00:00'], [4, 1, 101, '2026-09-02', '03:00:00'],
+        [5, 1, 101, '2026-09-03', '09:05:00'], [6, 2, 101, '2026-09-01', '10:00:00'],
+        [7, 1, 101, '2026-09-04', '09:00:00']] as [$id, $route, $customer, $date, $time]) {
+        DB::table('otplogdetail')->insert(['otplogid' => $id, 'routecode' => $route, 'customercode' => $customer, 'otpdate' => $date, 'otptime' => $time, 'otptype' => $id % 2 ? 'GPS IN' : 'OTHER']);
+    }
+});
+
+test('customer drilldowns separate planned visited and not visited and deduplicate unplanned customers', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    DB::table('customermaster')->insert(['customercode' => 101, 'alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
+    $service = app(DashboardCustomerDetails::class);
+    $planned = $service->build($journeys, 'planned')['groups'];
+    expect($planned)->toHaveCount(2)
+        ->and($planned[0]['rows'])->toHaveCount(2)
+        ->and($planned[0]['rows'][0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'Visited', 'visit_count' => 2])
+        ->and($planned[0]['rows'][1]['status'])->toBe('Not visited');
+    $unplanned = $service->build($journeys, 'unplanned')['groups'];
+    expect($unplanned)->toHaveCount(1)->and($unplanned[0]['rows'])->toHaveCount(3);
+    DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
+    expect($service->build($journeys, 'unplanned')['groups'])->toHaveCount(0);
+});
+
+test('productive drilldown counts documents per completed visit without mixing journeys or void invoices', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'productive')['groups'];
+    expect($groups[0]['rows'][0])->toMatchArray(['status' => 'Productive', 'invoices' => 2, 'orders' => 1, 'collections' => 0])
+        ->and($groups[0]['rows'][1])->toMatchArray(['status' => 'Productive', 'invoices' => 0, 'orders' => 1])
+        ->and($groups[1]['rows'])->toHaveCount(3)
+        ->and($groups[1]['rows'][0])->toMatchArray(['status' => 'Nonproductive', 'invoices' => 0, 'orders' => 0, 'collections' => 1]);
+});
+
+test('OTP drilldown preserves all types and records overnight events under their route start date', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    DB::table('otplogdetail')->where('otplogid', 3)->update(['username' => 'Manager', 'comments' => 'Approved']);
+    $groups = app(DashboardCustomerDetails::class)->build($journeys, 'otp')['groups'];
+    expect($groups[0]['date'])->toBe('2026-09-01')->and($groups[0]['rows'])->toHaveCount(3)
+        ->and($groups[0]['rows'][1]['otp_type'])->toBe('OTHER')
+        ->and($groups[0]['rows'][2])->toMatchArray(['date' => '2026-09-02', 'recorded_by' => 'Manager', 'comments' => 'Approved'])
+        ->and($groups[1]['rows'])->toHaveCount(1);
+});
+
+test('cards aggregate every selected journey without multiplying customers or transaction totals', function () {
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    expect($result)->toMatchArray([
+        'journeys_started' => 2, 'unique_routes' => 1, 'routes_not_started' => null,
+        'planned_customers' => 4, 'planned_visited' => 2, 'coverage_percent' => 50.0,
+        'pending_customers' => 1, 'missed_customers' => 1, 'completed_visits' => 5,
+        'productive_visits' => 2, 'nonproductive_visits' => 3, 'productivity_percent' => 40.0,
+        'cft_minutes' => 75.0, 'cft_variance_minutes' => 25.0, 'cft_configured_visits' => 4,
+        'otp' => ['events' => 4, 'visits' => 2],
+    ]);
+    expect($result['amounts']['sales'])->toHaveCount(2)
+        ->and((float) $result['amounts']['sales'][0]['amount'])->toBe(150.0)
+        ->and($result['amounts']['sales'][1]['currency'])->toBe('USD')
+        ->and((float) $result['amounts']['sales'][1]['amount'])->toBe(20.0)
+        ->and((float) $result['amounts']['orders'][0]['amount'])->toBe(60.0)
+        ->and((float) $result['amounts']['collections'][0]['amount'])->toBe(75.0);
+});
+
+test('empty periods have zero totals and undefined rates rather than fabricated percentages', function () {
+    $result = app(DashboardMetrics::class)->summarize(collect());
+    expect($result)->toMatchArray(['journeys_started' => 0, 'coverage_percent' => null, 'productivity_percent' => null,
+        'cft_minutes' => 0.0, 'cft_variance_minutes' => null, 'otp' => ['events' => 0, 'visits' => 0]])
+        ->and($result['amounts']['sales'])->toBe([]);
+});
+
+test('a return-only invoice does not change gross sales or make a visit productive', function () {
+    DB::table('customeroperationscontrol')->insert(['primary_id' => 9, 'routekey' => 2, 'log_id' => 23, 'visitkey' => 777]);
+    DB::table('invoiceheader')->insert(['routekey' => 2, 'visitkey' => 777, 'totalsalesamount' => 0, 'totalinvoiceamount' => -10, 'currencycode' => 1, 'voidflag' => 0]);
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    expect($result['productive_visits'])->toBe(2)
+        ->and((float) $result['amounts']['sales'][0]['amount'])->toBe(150.0);
+});
+
+test('analysis exposes journey coverage, repeat visits, OTP details and missing data honestly', function () {
+    $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    $rows = collect($result['analysis']['journeys'])->keyBy('routekey');
+    expect($rows[1])->toMatchArray(['planned' => 2, 'covered' => 1, 'missed' => 1, 'repeat' => 1, 'otp' => 3]);
+    expect($rows[2])->toMatchArray(['pending' => 1, 'unplanned' => 3, 'incomplete_visits' => 1, 'missing_cft' => 1, 'duration' => null, 'distance' => null, 'stationary_time' => null]);
+    expect($rows[1]['otp_events'])->toHaveCount(3)
+        ->and(collect($rows[1]['issues'])->pluck('label')->all())->toContain('Missed customers', 'Repeat visits');
+});
+
+test('time chart merges overlapping visit intervals and distance requires completed valid readings', function () {
+    DB::table('customervisitlog')->insert(['logkey' => 13, 'routekey' => 1, 'customercode' => 101,
+        'logstartdate' => '2026-09-01', 'logstarttime' => '10:10:00', 'logenddate' => '2026-09-01', 'logendtime' => '10:35:00', 'cft' => 10]);
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    foreach ($journeys as $journey) {
+        $journey->routestartodometer = 1234;
+        $journey->routeendodometer = 1250;
+    }
+    $rows = collect(app(DashboardMetrics::class)->summarize($journeys)['analysis']['journeys'])->keyBy('routekey');
+    expect($rows[1]['actual_cft'])->toEqual(55)
+        ->and($rows[1]['visit_time'])->toEqual(40)
+        ->and($rows[1]['remaining_time'])->toEqual($rows[1]['duration'] - 40)
+        ->and($rows[1]['distance'])->toBe(16.0)
+        ->and($rows[2]['distance'])->toBeNull();
+});
+
+test('sequence exceptions use planned order and do not label missing-plan visits unplanned', function () {
+    DB::table('routesequencecustomerstatus')->where('routekey', 1)->where('customercode', 101)->update(['sequencenumber' => 2]);
+    DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
+    $rows = collect(app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get())['analysis']['journeys'])->keyBy('routekey');
+    expect($rows[1]['out_of_sequence'])->toBe(1)->and($rows[1]['repeat'])->toBe(1)
+        ->and($rows[2]['unplanned'])->toBe(0)
+        ->and(collect($rows[2]['issues'])->pluck('label')->all())->toContain('Journey plan unavailable');
+});

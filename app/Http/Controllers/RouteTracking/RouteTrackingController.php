@@ -538,7 +538,7 @@ class RouteTrackingController extends Controller
         }
 
         $journeyPlan = $this->fetchJourneyPlan((int) $routeDay->routekey);
-        $plannedFaceTime = $this->plannedFaceTimeSeconds($journeyPlan);
+        $plannedFaceTime = $this->plannedFaceTimeSeconds((int) $routeDay->routekey, $journeyPlan);
         $customers = $this->fetchScheduledCustomersForRouteKey((int) $routeDay->routekey);
         $hasPlannedData = $journeyPlan->isNotEmpty();
         $otpLogs = $this->fetchRouteOtpLogs($routecode, $date);
@@ -837,17 +837,17 @@ class RouteTrackingController extends Controller
             ]);
     }
 
-    private function plannedFaceTimeSeconds(Collection $journeyPlan): int
+    private function plannedFaceTimeSeconds(int $routekey, Collection $journeyPlan): int
     {
         $customerCodes = $journeyPlan->pluck('customercode')->filter()->unique()->values();
         if ($customerCodes->isEmpty()) {
             return 0;
         }
 
-        $minutes = DB::table('customermaster as customer')
-            ->leftJoin('channelmaster as channel', 'channel.channelcode', '=', 'customer.channelcode')
-            ->whereIn('customer.customercode', $customerCodes)
-            ->sum(DB::raw('COALESCE(NULLIF(customer.customerfacetime, 0), NULLIF(channel.customercft, 0), 0)'));
+        $minutes = DB::table('customervisitlog')
+            ->where('routekey', $routekey)
+            ->whereIn('customercode', $customerCodes)
+            ->sum(DB::raw('COALESCE(cft, 0)'));
 
         return (int) round((float) $minutes * 60);
     }
@@ -1035,7 +1035,6 @@ class RouteTrackingController extends Controller
 
         $visits = DB::table('customervisitlog as cvl')
             ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
-            ->leftJoin('channelmaster as channel', 'channel.channelcode', '=', 'cm.channelcode')
             ->where('cvl.routekey', $routekey)
             ->orderBy('cvl.logstartdate')
             ->orderBy('cvl.logstarttime')
@@ -1051,7 +1050,7 @@ class RouteTrackingController extends Controller
                 'cm.alternatecode',
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
-                DB::raw('COALESCE(NULLIF(cm.customerfacetime, 0), NULLIF(channel.customercft, 0), 0) as default_face_time_minutes'),
+                DB::raw('COALESCE(cvl.cft, 0) as default_face_time_minutes'),
             ])
             ->map(function (object $visit) use ($operations, $routekey) {
                 $operation = $operations->get($visit->logkey);

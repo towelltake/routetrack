@@ -16,12 +16,10 @@ class DashboardMetrics
             ->select('routekey', 'customercode')->selectRaw('COALESCE(MIN(CASE WHEN sequencenumber > 0 THEN sequencenumber END), 0) as sequencenumber')
             ->groupBy('routekey', 'customercode')->get();
         $visits = DB::table('customervisitlog as v')
-            ->leftJoin('customermaster as c', 'c.customercode', '=', 'v.customercode')
-            ->leftJoin('channelmaster as ch', 'ch.channelcode', '=', 'c.channelcode')
             ->whereIn('v.routekey', $keys)
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
             ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime',
-                DB::raw('COALESCE(NULLIF(c.customerfacetime, 0), NULLIF(ch.customercft, 0), 0) as expected_minutes')]);
+                DB::raw('COALESCE(v.cft, 0) as expected_minutes')]);
         $operations = DB::table('customeroperationscontrol')
             ->whereIn('routekey', $keys)->where('log_id', '>', 0)
             ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
@@ -65,7 +63,9 @@ class DashboardMetrics
             $visited[$visit->routekey.':'.$visit->customercode] = true;
             $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
             $end = $this->timestamp($visit->logenddate, $visit->logendtime);
-            if ($start === null || $end === null || $end < $start) continue;
+            if ($start === null || $end === null || $end < $start) {
+                continue;
+            }
             $completed++;
             $actualSeconds += $end - $start;
             if ($visit->expected_minutes > 0) {
@@ -75,7 +75,9 @@ class DashboardMetrics
             }
             $operation = $operations->get($visit->routekey.':'.$visit->logkey);
             $transactionKey = $visit->routekey.':'.($operation?->visitkey ?? '');
-            if ($transactions['sales']->has($transactionKey) || $transactions['orders']->has($transactionKey)) $productive++;
+            if ($transactions['sales']->has($transactionKey) || $transactions['orders']->has($transactionKey)) {
+                $productive++;
+            }
         }
         $covered = 0;
         $pending = 0;
@@ -118,7 +120,9 @@ class DashboardMetrics
 
     private function otp(Collection $journeys, Collection $visits): array
     {
-        if ($journeys->isEmpty()) return ['events' => 0, 'visits' => 0, 'details' => []];
+        if ($journeys->isEmpty()) {
+            return ['events' => 0, 'visits' => 0, 'details' => []];
+        }
         // OTP has no verified journey key; associate it by route and journey time window.
         $starts = DB::table('startendday')->whereIn('routecode', $journeys->pluck('routecode')->unique())
             ->whereDate('routestartdate', '>=', substr((string) $journeys->min('routestartdate'), 0, 10))
@@ -128,7 +132,9 @@ class DashboardMetrics
         $windows = [];
         foreach ($journeys as $journey) {
             $start = $this->timestamp($journey->routestartdate, $journey->routestarttime ?: '00:00:00');
-            if ($start === null) continue;
+            if ($start === null) {
+                continue;
+            }
             $end = (int) $journey->routeclosed === 1 ? $this->timestamp($journey->routeenddate, $journey->routeendtime) : null;
             $next = $starts->get($journey->routecode)->map(fn ($row) => $this->timestamp($row->routestartdate, $row->routestarttime ?: '00:00:00'))
                 ->filter(fn ($time) => $time !== null && $time > $start)->min();
@@ -143,9 +149,13 @@ class DashboardMetrics
         $visitsByCustomer = $visits->groupBy(fn ($row) => $row->routekey.':'.$row->customercode);
         foreach ($events as $event) {
             $timestamp = $this->timestamp($event->otpdate, $event->otptime);
-            if ($timestamp === null) continue;
+            if ($timestamp === null) {
+                continue;
+            }
             foreach ($windows[$event->routecode] as $window) {
-                if ($timestamp < $window['start'] || ($window['end'] !== null && $timestamp > $window['end']) || ($window['next'] !== null && $timestamp >= $window['next'])) continue;
+                if ($timestamp < $window['start'] || ($window['end'] !== null && $timestamp > $window['end']) || ($window['next'] !== null && $timestamp >= $window['next'])) {
+                    continue;
+                }
                 $count++;
                 $details[] = (array) $event + ['routekey' => $window['key']];
                 foreach ($visitsByCustomer->get($window['key'].':'.$event->customercode, collect()) as $visit) {
@@ -159,13 +169,17 @@ class DashboardMetrics
                 break;
             }
         }
+
         return ['events' => $count, 'visits' => count($matchedVisits), 'details' => $details];
     }
 
     private function timestamp(mixed $date, mixed $time): ?int
     {
-        if (!$date || !$time || str_starts_with((string) $date, '0000-')) return null;
+        if (! $date || ! $time || str_starts_with((string) $date, '0000-')) {
+            return null;
+        }
         $value = strtotime(substr((string) $date, 0, 10).' '.$time);
+
         return $value === false ? null : $value;
     }
 }

@@ -9,9 +9,9 @@ const cards = computed(() => {
     const m = props.metrics;
     const variance = m?.cft_variance_minutes;
     return [
-        { title: "Journeys started", icon: "fa-route", tone: "blue", value: number(m?.journeys_started),
-            note: m ? `${number(m.unique_routes)} distinct routes in this period` : "",
-            definition: "Counts every journey started within the selected period. Routes not started requires an agreed operating schedule." },
+        { title: "Routes Started / Total Routes", icon: "fa-route", tone: "blue", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
+            note: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
+            definition: "Started routes count once per route start date. Total routes equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends. Uses the current route master, including routes without a journey plan." },
         { title: "Planned coverage", icon: "fa-location-dot", tone: "teal", value: percent(m?.coverage_percent),
             note: m ? `${number(m.planned_visited)} / ${number(m.planned_customers)} covered · ${number(m.pending_customers)} pending · ${number(m.missed_customers)} missed` : "",
             detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",

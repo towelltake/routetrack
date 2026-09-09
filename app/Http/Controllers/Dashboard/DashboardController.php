@@ -21,7 +21,7 @@ class DashboardController extends Controller
         return Inertia::render('routelocation/Index');
     }
 
-    private function matchingRoutes(array $filters = []): Builder
+    private function matchingRoutes(array $filters = [], bool $requireSequence = true): Builder
     {
         $query = RouteMaster::query()
             ->join('company', 'company.cmpycode', '=', 'routemaster.cmpycode')
@@ -31,7 +31,7 @@ class DashboardController extends Controller
             ->whereIn('routemaster.routecode', session('user_access.route_codes', []))
             ->whereIn('routemaster.cmpycode', session('user_access.company_codes', []))
             ->whereIn('routemaster.subareacode', session('user_access.subarea_codes', []))
-            ->whereIn('routemaster.routecode', RouteSequence::query()->select('routecode'));
+            ->when($requireSequence, fn ($query) => $query->whereIn('routemaster.routecode', RouteSequence::query()->select('routecode')));
 
         foreach ([
             'entities' => 'company.entity',
@@ -214,7 +214,7 @@ class DashboardController extends Controller
     public function metrics(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $routeCodes = $this->matchingRoutes($filters)
+        $routeCodes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
             ->select('routemaster.routecode');
@@ -224,7 +224,7 @@ class DashboardController extends Controller
             ->whereDate('routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
             ->get();
 
-        $metadata = $this->matchingRoutes($filters)->get([
+        $metadata = $this->matchingRoutes($filters, false)->get([
             'routemaster.routecode', 'routemaster.routename', 'company.cmpycode', 'company.name as division',
             'company.entity', 'clustermaster.clustercode', 'clustermaster.clustername as cluster',
             'regionmaster.regionmstcode', 'regionmaster.regionmstname as region',
@@ -239,7 +239,18 @@ class DashboardController extends Controller
             $journey->salesperson = $salesmen->get($journey->salesmancode ?? null)?->salesmanname1;
         }
 
-        return response()->json(app(\App\Services\DashboardMetrics::class)->summarize($journeys));
+        $days = (new \DateTimeImmutable($filters['from_date'] ?? $filters['date']))
+            ->diff(new \DateTimeImmutable($filters['to_date'] ?? $filters['date']))->days + 1;
+        $routeCount = (clone $routeCodes)->distinct()->count('routemaster.routecode');
+        $started = $journeys->unique(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))->count();
+        $metrics = app(\App\Services\DashboardMetrics::class)->summarize($journeys);
+        $metrics['routes_started'] = $started;
+        $metrics['route_count'] = $routeCount;
+        $metrics['period_days'] = $days;
+        $metrics['total_routes'] = $routeCount * $days;
+        $metrics['routes_not_started'] = max(0, $metrics['total_routes'] - $started);
+
+        return response()->json($metrics);
     }
 
     private function routeDateTime(mixed $date, mixed $time): ?string

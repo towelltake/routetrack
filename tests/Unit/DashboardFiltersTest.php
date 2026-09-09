@@ -7,6 +7,28 @@ use Illuminate\Validation\ValidationException;
 
 uses(Tests\TestCase::class);
 
+test('route started card counts filtered route days inclusively without duplicate starts', function () {
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->andReturn([]);
+    });
+    DB::table('startendday')->insert([
+        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07'],
+        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08'],
+    ]);
+    $controller = app(DashboardController::class);
+    $result = $controller->metrics(Request::create('/', 'GET', [
+        'from_date' => '2026-09-07', 'to_date' => '2026-09-08', 'divisions' => [1],
+    ]))->getData(true);
+    expect($result)->toMatchArray([
+        'route_count' => 3, 'period_days' => 2, 'total_routes' => 6,
+        'routes_started' => 4, 'routes_not_started' => 2,
+    ]);
+    $single = $controller->metrics(Request::create('/', 'GET', [
+        'date' => '2026-09-07', 'routes' => [7],
+    ]))->getData(true);
+    expect($single)->toMatchArray(['route_count' => 1, 'period_days' => 1, 'total_routes' => 1, 'routes_started' => 1]);
+});
+
 beforeEach(function () {
     config(['database.default' => 'dashboard_test', 'database.connections.dashboard_test' => [
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
@@ -88,12 +110,12 @@ test('metric endpoint passes all and only authorized journeys started in the per
     DB::table('startendday')->insert(['routekey' => 100, 'routecode' => 1, 'routestartdate' => '2026-09-05', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
     $service = Mockery::mock(App\Services\DashboardMetrics::class);
     $service->shouldReceive('summarize')->once()->withArgs(function ($journeys) {
-        expect($journeys->pluck('routekey')->all())->toEqualCanonicalizing([1, 2, 3, 99]);
+        expect($journeys->pluck('routekey')->all())->toEqualCanonicalizing([1, 2, 3, 7, 99]);
         return true;
-    })->andReturn(['journeys_started' => 4]);
+    })->andReturn(['journeys_started' => 5]);
     app()->instance(App\Services\DashboardMetrics::class, $service);
     $response = app(DashboardController::class)->metrics(Request::create('/', 'GET', ['from_date' => '2026-09-06', 'to_date' => '2026-09-07']));
-    expect($response->getData(true))->toBe(['journeys_started' => 4]);
+    expect($response->getData(true))->toMatchArray(['journeys_started' => 5, 'routes_started' => 5, 'total_routes' => 8]);
 });
 
 test('dashboard selects journeys by inclusive start date, not GPS date or end date', function () {

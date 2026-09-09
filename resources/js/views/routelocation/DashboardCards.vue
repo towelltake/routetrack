@@ -5,10 +5,15 @@ const props = defineProps({ metrics: Object, loading: Boolean, error: String });
 const emit = defineEmits(["inspect"]);
 const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
+const duration = (value) => {
+    if (value == null) return "—";
+    const minutes = Math.max(0, Math.round(Number(value)));
+    return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+};
 const cards = computed(() => {
     const m = props.metrics;
     return [
-        { title: "Routes Started / Total Routes", icon: "fa-route", tone: "blue", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
+        { title: "Routes Started / Total", icon: "fa-route", tone: "blue", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
             note: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
             definition: "Started routes count once per route start date. Total routes equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends. Uses the current route master, including routes without a journey plan." },
         { title: "Planned coverage", icon: "fa-location-dot", tone: "teal", value: percent(m?.coverage_percent),
@@ -16,7 +21,7 @@ const cards = computed(() => {
             detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",
             definition: "Distinct planned customers visited per journey divided by planned customers per journey. Unvisited customers are pending on open journeys and missed on closed journeys." },
         { title: "Productive visits", icon: "fa-check-double", tone: "teal", value: percent(m?.productivity_percent),
-            note: m ? `${number(m.productive_visits)} / ${number(m.completed_visits)} completed visits · ${number(m.nonproductive_visits)} nonproductive` : "",
+            note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Completed visits with a positive-value, non-voided sale or order, divided by completed visits. Each visit counts once. Collection-only and return-only visits do not count as productive." },
         { title: "Sales", icon: "fa-chart-line", tone: "blue", amounts: m?.amounts.sales,
             note: "Non-voided invoice sales", definition: "Sum of invoice sales amounts belonging to selected journeys, including transactions after the period end. Currencies are shown separately." },
@@ -24,18 +29,18 @@ const cards = computed(() => {
             note: "Non-voided orders", definition: "Sum of order totals belonging to selected journeys. Orders and invoiced sales are separate measures and should not be added together." },
         { title: "Collections", icon: "fa-wallet", tone: "teal", amounts: m?.amounts.collections,
             note: "Non-voided collection receipts", definition: "Amount paid on collection receipts belonging to selected journeys. Invoice payments are not added again." },
-        { title: "Planned / Actual Face Time", icon: "fa-clock", tone: "violet", value: m ? `${number(m.planned_cft_minutes, 1)} / ${number(m.comparable_actual_cft_minutes, 1)}` : "—", unit: "min",
-            note: m ? `${number(m.cft_configured_visits)} completed visits with planned CFT · All completed visits: ${number(m.cft_minutes, 1)} min actual` : "",
+        { title: "Face Time: Planned / Actual", icon: "fa-clock", tone: "violet", value: m ? `${duration(m.planned_cft_minutes)} / ${duration(m.comparable_actual_cft_minutes)}` : "—", unit: "h:mm",
+            note: m ? `${number(m.cft_configured_visits)} comparable visits · All actual: ${duration(m.cft_minutes)}` : "",
             definition: "Actual duration of completed visits. Variance includes only visits with a positive planned CFT recorded in the customer visit log." },
         { title: "OTP usage", icon: "fa-key", tone: "amber", value: number(m?.otp.events),
-            note: m ? `${number(m.otp.visits)} visits matched · All OTP types` : "",
+            note: "All OTP types",
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
-        { title: "Unplanned Customers Visited", icon: "fa-location-dot", tone: "amber", value: number(m?.unplanned_customers),
-            note: "Counted once per customer per journey", definition: "Customers visited outside the journey plan. Journeys without a plan are excluded." },
-        { title: "Total Duration", icon: "fa-clock", tone: "blue", value: number(m?.duration_minutes, 1), unit: "min",
+        { title: "Unplanned Customers", icon: "fa-location-dot", tone: "amber", value: number(m?.unplanned_customers),
+            note: "Unique customers per journey", definition: "Customers visited outside the journey plan. Journeys without a plan are excluded." },
+        { title: "Total Duration", icon: "fa-clock", tone: "blue", value: duration(m?.duration_minutes), unit: "h:mm",
             note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
             definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
-        { title: "Time Outside Customer Visits", icon: "fa-car", tone: "blue", value: number(m?.outside_visit_minutes, 1), unit: "min",
+        { title: "Time Outside Visits", icon: "fa-car", tone: "blue", value: duration(m?.outside_visit_minutes), unit: "h:mm",
             note: "Includes travel, idle time and breaks", definition: "Measured journey duration minus customer visit intervals. Overlapping intervals count once; ongoing visits on open routes stop at the last GPS timestamp." },
         { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
             note: "Invoice and order returns", definition: "Good and damaged returns from invoices and orders with voidflag = 0, belonging to selected journeys. Currencies are shown separately." },
@@ -121,23 +126,26 @@ const groups = computed(() => [
 .dashboard-overview { margin: 18px 0; }
 .dashboard-overview-heading { margin-bottom: 10px; }
 .dashboard-metric-groups { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
-.dashboard-metric-group { min-width: 0; padding: 9px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
+.dashboard-metric-group { display: flex; flex-direction: column; min-width: 0; padding: 10px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
 .group-journeys { grid-column: span 3; }
 .group-customers { grid-column: span 9; }
-.group-time { grid-column: span 6; }
-.group-transactions { grid-column: span 6; }
+.group-time { grid-column: span 5; }
+.group-transactions { grid-column: span 7; }
 .dashboard-group-title { margin: 0 0 6px 2px; color: #475569; font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
-.dashboard-metric-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
-.dashboard-metric-card { display: flex; align-items: flex-start; gap: 8px; min-height: 80px; padding: 10px; border-radius: 10px; }
-.dashboard-metric-copy { min-width: 0; flex: 1; }
-.dashboard-card-title { margin: 0 0 3px; color: #64748b; font-size: 11px; font-weight: 600; }
+.dashboard-metric-grid { flex: 1; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dashboard-metric-card { display: grid; grid-template-columns: 27px minmax(0, 1fr) 8px; grid-template-rows: minmax(30px, auto) auto 1fr; align-content: start; gap: 8px 6px; min-height: 150px; padding: 12px; border-radius: 10px; }
+.dashboard-metric-copy { display: contents; }
+.dashboard-card-title { margin: 0; align-self: center; color: #64748b; font-size: 11px; line-height: 1.35; font-weight: 600; }
+.dashboard-metric-value, .dashboard-metric-amounts, .dashboard-metric-note, .dashboard-metric-detail, .dashboard-metric-skeleton { grid-column: 1 / -1; }
 .dashboard-metric-icon { width: 27px; height: 27px; border-radius: 7px; font-size: 11px; }
 .dashboard-metric-value, .dashboard-metric-money strong { color: var(--accent); font-size: 18px; letter-spacing: 0; line-height: 1.2; }
 .dashboard-metric-value span, .dashboard-metric-money span { font-size: 10px; }
-.dashboard-metric-note { border: 0; padding: 0; margin: 4px 0 0; font-size: 10.5px; line-height: 1.35; }
+.dashboard-metric-note { border: 0; padding: 0; margin: 0; font-size: 10.5px; line-height: 1.45; }
 .dashboard-metric-detail { font-size: 10.5px; }
-.dashboard-metric-open { align-self: center; color: #94a3b8; font-size: 9px; }
+.dashboard-metric-open { grid-column: 3; grid-row: 1; align-self: center; color: #94a3b8; font-size: 9px; }
 .dashboard-metric-skeleton { height: 22px; }
-@media (max-width: 1100px) { .group-time, .group-transactions { grid-column: span 12; } }
-@media (max-width: 640px) { .dashboard-metric-group { grid-column: span 12; } .dashboard-overview-heading { align-items: flex-start; } }
+@media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }
+@media (max-width: 700px) { .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } .dashboard-overview-heading { align-items: flex-start; } }
 </style>

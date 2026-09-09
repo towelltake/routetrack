@@ -9,15 +9,15 @@ const cards = computed(() => {
     const m = props.metrics;
     const variance = m?.cft_variance_minutes;
     return [
-        { title: "Routes started", icon: "fa-route", tone: "blue", value: number(m?.journeys_started),
-            note: m ? `${number(m.unique_routes)} distinct routes · Not started: unavailable` : "",
+        { title: "Journeys started", icon: "fa-route", tone: "blue", value: number(m?.journeys_started),
+            note: m ? `${number(m.unique_routes)} distinct routes in this period` : "",
             definition: "Counts every journey started within the selected period. Routes not started requires an agreed operating schedule." },
         { title: "Planned coverage", icon: "fa-location-dot", tone: "teal", value: percent(m?.coverage_percent),
-            note: m ? `${number(m.pending_customers)} pending · ${number(m.missed_customers)} missed` : "",
+            note: m ? `${number(m.planned_visited)} / ${number(m.planned_customers)} covered · ${number(m.pending_customers)} pending · ${number(m.missed_customers)} missed` : "",
             detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",
             definition: "Distinct planned customers visited per journey divided by planned customers per journey. Unvisited customers are pending on open journeys and missed on closed journeys." },
         { title: "Productive visits", icon: "fa-check-double", tone: "teal", value: percent(m?.productivity_percent),
-            note: m ? `${number(m.nonproductive_visits)} visits with no sale or order` : "",
+            note: m ? `${number(m.productive_visits)} / ${number(m.completed_visits)} completed visits · ${number(m.nonproductive_visits)} nonproductive` : "",
             definition: "Completed visits with a positive-value, non-voided sale or order, divided by completed visits. Each visit counts once. Collection-only and return-only visits do not count as productive." },
         { title: "Net sales", icon: "fa-chart-line", tone: "blue", amounts: m?.amounts.sales,
             note: "Non-voided invoice totals", definition: "Sum of final invoice totals belonging to selected journeys, including transactions after the period end. Currencies are shown separately." },
@@ -33,6 +33,12 @@ const cards = computed(() => {
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
     ];
 });
+const groups = computed(() => [
+    { key: "journeys", title: "Journeys", cards: [cards.value[0], cards.value[7]] },
+    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[2]] },
+    { key: "time", title: "Face time", cards: [cards.value[6]] },
+    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5]] },
+]);
 </script>
 
 <template>
@@ -45,17 +51,19 @@ const cards = computed(() => {
             <span v-if="loading" role="status">Updating figures...</span>
         </div>
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
-        <div class="dashboard-metric-grid">
-            <article v-for="card in cards" :key="card.title" class="dashboard-metric-card" :class="`tone-${card.tone}`" :title="card.definition"
+        <div class="dashboard-metric-groups">
+            <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
+                <h3 class="dashboard-group-title">{{ group.title }}</h3>
+                <div class="dashboard-metric-grid">
+            <article v-for="card in group.cards" :key="card.title" class="dashboard-metric-card" :class="`tone-${card.tone}`" :title="card.definition"
                 role="button" :tabindex="metrics && !loading ? 0 : -1" :aria-disabled="!metrics || loading"
                 :aria-label="`${card.title}. ${card.definition} View journey details.`"
                 @click="metrics && !loading && emit('inspect', card.title)"
                 @keydown.enter="metrics && !loading && emit('inspect', card.title)"
                 @keydown.space.prevent="metrics && !loading && emit('inspect', card.title)">
-                <div class="dashboard-metric-heading">
-                    <h3>{{ card.title }}</h3>
-                    <span class="dashboard-metric-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
-                </div>
+                <span class="dashboard-metric-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
+                <div class="dashboard-metric-copy">
+                <h4 class="dashboard-card-title">{{ card.title }}</h4>
                 <div v-if="loading" class="dashboard-metric-skeleton" aria-hidden="true"></div>
                 <div v-else-if="!metrics" class="dashboard-metric-value">—</div>
                 <div v-else-if="card.amounts" class="dashboard-metric-amounts">
@@ -67,7 +75,11 @@ const cards = computed(() => {
                 <div v-else class="dashboard-metric-value">{{ card.value }} <span v-if="card.unit">{{ card.unit }}</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
+                </div>
+                <i class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
+                </div>
+            </section>
         </div>
     </section>
 </template>
@@ -97,6 +109,25 @@ const cards = computed(() => {
 .dashboard-metric-detail { color: #b45309; font-size: 11px; margin: 5px 0 0; }
 .dashboard-metric-skeleton { height: 38px; width: 65%; border-radius: 6px; background: #edf2f7; }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
-@media (max-width: 1100px) { .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 540px) { .dashboard-metric-grid { grid-template-columns: 1fr; } .dashboard-overview-heading { align-items: flex-start; } }
+.dashboard-overview { margin: 18px 0; }
+.dashboard-overview-heading { margin-bottom: 10px; }
+.dashboard-metric-groups { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; }
+.dashboard-metric-group { min-width: 0; padding: 9px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
+.group-journeys, .group-customers { grid-column: span 6; }
+.group-time { grid-column: span 3; }
+.group-transactions { grid-column: span 9; }
+.dashboard-group-title { margin: 0 0 6px 2px; color: #475569; font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.dashboard-metric-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.dashboard-metric-card { display: flex; align-items: flex-start; gap: 8px; min-height: 80px; padding: 10px; border-radius: 10px; }
+.dashboard-metric-copy { min-width: 0; flex: 1; }
+.dashboard-card-title { margin: 0 0 3px; color: #64748b; font-size: 11px; font-weight: 600; }
+.dashboard-metric-icon { width: 27px; height: 27px; border-radius: 7px; font-size: 11px; }
+.dashboard-metric-value, .dashboard-metric-money strong { color: var(--accent); font-size: 18px; letter-spacing: 0; line-height: 1.2; }
+.dashboard-metric-value span, .dashboard-metric-money span { font-size: 10px; }
+.dashboard-metric-note { border: 0; padding: 0; margin: 4px 0 0; font-size: 10.5px; line-height: 1.35; }
+.dashboard-metric-detail { font-size: 10.5px; }
+.dashboard-metric-open { align-self: center; color: #94a3b8; font-size: 9px; }
+.dashboard-metric-skeleton { height: 22px; }
+@media (max-width: 1100px) { .group-time, .group-transactions { grid-column: span 12; } }
+@media (max-width: 640px) { .dashboard-metric-group { grid-column: span 12; } .dashboard-overview-heading { align-items: flex-start; } }
 </style>

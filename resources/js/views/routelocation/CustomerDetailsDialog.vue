@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import axios from 'axios';
 
-const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', outside: 'Time Outside Visits' };
+const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', operational: 'Operational Time', otp_time: 'OTP Customer Time', actual_face: 'Actual Face Time', outside: 'Time Outside Visits' };
 const isRouteTime = computed(() => ['duration', 'outside'].includes(type.value));
 const signedDuration = (value) => value == null ? 'Unavailable' : `${value > 0 ? '+' : value < 0 ? '-' : ''}${duration(Math.abs(value))}`;
 const isTransaction = computed(() => ['sales', 'orders', 'collections', 'returns'].includes(type.value));
@@ -71,9 +71,14 @@ defineExpose({ open, close });
                     <button v-for="tab in statuses" :key="tab" type="button" :class="{ active: status === tab }" :aria-pressed="status === tab" @click="status = tab; page = 1">{{ tab }} ({{ scopedRows.filter((row) => tab === 'All' || row.status === tab).length }})</button>
                 </div>
                 <div v-if="type === 'outside'" class="details-table">
-                    <p class="salesman">Times in h:mm. Customer CFT merges overlapping visits within the route. Stationary time excludes customer visits and GPS gaps. Estimated travel = route duration − customer CFT − detected stationary time; it can include unobserved stops and GPS gaps.</p>
-                    <table><thead><tr><th>Route code</th><th>Salesman name</th><th>Route start time</th><th>Route end time</th><th>Customer CFT</th><th>Travel time (estimated)</th><th>Stationary time</th></tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`"><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.customer_cft) }}</td><td>{{ duration(row.travel) }}</td><td>{{ duration(row.stationary) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody></table>
+                    <p class="salesman">Times in h:mm. Time outside visits = total duration minus operational time.</p>
+                    <table><thead><tr><th>Route code</th><th>Date</th><th>Salesman</th><th>Start time</th><th>End time</th><th>Total duration</th><th>Operational time</th><th>Time outside visits</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ duration(row.operational) }}</td><td>{{ duration(row.outside) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="8">No matching records.</td></tr></tbody></table>
+                </div>
+                <div v-else-if="['operational', 'otp_time', 'actual_face'].includes(type)" class="details-table">
+                    <p class="salesman">Duration in h:mm. Each completed visit counts once.<template v-if="type === 'otp_time'"> OTP requests are matched by customer and visit timestamps; all matched OTP times are listed.</template></p>
+                    <table><thead><tr><th>Route code</th><th>Date</th><th>Customer code</th><th>Customer name</th><th>Check-in time</th><th>Check-out time</th><th>Duration (h:mm)</th><th v-if="type === 'otp_time'">OTP time</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`"><td>{{ row.routecode }}</td><td>{{ row.date || row.route_date }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}</td><td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.check_out || 'Unavailable' }}</td><td>{{ duration(row.actual_cft) }}</td><td v-if="type === 'otp_time'"><div v-for="(time, index) in row.otp_times" :key="index">{{ time }}</div></td></tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp_time' ? 8 : 7">No matching records.</td></tr></tbody></table>
                 </div>
                 <div v-else-if="type === 'duration'" class="details-table"><table>
                     <thead><tr><th>Date</th><th>Route code</th><th>Salesman name</th><th>Start time</th><th>End time</th><th>Duration (h:mm)</th><th>Route status</th></tr></thead>

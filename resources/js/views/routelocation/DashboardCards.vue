@@ -29,9 +29,8 @@ const cards = computed(() => {
             note: "Total orders value", definition: "Total order value" },
         { title: "Collections", icon: "fa-wallet", tone: "teal", amounts: m?.amounts.collections,
             note: "Total collection receipts value", definition: "Total collection value" },
-        { title: "Face Time: Planned / Actual", icon: "fa-clock", tone: "violet", value: m ? `${duration(m.planned_cft_minutes)} / ${duration(m.cft_minutes)}` : "—", unit: "h:mm",
-            note: m ? `${number(m.completed_visits)} completed visits · ${number(m.cft_configured_visits)} with planned CFT` : "",
-            definition: "Planned CFT recorded for completed visits. Actual CFT includes all completed visits, even when planned CFT is zero or missing. Variance includes only visits with positive planned CFT." },
+        { title: "Operational Time", icon: "fa-clock", tone: "violet", value: duration(m?.operational_minutes), unit: "h:mm",
+            note: "All completed customer visits", definition: "Total customer visit time" },
         { title: "OTP usage", icon: "fa-key", tone: "amber", value: number(m?.otp.events),
             note: "All OTP types",
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
@@ -41,15 +40,19 @@ const cards = computed(() => {
             note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
             definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
         { title: "Time Outside Visits", icon: "fa-car", tone: "blue", value: duration(m?.outside_visit_minutes), unit: "h:mm",
-            note: "Includes travel, idle time and breaks", definition: "Measured journey duration minus customer visit intervals. Overlapping intervals count once; ongoing visits on open routes stop at the last GPS timestamp." },
+            note: "Includes travel, idle time and breaks", definition: "Total duration minus operational time" },
         { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
             note: "Invoice and order returns", definition: "Total returns value" },
+        { title: "OTP Customer Time", icon: "fa-key", tone: "violet", value: duration(m?.otp_customer_minutes), unit: "h:mm",
+            note: "Visits with OTP", definition: "Total visit time for customers with OTP" },
+        { title: "Actual Face Time", icon: "fa-user-clock", tone: "teal", value: duration(m?.actual_face_minutes), unit: "h:mm",
+            note: "Operational minus OTP", definition: "Operational time minus OTP customer time" },
     ];
 });
 const groups = computed(() => [
     { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
     { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2], cards.value[7]] },
-    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[10]] },
+    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10]] },
     { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
 ]);
 </script>
@@ -123,12 +126,12 @@ const groups = computed(() => [
 .dashboard-metric-group { display: flex; flex-direction: column; min-width: 0; padding: 10px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
 .group-journeys { grid-column: span 3; }
 .group-customers { grid-column: span 9; }
-.group-time { grid-column: span 5; }
-.group-transactions { grid-column: span 7; }
+.group-time { grid-column: span 12; }
+.group-transactions { grid-column: span 12; }
 .dashboard-group-title { margin: 0 0 6px 2px; color: #475569; font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .dashboard-metric-grid { flex: 1; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.group-time .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .dashboard-metric-card { display: grid; grid-template-columns: 27px minmax(0, 1fr) 8px; grid-template-rows: minmax(30px, auto) auto 1fr; align-content: start; gap: 8px 6px; min-height: 150px; padding: 12px; border-radius: 10px; }
 .dashboard-metric-copy { display: contents; }
 .dashboard-card-title { margin: 0; align-self: center; color: #64748b; font-size: 11px; line-height: 1.35; font-weight: 600; }
@@ -140,6 +143,8 @@ const groups = computed(() => [
 .dashboard-metric-detail { font-size: 10.5px; }
 .dashboard-metric-open { grid-column: 3; grid-row: 1; align-self: center; color: #94a3b8; font-size: 9px; }
 .dashboard-metric-skeleton { height: 22px; }
+@media (max-width: 950px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }
-@media (max-width: 700px) { .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } .dashboard-overview-heading { align-items: flex-start; } }
+@media (max-width: 700px) { .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-overview-heading { align-items: flex-start; } }
+@media (max-width: 420px) { .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } }
 </style>

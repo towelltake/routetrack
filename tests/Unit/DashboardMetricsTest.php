@@ -78,13 +78,14 @@ test('returns combine both document sources and retain currencies without void o
         ->and((float) $returns['USD']['amount'])->toBe(14.0);
 });
 
-test('older open journeys use last GPS cutoff and ongoing visits do not inflate outside time', function () {
+test('outside time subtracts completed operational time from the last GPS duration', function () {
     $journeys = DB::table('startendday')->where('routekey', 2)->get();
     $journeys->first()->last_location_time = '2026-09-03 12:00:00';
     $result = app(DashboardMetrics::class)->summarize($journeys);
-    // 08:00–12:00 journey; 09:00–09:30 completed and 11:00–12:00 ongoing visit.
+    // Four-hour measured journey minus 45 minutes of completed visits; incomplete visits have no duration.
     expect($result['duration_minutes'])->toEqual(240)
-        ->and($result['outside_visit_minutes'])->toEqual(150)
+        ->and($result['operational_minutes'])->toEqual(45)
+        ->and($result['outside_visit_minutes'])->toEqual(195)
         ->and($result['duration_missing_journeys'])->toBe(0)
         ->and($result['unplanned_customers'])->toBe(3);
 });
@@ -221,7 +222,7 @@ test('analysis exposes journey coverage, repeat visits, OTP details and missing 
         ->and(collect($rows[1]['issues'])->pluck('label')->all())->toContain('Missed customers', 'Repeat visits');
 });
 
-test('time chart merges overlapping visit intervals and distance requires completed valid readings', function () {
+test('time chart uses operational visit totals and distance requires completed valid readings', function () {
     DB::table('customervisitlog')->insert(['logkey' => 13, 'routekey' => 1, 'customercode' => 101,
         'logstartdate' => '2026-09-01', 'logstarttime' => '10:10:00', 'logenddate' => '2026-09-01', 'logendtime' => '10:35:00', 'cft' => 10]);
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
@@ -231,8 +232,8 @@ test('time chart merges overlapping visit intervals and distance requires comple
     }
     $rows = collect(app(DashboardMetrics::class)->summarize($journeys)['analysis']['journeys'])->keyBy('routekey');
     expect($rows[1]['actual_cft'])->toEqual(55)
-        ->and($rows[1]['visit_time'])->toEqual(40)
-        ->and($rows[1]['remaining_time'])->toEqual($rows[1]['duration'] - 40)
+        ->and($rows[1]['visit_time'])->toEqual(55)
+        ->and($rows[1]['remaining_time'])->toEqual($rows[1]['duration'] - 55)
         ->and($rows[1]['distance'])->toBe(16.0)
         ->and($rows[2]['distance'])->toBeNull();
 });
@@ -244,4 +245,52 @@ test('sequence exceptions use planned order and do not label missing-plan visits
     expect($rows[1]['out_of_sequence'])->toBe(1)->and($rows[1]['repeat'])->toBe(1)
         ->and($rows[2]['unplanned'])->toBe(0)
         ->and(collect($rows[2]['issues'])->pluck('label')->all())->toContain('Journey plan unavailable');
+});
+
+
+test('dashboard operational and OTP time cards reconcile with customer detail rows', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $journeys[1]->last_location_time = '2026-09-03 12:00:00';
+    DB::table('customermaster')->insert(['customercode' => 101, 'alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics['operational_minutes'])->toEqual(75)
+        ->and($metrics['otp_customer_minutes'])->toEqual(50)
+        ->and($metrics['actual_face_minutes'])->toEqual(25)
+        ->and($metrics['outside_visit_minutes'])->toEqual($metrics['duration_minutes'] - 75);
+
+    $details = app(DashboardCustomerDetails::class);
+    $operational = collect($details->build($journeys, 'operational')['groups'])->flatMap(fn ($group) => $group['rows']);
+    $otpGroups = $details->build($journeys, 'otp_time')['groups'];
+    $otp = collect($otpGroups)->flatMap(fn ($group) => $group['rows']);
+    $face = collect($details->build($journeys, 'actual_face')['groups'])->flatMap(fn ($group) => $group['rows']);
+    expect($operational)->toHaveCount(5)
+        ->and($operational->sum('actual_cft'))->toEqual($metrics['operational_minutes'])
+        ->and($otp)->toHaveCount(2)
+        ->and($otp->sum('actual_cft'))->toEqual($metrics['otp_customer_minutes'])
+        ->and($face)->toHaveCount(3)
+        ->and($face->sum('actual_cft'))->toEqual($metrics['actual_face_minutes'])
+        ->and($otpGroups[0])->toMatchArray(['routecode' => 1, 'date' => '2026-09-01'])
+        ->and($otp[0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One',
+            'check_in' => '2026-09-01 10:00:00', 'check_out' => '2026-09-01 10:20:00', 'actual_cft' => 20,
+            'otp_times' => ['2026-09-01 10:05:00', '2026-09-01 10:06:00']]);
+    // A repeat visit to the same customer without an OTP stays in actual face time.
+    expect($face->pluck('id')->all())->toContain(12);
+    $outside = collect($details->build($journeys, 'outside')['groups'])->flatMap(fn ($group) => $group['rows']);
+    expect($outside->sum('operational'))->toEqual($metrics['operational_minutes'])
+        ->and($outside->sum('outside'))->toEqual($metrics['outside_visit_minutes']);
+});
+
+test('new dashboard time cards handle unavailable duration and no OTP matches', function () {
+    DB::table('otplogdetail')->delete();
+    $journeys = DB::table('startendday')->where('routekey', 2)->get();
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics['operational_minutes'])->toEqual(45)
+        ->and($metrics['otp_customer_minutes'])->toEqual(0)
+        ->and($metrics['actual_face_minutes'])->toEqual(45)
+        ->and($metrics['outside_visit_minutes'])->toBeNull();
+    $empty = app(DashboardMetrics::class)->summarize(collect());
+    expect($empty['operational_minutes'])->toEqual(0)
+        ->and($empty['otp_customer_minutes'])->toEqual(0)
+        ->and($empty['actual_face_minutes'])->toEqual(0);
 });

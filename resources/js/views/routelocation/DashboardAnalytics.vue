@@ -100,7 +100,7 @@ watch(() => props.metrics, async () => {
                     <th scope="col"><button @click="sortBy('journeys')">Journeys ↕</button></th>
                     <th scope="col"><button @click="sortBy('coverage')">Coverage ↕</button></th>
                     <th scope="col"><button @click="sortBy('productivity')">Productive ↕</button></th>
-                    <th scope="col">Customers</th><th scope="col"><button @click="sortBy('actual_cft')">CFT min ↕</button></th><th scope="col">CFT variance</th>
+                    <th scope="col">Customers</th><th scope="col"><button @click="sortBy('actual_cft')">Operational min ↕</button></th><th scope="col">CFT variance</th>
                     <th scope="col">Sales</th><th scope="col">Orders</th><th scope="col">Collections</th><th scope="col"><button @click="sortBy('otp')">OTP ↕</button></th>
                     <template v-if="extended"><th scope="col">No sale/order</th><th scope="col">Unplanned</th><th scope="col">Out of sequence</th><th scope="col">Repeat</th><th scope="col">Avg duration min</th></template>
                     <th scope="col">Details</th>
@@ -142,7 +142,7 @@ watch(() => props.metrics, async () => {
             <div class="analytics-dialog-body">
                 <article v-for="row in visibleDetails" :key="row.routekey" class="analytics-journey-detail">
                     <div class="analytics-journey-title"><h3>{{ row.routecode }} - {{ row.route }} <small>{{ row.date }} · Journey {{ row.routekey }}</small></h3><a :href="trackUrl(row)">Open Route Tracking &rarr;</a></div>
-                    <dl><div><dt>Coverage</dt><dd>{{ percent(row.covered, row.planned) }}</dd></div><div><dt>Productive visits</dt><dd>{{ row.productive }} / {{ row.completed }}</dd></div><div><dt>Actual CFT</dt><dd>{{ number(row.actual_cft, 1) }} min</dd></div><div><dt>CFT variance</dt><dd>{{ variance(row) }} min</dd></div><div><dt>Journey duration</dt><dd>{{ number(row.duration, 1) }} min</dd></div></dl>
+                    <dl><div><dt>Coverage</dt><dd>{{ percent(row.covered, row.planned) }}</dd></div><div><dt>Productive visits</dt><dd>{{ row.productive }} / {{ row.completed }}</dd></div><div><dt>Operational Time</dt><dd>{{ number(row.actual_cft, 1) }} min</dd></div><div><dt>CFT variance</dt><dd>{{ variance(row) }} min</dd></div><div><dt>Journey duration</dt><dd>{{ number(row.duration, 1) }} min</dd></div></dl>
                     <div class="analytics-detail-money"><span v-for="type in ['sales', 'orders', 'collections', 'returns']" :key="type"><strong>{{ type }}:</strong> {{ money(type === 'returns' ? (row.amounts.returns ?? []).map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })) : row.amounts[type]) }}</span></div>
                     <p v-if="row.issues.length" class="analytics-detail-issues">{{ row.issues.map(i => `${i.label}: ${i.count}`).join(' · ') }}</p>
                     <details v-if="row.otp_events.length"><summary>{{ row.otp_events.length }} OTP events — view details</summary><div class="analytics-table-scroll"><table><thead><tr><th>Customer</th><th>Type</th><th>Date / time</th><th>Recorded user</th><th>Reason / comments</th></tr></thead><tbody><tr v-for="event in row.otp_events" :key="event.otplogid"><td>{{ event.customercode }}</td><td>{{ event.otptype }}</td><td>{{ event.otpdate }} {{ event.otptime }}</td><td>{{ event.username || '—' }}</td><td>{{ event.otpreason || '—' }}<small>{{ event.comments }}</small></td></tr></tbody></table></div></details>

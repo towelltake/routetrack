@@ -100,19 +100,18 @@ watch(() => props.metrics, async () => {
                     <th scope="col"><button @click="sortBy('journeys')">Journeys ↕</button></th>
                     <th scope="col"><button @click="sortBy('coverage')">Coverage ↕</button></th>
                     <th scope="col"><button @click="sortBy('productivity')">Productive ↕</button></th>
-                    <th scope="col">Customers</th><th scope="col"><button @click="sortBy('actual_cft')">CFT min ↕</button></th><th scope="col">CFT variance</th><th scope="col">Distance km</th>
+                    <th scope="col">Customers</th><th scope="col"><button @click="sortBy('actual_cft')">CFT min ↕</button></th><th scope="col">CFT variance</th>
                     <th scope="col">Sales</th><th scope="col">Orders</th><th scope="col">Collections</th><th scope="col"><button @click="sortBy('otp')">OTP ↕</button></th>
                     <template v-if="extended"><th scope="col">No sale/order</th><th scope="col">Unplanned</th><th scope="col">Out of sequence</th><th scope="col">Repeat</th><th scope="col">Avg duration min</th></template>
                     <th scope="col">Details</th>
                 </tr></thead><tbody>
-                    <tr v-if="loading || !visibleGroups.length"><td :colspan="extended ? 18 : 13" class="analytics-empty">{{ loading ? 'Loading performance...' : 'No matching journeys.' }}</td></tr>
+                    <tr v-if="loading || !visibleGroups.length"><td :colspan="extended ? 17 : 12" class="analytics-empty">{{ loading ? 'Loading performance...' : 'No matching journeys.' }}</td></tr>
                     <tr v-for="group in visibleGroups" :key="group.id">
                         <th scope="row"><button class="analytics-group-link" @click="openRows(group.label, group.rows)">{{ group.label }}</button></th>
                         <td>{{ number(group.rows.length) }}<small>{{ number(group.closed) }} closed</small></td>
                         <td><strong>{{ percent(group.covered, group.planned) }}</strong><small>{{ group.pending }} pending / {{ group.missed }} missed</small></td>
                         <td>{{ percent(group.productive, group.completed) }}<small>{{ group.productive }} / {{ group.completed }} visits</small></td>
                         <td>{{ number(group.customers.size) }}</td><td>{{ number(group.actual_cft, 1) }}</td><td>{{ variance(group) }}</td>
-                        <td>{{ number(group.distance, 1) }}<small v-if="group.distance_count">{{ group.distance_count }} journeys</small></td>
                         <td>{{ money(group.amounts.sales) }}</td><td>{{ money(group.amounts.orders) }}</td><td>{{ money(group.amounts.collections) }}</td><td>{{ number(group.otp) }}</td>
                         <template v-if="extended"><td>{{ number(group.nonproductive) }}</td><td>{{ number(group.unplanned) }}</td><td>{{ number(group.out_of_sequence) }}</td><td>{{ number(group.repeat) }}</td><td>{{ number(group.duration_count ? group.duration / group.duration_count : null, 1) }}</td></template>
                         <td><button class="analytics-detail-button" @click="openRows(group.label, group.rows)" :aria-label="`View journeys for ${group.label}`">View</button></td>
@@ -143,7 +142,7 @@ watch(() => props.metrics, async () => {
             <div class="analytics-dialog-body">
                 <article v-for="row in visibleDetails" :key="row.routekey" class="analytics-journey-detail">
                     <div class="analytics-journey-title"><h3>{{ row.routecode }} - {{ row.route }} <small>{{ row.date }} · Journey {{ row.routekey }}</small></h3><a :href="trackUrl(row)">Open Route Tracking &rarr;</a></div>
-                    <dl><div><dt>Coverage</dt><dd>{{ percent(row.covered, row.planned) }}</dd></div><div><dt>Productive visits</dt><dd>{{ row.productive }} / {{ row.completed }}</dd></div><div><dt>Actual CFT</dt><dd>{{ number(row.actual_cft, 1) }} min</dd></div><div><dt>CFT variance</dt><dd>{{ variance(row) }} min</dd></div><div><dt>Journey duration</dt><dd>{{ number(row.duration, 1) }} min</dd></div><div><dt>Recorded distance</dt><dd>{{ number(row.distance, 1) }} km</dd></div></dl>
+                    <dl><div><dt>Coverage</dt><dd>{{ percent(row.covered, row.planned) }}</dd></div><div><dt>Productive visits</dt><dd>{{ row.productive }} / {{ row.completed }}</dd></div><div><dt>Actual CFT</dt><dd>{{ number(row.actual_cft, 1) }} min</dd></div><div><dt>CFT variance</dt><dd>{{ variance(row) }} min</dd></div><div><dt>Journey duration</dt><dd>{{ number(row.duration, 1) }} min</dd></div></dl>
                     <div class="analytics-detail-money"><span v-for="type in ['sales', 'orders', 'collections', 'returns']" :key="type"><strong>{{ type }}:</strong> {{ money(type === 'returns' ? (row.amounts.returns ?? []).map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })) : row.amounts[type]) }}</span></div>
                     <p v-if="row.issues.length" class="analytics-detail-issues">{{ row.issues.map(i => `${i.label}: ${i.count}`).join(' · ') }}</p>
                     <details v-if="row.otp_events.length"><summary>{{ row.otp_events.length }} OTP events — view details</summary><div class="analytics-table-scroll"><table><thead><tr><th>Customer</th><th>Type</th><th>Date / time</th><th>Recorded user</th><th>Reason / comments</th></tr></thead><tbody><tr v-for="event in row.otp_events" :key="event.otplogid"><td>{{ event.customercode }}</td><td>{{ event.otptype }}</td><td>{{ event.otpdate }} {{ event.otptime }}</td><td>{{ event.username || '—' }}</td><td>{{ event.otpreason || '—' }}<small>{{ event.comments }}</small></td></tr></tbody></table></div></details>

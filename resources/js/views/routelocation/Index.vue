@@ -245,6 +245,7 @@ async function loadLocations(request) {
         });
         if (currentMapRequest !== mapRequest || request !== locationRequest || activeView.value !== 'live' || !map) return;
         locations.value = data;
+        if (metrics.value?.action_summary) metrics.value.action_summary.tracking_routes = data.length;
 
         if (!data.length) {
             error.value = "No GPS locations found for journeys started within the selected date range.";
@@ -405,7 +406,7 @@ function resetFilters() {
         <div class="dashboard-actions">
             <article><i class="fa fa-chart-column"></i><h2>Performance comparison</h2><strong>{{ summary.customers ?? '\u2014' }} <small>customers visited</small></strong><p>{{ metrics?.journeys_started ?? '\u2014' }} journeys &middot; Compare routes and teams</p><button :disabled="!metrics || !!dateError" @click="openAction('performance')">Compare performance <span aria-hidden="true">&rarr;</span></button></article>
             <article class="attention"><i class="fa fa-flag"></i><h2>Journeys needing attention</h2><strong>{{ summary.review ?? '\u2014' }} <small>journeys to review</small></strong><p>{{ summary.repeat ?? '\u2014' }} repeat visits &middot; Execution and data issues</p><button :disabled="!metrics || !!dateError" @click="openAction('attention')">Review journeys <span aria-hidden="true">&rarr;</span></button></article>
-            <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.open ?? '\u2014' }} <small>open journeys</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span aria-hidden="true">&rarr;</span></button></article>
+            <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.tracking_routes ?? '\u2014' }} <small>routes with tracking</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span aria-hidden="true">&rarr;</span></button></article>
         </div>
         <DashboardGraphs :metrics="metrics" :loading="metricsLoading" />
         <dialog ref="actionDialog" class="dashboard-action-dialog" @cancel.prevent="closeAction">

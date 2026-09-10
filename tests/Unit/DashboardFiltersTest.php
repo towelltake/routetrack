@@ -258,3 +258,23 @@ test('dashboard rejects invalid date ranges', function (array $dates) {
     [['to_date' => '2026-09-07']],
     [['from_date' => '2026-02-30', 'to_date' => '2026-09-07']],
 ])->throws(ValidationException::class);
+
+
+test('tracking card counts distinct routes with usable PostgreSQL locations just like the map', function () {
+    $this->mock(\App\Services\DashboardMetrics::class, fn ($mock) => $mock->shouldReceive('summarize')->andReturn([]));
+    // The latest journey of route 1 has no GPS, so its older position must not count.
+    DB::table('startendday')->insert(['routekey' => 100, 'routecode' => 1, 'routestartdate' => '2026-09-07', 'routestarttime' => '12:00:00', 'routeclosed' => 0]);
+    // An open route with unusable coordinates also must not count.
+    DB::connection('tracking_pgsql')->table('trac_routetrack')->where('routecode', 2)->update(['latitude' => 0]);
+    // Closed routes remain available in the map if their journey has a location.
+    DB::table('startendday')->where('routecode', 3)->update(['routeclosed' => 1, 'routeenddate' => '2026-09-07', 'routeendtime' => '11:00:00']);
+    $controller = app(DashboardController::class);
+    $request = Request::create('/', 'GET', ['date' => '2026-09-07']);
+    $map = $controller->lastLocations($request)->getData(true);
+    $summary = $controller->metrics($request)->getData(true)['action_summary'];
+    expect($map)->toHaveCount(1)
+        ->and($map[0]['routecode'])->toBe(3)
+        ->and($summary['tracking_routes'])->toBe(count($map));
+    $request = Request::create('/', 'GET', ['date' => '2026-09-07', 'routes' => [1, 2]]);
+    expect($controller->metrics($request)->getData(true)['action_summary']['tracking_routes'])->toBe(0);
+});

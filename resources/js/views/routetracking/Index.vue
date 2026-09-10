@@ -145,7 +145,7 @@ const routeSummaryGroups = computed(() => {
             { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
             { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: planned.face_time ? `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` : "All customer visits" },
             { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
-            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "N/A" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
+            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "0%" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
                 comparison: { actual: actual.actual_cft, planned: actual.planned_cft },
                 meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
@@ -1829,10 +1829,10 @@ function focusEnd() {
 .route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }
 
 .route-summary-group-time {
-    .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+    .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: stretch; grid-auto-rows: 1fr; }
     .route-summary-card { padding: 14px; gap: 10px; }
     .route-summary-label { font-size: 12px; font-weight: 600; }
-    .route-summary-copy strong { margin: 8px 0; font-size: 28px; line-height: 1.2; overflow-wrap: normal; }
+    .route-summary-copy strong { margin: 8px 0; font-size: 24px; line-height: 1.2; overflow-wrap: normal; }
     .route-summary-copy > span:last-child { font-size: 11px; }
 }
 @container (min-width: 1260px) {

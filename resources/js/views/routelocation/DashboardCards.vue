@@ -5,7 +5,7 @@ const props = defineProps({ metrics: Object, loading: Boolean, error: String });
 const emit = defineEmits(["inspect"]);
 const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
-const signedPercent = (value) => value == null ? "N/A" : `${value > 0 ? "+" : ""}${number(value, 1)}%`;
+const signedPercent = (value) => value == null ? "0%" : `${value > 0 ? "+" : ""}${number(value, 1)}%`;
 const duration = (value) => {
     if (value == null) return "—";
     const minutes = Math.max(0, Math.round(Number(value)));
@@ -105,12 +105,12 @@ const groups = computed(() => [
 <style scoped>
 .dashboard-overview { margin: 18px 0; color: #172b45; }
 .dashboard-metric-groups { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
-.dashboard-metric-group { min-width: 0; padding: 12px; border: 1px solid #e8edf3; border-radius: 12px; background: #f8fafc; }
+.dashboard-metric-group { display: flex; flex-direction: column; min-width: 0; padding: 12px; border: 1px solid #e8edf3; border-radius: 12px; background: #f8fafc; }
 .group-journeys { grid-column: span 3; }
 .group-customers { grid-column: span 9; }
 .group-time, .group-transactions { grid-column: span 12; }
 .dashboard-group-title { margin: 0 0 9px 2px; color: #475569; font-size: 12px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
-.dashboard-metric-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .group-time .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; display: grid; grid-template-columns: 32px minmax(0, 1fr) 10px; align-content: start; gap: 10px 8px; min-width: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
@@ -123,16 +123,16 @@ const groups = computed(() => [
 .tone-red { --accent: #dc2626; --tint: #fef2f2; }
 .dashboard-metric-copy { display: contents; }
 .dashboard-metric-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--tint); color: var(--accent); font-size: 13px; }
-.dashboard-card-title { margin: 0; align-self: center; color: #475569; font-size: 13px; line-height: 1.35; font-weight: 650; }
+.dashboard-card-title { margin: 0; align-self: center; color: #475569; font-size: 12px; line-height: 1.35; font-weight: 650; }
 .dashboard-metric-value, .dashboard-metric-amounts, .dashboard-metric-note, .dashboard-metric-detail, .dashboard-metric-skeleton, .dashboard-time-comparison { grid-column: 1 / -1; }
-.dashboard-metric-value, .dashboard-metric-money strong { color: var(--accent); font-size: clamp(25px, 2.1vw, 34px); font-weight: 750; letter-spacing: -.6px; line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dashboard-metric-value, .dashboard-metric-money strong { color: var(--accent); font-size: clamp(23px, 1.8vw, 28px); font-weight: 750; letter-spacing: -.6px; line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .dashboard-metric-value span, .dashboard-metric-money span { margin-left: 4px; color: #64748b; font-size: 11px; font-weight: 500; letter-spacing: 0; }
 .dashboard-metric-money + .dashboard-metric-money { margin-top: 7px; }
-.dashboard-metric-note, .dashboard-metric-detail { margin: 0; color: #64748b; font-size: 12px; line-height: 1.45; }
+.dashboard-metric-note, .dashboard-metric-detail { margin: 0; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .dashboard-metric-open { grid-column: 3; grid-row: 1; align-self: center; color: #94a3b8; font-size: 10px; }
 .dashboard-time-comparison { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; padding-top: 10px; border-top: 1px solid #edf2f7; }
 .dashboard-time-comparison span { display: block; color: #64748b; font-size: 11px; }
-.dashboard-time-comparison strong { color: #172b45; font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.dashboard-time-comparison strong { color: #172b45; font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .dashboard-time-comparison small { align-self: end; color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }

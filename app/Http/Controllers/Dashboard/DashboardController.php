@@ -106,37 +106,10 @@ class DashboardController extends Controller
     {
         $validated = $this->validateFilters($request);
 
-        $matchingRouteCodes = $this->matchingRoutes($validated)
-            ->when($validated['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
-            ->when($validated['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
-            ->pluck('routemaster.routecode');
-
-        $routes = RouteMaster::query()
-            ->whereIn('routecode', $matchingRouteCodes)
-            ->orderBy('routename')
-            ->get(['routecode', 'routename'])
-            ->keyBy('routecode');
-
-        if ($routes->isEmpty()) {
-            return response()->json([]);
-        }
-
-        $fromDate = $validated['from_date'] ?? $validated['date'];
-        $toDate = $validated['to_date'] ?? $validated['date'];
-        $routeDays = DB::table('startendday')
-            ->whereIn('routecode', $routes->keys())
-            ->whereDate('routestartdate', '>=', $fromDate)
-            ->whereDate('routestartdate', '<=', $toDate)
-            ->orderByDesc('routestartdate')
-            ->orderByDesc('routestarttime')
-            ->orderByDesc('routekey')
-            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
-            ->unique('routecode')
-            ->keyBy('routecode');
-
-        if ($routeDays->isEmpty()) {
-            return response()->json([]);
-        }
+        $routeDays = $this->mapJourneys($validated);
+        if ($routeDays->isEmpty()) return response()->json([]);
+        $routes = RouteMaster::query()->whereIn('routecode', $routeDays->keys())
+            ->get(['routecode', 'routename'])->keyBy('routecode');
 
         // Match GPS records to the chosen journey, including journeys ending after midnight.
         $points = $this->journeyLocations($routeDays, true)->keyBy('routecode');
@@ -290,7 +263,7 @@ class DashboardController extends Controller
             'customers' => $analysis->flatMap(fn ($row) => $row['customer_codes'])->unique()->count(),
             'review' => $analysis->filter(fn ($row) => count($row['issues']) > 0)->count(),
             'repeat' => $analysis->sum('repeat'),
-            'open' => $journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1)->count(),
+            'tracking_routes' => $this->journeyLocations($this->mapJourneys($filters), true)->count(),
         ];
         if ($request->boolean('summary')) {
             $chartGroups = fn ($field) => $analysis->groupBy($field)->map(function ($rows, $key) use ($field) {
@@ -304,6 +277,20 @@ class DashboardController extends Controller
         }
 
         return response()->json($metrics);
+    }
+
+    private function mapJourneys(array $filters): \Illuminate\Support\Collection
+    {
+        $routes = $this->matchingRoutes($filters)
+            ->when($filters['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
+            ->when($filters['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
+            ->select('routemaster.routecode');
+        return DB::table('startendday')->whereIn('routecode', $routes)
+            ->whereDate('routestartdate', '>=', $filters['from_date'] ?? $filters['date'])
+            ->whereDate('routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
+            ->orderByDesc('routestartdate')->orderByDesc('routestarttime')->orderByDesc('routekey')
+            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
+            ->unique('routecode')->keyBy('routecode');
     }
 
     private function journeyLocations(\Illuminate\Support\Collection $journeys, bool $requireCoordinates = false): \Illuminate\Support\Collection

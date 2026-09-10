@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import axios from 'axios';
 
-const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', operational: 'Operational Time', otp_time: 'OTP Customer Time', actual_face: 'Actual Face Time', outside: 'Time Outside Visits' };
+const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', operational: 'Operational Time', otp_time: 'OTP Customer Time', actual_face: 'Face Time Compliance', outside: 'Time Outside Visits' };
 const isRouteTime = computed(() => ['duration', 'outside'].includes(type.value));
 const signedDuration = (value) => value == null ? 'Unavailable' : `${value > 0 ? '+' : value < 0 ? '-' : ''}${duration(Math.abs(value))}`;
 const isTransaction = computed(() => ['sales', 'orders', 'collections', 'returns'].includes(type.value));

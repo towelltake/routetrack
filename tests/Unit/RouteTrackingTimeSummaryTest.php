@@ -43,3 +43,19 @@ test('route time excludes OTP visits once and splits partially overlapping stati
     $short = $method->invoke(app(RouteTrackingController::class), array_replace($actual, ['duration' => 3600]), $visits);
     expect($short['travel_time'])->toBe(0);
 });
+
+
+test('route face time variance compares planned and actual durations without OTP visits', function () {
+    $visits = collect([
+        ['visit_duration_minutes' => 30, 'default_face_time_minutes' => 20, 'otp_logs' => []],
+        ['visit_duration_minutes' => 45, 'default_face_time_minutes' => 90, 'otp_logs' => [['id' => 1], ['id' => 2]]],
+        ['visit_duration_minutes' => null, 'default_face_time_minutes' => 100, 'otp_logs' => []],
+    ]);
+    $method = new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime');
+    $result = $method->invoke(app(RouteTrackingController::class), ['duration' => 7200, 'stationary_seconds' => 0, 'stationary_periods' => []], $visits);
+    expect($result['actual_cft'])->toEqual(1800)
+        ->and($result['planned_cft'])->toEqual(1200)
+        ->and($result['face_time_variance_percent'])->toEqual(50);
+    $result = $method->invoke(app(RouteTrackingController::class), ['duration' => null, 'stationary_seconds' => 0, 'stationary_periods' => []], collect());
+    expect($result['face_time_variance_percent'])->toBeNull();
+});

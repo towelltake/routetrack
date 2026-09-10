@@ -355,3 +355,17 @@ test('route transaction cards and documents match dashboard totals without requi
         }
     }
 });
+
+
+test('face time variance excludes OTP planned allowances and incomplete visits', function ($target, $expectedPlan, $expectedVariance) {
+    DB::table('customervisitlog')->whereIn('logkey', [11, 21, 22])->update(['cft' => 999]);
+    DB::table('customervisitlog')->whereIn('logkey', [12, 23])->update(['cft' => $target]);
+    $metrics = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
+    expect($metrics['actual_face_minutes'])->toEqual(25)
+        ->and($metrics['planned_face_minutes'])->toEqual($expectedPlan)
+        ->and($metrics['face_time_variance_percent'])->toEqual($expectedVariance);
+})->with([
+    'below plan' => [20, 40, -37.5],
+    'above plan' => [5, 10, 150.0],
+    'no plan' => [0, 0, null],
+]);

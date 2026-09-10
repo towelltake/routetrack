@@ -145,7 +145,9 @@ const routeSummaryGroups = computed(() => {
             { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
             { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: planned.face_time ? `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` : "All customer visits" },
             { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
-            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.actual_cft), meta: "Operational minus OTP" },
+            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "N/A" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
+                comparison: { actual: actual.actual_cft, planned: actual.planned_cft },
+                meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
             { label: "Stationary Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View stop breakdown" },
         ] },
@@ -1074,6 +1076,7 @@ function focusEnd() {
                             <span class="route-summary-copy">
                                 <span class="route-summary-label">{{ card.label }}</span>
                                 <strong>{{ card.value }}</strong>
+                                <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
                                 <span v-if="card.meta">{{ card.meta }}</span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
@@ -1819,15 +1822,17 @@ function focusEnd() {
 
 .route-summary-icon { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border-radius: 7px; background: var(--wash); color: var(--tone); font-size: 11px; }
 .route-summary-copy { min-width: 0; flex: 1; }
+.route-face-comparison { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
+.route-face-comparison b { display: block; margin-top: 3px; color: #172b45; font-size: 14px; font-variant-numeric: tabular-nums; }
 .route-summary-label, .route-summary-copy > span:last-child { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
 .route-summary-copy strong { display: block; margin: 2px 0; color: var(--tone); font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
 .route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }
 
 .route-summary-group-time {
-    .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .route-summary-card { min-height: 90px; padding: 14px; gap: 10px; }
+    .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+    .route-summary-card { padding: 14px; gap: 10px; }
     .route-summary-label { font-size: 12px; font-weight: 600; }
-    .route-summary-copy strong { margin: 6px 0; font-size: 22px; line-height: 1.2; overflow-wrap: normal; }
+    .route-summary-copy strong { margin: 8px 0; font-size: 28px; line-height: 1.2; overflow-wrap: normal; }
     .route-summary-copy > span:last-child { font-size: 11px; }
 }
 @container (min-width: 1260px) {

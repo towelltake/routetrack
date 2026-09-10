@@ -923,6 +923,10 @@ class RouteTrackingController extends Controller
         $actual['otp_customer_time'] = $visits->filter(fn (array $visit) => !empty($visit['otp_logs']))
             ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
         $actual['actual_cft'] = $actual['face_time'] - $actual['otp_customer_time'];
+        $actual['planned_cft'] = $visits->filter(fn (array $visit) => ($visit['visit_duration_minutes'] ?? null) !== null && empty($visit['otp_logs']))
+            ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60);
+        $actual['face_time_variance_percent'] = $actual['planned_cft'] > 0
+            ? round(100 * ($actual['actual_cft'] - $actual['planned_cft']) / $actual['planned_cft'], 1) : null;
         $actual['travel_time'] = $actual['duration'] === null ? null : max(0, $actual['duration'] - $actual['stationary_seconds']);
         foreach ($actual['stationary_periods'] as &$period) {
             $periodStart = strtotime($period['start_time']);

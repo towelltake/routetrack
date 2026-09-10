@@ -73,6 +73,8 @@ class DashboardMetrics
         $configuredSeconds = 0;
         $expectedMinutes = 0;
         $configuredVisits = 0;
+        $plannedFaceMinutes = 0;
+        $otp = $this->otp($journeys, $visits);
         foreach ($visits as $visit) {
             $visited[$visit->routekey.':'.$visit->customercode] = true;
             $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
@@ -86,6 +88,7 @@ class DashboardMetrics
                 $configuredVisits++;
                 $configuredSeconds += $end - $start;
                 $expectedMinutes += (int) $visit->expected_minutes;
+                if (!isset($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) $plannedFaceMinutes += (float) $visit->expected_minutes;
             }
             $operation = $operations->get($visit->routekey.':'.$visit->logkey);
             $transactionKey = $visit->routekey.':'.($operation?->visitkey ?? '');
@@ -106,7 +109,7 @@ class DashboardMetrics
             }
         }
 
-        $otp = $this->otp($journeys, $visits);
+        $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
 
@@ -116,7 +119,9 @@ class DashboardMetrics
             'outside_visit_minutes' => $timed->isEmpty() ? null : round(max(0, $timed->sum('duration') - $actualSeconds / 60), 1),
             'operational_minutes' => $actualSeconds / 60,
             'otp_customer_minutes' => $otp['customer_minutes'],
-            'actual_face_minutes' => $actualSeconds / 60 - $otp['customer_minutes'],
+            'actual_face_minutes' => $actualFaceMinutes,
+            'planned_face_minutes' => $plannedFaceMinutes,
+            'face_time_variance_percent' => $plannedFaceMinutes > 0 ? round(100 * ($actualFaceMinutes - $plannedFaceMinutes) / $plannedFaceMinutes, 1) : null,
             'duration_available_journeys' => $timed->count(),
             'duration_missing_journeys' => $journeys->count() - $timed->count(),
             'planned_cft_minutes' => $expectedMinutes,

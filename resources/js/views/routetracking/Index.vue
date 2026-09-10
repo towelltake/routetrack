@@ -159,9 +159,11 @@ const routeSummaryGroups = computed(() => {
         ] },
         { key: "time", title: "Time", cards: [
             { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Route start to route end" },
-            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` },
+            { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
-            { label: "Idle Time", icon: "fa-pause", tone: "red", value: stationaryDuration(actual.idle_seconds), meta: `${actual.idle_periods?.length ?? 0} stops outside customer visits · ${pct(actualSeconds ? actual.idle_seconds / actualSeconds : null)}` },
+            { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visit time of customers with OTP" },
+            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.actual_cft), meta: "Operational time minus OTP customer time ? Actual CFT" },
+            { label: "Stationary Time", icon: "fa-pause", tone: "red", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View idle time with and without customer visits" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
@@ -177,6 +179,7 @@ const summaryTitle = computed(() => ({
     customers: "Customer Coverage",
     unplanned: "Unplanned Visits",
     otp: "OTP Requests",
+    stationary: "Stationary Time",
     sales: "Sales",
     orders: "Orders",
     collections: "Collections",
@@ -1477,6 +1480,34 @@ function focusEnd() {
                                         <tr v-if="!summaryCustomers.length"><td colspan="4" class="text-center text-muted py-4">No customers found.</td></tr>
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <div v-else-if="summaryModal === 'stationary'">
+                                <dl class="route-detail-grid">
+                                    <div><dt>Idle time with customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_with_customer_seconds) }}</dd></div>
+                                    <div><dt>Idle time without customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_without_customer_seconds) }}</dd></div>
+                                </dl>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover align-middle mb-0">
+                                        <thead><tr><th>From / To</th><th>Stationary time</th><th>With customer visits</th><th>Without customer visits</th><th>Customers visited</th></tr></thead>
+                                        <tbody>
+                                            <tr v-for="period in stationaryPeriods" :key="period.listKey">
+                                                <td>{{ period.start_time }}<br>{{ period.end_time }}</td>
+                                                <td>{{ stationaryDuration(period.duration_seconds) }}</td>
+                                                <td>{{ stationaryDuration(period.with_customer_seconds) }}</td>
+                                                <td>{{ stationaryDuration(period.without_customer_seconds) }}</td>
+                                                <td>
+                                                    <div v-for="visit in period.customer_visits" :key="visit.logkey">
+                                                        {{ visit.customername }} ({{ visit.alternatecode || visit.customercode }})
+                                                        <span class="small text-muted"> ? {{ stationaryDuration(visit.stationary_overlap_seconds) }}</span>
+                                                    </div>
+                                                    <span v-if="!period.customer_visits?.length">No customer visits</span>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="!stationaryPeriods.length"><td colspan="5" class="text-center text-muted py-4">No stationary periods detected.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <div v-else-if="summaryModal === 'otp'" class="table-responsive">

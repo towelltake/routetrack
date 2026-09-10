@@ -205,27 +205,7 @@ class RouteTrackingController extends Controller
         $durationRatio = $planned['duration'] > 0 && $actual['duration'] !== null
             ? $actual['duration'] / $planned['duration']
             : null;
-        $actual['face_time'] = collect($planned['customer_visits'])
-            ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
-        $actual['travel_time'] = $actual['duration'] === null
-            ? null
-            : max(0, $actual['duration'] - $actual['face_time']);
-        foreach ($actual['stationary_periods'] as &$period) {
-            $period['customer_visits'] = collect($planned['customer_visits'])->filter(function (array $visit) use ($period) {
-                $start = strtotime(($visit['visit_start_date'] ?? '').' '.($visit['visit_start_time'] ?? ''));
-                $end = ! empty($visit['visit_end_date']) && ! empty($visit['visit_end_time'])
-                    ? strtotime($visit['visit_end_date'].' '.$visit['visit_end_time']) : false;
-
-                return $start !== false && $end !== false
-                    && $start < strtotime($period['end_time']) && $end > strtotime($period['start_time']);
-            })->values()->all();
-        }
-        unset($period);
-        $actual['idle_periods'] = collect($actual['stationary_periods'])
-            ->filter(fn (array $period) => empty($period['customer_visits']))
-            ->values()
-            ->all();
-        $actual['idle_seconds'] = array_sum(array_column($actual['idle_periods'], 'duration_seconds'));
+        $actual = $this->summarizeVisitTime($actual, collect($planned['customer_visits']));
 
         $transactionSummary = $this->summarizeTransactions(collect($planned['customer_visits']));
 
@@ -921,6 +901,48 @@ class RouteTrackingController extends Controller
                 'reason' => $otp->otpreason,
                 'comments' => $otp->comments,
             ]);
+    }
+
+    private function summarizeVisitTime(array $actual, Collection $visits): array
+    {
+        $actual['face_time'] = $visits->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
+        $actual['otp_customer_time'] = $visits->filter(fn (array $visit) => !empty($visit['otp_logs']))
+            ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
+        $actual['actual_cft'] = $actual['face_time'] - $actual['otp_customer_time'];
+        $actual['travel_time'] = $actual['duration'] === null ? null : max(0, $actual['duration'] - $actual['face_time']);
+        foreach ($actual['stationary_periods'] as &$period) {
+            $periodStart = strtotime($period['start_time']);
+            $periodEnd = strtotime($period['end_time']);
+            $intervals = [];
+            $period['customer_visits'] = [];
+            foreach ($visits as $visit) {
+                if (empty($visit['visit_start_date']) || empty($visit['visit_start_time'])) continue;
+                $start = strtotime($visit['visit_start_date'].' '.$visit['visit_start_time']);
+                $end = !empty($visit['visit_end_date']) && !empty($visit['visit_end_time'])
+                    ? strtotime($visit['visit_end_date'].' '.$visit['visit_end_time']) : false;
+                if ($start === false || $end === false || $end <= $start || $start >= $periodEnd || $end <= $periodStart) continue;
+                $overlapStart = max($start, $periodStart);
+                $overlapEnd = min($end, $periodEnd);
+                $intervals[] = [$overlapStart, $overlapEnd];
+                $period['customer_visits'][] = $visit + ['stationary_overlap_seconds' => $overlapEnd - $overlapStart];
+            }
+            sort($intervals);
+            $covered = 0;
+            $previousEnd = $periodStart;
+            foreach ($intervals as [$start, $end]) {
+                $covered += max(0, $end - max($start, $previousEnd));
+                $previousEnd = max($previousEnd, $end);
+            }
+            $period['with_customer_seconds'] = $covered;
+            $period['without_customer_seconds'] = max(0, $period['duration_seconds'] - $covered);
+        }
+        unset($period);
+        $actual['stationary_with_customer_seconds'] = array_sum(array_column($actual['stationary_periods'], 'with_customer_seconds'));
+        $actual['stationary_without_customer_seconds'] = array_sum(array_column($actual['stationary_periods'], 'without_customer_seconds'));
+        $actual['idle_periods'] = array_values(array_filter($actual['stationary_periods'], fn (array $period) => empty($period['customer_visits'])));
+        $actual['idle_seconds'] = array_sum(array_column($actual['idle_periods'], 'duration_seconds'));
+
+        return $actual;
     }
 
     private function attachGpsOtpLogs(Collection $visits, Collection $otpLogs): Collection

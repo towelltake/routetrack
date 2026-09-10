@@ -109,25 +109,9 @@ const routeHeading = computed(() => {
     return `Route ${details.routecode} · ${salesman}`;
 });
 
-const summaryTransactions = computed(() => {
-    const rows = { sales: [], orders: [], collections: [], returns: [] };
-    const seen = new Set();
-    for (const visit of customerVisits.value) {
-        for (const type of ["sales", "orders", "collections"]) {
-            for (const transaction of visit.transactions?.[type] ?? []) {
-                const key = `${type}:${transaction.transactionkey}`;
-                if (transaction.voided || seen.has(key)) continue;
-                seen.add(key);
-                const row = { ...transaction, customername: visit.customername, alternatecode: visit.alternatecode };
-                rows[type].push(row);
-                if (["sales", "orders"].includes(type) && Number(transaction.return_amount) > 0) {
-                    rows.returns.push({ ...row, amount: transaction.return_amount });
-                }
-            }
-        }
-    }
-    return rows;
-});
+const summaryTransactions = computed(() => Object.fromEntries(
+    ['sales', 'orders', 'collections', 'returns'].map(type => [type, result.value?.transactions?.[type]?.documents ?? []]),
+));
 
 const routeSummaryGroups = computed(() => {
     if (!result.value) return [];
@@ -138,7 +122,7 @@ const routeSummaryGroups = computed(() => {
         const count = transactions[type]?.count ?? 0;
         return {
             label, icon, tone, action: type,
-            value: money(type === "returns" ? -Math.abs(transactions[type]?.amount ?? 0) : transactions[type]?.amount),
+            value: transactions[type]?.amounts?.map(total => `${money(total.amount)} ${total.currency}`).join(" / ") || money(0),
             meta: `${count} ${count === 1 ? "document" : "documents"}`,
         };
     };
@@ -1554,12 +1538,12 @@ function focusEnd() {
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead><tr><th>Type</th><th>Document</th><th>Customer</th><th>Date & Time</th><th class="text-end">Amount</th></tr></thead>
                                     <tbody>
-                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="`${transaction.type}-${transaction.transactionkey}`">
-                                            <td>{{ transaction.type === 'sales' ? 'Invoice' : transaction.type === 'orders' ? 'Order' : 'Collection' }}</td>
-                                            <td>{{ transaction.documentnumber }}</td>
+                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="transaction.id">
+                                            <td>{{ transaction.source }}</td>
+                                            <td>{{ transaction.document }}</td>
                                             <td>{{ transaction.customername }}<br><span class="small text-muted">{{ transaction.alternatecode }}</span></td>
                                             <td>{{ transaction.date }} {{ transaction.time }}</td>
-                                            <td class="text-end fw-semibold">{{ money(summaryModal === 'returns' ? -Math.abs(transaction.amount) : transaction.amount) }}</td>
+                                            <td class="text-end fw-semibold">{{ money(transaction.amount) }} {{ transaction.currency }}</td>
                                         </tr>
                                         <tr v-if="!summaryTransactions[summaryModal]?.length"><td colspan="5" class="text-center text-muted py-4">No documents found.</td></tr>
                                     </tbody>

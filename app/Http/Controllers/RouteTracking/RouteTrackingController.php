@@ -207,7 +207,7 @@ class RouteTrackingController extends Controller
             : null;
         $actual = $this->summarizeVisitTime($actual, collect($planned['customer_visits']));
 
-        $transactionSummary = $this->summarizeTransactions(collect($planned['customer_visits']));
+        $transactionSummary = $this->summarizeTransactions($planned['routekey']);
 
         return response()->json([
             'planned' => $planned,
@@ -266,6 +266,8 @@ class RouteTrackingController extends Controller
      */
     private function computeMatchedActual(int $routecode, string $date): array
     {
+        $timing = $this->routeTiming($routecode, $date);
+        $totalDuration = $timing['duration'] === null ? null : $timing['duration'] * 60;
         $rawPoints = $this->fetchTrackingPoints($routecode, [$date]);
         $detector = app(StationaryDetection::class);
         $stationary = $detector->detect($rawPoints);
@@ -285,7 +287,7 @@ class RouteTrackingController extends Controller
                 ...$stationaryData,
                 'has_tracking_data' => false,
                 'distance' => 0,
-                'duration' => 0,
+                'duration' => $totalDuration,
                 'geometries' => [],
                 'raw_geometry' => null,
                 'start' => null,
@@ -352,9 +354,7 @@ class RouteTrackingController extends Controller
         $start = $points[0];
         $end = $points[count($points) - 1];
         $rawTrail = $this->rawTrailFallback($points);
-        $routeStartTimestamp = $this->routeStartTimestamp($routecode, $date);
-        $lastKnownTimestamp = strtotime($end->effective_timestamp);
-        $totalDuration = $routeStartTimestamp === null ? null : max(0, $lastKnownTimestamp - $routeStartTimestamp);
+        $routeStartTimestamp = $timing['start'];
 
         if ($geometries === []) {
             $totalDistance = $rawTrail['distance'];
@@ -730,16 +730,30 @@ class RouteTrackingController extends Controller
         ];
     }
 
-    private function routeStartTimestamp(int $routecode, string $date): ?int
+    private function routeTiming(int $routecode, string $date): array
     {
-        $routeDay = $this->findRouteDay($routecode, $date);
-        if (! $routeDay?->routestartdate || ! $routeDay?->routestarttime) {
-            return null;
-        }
+        $journey = $this->findRouteDay($routecode, $date);
+        if ($journey === null) return ['start' => null, 'end' => null, 'duration' => null];
+        $analysis = app(\App\Services\DashboardAnalysis::class);
+        $timing = $analysis->journeyTiming($journey);
+        if ((int) ($journey->routeclosed ?? 0) === 1 || $timing['start'] === null) return $timing;
 
-        $timestamp = strtotime(substr((string) $routeDay->routestartdate, 0, 10).' '.$routeDay->routestarttime);
+        $connection = DB::connection('tracking_pgsql');
+        $timestamp = $connection->getDriverName() === 'sqlite' ? "date || ' ' || time" : 'date + time';
+        $start = date('Y-m-d H:i:s', $timing['start']);
+        $next = DB::table('startendday')->where('routecode', $routecode)
+            ->whereDate('routestartdate', '>=', substr($start, 0, 10))
+            ->get(['routestartdate', 'routestarttime'])
+            ->map(fn ($row) => substr((string) $row->routestartdate, 0, 10).' '.($row->routestarttime ?: '00:00:00'))
+            ->filter(fn ($value) => $value > $start)->min();
+        // Duration uses the latest reported reading before the next journey,
+        // independently of coordinate filtering and map downsampling.
+        $journey->last_location_time = $connection->table('trac_routetrack')->where('routecode', $routecode)
+            ->whereRaw("{$timestamp} >= ?", [$start])
+            ->when($next, fn ($query) => $query->whereRaw("{$timestamp} < ?", [$next]))
+            ->selectRaw("{$timestamp} as effective_timestamp")->orderByDesc('effective_timestamp')->value('effective_timestamp');
 
-        return $timestamp === false ? null : $timestamp;
+        return $analysis->journeyTiming($journey);
     }
 
     private function emptyPlannedRoute(string $dayKey): array
@@ -978,7 +992,7 @@ class RouteTrackingController extends Controller
         $visitKeys = $visits->pluck('visitkey')->filter()->unique();
         $transactions = collect([
             'sales' => ['table' => 'invoiceheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
-            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
+            'orders' => ['table' => 'salesorderheader', 'amount' => 'totalinvoiceamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
             'collections' => ['table' => 'arheader', 'amount' => 'amountpaid', 'returns' => '0'],
         ])->map(function (array $config, string $type) use ($routekey, $visitKeys) {
             if ($visitKeys->isEmpty()) {
@@ -988,7 +1002,7 @@ class RouteTrackingController extends Controller
             return DB::table($config['table'])
                 ->where('routekey', $routekey)
                 ->whereIn('visitkey', $visitKeys)
-                ->when(in_array($type, ['sales', 'orders']), fn ($query) => $query->where('voidflag', 0))
+                ->where(fn ($query) => $query->whereNull('voidflag')->orWhere('voidflag', 0))
                 ->orderBy('transactiondate')
                 ->orderBy('transactiontime')
                 ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), DB::raw("{$config['returns']} as return_amount"), 'voidflag'])
@@ -1000,7 +1014,7 @@ class RouteTrackingController extends Controller
                     'date' => $transaction->transactiondate,
                     'time' => $transaction->transactiontime,
                     'amount' => (float) ($transaction->amount ?? 0),
-                    'return_amount' => (float) ($transaction->return_amount ?? 0),
+                    'return_amount' => $transaction->voidflag !== null && (int) $transaction->voidflag === 0 ? (float) ($transaction->return_amount ?? 0) : 0.0,
                     'voided' => (int) ($transaction->voidflag ?? 0) === 1,
                 ])
                 ->groupBy('visitkey');
@@ -1016,33 +1030,31 @@ class RouteTrackingController extends Controller
         });
     }
 
-    private function summarizeTransactions(Collection $visits): array
+    private function summarizeTransactions(?int $routekey): array
     {
-        $summary = collect(['sales', 'orders', 'collections', 'returns'])
-            ->mapWithKeys(fn (string $type) => [$type => ['count' => 0, 'amount' => 0.0]])
-            ->all();
-        $seen = [];
-
-        foreach ($visits as $visit) {
-            foreach (['sales', 'orders', 'collections'] as $type) {
-                foreach ($visit['transactions'][$type] ?? [] as $transaction) {
-                    $key = $type.':'.$transaction['transactionkey'];
-                    if (($transaction['voided'] ?? false) || isset($seen[$key])) {
-                        continue;
-                    }
-                    $seen[$key] = true;
-                    $summary[$type]['count']++;
-                    $summary[$type]['amount'] += (float) ($transaction['amount'] ?? 0);
-
-                    $returnAmount = (float) ($transaction['return_amount'] ?? 0);
-                    if (in_array($type, ['sales', 'orders']) && $returnAmount > 0) {
-                        $summary['returns']['count']++;
-                        $summary['returns']['amount'] += $returnAmount;
-                    }
-                }
-            }
+        $summary = [];
+        $service = app(\App\Services\DashboardCustomerDetails::class);
+        foreach (['sales', 'orders', 'collections', 'returns'] as $type) {
+            $documents = $routekey === null ? collect() : $service->transactionRows(collect([$routekey]), $type);
+            $summary[$type] = [
+                'count' => $documents->count(),
+                'amounts' => $documents->groupBy('currencycode')->map(fn ($rows) => [
+                    'currency' => $rows->first()['currency'], 'amount' => $rows->sum('amount'),
+                ])->values()->all(),
+                'documents' => $documents,
+            ];
         }
-
+        $codes = collect($summary)->flatMap(fn ($row) => $row['documents'])->pluck('customercode')->unique();
+        $customers = $codes->isEmpty() ? collect() : DB::table('customermaster')->whereIn('customercode', $codes)
+            ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
+        foreach ($summary as &$row) {
+            $row['documents'] = $row['documents']->map(function ($document) use ($customers) {
+                $customer = $customers->get($document['customercode']);
+                return $document + ['customername' => $customer?->customeraddress1 ?: 'Customer '.$document['customercode'],
+                    'alternatecode' => $customer?->alternatecode ?: $document['customercode']];
+            })->all();
+        }
+        unset($row);
         return $summary;
     }
 
@@ -1079,11 +1091,11 @@ class RouteTrackingController extends Controller
                 $operation = $operations->get($visit->logkey);
                 $coordinates = $this->validOmanCoordinates($operation?->latitude, $operation?->longitude)
                     ?? $this->validOmanCoordinates($visit->fixedlatitude, $visit->fixedlongitude);
-                $startDate = (string) $visit->logstartdate;
+                $startDate = $this->validVisitDate($visit->logstartdate);
                 $startTime = (string) $visit->logstarttime;
                 $endDate = $this->validVisitDate($visit->logenddate);
                 $endTime = $endDate && $visit->logendtime ? (string) $visit->logendtime : null;
-                $startTimestamp = strtotime("{$startDate} {$startTime}");
+                $startTimestamp = $startDate && $startTime ? strtotime("{$startDate} {$startTime}") : false;
                 $endTimestamp = $endDate && $endTime ? strtotime("{$endDate} {$endTime}") : false;
 
                 return [
@@ -1099,7 +1111,7 @@ class RouteTrackingController extends Controller
                     'visit_end_time' => $endTime,
                     'default_face_time_minutes' => (int) $visit->default_face_time_minutes,
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
-                        ? intdiv($endTimestamp - $startTimestamp, 60)
+                        ? ($endTimestamp - $startTimestamp) / 60
                         : null,
                     'lat' => $coordinates['lat'] ?? null,
                     'lng' => $coordinates['lng'] ?? null,

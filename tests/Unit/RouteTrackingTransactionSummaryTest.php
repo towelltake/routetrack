@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
-test('sales and orders use gross sales and only zero void flags with returns from both sources', function () {
+test('visit transactions use dashboard amount fields and void rules', function () {
     config(['database.default' => 'transaction_sources_test', 'database.connections.transaction_sources_test' => [
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
@@ -31,32 +31,17 @@ test('sales and orders use gross sales and only zero void flags with returns fro
     $controller = app(RouteTrackingController::class);
     $visits = (new ReflectionMethod(RouteTrackingController::class, 'attachVisitTransactions'))
         ->invoke($controller, collect([['visitkey' => 8]]), 7);
-    $summary = (new ReflectionMethod(RouteTrackingController::class, 'summarizeTransactions'))
-        ->invoke($controller, $visits);
-
-    expect($summary['sales'])->toBe(['count' => 2, 'amount' => 150.0])
-        ->and($summary['orders'])->toBe(['count' => 2, 'amount' => 150.0])
-        ->and($summary['returns'])->toBe(['count' => 2, 'amount' => 60.0]);
+    expect($visits[0]['transactions']['sales'])->toHaveCount(3)
+        ->and($visits[0]['transactions']['sales']->sum('amount'))->toEqual(250)
+        ->and($visits[0]['transactions']['orders']->sum('amount'))->toEqual(140)
+        ->and($visits[0]['transactions']['sales']->sum('return_amount'))->toEqual(30)
+        ->and($visits[0]['transactions']['orders']->sum('return_amount'))->toEqual(30);
 });
 
-test('route tracking totals non-voided documents once and combines good and bad returns', function () {
-    $sale = ['transactionkey' => 11, 'amount' => 100, 'return_amount' => 15, 'voided' => false];
-    $visits = collect([
-        ['transactions' => [
-            'sales' => [$sale, ['transactionkey' => 12, 'amount' => 50, 'return_amount' => 8, 'voided' => true]],
-            'orders' => [['transactionkey' => 11, 'amount' => 80, 'return_amount' => 5, 'voided' => false]],
-            'collections' => [['transactionkey' => 31, 'amount' => 45, 'voided' => false]],
-        ]],
-        ['transactions' => ['sales' => [$sale]]],
-    ]);
-
-    $method = new ReflectionMethod(RouteTrackingController::class, 'summarizeTransactions');
-    $summary = $method->invoke(app(RouteTrackingController::class), $visits);
-
-    expect($summary['sales'])->toBe(['count' => 1, 'amount' => 100.0])
-        ->and($summary['orders'])->toBe(['count' => 1, 'amount' => 80.0])
-        ->and($summary['collections'])->toBe(['count' => 1, 'amount' => 45.0])
-        ->and($summary['returns'])->toBe(['count' => 2, 'amount' => 20.0]);
+test('transaction summary for an absent journey is empty', function () {
+    $summary = (new ReflectionMethod(RouteTrackingController::class, 'summarizeTransactions'))
+        ->invoke(app(RouteTrackingController::class), null);
+    foreach ($summary as $type) expect($type)->toBe(['count' => 0, 'amounts' => [], 'documents' => []]);
 });
 
 test('route journey details expose route salesman times odometers version and optional phone', function () {

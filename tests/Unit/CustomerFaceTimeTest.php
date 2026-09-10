@@ -24,8 +24,8 @@ test('planned customer face time uses only the visit log CFT in minutes', functi
     ]);
     DB::table('customervisitlog')->insert([
         'logkey' => 1, 'customercode' => 1, 'routekey' => 100,
-        'logstartdate' => '2026-09-07', 'logstarttime' => '10:00:00',
-        'logenddate' => '2026-09-07', 'logendtime' => '10:18:00',
+        'logstartdate' => '2026-09-07 00:00:00', 'logstarttime' => '10:00:00',
+        'logenddate' => '2026-09-07 00:00:00', 'logendtime' => '10:18:45',
         'cft' => $visitCft,
     ]);
 
@@ -33,7 +33,15 @@ test('planned customer face time uses only the visit log CFT in minutes', functi
     $visits = $method->invoke(app(RouteTrackingController::class), 100, 1);
     expect($visits)->toHaveCount(1)
         ->and($visits->first()['default_face_time_minutes'])->toBe($expected)
-        ->and($visits->first()['visit_duration_minutes'])->toBe(18);
+        ->and($visits->first()['visit_duration_minutes'])->toBe(18.75);
+    $time = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(
+        app(RouteTrackingController::class), ['duration' => 3600, 'stationary_seconds' => 0, 'stationary_periods' => []], $visits,
+    );
+    $journey = (object) ['routekey' => 100, 'routecode' => 1, 'routestartdate' => '2026-09-07', 'routename' => 'Route', 'salesman' => 'Salesman'];
+    $dashboard = app(\App\Services\DashboardCustomerDetails::class)->build(collect([$journey]), 'operational');
+    expect($time['face_time'])->toEqual(1125)
+        ->and($dashboard['groups'][0]['rows']->sum('actual_cft'))->toEqual($time['face_time'] / 60);
+
 })->with([
     'visit CFT is used' => [12, 12],
     'null visit CFT becomes zero' => [null, 0],

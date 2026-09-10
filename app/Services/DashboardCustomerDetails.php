@@ -48,25 +48,7 @@ class DashboardCustomerDetails
                 && ($type !== 'otp_time' || count($row['otp_times']) > 0)
                 && ($type !== 'actual_face' || count($row['otp_times']) === 0));
         } elseif (in_array($type, ['sales', 'orders', 'collections', 'returns'])) {
-            $sources = ['sales' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']];
-            foreach ($type === 'returns' ? ['sales', 'orders'] : [$type] as $source) {
-                [$table, $amount] = $sources[$source];
-                $expression = $type === 'returns' ? 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)' : "COALESCE({$amount}, 0)";
-                $query = DB::table($table)->whereIn('routekey', $keys);
-                if ($type === 'returns') $query->where('voidflag', 0)->whereRaw($expression.' > 0');
-                else $query->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0));
-                $records = $query->orderBy('transactiondate')->orderBy('transactiontime')->get([
-                    'routekey', 'customercode', 'transactionkey', 'documentnumber', 'transactiondate', 'transactiontime', 'currencycode', DB::raw($expression.' as amount'),
-                ]);
-                foreach ($records as $record) $rows->push([
-                    'id' => $source.':'.$record->transactionkey, 'routekey' => $record->routekey, 'customercode' => $record->customercode,
-                    'date' => $record->transactiondate, 'time' => $record->transactiontime, 'document' => $record->documentnumber,
-                    'source' => ['sales' => 'Invoice', 'orders' => 'Order', 'collections' => 'Receipt'][$source],
-                    'currencycode' => $record->currencycode, 'amount' => (float) $record->amount * ($type === 'returns' ? -1 : 1),
-                ]);
-            }
-            $currencies = DB::table('currencymaster')->whereIn('currencycode', $rows->pluck('currencycode')->unique())->pluck('currencysymbol', 'currencycode');
-            $rows = $rows->map(fn ($row) => $row + ['currency' => $currencies->get($row['currencycode']) ?: ($row['currencycode'] ? 'Currency '.$row['currencycode'] : 'Unspecified currency')]);
+            $rows = $this->transactionRows($keys, $type);
         } elseif ($type === 'otp') {
             $rows = collect(app(DashboardMetrics::class)->otp($journeys, collect())['details'])
                 ->map(fn ($event) => [
@@ -142,4 +124,29 @@ class DashboardCustomerDetails
             'salesman' => $journey->salesman, 'rows' => $grouped->get($journey->routekey, collect())->values(),
         ])->filter(fn ($group) => $group['rows']->isNotEmpty())->values()];
     }
+    public function transactionRows(Collection $keys, string $type): Collection
+    {
+        $rows = collect();
+        $sources = ['sales' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']];
+        foreach ($type === 'returns' ? ['sales', 'orders'] : [$type] as $source) {
+            [$table, $amount] = $sources[$source];
+            $expression = $type === 'returns' ? 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)' : "COALESCE({$amount}, 0)";
+            $query = DB::table($table)->whereIn('routekey', $keys);
+            if ($type === 'returns') $query->where('voidflag', 0)->whereRaw($expression.' > 0');
+            else $query->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0));
+            $records = $query->orderBy('transactiondate')->orderBy('transactiontime')->get([
+                'routekey', 'customercode', 'transactionkey', 'documentnumber', 'transactiondate', 'transactiontime', 'currencycode', DB::raw($expression.' as amount'),
+            ]);
+            foreach ($records as $record) $rows->push([
+                'id' => $source.':'.$record->transactionkey, 'routekey' => $record->routekey, 'customercode' => $record->customercode,
+                'date' => $record->transactiondate, 'time' => $record->transactiontime, 'document' => $record->documentnumber,
+                'source' => ['sales' => 'Invoice', 'orders' => 'Order', 'collections' => 'Receipt'][$source],
+                'currencycode' => (int) ($record->currencycode ?? 0), 'amount' => (float) $record->amount * ($type === 'returns' ? -1 : 1),
+            ]);
+        }
+        $currencies = DB::table('currencymaster')->whereIn('currencycode', $rows->pluck('currencycode')->unique())->pluck('currencysymbol', 'currencycode');
+        $rows = $rows->map(fn ($row) => $row + ['currency' => $currencies->get($row['currencycode']) ?: ($row['currencycode'] ? 'Currency '.$row['currencycode'] : 'Unspecified currency')]);
+        return $rows;
+    }
+
 }

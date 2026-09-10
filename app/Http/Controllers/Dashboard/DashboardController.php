@@ -315,6 +315,7 @@ class DashboardController extends Controller
             ->get(['routecode', 'routestartdate', 'routestarttime'])->groupBy('routecode')
             ->map(fn ($rows) => $rows->map(fn ($row) => $this->routeDateTime($row->routestartdate, $row->routestarttime ?: '00:00:00'))->filter());
         $connection = DB::connection('tracking_pgsql');
+        $timestamp = $connection->getDriverName() === 'sqlite' ? "date || ' ' || time" : 'date + time';
         $points = collect();
         // Batch remote lookups without transferring the full GPS trail into PHP.
         foreach ($journeys->chunk(100) as $chunk) {
@@ -325,11 +326,11 @@ class DashboardController extends Controller
                 $next = $starts->get($journey->routecode, collect())->first(fn ($value) => $value > $start);
                 $end = (int) $journey->routeclosed === 1 ? $this->routeDateTime($journey->routeenddate, $journey->routeendtime) : null;
                 $query = $connection->table('trac_routetrack')->where('routecode', $journey->routecode)
-                    ->whereRaw('COALESCE(cdate, date + time) >= ?', [$start])
-                    ->when($next, fn ($q) => $q->whereRaw('COALESCE(cdate, date + time) < ?', [$next]))
-                    ->when($end, fn ($q) => $q->whereRaw('COALESCE(cdate, date + time) <= ?', [$end]))
+                    ->whereRaw("{$timestamp} >= ?", [$start])
+                    ->when($next, fn ($q) => $q->whereRaw("{$timestamp} < ?", [$next]))
+                    ->when($end, fn ($q) => $q->whereRaw("{$timestamp} <= ?", [$end]))
                     ->when($requireCoordinates, fn ($q) => $q->whereNotNull('latitude')->whereNotNull('longitude')->where('latitude', '!=', 0)->where('longitude', '!=', 0))
-                    ->selectRaw('CAST(? AS BIGINT) as journey_key, routecode, salesmancode, latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp', [$journey->routekey])
+                    ->selectRaw("CAST(? AS BIGINT) as journey_key, routecode, salesmancode, latitude, longitude, {$timestamp} as effective_timestamp", [$journey->routekey])
                     ->orderByDesc('effective_timestamp')->orderByDesc('id')->limit(1);
                 $part = $connection->query()->fromSub($query, 'latest_point');
                 if ($batch === null) $batch = $part;

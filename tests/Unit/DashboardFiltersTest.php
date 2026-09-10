@@ -80,8 +80,8 @@ test('GPS lookups use one remote query for a batch of journeys', function () {
 test('open route GPS cutoff stops before the next journey even beyond the selected dates', function () {
     DB::table('startendday')->insert(['routekey' => 999, 'routecode' => 1, 'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);
     DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
-        ['id' => 100, 'routecode' => 1, 'cdate' => '2026-09-07 23:00:00'],
-        ['id' => 101, 'routecode' => 1, 'cdate' => '2026-09-08 09:00:00'],
+        ['id' => 100, 'routecode' => 1, 'date' => '2026-09-07', 'time' => '23:00:00', 'cdate' => '2026-09-09 10:00:00'],
+        ['id' => 101, 'routecode' => 1, 'date' => '2026-09-08', 'time' => '09:00:00', 'cdate' => '2026-09-09 10:00:00'],
     ]);
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->once()->withArgs(function ($journeys) {

@@ -326,3 +326,32 @@ test('OTP matched to an incomplete visit does not borrow time from another compl
     expect($metrics['otp_customer_minutes'])->toEqual(0)
         ->and($metrics['actual_face_minutes'])->toEqual(20);
 });
+
+
+test('route transaction cards and documents match dashboard totals without requiring visit links', function () {
+    foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
+        foreach (['customercode integer', 'transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
+        DB::table($table)->update(['customercode' => 101, 'transactionkey' => 1, 'documentnumber' => 'D1', 'transactiondate' => '2026-09-01', 'transactiontime' => '10:00:00']);
+    }
+    // Include headers with no visit link and null void flags, but exclude void documents.
+    foreach ([null, 0, 1, 2] as $void) {
+        DB::table('invoiceheader')->insert(['routekey' => 1, 'customercode' => 101, 'transactionkey' => 99,
+            'totalsalesamount' => 15, 'totalreturnamount' => 4, 'totaldamagedamount' => 1, 'currencycode' => 2, 'voidflag' => $void]);
+        DB::table('salesorderheader')->insert(['routekey' => 1, 'customercode' => 101, 'transactionkey' => 99,
+            'totalinvoiceamount' => 25, 'totalreturnamount' => 3, 'currencycode' => 1, 'voidflag' => $void]);
+        DB::table('arheader')->insert(['routekey' => 1, 'customercode' => 101, 'transactionkey' => 99,
+            'amountpaid' => 35, 'currencycode' => 1, 'voidflag' => $void]);
+    }
+    $dashboard = app(DashboardMetrics::class)->summarize(DB::table('startendday')->where('routekey', 1)->get());
+    $tracking = (new ReflectionMethod(\App\Http\Controllers\RouteTracking\RouteTrackingController::class, 'summarizeTransactions'))
+        ->invoke(app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class), 1);
+    foreach (['sales', 'orders', 'collections', 'returns'] as $type) {
+        $expected = collect($dashboard['amounts'][$type])->keyBy('currency');
+        expect($tracking[$type]['count'])->toBe($expected->sum('documents'));
+        foreach ($tracking[$type]['amounts'] as $amount) {
+            expect(abs($amount['amount']))->toEqual(abs((float) $expected[$amount['currency']]['amount']));
+            $documents = collect($tracking[$type]['documents'])->where('currency', $amount['currency']);
+            expect($documents->sum('amount'))->toEqual($amount['amount']);
+        }
+    }
+});

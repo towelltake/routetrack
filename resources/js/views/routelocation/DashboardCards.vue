@@ -91,7 +91,7 @@ const groups = computed(() => [
                     <div><span>Planned</span><strong>{{ duration(card.comparison.planned) }}</strong></div>
                     <small>h:mm</small>
                 </div>
-                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance %</span></div>
+                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
                 </div>

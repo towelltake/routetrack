@@ -1077,7 +1077,7 @@ function focusEnd() {
                                 <span class="route-summary-label">{{ card.label }}</span>
                                 <strong v-if="!card.comparison">{{ card.value }}</strong>
                                 <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
-                                <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance %</span></span>
+                                <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance</span></span>
                                 <span v-if="card.meta">{{ card.meta }}</span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>

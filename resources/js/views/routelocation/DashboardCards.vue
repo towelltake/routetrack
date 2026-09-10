@@ -14,39 +14,39 @@ const duration = (value) => {
 const cards = computed(() => {
     const m = props.metrics;
     return [
-        { title: "Routes Started / Total", icon: "fa-route", tone: "blue", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
+        { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
             note: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
             definition: "Started routes count once per route start date. Total routes equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends. Uses the current route master, including routes without a journey plan." },
-        { title: "Planned coverage", icon: "fa-location-dot", tone: "teal", value: percent(m?.coverage_percent),
+        { title: "Planned coverage", icon: "fa-location-dot", tone: "blue", value: percent(m?.coverage_percent),
             note: m ? `${number(m.planned_visited)} / ${number(m.planned_customers)} covered · ${number(m.pending_customers)} pending · ${number(m.missed_customers)} missed` : "",
             detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",
             definition: "Distinct planned customers visited per journey divided by planned customers per journey. Unvisited customers are pending on open journeys and missed on closed journeys." },
-        { title: "Productive visits", icon: "fa-check-double", tone: "teal", value: percent(m?.productivity_percent),
+        { title: "Productive visits", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Completed visits with a positive-value, non-voided sale or order, divided by completed visits. Each visit counts once. Collection-only and return-only visits do not count as productive." },
-        { title: "Sales", icon: "fa-chart-line", tone: "blue", amounts: m?.amounts.sales,
+        { title: "Sales", icon: "fa-chart-line", tone: "green", amounts: m?.amounts.sales,
             note: "Total invoice sales value", definition: "Total sales value" },
-        { title: "Order value", icon: "fa-file-invoice", tone: "violet", amounts: m?.amounts.orders,
+        { title: "Order value", icon: "fa-file-invoice", tone: "blue", amounts: m?.amounts.orders,
             note: "Total orders value", definition: "Total order value" },
-        { title: "Collections", icon: "fa-wallet", tone: "teal", amounts: m?.amounts.collections,
+        { title: "Collections", icon: "fa-wallet", tone: "navy", amounts: m?.amounts.collections,
             note: "Total collection receipts value", definition: "Total collection value" },
-        { title: "Operational Time", icon: "fa-clock", tone: "violet", value: duration(m?.operational_minutes), unit: "h:mm",
+        { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(m?.operational_minutes), unit: "h:mm",
             note: "All completed customer visits", definition: "Total customer visit time" },
-        { title: "OTP usage", icon: "fa-key", tone: "amber", value: number(m?.otp.events),
+        { title: "OTP usage", icon: "fa-key", tone: "purple", value: number(m?.otp.events),
             note: "All OTP types",
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
-        { title: "Unplanned Customers", icon: "fa-location-dot", tone: "amber", value: number(m?.unplanned_customers),
+        { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: number(m?.unplanned_customers),
             note: "Unique customers per journey", definition: "Customers visited outside the journey plan. Journeys without a plan are excluded." },
-        { title: "Total Duration", icon: "fa-clock", tone: "blue", value: duration(m?.duration_minutes), unit: "h:mm",
+        { title: "Total Duration", icon: "fa-clock", tone: "navy", value: duration(m?.duration_minutes), unit: "h:mm",
             note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
             definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
-        { title: "Time Outside Visits", icon: "fa-car", tone: "blue", value: duration(m?.outside_visit_minutes), unit: "h:mm",
+        { title: "Time Outside Visits", icon: "fa-car", tone: "slate", value: duration(m?.outside_visit_minutes), unit: "h:mm",
             note: "Includes travel, idle time and breaks", definition: "Total duration minus operational time" },
         { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
             note: "Invoice and order returns", definition: "Total returns value" },
-        { title: "OTP Customer Time", icon: "fa-key", tone: "violet", value: duration(m?.otp_customer_minutes), unit: "h:mm",
+        { title: "OTP Customer Time", icon: "fa-key", tone: "purple", value: duration(m?.otp_customer_minutes), unit: "h:mm",
             note: "Visits with OTP", definition: "Total visit time for customers with OTP" },
-        { title: "Actual Face Time", icon: "fa-user-clock", tone: "teal", value: signedPercent(m?.face_time_variance_percent),
+        { title: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: signedPercent(m?.face_time_variance_percent),
             comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes },
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
             definition: "Variance from planned face time, excluding OTP visits" },
@@ -117,9 +117,11 @@ const groups = computed(() => [
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .dashboard-metric-card[aria-disabled="false"]:hover { border-color: var(--accent); box-shadow: 0 4px 14px #172b4510; }
 .dashboard-metric-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
-.tone-teal { --accent: #0f766e; --tint: #f0fdfa; }
-.tone-violet { --accent: #7c3aed; --tint: #f5f3ff; }
-.tone-amber { --accent: #b45309; --tint: #fffbeb; }
+.tone-green { --accent: #15803d; --tint: #f0fdf4; }
+.tone-purple { --accent: #7c3aed; --tint: #f5f3ff; }
+.tone-orange { --accent: #c2410c; --tint: #fff7ed; }
+.tone-navy { --accent: #172b45; --tint: #eef2f6; }
+.tone-slate { --accent: #475569; --tint: #f1f5f9; }
 .tone-red { --accent: #dc2626; --tint: #fef2f2; }
 .dashboard-metric-copy { display: contents; }
 .dashboard-metric-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--tint); color: var(--accent); font-size: 13px; }

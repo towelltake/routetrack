@@ -116,7 +116,7 @@ class DashboardMetrics
         return [
             'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
-            'outside_visit_minutes' => $timed->isEmpty() ? null : round(max(0, $timed->sum('duration') - $actualSeconds / 60), 1),
+            'outside_visit_minutes' => $timed->isEmpty() ? null : round($timed->sum('remaining_time'), 1),
             'operational_minutes' => $actualSeconds / 60,
             'otp_customer_minutes' => $otp['customer_minutes'],
             'actual_face_minutes' => $actualFaceMinutes,

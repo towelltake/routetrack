@@ -369,3 +369,25 @@ test('face time variance excludes OTP planned allowances and incomplete visits',
     'above plan' => [5, 10, 150.0],
     'no plan' => [0, 0, null],
 ]);
+
+
+test('all-route outside time totals available journeys without subtracting visits from unavailable journeys', function () {
+    DB::table('startendday')->where('routekey', 1)->update(['routeenddate' => '2026-09-01', 'routeendtime' => '11:00:00']);
+    DB::table('customervisitlog')->where('logkey', 21)->update(['logenddate' => '2026-09-04']);
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $service = app(DashboardMetrics::class);
+    $single = $service->summarize($journeys->where('routekey', 1));
+    $all = $service->summarize($journeys);
+    expect($single['outside_visit_minutes'])->toEqual(150)
+        ->and($all['outside_visit_minutes'])->toEqual($single['outside_visit_minutes'])
+        ->and($all['duration_missing_journeys'])->toBe(1);
+    $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, 'outside')['groups'])->flatMap(fn ($group) => $group['rows']);
+    expect($rows->sum('outside'))->toEqual($all['outside_visit_minutes']);
+
+    // A measured journey whose visits exceed its duration cannot cancel another journey's outside time.
+    $journeys[1]->last_location_time = '2026-09-03 10:00:00';
+    $all = $service->summarize($journeys);
+    expect($all['outside_visit_minutes'])->toEqual(150)
+        ->and($all['duration_missing_journeys'])->toBe(0);
+});

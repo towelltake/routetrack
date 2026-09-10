@@ -10,7 +10,7 @@ test('route time excludes OTP visits once and splits partially overlapping stati
         'visit_end_date' => '2026-09-10', 'visit_end_time' => $end,
         'visit_duration_minutes' => $minutes, 'otp_logs' => $otp,
     ];
-    $actual = ['duration' => 7200, 'stationary_periods' => [
+    $actual = ['duration' => 7200, 'stationary_seconds' => 4200, 'stationary_periods' => [
         ['start_time' => '2026-09-10 09:00:00', 'end_time' => '2026-09-10 10:00:00', 'duration_seconds' => 3600],
         ['start_time' => '2026-09-10 11:00:00', 'end_time' => '2026-09-10 11:10:00', 'duration_seconds' => 600],
     ]];
@@ -26,17 +26,20 @@ test('route time excludes OTP visits once and splits partially overlapping stati
     expect($summary['face_time'])->toBe(3300)
         ->and($summary['otp_customer_time'])->toBe(1500)
         ->and($summary['actual_cft'])->toBe(1800)
-        ->and($summary['travel_time'])->toBe(3900)
+        ->and($summary['travel_time'])->toBe(3000)
         ->and($summary['stationary_with_customer_seconds'])->toBe(2400)
         ->and($summary['stationary_without_customer_seconds'])->toBe(1800)
         ->and($summary['stationary_periods'][0]['customer_visits'])->toHaveCount(3)
         ->and($summary['stationary_periods'][0]['customer_visits'][0]['stationary_overlap_seconds'])->toBe(1200)
         ->and($summary['stationary_periods'][1]['customer_visits'])->toBe([]);
 
-    $empty = $method->invoke(app(RouteTrackingController::class), ['duration' => null, 'stationary_periods' => []], collect());
+    $empty = $method->invoke(app(RouteTrackingController::class), ['duration' => null, 'stationary_seconds' => 0, 'stationary_periods' => []], collect());
     expect($empty['actual_cft'])->toBe(0)
         ->and($empty['otp_customer_time'])->toBe(0)
         ->and($empty['travel_time'])->toBeNull()
         ->and($empty['stationary_with_customer_seconds'])->toBe(0)
         ->and($empty['stationary_without_customer_seconds'])->toBe(0);
+
+    $short = $method->invoke(app(RouteTrackingController::class), array_replace($actual, ['duration' => 3600]), $visits);
+    expect($short['travel_time'])->toBe(0);
 });

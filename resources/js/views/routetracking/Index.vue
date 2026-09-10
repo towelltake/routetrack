@@ -155,15 +155,15 @@ const routeSummaryGroups = computed(() => {
         ] },
         { key: "distance", title: "Distance", cards: [
             { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
-            { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
+            { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
             { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
             { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: planned.face_time ? `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` : "All customer visits" },
-            { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
             { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
             { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.actual_cft), meta: "Operational minus OTP" },
-            { label: "Stationary Time", icon: "fa-pause", tone: "red", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View stop breakdown" },
+            { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
+            { label: "Stationary Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View stop breakdown" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),

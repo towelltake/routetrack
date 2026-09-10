@@ -24,11 +24,11 @@ const cards = computed(() => {
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Completed visits with a positive-value, non-voided sale or order, divided by completed visits. Each visit counts once. Collection-only and return-only visits do not count as productive." },
         { title: "Sales", icon: "fa-chart-line", tone: "blue", amounts: m?.amounts.sales,
-            note: "Total invoice sales value", definition: "Sum of invoice sales amounts belonging to selected journeys, including transactions after the period end. Currencies are shown separately." },
+            note: "Total invoice sales value", definition: "Total sales value" },
         { title: "Order value", icon: "fa-file-invoice", tone: "violet", amounts: m?.amounts.orders,
-            note: "Total orders value", definition: "Sum of order totals belonging to selected journeys. Orders and invoiced sales are separate measures and should not be added together." },
+            note: "Total orders value", definition: "Total order value" },
         { title: "Collections", icon: "fa-wallet", tone: "teal", amounts: m?.amounts.collections,
-            note: "Total collection receipts value", definition: "Amount paid on collection receipts belonging to selected journeys. Invoice payments are not added again." },
+            note: "Total collection receipts value", definition: "Total collection value" },
         { title: "Face Time: Planned / Actual", icon: "fa-clock", tone: "violet", value: m ? `${duration(m.planned_cft_minutes)} / ${duration(m.cft_minutes)}` : "—", unit: "h:mm",
             note: m ? `${number(m.completed_visits)} completed visits · ${number(m.cft_configured_visits)} with planned CFT` : "",
             definition: "Planned CFT recorded for completed visits. Actual CFT includes all completed visits, even when planned CFT is zero or missing. Variance includes only visits with positive planned CFT." },
@@ -43,7 +43,7 @@ const cards = computed(() => {
         { title: "Time Outside Visits", icon: "fa-car", tone: "blue", value: duration(m?.outside_visit_minutes), unit: "h:mm",
             note: "Includes travel, idle time and breaks", definition: "Measured journey duration minus customer visit intervals. Overlapping intervals count once; ongoing visits on open routes stop at the last GPS timestamp." },
         { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
-            note: "Invoice and order returns", definition: "Good and damaged returns from invoices and orders with voidflag = 0, belonging to selected journeys. Currencies are shown separately." },
+            note: "Invoice and order returns", definition: "Total returns value" },
     ];
 });
 const groups = computed(() => [

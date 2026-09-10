@@ -294,3 +294,35 @@ test('new dashboard time cards handle unavailable duration and no OTP matches', 
         ->and($empty['otp_customer_minutes'])->toEqual(0)
         ->and($empty['actual_face_minutes'])->toEqual(0);
 });
+
+
+test('OTP before check-in uses the nearest customer visit in the same journey without counting requests twice', function () {
+    DB::table('otplogdetail')->delete();
+    foreach ([[1, 101, '2026-09-01', '09:58:00'], [2, 101, '2026-09-01', '09:59:00'],
+        [3, 101, '2026-09-01', '10:29:00'], [4, 999, '2026-09-01', '10:00:00'],
+        [5, 101, '2026-09-03', '08:59:00']] as [$id, $customer, $date, $time]) {
+        DB::table('otplogdetail')->insert(['otplogid' => $id, 'routecode' => 1, 'customercode' => $customer,
+            'otpdate' => $date, 'otptime' => $time, 'otptype' => 'GPS IN']);
+    }
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics['otp_customer_minutes'])->toEqual(30)
+        ->and($metrics['actual_face_minutes'])->toEqual(0)
+        ->and($metrics['otp'])->toBe(['events' => 4, 'visits' => 2]);
+    $rows = app(DashboardCustomerDetails::class)->build($journeys, 'otp_time')['groups'][0]['rows'];
+    expect($rows)->toHaveCount(2)
+        ->and($rows->sum('actual_cft'))->toEqual(30)
+        ->and($rows[0]['otp_times'])->toBe(['2026-09-01 09:58:00', '2026-09-01 09:59:00'])
+        ->and($rows[1]['otp_times'])->toBe(['2026-09-01 10:29:00']);
+});
+
+test('OTP matched to an incomplete visit does not borrow time from another completed visit', function () {
+    DB::table('otplogdetail')->delete();
+    DB::table('customervisitlog')->where('logkey', 12)->update(['logendtime' => null]);
+    DB::table('otplogdetail')->insert(['otplogid' => 1, 'routecode' => 1, 'customercode' => 101,
+        'otpdate' => '2026-09-01', 'otptime' => '10:29:00', 'otptype' => 'GPS IN']);
+    $metrics = app(DashboardMetrics::class)->summarize(DB::table('startendday')->where('routekey', 1)->get());
+    expect($metrics['otp_customer_minutes'])->toEqual(0)
+        ->and($metrics['actual_face_minutes'])->toEqual(20);
+});

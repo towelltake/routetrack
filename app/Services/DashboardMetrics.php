@@ -185,15 +185,23 @@ class DashboardMetrics
                 }
                 $count++;
                 $details[] = (array) $event + ['routekey' => $window['key']];
+                // GPS override OTPs can precede check-in; match the nearest visit start,
+                // as route tracking does, but only for this customer and journey.
+                $matchedVisit = null;
+                $nearest = PHP_INT_MAX;
                 foreach ($visitsByCustomer->get($window['key'].':'.$event->customercode, collect()) as $visit) {
                     $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
-                    $end = $this->timestamp($visit->logenddate, $visit->logendtime);
-                    if ($start !== null && $end !== null && $timestamp >= $start && $timestamp <= $end) {
-                        $key = $visit->routekey.':'.$visit->logkey;
-                        $matchedVisits[$key] = ($end - $start) / 60;
-                        $byVisit[$key][] = (array) $event;
-                        break;
+                    if ($start !== null && abs($timestamp - $start) < $nearest) {
+                        $matchedVisit = $visit;
+                        $nearest = abs($timestamp - $start);
                     }
+                }
+                if ($matchedVisit !== null) {
+                    $key = $matchedVisit->routekey.':'.$matchedVisit->logkey;
+                    $byVisit[$key][] = (array) $event;
+                    $start = $this->timestamp($matchedVisit->logstartdate, $matchedVisit->logstarttime);
+                    $end = $this->timestamp($matchedVisit->logenddate, $matchedVisit->logendtime);
+                    if ($end !== null && $end >= $start) $matchedVisits[$key] = ($end - $start) / 60;
                 }
                 break;
             }

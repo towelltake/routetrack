@@ -106,37 +106,10 @@ class DashboardController extends Controller
     {
         $validated = $this->validateFilters($request);
 
-        $matchingRouteCodes = $this->matchingRoutes($validated)
-            ->when($validated['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
-            ->when($validated['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
-            ->pluck('routemaster.routecode');
-
-        $routes = RouteMaster::query()
-            ->whereIn('routecode', $matchingRouteCodes)
-            ->orderBy('routename')
-            ->get(['routecode', 'routename'])
-            ->keyBy('routecode');
-
-        if ($routes->isEmpty()) {
-            return response()->json([]);
-        }
-
-        $fromDate = $validated['from_date'] ?? $validated['date'];
-        $toDate = $validated['to_date'] ?? $validated['date'];
-        $routeDays = DB::table('startendday')
-            ->whereIn('routecode', $routes->keys())
-            ->whereDate('routestartdate', '>=', $fromDate)
-            ->whereDate('routestartdate', '<=', $toDate)
-            ->orderByDesc('routestartdate')
-            ->orderByDesc('routestarttime')
-            ->orderByDesc('routekey')
-            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
-            ->unique('routecode')
-            ->keyBy('routecode');
-
-        if ($routeDays->isEmpty()) {
-            return response()->json([]);
-        }
+        $routeDays = $this->mapJourneys($validated);
+        if ($routeDays->isEmpty()) return response()->json([]);
+        $routes = RouteMaster::query()->whereIn('routecode', $routeDays->keys())
+            ->get(['routecode', 'routename'])->keyBy('routecode');
 
         // Match GPS records to the chosen journey, including journeys ending after midnight.
         $points = $this->journeyLocations($routeDays, true)->keyBy('routecode');
@@ -194,7 +167,7 @@ class DashboardController extends Controller
     public function customerDetails(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,sales,orders,collections,returns,duration,cft,outside']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,sales,orders,collections,returns,duration,cft,outside,operational,otp_time,actual_face']])['type'];
         $routes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
@@ -290,7 +263,7 @@ class DashboardController extends Controller
             'customers' => $analysis->flatMap(fn ($row) => $row['customer_codes'])->unique()->count(),
             'review' => $analysis->filter(fn ($row) => count($row['issues']) > 0)->count(),
             'repeat' => $analysis->sum('repeat'),
-            'open' => $journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1)->count(),
+            'tracking_routes' => $this->journeyLocations($this->mapJourneys($filters), true)->count(),
         ];
         if ($request->boolean('summary')) {
             $chartGroups = fn ($field) => $analysis->groupBy($field)->map(function ($rows, $key) use ($field) {
@@ -306,6 +279,20 @@ class DashboardController extends Controller
         return response()->json($metrics);
     }
 
+    private function mapJourneys(array $filters): \Illuminate\Support\Collection
+    {
+        $routes = $this->matchingRoutes($filters)
+            ->when($filters['companycode'] ?? null, fn ($query, $code) => $query->where('routemaster.cmpycode', $code))
+            ->when($filters['routecode'] ?? null, fn ($query, $code) => $query->where('routemaster.routecode', $code))
+            ->select('routemaster.routecode');
+        return DB::table('startendday')->whereIn('routecode', $routes)
+            ->whereDate('routestartdate', '>=', $filters['from_date'] ?? $filters['date'])
+            ->whereDate('routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
+            ->orderByDesc('routestartdate')->orderByDesc('routestarttime')->orderByDesc('routekey')
+            ->get(['routekey', 'routecode', 'routestartdate', 'routestarttime', 'routeenddate', 'routeendtime', 'routeclosed'])
+            ->unique('routecode')->keyBy('routecode');
+    }
+
     private function journeyLocations(\Illuminate\Support\Collection $journeys, bool $requireCoordinates = false): \Illuminate\Support\Collection
     {
         if ($journeys->isEmpty()) return collect();
@@ -315,6 +302,7 @@ class DashboardController extends Controller
             ->get(['routecode', 'routestartdate', 'routestarttime'])->groupBy('routecode')
             ->map(fn ($rows) => $rows->map(fn ($row) => $this->routeDateTime($row->routestartdate, $row->routestarttime ?: '00:00:00'))->filter());
         $connection = DB::connection('tracking_pgsql');
+        $timestamp = $connection->getDriverName() === 'sqlite' ? "date || ' ' || time" : 'date + time';
         $points = collect();
         // Batch remote lookups without transferring the full GPS trail into PHP.
         foreach ($journeys->chunk(100) as $chunk) {
@@ -325,11 +313,11 @@ class DashboardController extends Controller
                 $next = $starts->get($journey->routecode, collect())->first(fn ($value) => $value > $start);
                 $end = (int) $journey->routeclosed === 1 ? $this->routeDateTime($journey->routeenddate, $journey->routeendtime) : null;
                 $query = $connection->table('trac_routetrack')->where('routecode', $journey->routecode)
-                    ->whereRaw('COALESCE(cdate, date + time) >= ?', [$start])
-                    ->when($next, fn ($q) => $q->whereRaw('COALESCE(cdate, date + time) < ?', [$next]))
-                    ->when($end, fn ($q) => $q->whereRaw('COALESCE(cdate, date + time) <= ?', [$end]))
+                    ->whereRaw("{$timestamp} >= ?", [$start])
+                    ->when($next, fn ($q) => $q->whereRaw("{$timestamp} < ?", [$next]))
+                    ->when($end, fn ($q) => $q->whereRaw("{$timestamp} <= ?", [$end]))
                     ->when($requireCoordinates, fn ($q) => $q->whereNotNull('latitude')->whereNotNull('longitude')->where('latitude', '!=', 0)->where('longitude', '!=', 0))
-                    ->selectRaw('CAST(? AS BIGINT) as journey_key, routecode, salesmancode, latitude, longitude, COALESCE(cdate, date + time) as effective_timestamp', [$journey->routekey])
+                    ->selectRaw("CAST(? AS BIGINT) as journey_key, routecode, salesmancode, latitude, longitude, {$timestamp} as effective_timestamp", [$journey->routekey])
                     ->orderByDesc('effective_timestamp')->orderByDesc('id')->limit(1);
                 $part = $connection->query()->fromSub($query, 'latest_point');
                 if ($batch === null) $batch = $part;

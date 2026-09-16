@@ -12,22 +12,25 @@ class DashboardCustomerDetails
         if ($journeys->isEmpty()) return ['groups' => []];
         $keys = $journeys->pluck('routekey');
         $rows = collect();
-        if ($type === 'outside') {
-            $rows = app(DashboardOutsideVisits::class)->build($journeys);
-        } elseif ($type === 'duration') {
-            $rows = $journeys->map(function ($journey) {
+        if (in_array($type, ['duration', 'outside'])) {
+            $operational = $type === 'outside' ? collect($this->build($journeys, 'operational')['groups'])
+                ->mapWithKeys(fn ($group) => [$group['routekey'] => $group['rows']->sum('actual_cft')]) : collect();
+            $rows = $journeys->map(function ($journey) use ($operational) {
                 $timing = app(DashboardAnalysis::class)->journeyTiming($journey);
                 return ['id' => $journey->routekey, 'routekey' => $journey->routekey, 'customercode' => null,
                     'routecode' => $journey->routecode, 'salesman' => $journey->salesman,
                     'start' => $timing['start'] === null ? null : date('Y-m-d H:i:s', $timing['start']),
                     'end' => $timing['end'] === null ? null : date('Y-m-d H:i:s', $timing['end']),
+                    'operational' => $operational->get($journey->routekey, 0),
+                    'outside' => $timing['duration'] === null ? null : max(0, $timing['duration'] - $operational->get($journey->routekey, 0)),
                     'duration' => $timing['duration'], 'status' => (int) $journey->routeclosed === 1 ? 'Closed' : 'Open'];
             });
-        } elseif ($type === 'cft') {
-            $rows = DB::table('customervisitlog')->whereIn('routekey', $keys)
+        } elseif (in_array($type, ['cft', 'operational', 'otp_time', 'actual_face'])) {
+            $visits = DB::table('customervisitlog')->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'cft', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime'])
-                ->map(function ($visit) {
+                ->get(['logkey', 'routekey', 'customercode', 'cft', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+            $otp = in_array($type, ['otp_time', 'actual_face']) ? app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'] : [];
+            $rows = $visits->map(function ($visit) use ($otp) {
                     $validStart = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-');
                     $validEnd = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-');
                     $start = $validStart ? strtotime(substr($visit->logstartdate, 0, 10).' '.$visit->logstarttime) : false;
@@ -35,29 +38,17 @@ class DashboardCustomerDetails
                     $actual = $start !== false && $end !== false && $end >= $start ? ($end - $start) / 60 : null;
                     $planned = max(0, (float) ($visit->cft ?? 0));
                     return ['id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
-                        'date' => $visit->logstartdate, 'time' => $visit->logstarttime, 'planned_cft' => $planned,
+                        'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $planned,
+                        'check_in' => $start === false ? null : date('Y-m-d H:i:s', $start),
+                        'check_out' => $end === false ? null : date('Y-m-d H:i:s', $end),
+                        'otp_times' => array_map(fn ($event) => substr((string) $event['otpdate'], 0, 10).' '.$event['otptime'], $otp[$visit->routekey.':'.$visit->logkey] ?? []),
                         'actual_cft' => $actual, 'variance' => $planned > 0 && $actual !== null ? $actual - $planned : null];
                 });
+            if ($type !== 'cft') $rows = $rows->filter(fn ($row) => $row['actual_cft'] !== null
+                && ($type !== 'otp_time' || count($row['otp_times']) > 0)
+                && ($type !== 'actual_face' || count($row['otp_times']) === 0));
         } elseif (in_array($type, ['sales', 'orders', 'collections', 'returns'])) {
-            $sources = ['sales' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']];
-            foreach ($type === 'returns' ? ['sales', 'orders'] : [$type] as $source) {
-                [$table, $amount] = $sources[$source];
-                $expression = $type === 'returns' ? 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)' : "COALESCE({$amount}, 0)";
-                $query = DB::table($table)->whereIn('routekey', $keys);
-                if ($type === 'returns') $query->where('voidflag', 0)->whereRaw($expression.' > 0');
-                else $query->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0));
-                $records = $query->orderBy('transactiondate')->orderBy('transactiontime')->get([
-                    'routekey', 'customercode', 'transactionkey', 'documentnumber', 'transactiondate', 'transactiontime', 'currencycode', DB::raw($expression.' as amount'),
-                ]);
-                foreach ($records as $record) $rows->push([
-                    'id' => $source.':'.$record->transactionkey, 'routekey' => $record->routekey, 'customercode' => $record->customercode,
-                    'date' => $record->transactiondate, 'time' => $record->transactiontime, 'document' => $record->documentnumber,
-                    'source' => ['sales' => 'Invoice', 'orders' => 'Order', 'collections' => 'Receipt'][$source],
-                    'currencycode' => $record->currencycode, 'amount' => (float) $record->amount * ($type === 'returns' ? -1 : 1),
-                ]);
-            }
-            $currencies = DB::table('currencymaster')->whereIn('currencycode', $rows->pluck('currencycode')->unique())->pluck('currencysymbol', 'currencycode');
-            $rows = $rows->map(fn ($row) => $row + ['currency' => $currencies->get($row['currencycode']) ?: ($row['currencycode'] ? 'Currency '.$row['currencycode'] : 'Unspecified currency')]);
+            $rows = $this->transactionRows($keys, $type);
         } elseif ($type === 'otp') {
             $rows = collect(app(DashboardMetrics::class)->otp($journeys, collect())['details'])
                 ->map(fn ($event) => [
@@ -133,4 +124,29 @@ class DashboardCustomerDetails
             'salesman' => $journey->salesman, 'rows' => $grouped->get($journey->routekey, collect())->values(),
         ])->filter(fn ($group) => $group['rows']->isNotEmpty())->values()];
     }
+    public function transactionRows(Collection $keys, string $type): Collection
+    {
+        $rows = collect();
+        $sources = ['sales' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']];
+        foreach ($type === 'returns' ? ['sales', 'orders'] : [$type] as $source) {
+            [$table, $amount] = $sources[$source];
+            $expression = $type === 'returns' ? 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)' : "COALESCE({$amount}, 0)";
+            $query = DB::table($table)->whereIn('routekey', $keys);
+            if ($type === 'returns') $query->where('voidflag', 0)->whereRaw($expression.' > 0');
+            else $query->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0));
+            $records = $query->orderBy('transactiondate')->orderBy('transactiontime')->get([
+                'routekey', 'customercode', 'transactionkey', 'documentnumber', 'transactiondate', 'transactiontime', 'currencycode', DB::raw($expression.' as amount'),
+            ]);
+            foreach ($records as $record) $rows->push([
+                'id' => $source.':'.$record->transactionkey, 'routekey' => $record->routekey, 'customercode' => $record->customercode,
+                'date' => $record->transactiondate, 'time' => $record->transactiontime, 'document' => $record->documentnumber,
+                'source' => ['sales' => 'Invoice', 'orders' => 'Order', 'collections' => 'Receipt'][$source],
+                'currencycode' => (int) ($record->currencycode ?? 0), 'amount' => (float) $record->amount * ($type === 'returns' ? -1 : 1),
+            ]);
+        }
+        $currencies = DB::table('currencymaster')->whereIn('currencycode', $rows->pluck('currencycode')->unique())->pluck('currencysymbol', 'currencycode');
+        $rows = $rows->map(fn ($row) => $row + ['currency' => $currencies->get($row['currencycode']) ?: ($row['currencycode'] ? 'Currency '.$row['currencycode'] : 'Unspecified currency')]);
+        return $rows;
+    }
+
 }

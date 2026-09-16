@@ -117,6 +117,7 @@ test('actual route detects legacy stationary pings before downsampling and filte
     $journey->shouldReceive('where', 'orderByDesc')->andReturnSelf();
     $journey->shouldReceive('first')->andReturn((object) [
         'routestartdate' => '2026-09-08', 'routestarttime' => '08:00:00',
+        'routeclosed' => 1, 'routeenddate' => '2026-09-08', 'routeendtime' => '09:00:00',
     ]);
     \Illuminate\Support\Facades\DB::shouldReceive('table')->with('startendday')->andReturn($journey);
     \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['code' => 'NoMatch'])]);

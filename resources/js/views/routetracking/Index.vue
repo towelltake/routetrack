@@ -109,25 +109,9 @@ const routeHeading = computed(() => {
     return `Route ${details.routecode} · ${salesman}`;
 });
 
-const summaryTransactions = computed(() => {
-    const rows = { sales: [], orders: [], collections: [], returns: [] };
-    const seen = new Set();
-    for (const visit of customerVisits.value) {
-        for (const type of ["sales", "orders", "collections"]) {
-            for (const transaction of visit.transactions?.[type] ?? []) {
-                const key = `${type}:${transaction.transactionkey}`;
-                if (transaction.voided || seen.has(key)) continue;
-                seen.add(key);
-                const row = { ...transaction, customername: visit.customername, alternatecode: visit.alternatecode };
-                rows[type].push(row);
-                if (["sales", "orders"].includes(type) && Number(transaction.return_amount) > 0) {
-                    rows.returns.push({ ...row, amount: transaction.return_amount });
-                }
-            }
-        }
-    }
-    return rows;
-});
+const summaryTransactions = computed(() => Object.fromEntries(
+    ['sales', 'orders', 'collections', 'returns'].map(type => [type, result.value?.transactions?.[type]?.documents ?? []]),
+));
 
 const routeSummaryGroups = computed(() => {
     if (!result.value) return [];
@@ -138,7 +122,7 @@ const routeSummaryGroups = computed(() => {
         const count = transactions[type]?.count ?? 0;
         return {
             label, icon, tone, action: type,
-            value: money(type === "returns" ? -Math.abs(transactions[type]?.amount ?? 0) : transactions[type]?.amount),
+            value: transactions[type]?.amounts?.map(total => `${money(total.amount)} ${total.currency}`).join(" / ") || money(0),
             meta: `${count} ${count === 1 ? "document" : "documents"}`,
         };
     };
@@ -155,13 +139,17 @@ const routeSummaryGroups = computed(() => {
         ] },
         { key: "distance", title: "Distance", cards: [
             { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
-            { label: "Actual Distance", icon: "fa-location-arrow", tone: "red", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
+            { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
-            { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Route start to route end" },
-            { label: "Actual Face Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` },
+            { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
+            { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: planned.face_time ? `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` : "All customer visits" },
+            { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
+            { label: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "0%" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
+                comparison: { actual: actual.actual_cft, planned: actual.planned_cft },
+                meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
-            { label: "Idle Time", icon: "fa-pause", tone: "red", value: stationaryDuration(actual.idle_seconds), meta: `${actual.idle_periods?.length ?? 0} stops outside customer visits · ${pct(actualSeconds ? actual.idle_seconds / actualSeconds : null)}` },
+            { label: "Stationary Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View stop breakdown" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
@@ -177,6 +165,7 @@ const summaryTitle = computed(() => ({
     customers: "Customer Coverage",
     unplanned: "Unplanned Visits",
     otp: "OTP Requests",
+    stationary: "Stationary Time",
     sales: "Sales",
     orders: "Orders",
     collections: "Collections",
@@ -1086,7 +1075,9 @@ function focusEnd() {
                             <span class="route-summary-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
                             <span class="route-summary-copy">
                                 <span class="route-summary-label">{{ card.label }}</span>
-                                <strong>{{ card.value }}</strong>
+                                <strong v-if="!card.comparison">{{ card.value }}</strong>
+                                <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
+                                <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance</span></span>
                                 <span v-if="card.meta">{{ card.meta }}</span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
@@ -1444,7 +1435,7 @@ function focusEnd() {
                 aria-labelledby="route-summary-modal-title"
                 @click.self="closeSummary"
             >
-                <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="summaryModal === 'stationary' ? 'modal-xl' : 'modal-lg'">
                     <div class="modal-content">
                         <div class="modal-header">
                             <div>
@@ -1479,6 +1470,58 @@ function focusEnd() {
                                 </table>
                             </div>
 
+                            <div v-else-if="summaryModal === 'stationary'" class="stationary-breakdown">
+                                <dl class="stationary-totals">
+                                    <div><dt>Total stationary time</dt><dd>{{ stationaryDuration(result.actual.stationary_seconds) }}</dd><small>{{ stationaryPeriods.length }} detected stops</small></div>
+                                    <div class="with-visits"><dt>Idle time with customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_with_customer_seconds) }}</dd><small>Time overlapping customer visits</small></div>
+                                    <div class="without-visits"><dt>Idle time without customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_without_customer_seconds) }}</dd><small>Time outside customer visits</small></div>
+                                </dl>
+                                <p class="small text-muted">Expand a stop to inspect its visits. Visit duration covers the full visit; time at this stop shows only the overlap. Overlapping visits count once in the totals.</p>
+                                <details v-for="period in stationaryPeriods" :key="period.listKey" class="stationary-stop" open>
+                                    <summary>
+                                        <span class="stationary-stop-number">{{ period.displayNumber }}</span>
+                                        <span class="stationary-stop-heading"><strong>{{ stationaryTime(period.start_time) }} &ndash; {{ stationaryTime(period.end_time) }}</strong><small>{{ period.start_time.slice(0, 10) }}<template v-if="period.end_time.slice(0, 10) !== period.start_time.slice(0, 10)"> &ndash; {{ period.end_time.slice(0, 10) }}</template> &middot; {{ period.customer_visits.length }} customer visits</small></span>
+                                        <strong class="stationary-stop-duration">{{ stationaryDuration(period.duration_seconds) }}</strong>
+                                    </summary>
+                                    <div class="stationary-stop-body">
+                                        <div class="stationary-stop-actions">
+                                            <div class="stationary-split-labels"><span class="with-visits">With visits <strong>{{ stationaryDuration(period.with_customer_seconds) }}</strong></span><span class="without-visits">Without visits <strong>{{ stationaryDuration(period.without_customer_seconds) }}</strong></span></div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" @click="closeSummary(); focusStationary(period)"><i class="fa fa-location-dot" aria-hidden="true"></i> Show on map</button>
+                                        </div>
+                                        <div class="stationary-split-bar" aria-hidden="true"><span :style="{ width: `${period.duration_seconds ? period.with_customer_seconds / period.duration_seconds * 100 : 0}%` }"></span></div>
+                                        <div v-if="period.customer_visits.length" class="table-responsive">
+                                            <table class="stationary-visits">
+                                                <thead><tr><th scope="col">Customer / visit status</th><th scope="col">Check-in</th><th scope="col">Check-out</th><th scope="col">Visit duration</th><th scope="col">Time at this stop</th><th scope="col">OTP</th></tr></thead>
+                                                <tbody>
+                                                    <tr v-for="visit in period.customer_visits" :key="visit.logkey" :style="{ '--visit-color': customerStatusColor({ ...visit, type: 'visit' }) }">
+                                                        <td><strong>{{ visit.customername }}</strong><small>{{ visit.alternatecode || visit.customercode }}</small><span class="stationary-visit-status">{{ customerVisitStatus({ ...visit, type: 'visit' }) }}</span></td>
+                                                        <td><strong>{{ visit.visit_start_time || 'Unavailable' }}</strong><small>{{ visit.visit_start_date }}</small></td>
+                                                        <td><strong>{{ visit.visit_end_time || 'Unavailable' }}</strong><small>{{ visit.visit_end_date }}</small></td>
+                                                        <td>{{ visit.visit_duration_minutes == null ? 'Unavailable' : stationaryDuration(visit.visit_duration_minutes * 60) }}</td>
+                                                        <td><strong>{{ stationaryDuration(visit.stationary_overlap_seconds) }}</strong></td>
+                                                        <td>
+                                                            <details v-if="visit.otp_logs?.length" class="stationary-otp">
+                                                                <summary><i class="fa fa-key" aria-hidden="true"></i> OTP ({{ visit.otp_logs.length }})</summary>
+                                                                <div v-for="otp in visit.otp_logs" :key="otp.id" class="stationary-otp-record">
+                                                                    <strong>{{ otp.type || 'OTP request' }}</strong>
+                                                                    <small>{{ otp.date }} {{ otp.time }}</small>
+                                                                    <small>Recorded by: {{ otp.approved_by || 'Not available' }}</small>
+                                                                    <small>{{ [otp.reason, otp.comments].filter(Boolean).join(' / ') || 'No reason recorded' }}</small>
+                                                                </div>
+                                                            </details>
+                                                            <span v-else class="text-muted small">No OTP</span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <p v-else class="stationary-no-visits"><i class="fa fa-pause" aria-hidden="true"></i> No customer visits during this stop. All {{ stationaryDuration(period.duration_seconds) }} is idle time without customer visits.</p>
+                                        <p v-if="period.accuracy_unknown" class="small text-warning mt-2 mb-0">GPS accuracy unknown for this stop.</p>
+                                    </div>
+                                </details>
+                                <p v-if="!stationaryPeriods.length" class="text-center text-muted py-4">No stationary periods detected.</p>
+                            </div>
+
                             <div v-else-if="summaryModal === 'otp'" class="table-responsive">
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead><tr><th>Customer</th><th>Type</th><th>Date & Time</th><th>Recorded By</th><th>Reason / Comments</th></tr></thead>
@@ -1499,12 +1542,12 @@ function focusEnd() {
                                 <table class="table table-sm table-hover align-middle mb-0">
                                     <thead><tr><th>Type</th><th>Document</th><th>Customer</th><th>Date & Time</th><th class="text-end">Amount</th></tr></thead>
                                     <tbody>
-                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="`${transaction.type}-${transaction.transactionkey}`">
-                                            <td>{{ transaction.type === 'sales' ? 'Invoice' : transaction.type === 'orders' ? 'Order' : 'Collection' }}</td>
-                                            <td>{{ transaction.documentnumber }}</td>
+                                        <tr v-for="transaction in summaryTransactions[summaryModal]" :key="transaction.id">
+                                            <td>{{ transaction.source }}</td>
+                                            <td>{{ transaction.document }}</td>
                                             <td>{{ transaction.customername }}<br><span class="small text-muted">{{ transaction.alternatecode }}</span></td>
                                             <td>{{ transaction.date }} {{ transaction.time }}</td>
-                                            <td class="text-end fw-semibold">{{ money(summaryModal === 'returns' ? -Math.abs(transaction.amount) : transaction.amount) }}</td>
+                                            <td class="text-end fw-semibold">{{ money(transaction.amount) }} {{ transaction.currency }}</td>
                                         </tr>
                                         <tr v-if="!summaryTransactions[summaryModal]?.length"><td colspan="5" class="text-center text-muted py-4">No documents found.</td></tr>
                                     </tbody>
@@ -1730,8 +1773,8 @@ function focusEnd() {
 .route-summary-group-route { grid-column: span 2; }
 .route-summary-group-customers { grid-column: span 6; }
 .route-summary-group-distance { grid-column: span 4; }
-.route-summary-group-time { grid-column: span 6; }
-.route-summary-group-transactions { grid-column: span 6; }
+.route-summary-group-time { grid-column: 1 / -1; container-type: inline-size; }
+.route-summary-group-transactions { grid-column: 1 / -1; }
 
 .route-summary-group h3 {
     margin: 0 0 6px 2px;
@@ -1780,9 +1823,31 @@ function focusEnd() {
 
 .route-summary-icon { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border-radius: 7px; background: var(--wash); color: var(--tone); font-size: 11px; }
 .route-summary-copy { min-width: 0; flex: 1; }
+.route-face-comparison { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0; font-size: 11px; color: #64748b; }
+.route-face-comparison b { display: block; margin-top: 3px; color: var(--tone); font-size: 22px; font-variant-numeric: tabular-nums; }
+.route-face-variance { display: flex; align-items: baseline; gap: 8px; padding-top: 8px; margin-bottom: 6px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
+.route-face-variance b { color: var(--tone); font-size: 15px; }
 .route-summary-label, .route-summary-copy > span:last-child { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
 .route-summary-copy strong { display: block; margin: 2px 0; color: var(--tone); font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
 .route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }
+
+.route-summary-group-time {
+    .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: stretch; grid-auto-rows: 1fr; }
+    .route-summary-card { padding: 14px; gap: 10px; }
+    .route-summary-label { font-size: 12px; font-weight: 600; }
+    .route-summary-copy strong { margin: 8px 0; font-size: 24px; line-height: 1.2; overflow-wrap: normal; }
+    .route-summary-copy > span:last-child { font-size: 11px; }
+}
+@container (min-width: 1260px) {
+    .route-summary-group-time .route-summary-cards { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@container (max-width: 639px) {
+    .route-summary-group-time .route-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .route-summary-group-time .route-summary-card { padding: 10px; gap: 8px; }
+}
+@container (max-width: 359px) {
+    .route-summary-group-time .route-summary-cards { grid-template-columns: 1fr; }
+}
 
 .route-detail-grid {
     display: grid;
@@ -2291,6 +2356,39 @@ function focusEnd() {
     font-weight: 700;
     text-align: right;
 }
+
+.stationary-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;
+    > div { padding: 16px; border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+    dt { font-size: 12px; } dd { margin: 6px 0; font-size: 24px; font-weight: 700; } small { font-size: 11px; }
+    .with-visits { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .without-visits { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+}
+.stationary-stop { margin-top: 14px; border: 1px solid #dbe3ec; border-radius: 10px; overflow: hidden;
+    > summary { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; background: #f8fafc; list-style: none; }
+    > summary::-webkit-details-marker { display: none; }
+    > summary::after { content: '+'; font-size: 22px; color: #64748b; }
+    &[open] > summary::after { content: '-'; }
+    summary:focus-visible, button:focus-visible { outline: 3px solid #60a5fa; outline-offset: -3px; }
+}
+.stationary-stop-number { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: #e2e8f0; font-weight: 700; }
+.stationary-stop-heading { flex: 1; } .stationary-stop-heading small { display: block; color: #64748b; font-size: 11px; }
+.stationary-stop-duration { color: #172b45; white-space: nowrap; }
+.stationary-stop-body { padding: 14px 16px; }
+.stationary-stop-actions, .stationary-split-labels { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.stationary-split-labels { font-size: 12px; .with-visits { color: #166534; } .without-visits { color: #991b1b; } }
+.stationary-split-bar { height: 7px; margin: 12px 0 16px; border-radius: 8px; overflow: hidden; background: #fecaca; span { display: block; height: 100%; background: #22c55e; } }
+.stationary-visits { width: 100%; min-width: 760px; font-size: 12px; border-collapse: separate; border-spacing: 0 6px;
+    th { padding: 6px 10px; color: #64748b; font-size: 11px; }
+    td { padding: 12px 10px; vertical-align: top; background: color-mix(in srgb, var(--visit-color) 7%, white); border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+    td:first-child { border-left: 4px solid var(--visit-color); border-radius: 6px 0 0 6px; min-width: 180px; }
+    td:last-child { border-radius: 0 6px 6px 0; }
+    small { display: block; color: #64748b; font-size: 11px; margin-top: 3px; }
+}
+.stationary-visit-status { display: inline-block; margin-top: 6px; color: var(--visit-color); font-size: 11px; font-weight: 600; }
+.stationary-otp { min-width: 100px; summary { cursor: pointer; color: #7c3aed; font-weight: 700; white-space: nowrap; } }
+.stationary-otp-record { min-width: 170px; margin-top: 8px; padding: 8px; border-radius: 6px; background: #f5f3ff; border: 1px solid #ddd6fe; }
+.stationary-no-visits { padding: 14px; margin: 0; background: #fef2f2; border-radius: 6px; color: #991b1b; font-size: 12px; }
+@media (max-width: 650px) { .stationary-totals { grid-template-columns: 1fr; } .stationary-stop > summary { padding: 12px; gap: 8px; } .stationary-stop-body { padding: 12px; } }
 
 .route-tracking-otp-modal {
     z-index: 2000;

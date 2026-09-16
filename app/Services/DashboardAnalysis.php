@@ -42,7 +42,6 @@ class DashboardAnalysis
                 'amounts' => [], 'issues' => [],
             ];
             $seen = [];
-            $intervals = [];
             foreach ($journeyVisits->values() as $index => $visit) {
                 $customer = (string) $visit->customercode;
                 $seen[$customer] = ($seen[$customer] ?? 0) + 1;
@@ -55,12 +54,6 @@ class DashboardAnalysis
                 if ($visit->expected_minutes <= 0) $row['missing_cft']++;
                 $visitStart = $this->timestamp($visit->logstartdate, $visit->logstarttime);
                 $visitEnd = $this->timestamp($visit->logenddate, $visit->logendtime);
-                if ($duration !== null && $visitStart !== null) {
-                    $cutoff = $visitEnd ?? (!$closed ? $end : null);
-                    if ($cutoff !== null && $cutoff > $start && $visitStart < $end && $cutoff >= $visitStart) {
-                        $intervals[] = [max($start, $visitStart), min($end, $cutoff)];
-                    }
-                }
                 if ($visitStart === null || $visitEnd === null || $visitEnd < $visitStart) {
                     $row['incomplete_visits']++;
                     continue;
@@ -81,14 +74,7 @@ class DashboardAnalysis
             $row[$closed ? 'missed' : 'pending'] = $row['planned'] - $row['covered'];
             $row['nonproductive'] = $row['completed'] - $row['productive'];
             if ($duration !== null) {
-                sort($intervals);
-                $unionSeconds = 0;
-                $previousEnd = $start;
-                foreach ($intervals as [$intervalStart, $intervalEnd]) {
-                    $unionSeconds += max(0, $intervalEnd - max($intervalStart, $previousEnd));
-                    $previousEnd = max($previousEnd, $intervalEnd);
-                }
-                $row['visit_time'] = $unionSeconds / 60;
+                $row['visit_time'] = $row['actual_cft'];
                 $row['remaining_time'] = max(0, $duration - $row['visit_time']);
             }
             foreach ($moneyByJourney as $type => $values) {

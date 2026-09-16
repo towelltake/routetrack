@@ -73,6 +73,8 @@ class DashboardMetrics
         $configuredSeconds = 0;
         $expectedMinutes = 0;
         $configuredVisits = 0;
+        $plannedFaceMinutes = 0;
+        $otp = $this->otp($journeys, $visits);
         foreach ($visits as $visit) {
             $visited[$visit->routekey.':'.$visit->customercode] = true;
             $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
@@ -86,6 +88,7 @@ class DashboardMetrics
                 $configuredVisits++;
                 $configuredSeconds += $end - $start;
                 $expectedMinutes += (int) $visit->expected_minutes;
+                if (!isset($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) $plannedFaceMinutes += (float) $visit->expected_minutes;
             }
             $operation = $operations->get($visit->routekey.':'.$visit->logkey);
             $transactionKey = $visit->routekey.':'.($operation?->visitkey ?? '');
@@ -106,14 +109,19 @@ class DashboardMetrics
             }
         }
 
-        $otp = $this->otp($journeys, $visits);
+        $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
 
         return [
             'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
-            'outside_visit_minutes' => $timed->isEmpty() ? null : $timed->sum('remaining_time'),
+            'outside_visit_minutes' => $timed->isEmpty() ? null : round($timed->sum('remaining_time'), 1),
+            'operational_minutes' => $actualSeconds / 60,
+            'otp_customer_minutes' => $otp['customer_minutes'],
+            'actual_face_minutes' => $actualFaceMinutes,
+            'planned_face_minutes' => $plannedFaceMinutes,
+            'face_time_variance_percent' => $plannedFaceMinutes > 0 ? round(100 * ($actualFaceMinutes - $plannedFaceMinutes) / $plannedFaceMinutes, 1) : null,
             'duration_available_journeys' => $timed->count(),
             'duration_missing_journeys' => $journeys->count() - $timed->count(),
             'planned_cft_minutes' => $expectedMinutes,
@@ -143,7 +151,7 @@ class DashboardMetrics
     public function otp(Collection $journeys, Collection $visits): array
     {
         if ($journeys->isEmpty()) {
-            return ['events' => 0, 'visits' => 0, 'details' => []];
+            return ['events' => 0, 'visits' => 0, 'details' => [], 'by_visit' => [], 'customer_minutes' => 0];
         }
         // OTP has no verified journey key; associate it by route and journey time window.
         $starts = DB::table('startendday')->whereIn('routecode', $journeys->pluck('routecode')->unique())
@@ -164,10 +172,12 @@ class DashboardMetrics
         }
         $events = DB::table('otplogdetail')->whereIn('routecode', array_keys($windows))
             ->whereDate('otpdate', '>=', substr((string) $journeys->min('routestartdate'), 0, 10))
+            ->orderBy('otpdate')->orderBy('otptime')->orderBy('otplogid')
             ->get(['otplogid', 'routecode', 'customercode', 'otpdate', 'otptime', 'otptype', 'username', 'otpreason', 'comments']);
         $details = [];
         $count = 0;
         $matchedVisits = [];
+        $byVisit = [];
         $visitsByCustomer = $visits->groupBy(fn ($row) => $row->routekey.':'.$row->customercode);
         foreach ($events as $event) {
             $timestamp = $this->timestamp($event->otpdate, $event->otptime);
@@ -180,19 +190,30 @@ class DashboardMetrics
                 }
                 $count++;
                 $details[] = (array) $event + ['routekey' => $window['key']];
+                // GPS override OTPs can precede check-in; match the nearest visit start,
+                // as route tracking does, but only for this customer and journey.
+                $matchedVisit = null;
+                $nearest = PHP_INT_MAX;
                 foreach ($visitsByCustomer->get($window['key'].':'.$event->customercode, collect()) as $visit) {
                     $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
-                    $end = $this->timestamp($visit->logenddate, $visit->logendtime);
-                    if ($start !== null && $end !== null && $timestamp >= $start && $timestamp <= $end) {
-                        $matchedVisits[$visit->routekey.':'.$visit->logkey] = true;
-                        break;
+                    if ($start !== null && abs($timestamp - $start) < $nearest) {
+                        $matchedVisit = $visit;
+                        $nearest = abs($timestamp - $start);
                     }
+                }
+                if ($matchedVisit !== null) {
+                    $key = $matchedVisit->routekey.':'.$matchedVisit->logkey;
+                    $byVisit[$key][] = (array) $event;
+                    $start = $this->timestamp($matchedVisit->logstartdate, $matchedVisit->logstarttime);
+                    $end = $this->timestamp($matchedVisit->logenddate, $matchedVisit->logendtime);
+                    if ($end !== null && $end >= $start) $matchedVisits[$key] = ($end - $start) / 60;
                 }
                 break;
             }
         }
 
-        return ['events' => $count, 'visits' => count($matchedVisits), 'details' => $details];
+        return ['events' => $count, 'visits' => count($matchedVisits), 'details' => $details,
+            'by_visit' => $byVisit, 'customer_minutes' => array_sum($matchedVisits)];
     }
 
     private function timestamp(mixed $date, mixed $time): ?int

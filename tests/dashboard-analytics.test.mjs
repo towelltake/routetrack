@@ -30,7 +30,7 @@ test("identically named divisions stay separate and daily totals use journey sta
     const rows = [journey(), journey({ routekey: "2", cmpycode: "2", date: "2026-09-02" })];
     assert.equal(groupJourneys(rows, "division").length, 2);
     assert.deepEqual(groupJourneys(rows, "date").map(r => r.id), ["2026-09-01", "2026-09-02"]);
-    assert.equal(trackUrl(rows[1]), "/route-tracking?routecode=10&date=2026-09-02");
+    assert.equal(trackUrl(rows[1]), "/route-tracking?routecode=10&date=2026-09-02&from=dashboard");
 });
 test("empty results and zero denominators remain unavailable", () => {
     assert.deepEqual(groupJourneys([]), []);

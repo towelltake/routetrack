@@ -13,8 +13,8 @@ class DashboardCustomerDetails
         $keys = $journeys->pluck('routekey');
         $rows = collect();
         if (in_array($type, ['duration', 'outside'])) {
-            $operational = $type === 'outside' ? collect($this->build($journeys, 'operational')['groups'])
-                ->mapWithKeys(fn ($group) => [$group['routekey'] => $group['rows']->sum('actual_cft')]) : collect();
+            $operational = $type === 'outside' ? collect($this->build($journeys, 'cft')['groups'])
+                ->mapWithKeys(fn ($group) => [$group['routekey'] => $group['rows']->sum('recorded_actual_cft')]) : collect();
             $rows = $journeys->map(function ($journey) use ($operational) {
                 $timing = app(DashboardAnalysis::class)->journeyTiming($journey);
                 return ['id' => $journey->routekey, 'routekey' => $journey->routekey, 'customercode' => null,
@@ -25,28 +25,50 @@ class DashboardCustomerDetails
                     'outside' => $timing['duration'] === null ? null : max(0, $timing['duration'] - $operational->get($journey->routekey, 0)),
                     'duration' => $timing['duration'], 'status' => (int) $journey->routeclosed === 1 ? 'Closed' : 'Open'];
             });
-        } elseif (in_array($type, ['cft', 'operational', 'otp_time', 'actual_face'])) {
+        } elseif ($type === 'operational') {
+            $visits = DB::table('customervisitlog')->whereIn('routekey', $keys)
+                ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
+                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+            $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
+            $byJourney = $visits->groupBy('routekey');
+            $rows = $journeys->map(function ($journey) use ($byJourney, $otp) {
+                $window = app(OperationalTime::class)->fromLogs($byJourney->get($journey->routekey, collect()), $otp);
+                return ['id' => $journey->routekey, 'routekey' => $journey->routekey, 'customercode' => null,
+                    'check_in' => $window['start'], 'check_out' => $window['end'], 'actual_cft' => $window['minutes'],
+                    'first_customer' => $window['first_customer'], 'last_customer' => $window['last_customer']];
+            });
+            $boundaryCustomers = DB::table('customermaster')
+                ->whereIn('customercode', $rows->pluck('first_customer')->merge($rows->pluck('last_customer'))->filter()->unique())
+                ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
+            $rows = $rows->map(function ($row) use ($boundaryCustomers) {
+                foreach (['first_customer', 'last_customer'] as $field) {
+                    $customer = $boundaryCustomers->get($row[$field]);
+                    if ($customer) $row[$field] = ($customer->alternatecode ?: $customer->customercode).' - '.$customer->customeraddress1;
+                }
+                return $row;
+            });
+        } elseif (in_array($type, ['cft', 'otp_time', 'actual_face'])) {
             $visits = DB::table('customervisitlog')->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
                 ->get(['logkey', 'routekey', 'customercode', 'cft', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
-            $otp = in_array($type, ['otp_time', 'actual_face']) ? app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'] : [];
-            $rows = $visits->map(function ($visit) use ($otp) {
+            $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
+            $rows = $visits->map(function ($visit) use ($otp, $type) {
                     $validStart = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-');
                     $validEnd = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-');
                     $start = $validStart ? strtotime(substr($visit->logstartdate, 0, 10).' '.$visit->logstarttime) : false;
                     $end = $validEnd ? strtotime(substr($visit->logenddate, 0, 10).' '.$visit->logendtime) : false;
                     $actual = $start !== false && $end !== false && $end >= $start ? ($end - $start) / 60 : null;
                     $planned = max(0, (float) ($visit->cft ?? 0));
+                    $excluded = $type !== 'otp_time' && !empty($otp[$visit->routekey.':'.$visit->logkey]);
                     return ['id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
-                        'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $planned,
+                        'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $excluded ? 0 : $planned,
+                        'otp_excluded' => $excluded, 'recorded_actual_cft' => $actual,
                         'check_in' => $start === false ? null : date('Y-m-d H:i:s', $start),
                         'check_out' => $end === false ? null : date('Y-m-d H:i:s', $end),
                         'otp_times' => array_map(fn ($event) => substr((string) $event['otpdate'], 0, 10).' '.$event['otptime'], $otp[$visit->routekey.':'.$visit->logkey] ?? []),
-                        'actual_cft' => $actual, 'variance' => $planned > 0 && $actual !== null ? $actual - $planned : null];
+                        'actual_cft' => $excluded ? 0 : $actual, 'variance' => !$excluded && $planned > 0 && $actual !== null ? $actual - $planned : null];
                 });
-            if ($type !== 'cft') $rows = $rows->filter(fn ($row) => $row['actual_cft'] !== null
-                && ($type !== 'otp_time' || count($row['otp_times']) > 0)
-                && ($type !== 'actual_face' || count($row['otp_times']) === 0));
+            if ($type === 'otp_time') $rows = $rows->filter(fn ($row) => $row['actual_cft'] !== null && count($row['otp_times']) > 0);
         } elseif (in_array($type, ['sales', 'orders', 'collections', 'returns'])) {
             $rows = $this->transactionRows($keys, $type);
         } elseif ($type === 'otp') {
@@ -65,7 +87,9 @@ class DashboardCustomerDetails
                 ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
             $documents = [];
             $operations = collect();
-            if ($type === 'productive') {
+            if (in_array($type, ['productive', 'efficiency'])) {
+                $excludedCustomers = DB::table('customermaster')->where('toplpo', 1)
+                    ->whereIn('customercode', $visits->pluck('customercode')->unique())->pluck('customercode')->flip();
                 $operations = DB::table('customeroperationscontrol')->whereIn('routekey', $keys)->where('log_id', '>', 0)
                     ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
                     ->unique(fn ($row) => $row->routekey.':'.$row->log_id)->keyBy(fn ($row) => $row->routekey.':'.$row->log_id);
@@ -94,16 +118,24 @@ class DashboardCustomerDetails
                     ]);
                 } else {
                     foreach ($journeyVisits as $visit) {
-                        if (!$visit->logstartdate || !$visit->logstarttime || !$visit->logenddate || !$visit->logendtime || str_starts_with($visit->logstartdate, '0000-') || str_starts_with($visit->logenddate, '0000-')) continue;
-                        $start = strtotime($visit->logstartdate.' '.$visit->logstarttime);
-                        $end = strtotime($visit->logenddate.' '.$visit->logendtime);
-                        if ($start === false || $end === false || $end < $start) continue;
+                        $ignored = $excludedCustomers->has($visit->customercode);
+                        $start = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-') ? strtotime($visit->logstartdate.' '.$visit->logstarttime) : false;
+                        $end = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-') ? strtotime($visit->logenddate.' '.$visit->logendtime) : false;
+                        $completed = $start !== false && $end !== false && $end >= $start;
+                        if ($type === 'productive' && !$completed && !$ignored) continue;
                         $operation = $operations->get($journey->routekey.':'.$visit->logkey);
                         $key = $journey->routekey.':'.($operation?->visitkey ?? '');
-                        $productive = ($documents['invoices']->get($key)?->positive_documents ?? 0) > 0 || ($documents['orders']->get($key)?->positive_documents ?? 0) > 0;
+                        $salesOrder = $completed && (($documents['invoices']->get($key)?->positive_documents ?? 0) > 0 || ($documents['orders']->get($key)?->positive_documents ?? 0) > 0);
+                        $collection = $completed && ($documents['collections']->get($key)?->positive_documents ?? 0) > 0;
+                        $productive = $salesOrder || $collection;
                         $rows->push([
                             'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
-                            'time' => $visit->logstarttime, 'status' => $productive ? 'Productive' : 'Nonproductive',
+                            'time' => $visit->logstarttime,
+                            'status' => $ignored ? 'Ignored' : ($completed && $productive ? 'Productive' : 'Nonproductive'),
+                            'ignored' => $ignored, 'exclusion_reason' => $ignored ? 'Customer marked toplpo = 1; excluded from calculations' : null,
+                            'visit_count' => 1,
+                            'sales_order_productive' => !$ignored && $salesOrder,
+                            'collection_productive' => !$ignored && $collection,
                             'invoices' => (int) ($documents['invoices']->get($key)?->documents ?? 0),
                             'orders' => (int) ($documents['orders']->get($key)?->documents ?? 0),
                             'collections' => (int) ($documents['collections']->get($key)?->documents ?? 0),
@@ -111,6 +143,17 @@ class DashboardCustomerDetails
                     }
                 }
             }
+        }
+        if ($type === 'efficiency') {
+            $rows = $rows->groupBy(fn ($row) => $row['routekey'].':'.$row['customercode'])->map(function ($visits) {
+                $row = $visits->first();
+                $row['id'] = $row['customercode'];
+                $row['visit_count'] = $visits->count();
+                $row['sales_order_productive'] = $visits->contains('sales_order_productive', true);
+                $row['collection_productive'] = $visits->contains('collection_productive', true);
+                $row['status'] = $row['ignored'] ? 'Ignored' : ($visits->contains('status', 'Productive') ? 'Productive' : 'Nonproductive');
+                return $row;
+            })->values();
         }
         $customers = in_array($type, ['duration', 'outside']) ? collect() : DB::table('customermaster')->whereIn('customercode', $rows->pluck('customercode')->unique())
             ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');

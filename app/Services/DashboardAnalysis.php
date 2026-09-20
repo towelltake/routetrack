@@ -17,6 +17,7 @@ class DashboardAnalysis
         foreach ($journeys as $journey) {
             $plan = $plansByJourney->get($journey->routekey, collect())->keyBy('customercode');
             $journeyVisits = $visitsByJourney->get($journey->routekey, collect());
+            $operational = app(OperationalTime::class)->fromLogs($journeyVisits, $otp['by_visit'] ?? []);
             $closed = (int) $journey->routeclosed === 1;
             ['start' => $start, 'end' => $end, 'duration' => $duration] = $this->journeyTiming($journey);
             $row = [
@@ -35,6 +36,12 @@ class DashboardAnalysis
                 'actual_cft' => 0, 'expected_cft' => 0, 'configured_actual_cft' => 0, 'configured_visits' => 0,
                 'missing_cft' => 0, 'incomplete_visits' => 0,
                 'duration' => $duration, 'visit_time' => null, 'remaining_time' => null, 'stationary_time' => null,
+                'operational_minutes' => $operational['minutes'], 'operational_start' => $operational['start'], 'operational_end' => $operational['end'],
+                'timeline' => [
+                    'start' => $start === null ? null : date('Y-m-d H:i:s', $start),
+                    'end' => $end === null ? null : date('Y-m-d H:i:s', $end),
+                    'visits' => [],
+                ],
                 'distance' => $closed && ($journey->routestartodometer ?? 0) > 0 && ($journey->routeendodometer ?? 0) >= $journey->routestartodometer
                     ? (float) $journey->routeendodometer - (float) $journey->routestartodometer : null,
                 'otp' => $otpByJourney->get($journey->routekey, collect())->count(),
@@ -42,8 +49,12 @@ class DashboardAnalysis
                 'amounts' => [], 'issues' => [],
             ];
             $seen = [];
+            $recordedVisitMinutes = 0;
+            $eligibleCustomers = []; $productiveCustomers = []; $salesOrderCustomers = []; $collectionCustomers = [];
+            $row['sales_order_productive'] = 0; $row['collection_productive'] = 0;
             foreach ($journeyVisits->values() as $index => $visit) {
                 $customer = (string) $visit->customercode;
+                if (!($visit->productivity_excluded ?? false)) $eligibleCustomers[$customer] = true;
                 $seen[$customer] = ($seen[$customer] ?? 0) + 1;
                 if ($seen[$customer] > 1) $row['repeat']++;
                 if ($plan->isNotEmpty()) {
@@ -59,22 +70,35 @@ class DashboardAnalysis
                     continue;
                 }
                 $minutes = ($visitEnd - $visitStart) / 60;
-                $row['completed']++;
-                $row['actual_cft'] += $minutes;
-                if ($visit->expected_minutes > 0) {
+                $row['timeline']['visits'][] = [date('Y-m-d H:i:s', $visitStart), date('Y-m-d H:i:s', $visitEnd)];
+                if (!($visit->productivity_excluded ?? false)) $row['completed']++;
+                $recordedVisitMinutes += $minutes;
+                $hasOtp = !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]);
+                if (!$hasOtp) $row['actual_cft'] += $minutes;
+                if ($visit->expected_minutes > 0 && !$hasOtp) {
                     $row['configured_visits']++;
                     $row['expected_cft'] += $visit->expected_minutes;
                     $row['configured_actual_cft'] += $minutes;
                 }
                 $operation = $operations->get($visit->routekey.':'.$visit->logkey);
                 $key = $visit->routekey.':'.($operation?->visitkey ?? '');
-                if ($transactions['sales']->has($key) || $transactions['orders']->has($key)) $row['productive']++;
+                if (!($visit->productivity_excluded ?? false)) {
+                    $salesOrder = $transactions['sales']->has($key) || $transactions['orders']->has($key);
+                    $collection = $transactions['collections']->has($key);
+                    if ($salesOrder) { $row['sales_order_productive']++; $salesOrderCustomers[$customer] = true; }
+                    if ($collection) { $row['collection_productive']++; $collectionCustomers[$customer] = true; }
+                    if ($salesOrder || $collection) { $row['productive']++; $productiveCustomers[$customer] = true; }
+                }
             }
             $row['covered'] = $plan->keys()->filter(fn ($code) => isset($seen[(string) $code]))->count();
             $row[$closed ? 'missed' : 'pending'] = $row['planned'] - $row['covered'];
             $row['nonproductive'] = $row['completed'] - $row['productive'];
+            $row['eligible_customers'] = count($eligibleCustomers);
+            $row['productive_customers'] = count($productiveCustomers);
+            $row['sales_order_customers'] = count($salesOrderCustomers);
+            $row['collection_customers'] = count($collectionCustomers);
             if ($duration !== null) {
-                $row['visit_time'] = $row['actual_cft'];
+                $row['visit_time'] = $recordedVisitMinutes;
                 $row['remaining_time'] = max(0, $duration - $row['visit_time']);
             }
             foreach ($moneyByJourney as $type => $values) {

@@ -93,6 +93,14 @@ const analyticsView = ref(null);
 const routeStatusDialog = ref(null);
 const customerDetailsDialog = ref(null);
 function inspectCard(title) {
+    if (title === 'Customer Face Time') {
+        customerDetailsDialog.value.open('cft', { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+        return;
+    }
+    if (title === 'Efficiency') {
+        customerDetailsDialog.value.open('efficiency', { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+        return;
+    }
     const kind = { 'Planned coverage': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productive visits': 'productive', 'Sales': 'sales', 'Order value': 'orders', 'Collections': 'collections', 'Returns': 'returns', 'Total Duration': 'duration', 'Operational Time': 'operational', 'OTP Customer Time': 'otp_time', 'Face Time Compliance': 'actual_face', 'Time Outside Visits': 'outside' }[title];
     if (kind) {
         customerDetailsDialog.value.open(kind, { from_date: fromDate.value, to_date: toDate.value, ...selected.value });

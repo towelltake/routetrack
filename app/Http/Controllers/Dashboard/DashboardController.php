@@ -167,7 +167,7 @@ class DashboardController extends Controller
     public function customerDetails(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,sales,orders,collections,returns,duration,cft,outside,operational,otp_time,actual_face']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,efficiency,sales,orders,collections,returns,duration,cft,outside,operational,otp_time,actual_face']])['type'];
         $routes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
@@ -268,11 +268,20 @@ class DashboardController extends Controller
         if ($request->boolean('summary')) {
             $chartGroups = fn ($field) => $analysis->groupBy($field)->map(function ($rows, $key) use ($field) {
                 $result = ['label' => $field === 'date' ? $key : $key.' - '.$rows->first()['route']];
-                foreach (['planned', 'covered', 'pending', 'missed', 'productive', 'nonproductive', 'unplanned', 'out_of_sequence', 'repeat', 'expected_cft', 'configured_actual_cft', 'configured_visits', 'duration', 'visit_time', 'remaining_time'] as $metric) $result[$metric] = $rows->sum($metric);
+                foreach (['sales_order_productive', 'collection_productive', 'eligible_customers', 'productive_customers', 'sales_order_customers', 'collection_customers', 'planned', 'covered', 'pending', 'missed', 'visits', 'productive', 'nonproductive', 'unplanned', 'out_of_sequence', 'repeat', 'expected_cft', 'configured_actual_cft', 'configured_visits', 'duration', 'visit_time', 'remaining_time'] as $metric) $result[$metric] = $rows->sum($metric);
                 $result['duration_count'] = $rows->whereNotNull('duration')->count();
                 return $result;
             })->values();
             $metrics['charts'] = ['daily' => $chartGroups('date')->sortBy('label')->values(), 'routes' => $chartGroups('routecode')];
+            $timeRoutes = $analysis->whereNotNull('duration')->groupBy('routecode')
+                ->sortByDesc(fn ($rows) => $rows->sum('duration'))->take(10)->keys();
+            $metrics['charts']['timeline'] = $analysis->whereIn('routecode', $timeRoutes)
+                ->filter(fn ($row) => $row['duration'] !== null && !empty($row['timeline']['start']) && !empty($row['timeline']['end']))
+                ->map(fn ($row) => [
+                    'routekey' => $row['routekey'], 'routecode' => $row['routecode'],
+                    'route' => $row['route'], 'closed' => $row['closed'],
+                    ...$row['timeline'],
+                ])->values();
             unset($metrics['analysis']);
         }
 

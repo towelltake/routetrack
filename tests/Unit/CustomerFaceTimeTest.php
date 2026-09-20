@@ -12,7 +12,7 @@ test('planned customer face time uses only the visit log CFT in minutes', functi
     DB::purge('cft_test');
 
     foreach ([
-        'customermaster (customercode integer, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real)',
+        'customermaster (customercode integer, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
         'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
     ] as $table) {
@@ -20,6 +20,7 @@ test('planned customer face time uses only the visit log CFT in minutes', functi
     }
     DB::table('customermaster')->insert([
         'customercode' => 1,
+        'toplpo' => 1,
         'fixedlatitude' => 23.5, 'fixedlongitude' => 58.5,
     ]);
     DB::table('customervisitlog')->insert([
@@ -32,13 +33,15 @@ test('planned customer face time uses only the visit log CFT in minutes', functi
     $method = new ReflectionMethod(RouteTrackingController::class, 'fetchCustomerVisits');
     $visits = $method->invoke(app(RouteTrackingController::class), 100, 1);
     expect($visits)->toHaveCount(1)
+        ->and($visits->first()['toplpo'])->toBe(1)
         ->and($visits->first()['default_face_time_minutes'])->toBe($expected)
         ->and($visits->first()['visit_duration_minutes'])->toBe(18.75);
     $time = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(
         app(RouteTrackingController::class), ['duration' => 3600, 'stationary_seconds' => 0, 'stationary_periods' => []], $visits,
     );
     $journey = (object) ['routekey' => 100, 'routecode' => 1, 'routestartdate' => '2026-09-07', 'routename' => 'Route', 'salesman' => 'Salesman'];
-    $dashboard = app(\App\Services\DashboardCustomerDetails::class)->build(collect([$journey]), 'operational');
+    $this->mock(\App\Services\DashboardMetrics::class, fn ($mock) => $mock->shouldReceive('otp')->once()->andReturn(['by_visit' => []]));
+    $dashboard = app(\App\Services\DashboardCustomerDetails::class)->build(collect([$journey]), 'cft');
     expect($time['face_time'])->toEqual(1125)
         ->and($dashboard['groups'][0]['rows']->sum('actual_cft'))->toEqual($time['face_time'] / 60);
 

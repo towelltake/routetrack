@@ -5,6 +5,55 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('route efficiency ignores every toplpo visit in numerator and denominator', function () {
+    $method = new ReflectionMethod(RouteTrackingController::class, 'summarizeEfficiency');
+    $controller = app(RouteTrackingController::class);
+    $productive = ['visit_duration_minutes' => 10, 'transactions' => ['sales' => [['amount' => 10, 'voided' => false]]]];
+    $visits = collect([
+        $productive + ['customercode' => 1, 'toplpo' => 1],
+        $productive + ['customercode' => 1, 'toplpo' => '1'],
+        $productive + ['customercode' => 2, 'toplpo' => 0],
+        ['customercode' => 3, 'toplpo' => null],
+        ['customercode' => 4, 'toplpo' => 2],
+        ['customercode' => 5, 'toplpo' => 1],
+    ]);
+    expect($method->invoke($controller, $visits))->toMatchArray([
+        'unique_visited_customers' => 3, 'unique_productive_customers' => 1, 'efficiency_percent' => 33.3,
+    ])->and($method->invoke($controller, $visits->filter(fn ($visit) => (int) ($visit['toplpo'] ?? 0) === 1)))->toMatchArray([
+        'unique_visited_customers' => 0, 'unique_productive_customers' => 0, 'efficiency_percent' => null,
+    ]);
+});
+
+test('route efficiency combines collections and sales orders without double counting overlaps', function () {
+    $document = fn ($amount, $voided = false) => ['amount' => $amount, 'voided' => $voided];
+    $visit = fn ($customer, $transactions, $duration = 10) => [
+        'customercode' => $customer, 'visit_duration_minutes' => $duration, 'transactions' => $transactions,
+    ];
+    $visits = collect([
+        $visit(1, ['sales' => [$document(20), $document(30)], 'orders' => [$document(10)], 'collections' => [$document(10), $document(20)]]),
+        $visit(1, ['orders' => [$document(40)]]),
+        $visit(2, ['collections' => [$document(50)]]),
+        $visit(3, ['sales' => [$document(100, true), $document(0), $document(-10)]]),
+        $visit(4, ['orders' => [$document(20)]], null),
+        $visit(5, []),
+        $visit(5, ['orders' => [$document(10)]]),
+    ]);
+    $method = new ReflectionMethod(RouteTrackingController::class, 'summarizeEfficiency');
+    $controller = app(RouteTrackingController::class);
+    expect($method->invoke($controller, $visits))->toMatchArray([
+        'unique_visited_customers' => 5,
+        'unique_productive_customers' => 3,
+        'efficiency_percent' => 60.0,
+        'collection_productive_customers' => 2, 'sales_order_productive_customers' => 2,
+        'collection_efficiency_percent' => 40.0, 'sales_order_efficiency_percent' => 40.0,
+    ])->and($method->invoke($controller, collect()))->toMatchArray([
+        'unique_visited_customers' => 0,
+        'unique_productive_customers' => 0,
+        'efficiency_percent' => null,
+        'collection_efficiency_percent' => null, 'sales_order_efficiency_percent' => null,
+    ])->and($method->invoke($controller, collect([$visit(1, [])]))['efficiency_percent'])->toBe(0.0);
+});
+
 test('visit transactions use dashboard amount fields and void rules', function () {
     config(['database.default' => 'transaction_sources_test', 'database.connections.transaction_sources_test' => [
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',

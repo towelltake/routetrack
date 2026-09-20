@@ -20,8 +20,9 @@ test('filter catalog derives divisions clusters and entities only from permitted
 test('dashboard action cards receive counts without eagerly transferring table details', function () {
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => [
-            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 2, 'duration' => 60],
-            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null],
+            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2, 'visits' => 4, 'date' => '2026-09-07', 'routecode' => 1, 'routekey' => 10, 'closed' => true, 'route' => 'Route 1', 'covered' => 2, 'duration' => 60,
+                'timeline' => ['start' => '2026-09-07 08:00:00', 'end' => '2026-09-07 09:00:00', 'visits' => [['2026-09-07 08:15:00', '2026-09-07 08:30:00']]]],
+            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'visits' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null],
         ]]]);
     });
     $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
@@ -29,6 +30,12 @@ test('dashboard action cards receive counts without eagerly transferring table d
     expect($summary)->not->toHaveKey('analysis')
         ->and($summary['action_summary'])->toMatchArray(['customers' => 3, 'review' => 1, 'repeat' => 2])
         ->and($summary['charts']['daily'])->toHaveCount(1)
+        ->and($summary['charts']['daily'][0]['visits'])->toBe(6)
+        ->and($summary['charts']['timeline'])->toHaveCount(1)
+        ->and($summary['charts']['timeline'][0])->toMatchArray([
+            'routekey' => 10, 'start' => '2026-09-07 08:00:00', 'end' => '2026-09-07 09:00:00',
+            'visits' => [['2026-09-07 08:15:00', '2026-09-07 08:30:00']],
+        ])
         ->and($summary['charts']['routes'][0])->toMatchArray(['covered' => 3, 'duration' => 60, 'duration_count' => 1])
         ->and($summary['charts']['daily'][0])->not->toHaveKey('customer_codes');
     $details = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['details' => 1]))->getData(true);

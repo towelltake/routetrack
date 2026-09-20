@@ -7,6 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import { filterFields, filterOptions } from "@/views/routelocation/filters";
+import { efficiencyCustomers } from "@/views/routelocation/analytics";
 
 const fromDashboard = new URLSearchParams(window.location.search).get('from') === 'dashboard';
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
@@ -73,6 +74,17 @@ const customerVisits = computed(() => {
     }));
 });
 
+const cftVisitRows = computed(() => customerVisits.value.map(visit => {
+    const excluded = visit.operational_otp ?? !!visit.otp_logs?.length;
+    const planned = excluded ? 0 : Math.max(0, Number(visit.default_face_time_minutes) || 0);
+    const actual = excluded ? 0 : visit.visit_duration_minutes;
+    return { ...visit, excluded, plannedCft: planned, actualCft: actual,
+        varianceCft: !excluded && actual != null && planned > 0 ? actual - planned : null };
+}));
+const cftOtpCount = computed(() => cftVisitRows.value.filter(visit => visit.excluded).length);
+const cftDuration = minutes => minutes == null ? 'Unavailable' : stationaryDuration(minutes * 60);
+const cftVariance = minutes => minutes == null ? 'Unavailable' : `${minutes > 0 ? '+' : minutes < 0 ? '-' : ''}${cftDuration(Math.abs(minutes))}`;
+
 const stationaryPeriods = computed(() =>
     (result.value?.actual?.stationary_periods ?? []).map((period, index) => ({
         ...period,
@@ -118,6 +130,7 @@ const routeSummaryGroups = computed(() => {
     const planned = result.value.planned;
     const actual = result.value.actual;
     const transactions = result.value.transactions ?? {};
+    const efficiency = result.value.efficiency;
     const transactionCard = (label, type, icon, tone) => {
         const count = transactions[type]?.count ?? 0;
         return {
@@ -133,6 +146,7 @@ const routeSummaryGroups = computed(() => {
             { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", action: "route", value: planned.route_closed ? "Closed" : "Live", meta: "View journey details" },
         ] },
         { key: "customers", title: "Customers", cards: [
+            { label: "Efficiency", action: "efficiency", breakdown: [{ label: "Collection", value: efficiency?.collection_efficiency_percent }, { label: "Sales orders + invoices", value: efficiency?.sales_order_efficiency_percent }], icon: "fa-gauge-high", tone: "green", value: efficiency?.efficiency_percent == null ? "—" : `${Number(efficiency.efficiency_percent).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`, meta: `${efficiency?.unique_productive_customers ?? 0} of ${efficiency?.unique_visited_customers ?? 0} unique customers productive`, definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited in this journey. Customers marked for productivity exclusion are omitted from both counts. Repeated visits count once. Collection and sales/order breakdowns can overlap." },
             { label: "Customer Coverage", icon: "fa-store", tone: "blue", action: "customers", value: pct(customerVisitSummary.value.planned ? customerVisitSummary.value.plannedVisited / customerVisitSummary.value.planned : null), meta: `${customerVisitSummary.value.plannedVisited} of ${customerVisitSummary.value.planned} visited · ${customerVisitSummary.value.plannedNotVisited} pending` },
             { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", action: "unplanned", value: customerVisitSummary.value.unplannedVisited, meta: "View customer list" },
             { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
@@ -142,10 +156,11 @@ const routeSummaryGroups = computed(() => {
             { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
+            { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", action: "cft", value: stationaryDuration(actual.actual_cft), meta: "Completed visits without OTP" },
             { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
-            { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: stationaryDuration(actual.face_time), meta: planned.face_time ? `Planned ${stationaryDuration(planned.face_time)} · ${pct(planned.face_time ? actual.face_time / planned.face_time : null)} achieved` : "All customer visits" },
+            { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: actual.operational_time == null ? "N/A" : stationaryDuration(actual.operational_time), meta: actual.operational_time == null ? "No complete non-OTP visit window" : `${actual.operational_start} to ${actual.operational_end}`, definition: "First non-OTP customer check-in to the last non-OTP customer checkout, including time between visits." },
             { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
-            { label: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "0%" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
+            { label: "Face Time Compliance", action: "cft", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "0%" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
                 comparison: { actual: actual.actual_cft, planned: actual.planned_cft },
                 meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
             { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
@@ -161,6 +176,8 @@ const routeSummaryGroups = computed(() => {
 });
 
 const summaryTitle = computed(() => ({
+    cft: "Customer Face Time",
+    efficiency: "Efficiency — Unique Customers",
     route: "Route Journey Details",
     customers: "Customer Coverage",
     unplanned: "Unplanned Visits",
@@ -175,6 +192,7 @@ const summaryTitle = computed(() => ({
 const summaryCustomers = computed(() => summaryModal.value === "unplanned"
     ? customerVisits.value.filter((visit) => visit.journey_status === "unplanned")
     : numberedCustomers.value);
+const efficiencyRows = computed(() => efficiencyCustomers(customerVisits.value));
 
 const routeQualityWarnings = computed(() => {
     if (!result.value) {
@@ -1070,6 +1088,7 @@ function focusEnd() {
                             class="route-summary-card"
                             :class="[`tone-${card.tone}`, { clickable: card.action }]"
                             :disabled="!card.action"
+                            :title="card.definition"
                             @click="openSummary(card.action)"
                         >
                             <span class="route-summary-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
@@ -1078,7 +1097,7 @@ function focusEnd() {
                                 <strong v-if="!card.comparison">{{ card.value }}</strong>
                                 <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
                                 <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance</span></span>
-                                <span v-if="card.meta">{{ card.meta }}</span>
+                                <span v-if="card.meta">{{ card.meta }}</span><span v-for="item in card.breakdown ?? []" :key="item.label" class="d-block">{{ item.label }}: <b>{{ item.value == null ? "Unavailable" : `${item.value}%` }}</b></span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
                         </button>
@@ -1435,7 +1454,7 @@ function focusEnd() {
                 aria-labelledby="route-summary-modal-title"
                 @click.self="closeSummary"
             >
-                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="summaryModal === 'stationary' ? 'modal-xl' : 'modal-lg'">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="['stationary', 'cft'].includes(summaryModal) ? 'modal-xl' : 'modal-lg'">
                     <div class="modal-content">
                         <div class="modal-header">
                             <div>
@@ -1445,7 +1464,30 @@ function focusEnd() {
                             <button type="button" class="btn-close" aria-label="Close" @click="closeSummary"></button>
                         </div>
                         <div class="modal-body">
-                            <dl v-if="summaryModal === 'route'" class="route-detail-grid mb-0">
+                            <div v-if="summaryModal === 'cft'">
+                                <p>Customer Face Time: <strong>{{ stationaryDuration(result.actual.actual_cft) }}</strong></p>
+                                <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Times are in h:mm; variance is actual minus planned.</p>
+                                <div class="table-responsive"><table class="table table-sm">
+                                    <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance</th><th scope="col">Status</th></tr></thead>
+                                    <tbody>
+                                        <tr v-for="visit in cftVisitRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded }">
+                                            <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}</td>
+                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td>
+                                            <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ cftVariance(visit.varianceCft) }}</td>
+                                            <td>{{ visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
+                                        </tr>
+                                        <tr v-if="!cftVisitRows.length"><td colspan="10">No customer visits for this journey.</td></tr>
+                                    </tbody>
+                                </table></div>
+                            </div>
+                            <div v-else-if="summaryModal === 'efficiency'">
+                                <p class="small text-muted">Each customer counts once. Ignored customers are shown for reference and excluded from both metric counts.</p>
+                                <div class="table-responsive"><table class="table table-sm">
+                                    <thead><tr><th>Customer code</th><th>Customer name</th><th>Status</th><th>Visits</th></tr></thead>
+                                    <tbody><tr v-for="customer in efficiencyRows" :key="customer.customercode"><td>{{ customer.alternatecode || customer.customercode }}</td><td>{{ customer.customername }}</td><td><span :class="{ 'text-warning': customer.ignored }">{{ customer.status }}</span><small v-if="!customer.ignored" class="d-block text-muted">Collection: {{ customer.collection_productive ? "Yes" : "No" }} &middot; Sales orders + invoices: {{ customer.sales_order_productive ? "Yes" : "No" }}</small><small v-if="customer.ignored" class="d-block text-muted">Customer marked toplpo = 1; excluded from calculations</small></td><td>{{ customer.visit_count }}</td></tr><tr v-if="!efficiencyRows.length"><td colspan="4">No customer visits.</td></tr></tbody>
+                                </table></div>
+                            </div>
+                            <dl v-else-if="summaryModal === 'route'" class="route-detail-grid mb-0">
                                 <div><dt>Route</dt><dd>{{ result.planned.route_details?.routecode }} - {{ result.planned.route_details?.routename || "Not available" }}</dd></div>
                                 <div><dt>Salesman</dt><dd>{{ result.planned.route_details?.salesmanname || "Not available" }} <span v-if="result.planned.route_details?.salesmancode" class="text-muted">({{ result.planned.route_details.salesmancode }})</span></dd></div>
                                 <div><dt>Version Number</dt><dd>{{ result.planned.route_details?.version || "Not available" }}</dd></div>
@@ -1704,6 +1746,7 @@ function focusEnd() {
 </template>
 
 <style lang="scss">
+.cft-otp-excluded > td { color: #b91c1c; background: #fef2f2; }
 @import "vue-select/dist/vue-select.css";
 @import "@scss/vendor/vue-select";
 

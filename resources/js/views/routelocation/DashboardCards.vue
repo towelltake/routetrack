@@ -22,8 +22,9 @@ const cards = computed(() => {
             detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",
             definition: "Distinct planned customers visited per journey divided by planned customers per journey. Unvisited customers are pending on open journeys and missed on closed journeys." },
         { title: "Productive visits", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
+            breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Sales orders + invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
-            definition: "Completed visits with a positive-value, non-voided sale or order, divided by completed visits. Each visit counts once. Collection-only and return-only visits do not count as productive." },
+            definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. Ignored customers are excluded." },
         { title: "Sales", icon: "fa-chart-line", tone: "green", amounts: m?.amounts.sales,
             note: "Total invoice sales value", definition: "Total sales value" },
         { title: "Order value", icon: "fa-file-invoice", tone: "blue", amounts: m?.amounts.orders,
@@ -31,7 +32,7 @@ const cards = computed(() => {
         { title: "Collections", icon: "fa-wallet", tone: "navy", amounts: m?.amounts.collections,
             note: "Total collection receipts value", definition: "Total collection value" },
         { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(m?.operational_minutes), unit: "h:mm",
-            note: "All completed customer visits", definition: "Total customer visit time" },
+            note: "First check-in to last checkout without OTP", detail: m?.operational_missing_journeys ? `${m.operational_missing_journeys} journeys unavailable` : "", definition: "Sum of each journey's first non-OTP check-in to its last non-OTP checkout. Includes intervening time. A missing final checkout makes the journey unavailable." },
         { title: "OTP usage", icon: "fa-key", tone: "purple", value: number(m?.otp.events),
             note: "All OTP types",
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
@@ -43,7 +44,7 @@ const cards = computed(() => {
         { title: "Time Outside Visits", icon: "fa-car", tone: "slate", value: duration(m?.outside_visit_minutes), unit: "h:mm",
             note: "Includes travel, idle time and breaks",
             detail: m?.duration_missing_journeys ? `${number(m.duration_missing_journeys)} journeys excluded: duration unavailable` : "",
-            definition: "Journey duration minus operational time, summed for journeys with available duration" },
+            definition: "Journey duration minus summed completed customer visit time, for journeys with available duration" },
         { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
             note: "Invoice and order returns", definition: "Total returns value" },
         { title: "OTP Customer Time", icon: "fa-key", tone: "purple", value: duration(m?.otp_customer_minutes), unit: "h:mm",
@@ -52,12 +53,18 @@ const cards = computed(() => {
             comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes },
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
             definition: "Variance from planned face time, excluding OTP visits" },
+        { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
+            breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Sales orders + invoices', value: m?.sales_order_efficiency_percent }],
+            note: m ? `${number(m.unique_productive_customers)} of ${number(m.unique_visited_customers)} unique customers productive` : "",
+            definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. Ignored customers are excluded." },
+        { title: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: duration(m?.cft_minutes), unit: "h:mm",
+            note: "Completed visits without OTP", definition: "Sum of completed customer visit durations excluding visits matched to any OTP type. OTP visits remain visible in red in the details." },
     ];
 });
 const groups = computed(() => [
     { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
-    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2], cards.value[7]] },
-    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10]] },
+    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2], cards.value[14], cards.value[7]] },
+    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[15], cards.value[12], cards.value[13], cards.value[10]] },
     { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
 ]);
 </script>
@@ -71,11 +78,11 @@ const groups = computed(() => [
                 <h3 class="dashboard-group-title">{{ group.title }}</h3>
                 <div class="dashboard-metric-grid">
             <article v-for="card in group.cards" :key="card.title" class="dashboard-metric-card" :class="`tone-${card.tone}`" :title="card.definition"
-                role="button" :tabindex="metrics && !loading ? 0 : -1" :aria-disabled="!metrics || loading"
-                :aria-label="`${card.title}. ${card.definition} View journey details.`"
-                @click="metrics && !loading && emit('inspect', card.title)"
-                @keydown.enter="metrics && !loading && emit('inspect', card.title)"
-                @keydown.space.prevent="metrics && !loading && emit('inspect', card.title)">
+                :role="card.interactive === false ? undefined : 'button'" :tabindex="card.interactive !== false && metrics && !loading ? 0 : -1" :aria-disabled="card.interactive === false ? undefined : !metrics || loading"
+                :aria-label="`${card.title}. ${card.definition}${card.interactive === false ? '' : ' View journey details.'}`"
+                @click="card.interactive !== false && metrics && !loading && emit('inspect', card.title)"
+                @keydown.enter="card.interactive !== false && metrics && !loading && emit('inspect', card.title)"
+                @keydown.space.prevent="card.interactive !== false && metrics && !loading && emit('inspect', card.title)">
                 <span class="dashboard-metric-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
                 <div class="dashboard-metric-copy">
                 <h4 class="dashboard-card-title">{{ card.title }}</h4>
@@ -96,8 +103,9 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
+                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown"><div v-for="item in card.breakdown" :key="item.label"><span>{{ item.label }}</span><strong>{{ percent(item.value) }}</strong></div></div>
                 </div>
-                <i class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
+                <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
                 </div>
             </section>
@@ -116,6 +124,7 @@ const groups = computed(() => [
 .dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .group-time .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; display: grid; grid-template-columns: 32px minmax(0, 1fr) 10px; align-content: start; gap: 10px 8px; min-width: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .dashboard-metric-card[aria-disabled="false"]:hover { border-color: var(--accent); box-shadow: 0 4px 14px #172b4510; }
@@ -143,9 +152,11 @@ const groups = computed(() => [
 .dashboard-face-variance span { font-size: 11px; color: #64748b; }
 .dashboard-time-comparison small { align-self: end; color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
+.dashboard-metric-breakdown { border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 6px; font-size: 11px; }
+.dashboard-metric-breakdown div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }
-@media (max-width: 1050px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1050px) { .group-customers .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-metric-card { padding: 12px; } }
 @media (max-width: 420px) { .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } }
 </style>

@@ -4,6 +4,21 @@ use App\Http\Controllers\RouteTracking\RouteTrackingController;
 
 uses(Tests\TestCase::class);
 
+test('CFT uses all journey OTP types even when the GPS IN list is empty', function () {
+    $visits = collect([
+        ['customercode' => 1, 'visit_duration_minutes' => 20, 'default_face_time_minutes' => 30, 'operational_otp' => true, 'otp_logs' => []],
+        ['customercode' => 1, 'visit_duration_minutes' => 10, 'default_face_time_minutes' => 15, 'operational_otp' => false, 'otp_logs' => []],
+        ['customercode' => 2, 'visit_duration_minutes' => null, 'default_face_time_minutes' => 50, 'operational_otp' => true, 'otp_logs' => []],
+    ]);
+    $result = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(
+        app(RouteTrackingController::class), ['duration' => 3600, 'stationary_seconds' => 0, 'stationary_periods' => []], $visits,
+    );
+    expect($result['actual_cft'])->toEqual(600)
+        ->and($result['planned_cft'])->toEqual(900)
+        ->and($result['otp_customer_time'])->toEqual(1200)
+        ->and($result['face_time'])->toEqual(1800);
+});
+
 test('route time excludes OTP visits once and splits partially overlapping stationary periods', function () {
     $visit = fn ($key, $start, $end, $minutes, $otp = []) => [
         'logkey' => $key, 'visit_start_date' => '2026-09-10', 'visit_start_time' => $start,

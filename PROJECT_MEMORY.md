@@ -637,3 +637,10 @@ tiles. Reduced customer-card gaps/padding and removed forced 36px note height
 and filler rows; reduced tile padding while keeping prominent percentages.
 Customer card rows size naturally while retaining aligned heights within each
 row. Diff check passed. CSS-only change; browser/build remains unverified.
+
+## Route Tracking idle card only: 2026-09-20
+
+Renamed the Stationary Time card to Idle Time and bound its displayed value to
+stationary_without_customer_seconds (the popup's Idle time without customer
+visits total). Card note explicitly identifies that measure. The stationary
+popup, click action and calculations remain unchanged. Diff check passed.

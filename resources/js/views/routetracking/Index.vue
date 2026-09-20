@@ -166,7 +166,7 @@ const routeSummaryGroups = computed(() => {
                 meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
             { label: "OTP Customer Time", action: "otp_time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
             { label: "Travel Time", action: "travel", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
-            { label: "Stationary Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View stop breakdown" },
+            { label: "Idle Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_without_customer_seconds), meta: "Idle time without customer visits" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),

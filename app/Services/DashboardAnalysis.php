@@ -41,6 +41,7 @@ class DashboardAnalysis
                     'start' => $start === null ? null : date('Y-m-d H:i:s', $start),
                     'end' => $end === null ? null : date('Y-m-d H:i:s', $end),
                     'visits' => [],
+                    'otp_visits' => [],
                 ],
                 'distance' => $closed && ($journey->routestartodometer ?? 0) > 0 && ($journey->routeendodometer ?? 0) >= $journey->routestartodometer
                     ? (float) $journey->routeendodometer - (float) $journey->routestartodometer : null,
@@ -74,6 +75,7 @@ class DashboardAnalysis
                 if (!($visit->productivity_excluded ?? false)) $row['completed']++;
                 $recordedVisitMinutes += $minutes;
                 $hasOtp = !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]);
+                if ($hasOtp) $row['timeline']['otp_visits'][] = [date('Y-m-d H:i:s', $visitStart), date('Y-m-d H:i:s', $visitEnd)];
                 if (!$hasOtp) $row['actual_cft'] += $minutes;
                 if ($visit->expected_minutes > 0 && !$hasOtp) {
                     $row['configured_visits']++;

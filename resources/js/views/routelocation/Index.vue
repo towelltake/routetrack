@@ -87,6 +87,7 @@ const toDate = ref(restored?.to ?? DEFAULT_DATE);
 const dateError = computed(() => dateRangeError(fromDate.value, toDate.value));
 const loading = ref(false);
 const metrics = ref(null);
+const timelineFilters = ref({});
 const metricsLoading = ref(true);
 const metricsError = ref(null);
 const analyticsView = ref(null);
@@ -291,14 +292,15 @@ async function loadLocations(request) {
 }
 
 async function loadMetrics(request, signal) {
+    const params = { from_date: fromDate.value, to_date: toDate.value, ...selected.value, summary: 1 };
     metricsLoading.value = true;
     try {
         const { data } = await axios.get("/dashboard/metrics.json", {
             signal,
             timeout: 60000,
-            params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value, summary: 1 },
+            params,
         });
-        if (request === locationRequest) metrics.value = data;
+        if (request === locationRequest) { metrics.value = data; timelineFilters.value = params; }
     } catch {
         if (request === locationRequest) metricsError.value = "Unable to load the overview figures.";
     } finally {
@@ -416,7 +418,7 @@ function resetFilters() {
             <article class="attention"><i class="fa fa-flag"></i><h2>Journeys needing attention</h2><strong>{{ summary.review ?? '\u2014' }} <small>journeys to review</small></strong><p>{{ summary.repeat ?? '\u2014' }} repeat visits &middot; Execution and data issues</p><button :disabled="!metrics || !!dateError" @click="openAction('attention')">Review journeys <span aria-hidden="true">&rarr;</span></button></article>
             <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.tracking_routes ?? '\u2014' }} <small>routes with tracking</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span aria-hidden="true">&rarr;</span></button></article>
         </div>
-        <DashboardGraphs :metrics="metrics" :loading="metricsLoading" />
+        <DashboardGraphs :metrics="metrics" :loading="metricsLoading" :timeline-filters="timelineFilters" />
         <dialog ref="actionDialog" class="dashboard-action-dialog" @cancel.prevent="closeAction">
             <header><h2>{{ activeView === 'live' ? 'Track your live routes' : activeView === 'attention' ? 'Journeys needing attention' : 'Performance comparison' }}</h2><button @click="closeAction" aria-label="Close">&times;</button></header>
             <p v-if="detailError && activeView !== 'live'" role="alert">{{ detailError }}</p>

@@ -111,6 +111,7 @@ test('journey analysis carries recorded visit intervals for the clock timeline w
             ['2026-09-01 10:00:00', '2026-09-01 10:20:00'],
             ['2026-09-01 10:30:00', '2026-09-01 10:40:00'],
         ],
+        'otp_visits' => [['2026-09-01 10:00:00', '2026-09-01 10:20:00']],
     ])->and($row['visit_time'])->toEqual(30)
         ->and($row['duration'])->toEqual(1080);
 });

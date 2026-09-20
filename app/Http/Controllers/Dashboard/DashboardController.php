@@ -259,6 +259,15 @@ class DashboardController extends Controller
         $metrics['routes_not_started'] = max(0, $metrics['total_routes'] - $started);
 
         $analysis = collect($metrics['analysis']['journeys'] ?? []);
+        $timeline = $analysis->filter(fn ($row) => $row['duration'] !== null && !empty($row['timeline']['start']) && !empty($row['timeline']['end']));
+        $timelineRoutes = $timeline->groupBy('routecode')->sortByDesc(fn ($rows) => $rows->sum('duration'))->keys();
+        $timelineRows = fn ($rows) => $rows->map(fn ($row) => [
+            'routekey' => $row['routekey'], 'routecode' => $row['routecode'],
+            'route' => $row['route'], 'closed' => $row['closed'], ...$row['timeline'],
+        ])->values();
+        if ($request->boolean('timeline_only')) {
+            return response()->json(['timeline' => $timelineRows($timeline)]);
+        }
         $metrics['action_summary'] = [
             'customers' => $analysis->flatMap(fn ($row) => $row['customer_codes'])->unique()->count(),
             'review' => $analysis->filter(fn ($row) => count($row['issues']) > 0)->count(),
@@ -273,15 +282,8 @@ class DashboardController extends Controller
                 return $result;
             })->values();
             $metrics['charts'] = ['daily' => $chartGroups('date')->sortBy('label')->values(), 'routes' => $chartGroups('routecode')];
-            $timeRoutes = $analysis->whereNotNull('duration')->groupBy('routecode')
-                ->sortByDesc(fn ($rows) => $rows->sum('duration'))->take(10)->keys();
-            $metrics['charts']['timeline'] = $analysis->whereIn('routecode', $timeRoutes)
-                ->filter(fn ($row) => $row['duration'] !== null && !empty($row['timeline']['start']) && !empty($row['timeline']['end']))
-                ->map(fn ($row) => [
-                    'routekey' => $row['routekey'], 'routecode' => $row['routecode'],
-                    'route' => $row['route'], 'closed' => $row['closed'],
-                    ...$row['timeline'],
-                ])->values();
+            $metrics['charts']['timeline_route_count'] = $timelineRoutes->count();
+            $metrics['charts']['timeline'] = $timelineRows($timeline->whereIn('routecode', $timelineRoutes->take(10)));
             unset($metrics['analysis']);
         }
 

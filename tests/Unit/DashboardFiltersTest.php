@@ -285,3 +285,24 @@ test('tracking card counts distinct routes with usable PostgreSQL locations just
     $request = Request::create('/', 'GET', ['date' => '2026-09-07', 'routes' => [1, 2]]);
     expect($controller->metrics($request)->getData(true)['action_summary']['tracking_routes'])->toBe(0);
 });
+
+test('timeline expansion is deferred until requested and returns only timeline data', function () {
+    $rows = collect(range(1, 12))->map(fn ($id) => [
+        'routekey' => $id, 'routecode' => $id, 'route' => 'Route '.$id,
+        'closed' => true, 'date' => '2026-09-07', 'duration' => $id * 60,
+        'customer_codes' => [], 'issues' => [], 'repeat' => 0,
+        'timeline' => ['start' => '2026-09-07 08:00:00',
+            'end' => sprintf('2026-09-07 %02d:00:00', 8 + $id), 'visits' => [], 'otp_visits' => []],
+    ])->all();
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) use ($rows) {
+        $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => $rows]]);
+    });
+    $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
+    $summary = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['summary' => 1]))->getData(true);
+    expect($summary['charts']['timeline'])->toHaveCount(10)
+        ->and($summary['charts']['timeline_route_count'])->toBe(12)
+        ->and(array_column($summary['charts']['timeline'], 'routecode'))->not->toContain(1, 2);
+    $expanded = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['timeline_only' => 1]))->getData(true);
+    expect(array_keys($expanded))->toBe(['timeline'])
+        ->and($expanded['timeline'])->toHaveCount(12);
+});

@@ -146,7 +146,7 @@ const routeSummaryGroups = computed(() => {
             { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", action: "route", value: planned.route_closed ? "Closed" : "Live", meta: "View journey details" },
         ] },
         { key: "customers", title: "Customers", cards: [
-            { label: "Efficiency", action: "efficiency", breakdown: [{ label: "Collection", value: efficiency?.collection_efficiency_percent }, { label: "Sales orders + invoices", value: efficiency?.sales_order_efficiency_percent }], icon: "fa-gauge-high", tone: "green", value: efficiency?.efficiency_percent == null ? "—" : `${Number(efficiency.efficiency_percent).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`, meta: `${efficiency?.unique_productive_customers ?? 0} of ${efficiency?.unique_visited_customers ?? 0} unique customers productive`, definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited in this journey. Customers marked for productivity exclusion are omitted from both counts. Repeated visits count once. Collection and sales/order breakdowns can overlap." },
+            { label: "Efficiency", action: "efficiency", breakdown: [{ label: "Collection", value: efficiency?.collection_efficiency_percent }, { label: "Orders/Invoices", value: efficiency?.sales_order_efficiency_percent }], icon: "fa-gauge-high", tone: "green", value: efficiency?.efficiency_percent == null ? "—" : `${Number(efficiency.efficiency_percent).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`, meta: `${efficiency?.unique_productive_customers ?? 0} of ${efficiency?.unique_visited_customers ?? 0} unique customers productive`, definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited in this journey. Customers marked for productivity exclusion are omitted from both counts. Repeated visits count once. Collection and sales/order breakdowns can overlap." },
             { label: "Customer Coverage", icon: "fa-store", tone: "blue", action: "customers", value: pct(customerVisitSummary.value.planned ? customerVisitSummary.value.plannedVisited / customerVisitSummary.value.planned : null), meta: `${customerVisitSummary.value.plannedVisited} of ${customerVisitSummary.value.planned} visited · ${customerVisitSummary.value.plannedNotVisited} pending` },
             { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", action: "unplanned", value: customerVisitSummary.value.unplannedVisited, meta: "View customer list" },
             { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
@@ -1097,7 +1097,8 @@ function focusEnd() {
                                 <strong v-if="!card.comparison">{{ card.value }}</strong>
                                 <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
                                 <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance</span></span>
-                                <span v-if="card.meta">{{ card.meta }}</span><span v-for="item in card.breakdown ?? []" :key="item.label" class="d-block">{{ item.label }}: <b>{{ item.value == null ? "Unavailable" : `${item.value}%` }}</b></span>
+                                <span v-if="card.meta">{{ card.meta }}</span>
+                                <span v-if="card.breakdown" class="route-metric-breakdown"><span v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><b>{{ item.value == null ? '—' : `${Number(item.value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%` }}</b><span>{{ item.label }}</span></span></span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
                         </button>
@@ -1484,7 +1485,7 @@ function focusEnd() {
                                 <p class="small text-muted">Each customer counts once. Ignored customers are shown for reference and excluded from both metric counts.</p>
                                 <div class="table-responsive"><table class="table table-sm">
                                     <thead><tr><th>Customer code</th><th>Customer name</th><th>Status</th><th>Visits</th></tr></thead>
-                                    <tbody><tr v-for="customer in efficiencyRows" :key="customer.customercode"><td>{{ customer.alternatecode || customer.customercode }}</td><td>{{ customer.customername }}</td><td><span :class="{ 'text-warning': customer.ignored }">{{ customer.status }}</span><small v-if="!customer.ignored" class="d-block text-muted">Collection: {{ customer.collection_productive ? "Yes" : "No" }} &middot; Sales orders + invoices: {{ customer.sales_order_productive ? "Yes" : "No" }}</small><small v-if="customer.ignored" class="d-block text-muted">Customer marked toplpo = 1; excluded from calculations</small></td><td>{{ customer.visit_count }}</td></tr><tr v-if="!efficiencyRows.length"><td colspan="4">No customer visits.</td></tr></tbody>
+                                    <tbody><tr v-for="customer in efficiencyRows" :key="customer.customercode"><td>{{ customer.alternatecode || customer.customercode }}</td><td>{{ customer.customername }}</td><td><span :class="{ 'text-warning': customer.ignored }">{{ customer.status }}</span><small v-if="!customer.ignored" class="d-block text-muted">Collection: {{ customer.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ customer.sales_order_productive ? "Yes" : "No" }}</small><small v-if="customer.ignored" class="d-block text-muted">Customer marked toplpo = 1; excluded from calculations</small></td><td>{{ customer.visit_count }}</td></tr><tr v-if="!efficiencyRows.length"><td colspan="4">No customer visits.</td></tr></tbody>
                                 </table></div>
                             </div>
                             <dl v-else-if="summaryModal === 'route'" class="route-detail-grid mb-0">
@@ -1873,6 +1874,12 @@ function focusEnd() {
 .route-summary-label, .route-summary-copy > span:last-child { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
 .route-summary-copy strong { display: block; margin: 2px 0; color: var(--tone); font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
 .route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }
+.route-summary-copy > .route-metric-breakdown { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 12px; }
+.route-metric-breakdown > span { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 10px; text-align: center; min-width: 0; }
+.route-metric-breakdown b { font-size: 24px; font-weight: 800; line-height: 1.1; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+.route-metric-breakdown > span > span { color: #52657b; font-size: 10px; font-weight: 600; line-height: 1.4; }
+.route-metric-breakdown .collection-share { color: #7c3aed; background: #f5f3ff; }
+.route-metric-breakdown .sales-share { color: #2563eb; background: #eff6ff; }
 
 .route-summary-group-time {
     .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: stretch; grid-auto-rows: 1fr; }

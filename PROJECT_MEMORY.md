@@ -404,6 +404,25 @@ No calculation or endpoint behavior changed in this refinement.
 Validation: 18 existing JS tests, Vue script syntax and diff checks passed;
 full build and browser rendering remain unverified without local dependencies.
 
+## Percentage breakdown presentation: 2026-09-20
+
+Dashboard productivity/efficiency and Route Tracking efficiency breakdowns now
+show bold 24px percentages above their labels in two softly tinted tiles:
+purple for Collection, blue for Sales orders + invoices. Responsive grids stack
+tiles when narrow. Calculation behavior is unchanged. Diff and Vue script syntax
+checks passed; full build/rendering was not verified in this workspace.
+
+## Card alignment and shorter labels: 2026-09-20
+
+Renamed displayed sales/order breakdown labels to Orders/Invoices in Dashboard
+cards, graphs, comparisons and popups and Route Tracking cards/popups. Dashboard
+customer cards now align title/value/note rows and anchor full-width, equal-column
+percentage tiles to the bottom. Journey section uses two columns of the outer
+twelve-column grid, giving the five customer cards more room. Six time cards use
+six columns on wide screens and balanced three/two columns at smaller widths.
+No calculation changes. Diff and Vue script syntax checks passed; visual/build
+verification remains unavailable without installed frontend dependencies.
+
 ## Verification and continuing work
 
 Existing tests cover dashboard filters/metrics, outside visits, CFT, journey
@@ -417,3 +436,36 @@ After a customization, update this file with its purpose, changed behavior,
 important decisions and checks. Keep credentials and live customer data out.
 If a historical decision cannot be found in code, tests, Git or these notes, say
 it is unknown instead of inventing a rationale.
+
+## Journey timeline display refinement: 2026-09-20
+
+Removed journey numbers from visible route/date labels while preserving unique
+internal row keys for multiple journeys. Renamed the canvas container to avoid
+OneUI's global timeline pseudo-element drawing the unwanted left-hand line.
+Dashboard summary now returns all authorized, filtered journeys with usable
+boundaries. The chart defaults to the ten routes with greatest total duration;
+Expand all routes / Collapse to top 10 controls the displayed selection.
+OTP intervals use the existing all-type by_visit matching. Non-OTP visit segments
+are teal, OTP segments purple and outside-recorded-visit segments red. OTP takes
+precedence for overlapping intervals; all durations still count once. Outside
+visits is labelled idle / travel, since this data cannot isolate GPS idle time.
+Percentages and the values table include all three categories and follow the
+currently displayed routes. No operational/CFT metric formulas were changed.
+Validation: 20 JavaScript tests passed, Vue script syntax and diff checks passed.
+Updated PHP timeline expectation; PHP tests, build and visual verification remain
+unavailable without local PHP/vendor/frontend dependencies.
+
+## Deferred timeline expansion: 2026-09-20
+
+Supersedes the eager all-route timeline response above. Dashboard summary sends
+only the top ten routes' timeline rows plus timeline_route_count. Expand requests
+metrics.json with timeline_only=1 and the filter snapshot used for the displayed
+summary. That response includes only timeline rows, through the same authorized
+metrics query and validation. Existing backend metric calculations still run;
+this optimization reduces initial payload and browser work, not database work.
+The chart caches expanded rows until refresh/filter change, cancels stale requests,
+resets expansion on new data, and shows loading and retryable errors. Collapse
+and reopening reuse loaded rows. PHP regression coverage added for ten-row-route
+selection versus explicit all-route response. Twenty JS tests, modified Vue script
+syntax and diff checks passed. PHP tests, production build and browser checks
+remain unverified because local runtime/dependencies are unavailable.

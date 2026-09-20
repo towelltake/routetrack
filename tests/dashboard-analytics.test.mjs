@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { efficiencyCustomers } from "../resources/js/views/routelocation/analytics.js";
-import { journeyTimeline, clockTime } from "../resources/js/views/routelocation/journeyTimeline.js";
+import { journeyTimeline, clockTime, selectTimelineRoutes } from "../resources/js/views/routelocation/journeyTimeline.js";
 import { groupJourneys, rate, trackUrl, percentageDataset, percentageSeries, chartValueLabel } from "../resources/js/views/routelocation/analytics.js";
 
 const journey = (overrides = {}) => ({
@@ -137,7 +137,27 @@ test("timeline preserves separate journeys and excludes unavailable or zero dura
     const base = { routekey: 1, routecode: 10, route: 'North', start: '2026-09-01 08:00:00', end: '2026-09-01 10:00:00', visits: [] };
     const rows = journeyTimeline([base, { ...base, routekey: 2 }, { ...base, end: null }, { ...base, end: base.start }]);
     assert.equal(rows.length, 2);
-    assert.notEqual(rows[0].label, rows[1].label);
+    assert.notEqual(rows[0].key, rows[1].key);
+    assert.equal(rows[0].label, rows[1].label);
+    assert.ok(!rows[0].label.includes('Journey'));
     assert.equal(rows[0].outsideMinutes, 120);
     assert.deepEqual(journeyTimeline([]), []);
+});
+
+test('OTP timeline overlaps count once and split across midnight', () => {
+    const rows = journeyTimeline([{ routekey: 1, routecode: 10, route: 'North',
+        start: '2026-09-01 23:00:00', end: '2026-09-02 02:00:00',
+        visits: [['2026-09-01 23:15:00', '2026-09-02 01:00:00'], ['2026-09-01 23:30:00', '2026-09-02 00:30:00']],
+        otp_visits: [['2026-09-01 23:30:00', '2026-09-02 00:30:00']],
+    }]);
+    assert.deepEqual(rows.map(r => [r.visitMinutes, r.otpMinutes, r.outsideMinutes]), [[15, 30, 15], [30, 30, 60]]);
+    for (const row of rows) assert.equal(row.visitMinutes + row.otpMinutes + row.outsideMinutes, row.duration);
+});
+
+test('timeline expansion includes every selected route while collapsed ranks total route duration', () => {
+    const journeys = Array.from({ length: 12 }, (_, i) => ({ routekey: i, routecode: i,
+        start: '2026-09-01 08:00:00', end: `2026-09-01 ${String(i + 9).padStart(2, '0')}:00:00` }));
+    assert.equal(selectTimelineRoutes(journeys).length, 10);
+    assert.ok(!selectTimelineRoutes(journeys).some(row => row.routecode < 2));
+    assert.equal(selectTimelineRoutes(journeys, true).length, 12);
 });

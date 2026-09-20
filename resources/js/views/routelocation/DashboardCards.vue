@@ -22,7 +22,7 @@ const cards = computed(() => {
             detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",
             definition: "Distinct planned customers visited per journey divided by planned customers per journey. Unvisited customers are pending on open journeys and missed on closed journeys." },
         { title: "Productive visits", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
-            breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Sales orders + invoices', value: m?.sales_order_productivity_percent }],
+            breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Orders/Invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. Ignored customers are excluded." },
         { title: "Sales", icon: "fa-chart-line", tone: "green", amounts: m?.amounts.sales,
@@ -54,7 +54,7 @@ const cards = computed(() => {
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
             definition: "Variance from planned face time, excluding OTP visits" },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
-            breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Sales orders + invoices', value: m?.sales_order_efficiency_percent }],
+            breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Orders/Invoices', value: m?.sales_order_efficiency_percent }],
             note: m ? `${number(m.unique_productive_customers)} of ${number(m.unique_visited_customers)} unique customers productive` : "",
             definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. Ignored customers are excluded." },
         { title: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: duration(m?.cft_minutes), unit: "h:mm",
@@ -103,7 +103,7 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
-                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown"><div v-for="item in card.breakdown" :key="item.label"><span>{{ item.label }}</span><strong>{{ percent(item.value) }}</strong></div></div>
+                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ percent(item.value) }}</strong><span>{{ item.label }}</span></div></div>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
@@ -117,13 +117,13 @@ const groups = computed(() => [
 .dashboard-overview { margin: 18px 0; color: #172b45; }
 .dashboard-metric-groups { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
 .dashboard-metric-group { display: flex; flex-direction: column; min-width: 0; padding: 12px; border: 1px solid #e8edf3; border-radius: 12px; background: #f8fafc; }
-.group-journeys { grid-column: span 3; }
-.group-customers { grid-column: span 9; }
+.group-journeys { grid-column: span 2; }
+.group-customers { grid-column: span 10; }
 .group-time, .group-transactions { grid-column: span 12; }
 .dashboard-group-title { margin: 0 0 9px 2px; color: #475569; font-size: 12px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
 .dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.group-time .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.group-time .dashboard-metric-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; display: grid; grid-template-columns: 32px minmax(0, 1fr) 10px; align-content: start; gap: 10px 8px; min-width: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
@@ -152,8 +152,18 @@ const groups = computed(() => [
 .dashboard-face-variance span { font-size: 11px; color: #64748b; }
 .dashboard-time-comparison small { align-self: end; color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
-.dashboard-metric-breakdown { border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 6px; font-size: 11px; }
-.dashboard-metric-breakdown div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.dashboard-metric-breakdown { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; }
+.dashboard-metric-breakdown > div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 10px; text-align: center; min-width: 0; }
+.dashboard-metric-breakdown strong { font-size: 24px; font-weight: 800; line-height: 1.1; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+.dashboard-metric-breakdown span { color: #52657b; font-size: 10px; font-weight: 600; line-height: 1.4; }
+.dashboard-metric-breakdown .collection-share { color: #7c3aed; background: #f5f3ff; }
+.dashboard-metric-breakdown .sales-share { color: #2563eb; background: #eff6ff; }
+.group-customers .dashboard-metric-card { grid-template-rows: 32px auto minmax(34px, auto) 1fr auto; }
+.group-customers .dashboard-metric-value, .group-customers .dashboard-metric-skeleton { grid-row: 2; }
+.group-customers .dashboard-metric-note { grid-row: 3; }
+.group-customers .dashboard-metric-detail { grid-row: 4; }
+.group-customers .dashboard-metric-breakdown { grid-row: 5; align-self: end; margin-top: 0; }
+@media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }
 @media (max-width: 1050px) { .group-customers .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

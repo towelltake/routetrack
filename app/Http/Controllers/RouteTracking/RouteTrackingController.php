@@ -20,6 +20,25 @@ use Inertia\Response;
 
 class RouteTrackingController extends Controller
 {
+    // Request-local: do not repeat a failed connection for every leg/chunk.
+    private bool $routingConnectionFailed = false;
+
+    private function routingGet(string $path, array $query): \Illuminate\Http\Client\Response
+    {
+        if ($this->routingConnectionFailed) {
+            throw new ConnectionException('Routing service unavailable for this request');
+        }
+        try {
+            return Http::baseUrl(config('services.osrm.url'))
+                ->connectTimeout(max(1, (int) config('services.osrm.connect_timeout', 2)))
+                ->timeout(max(1, (int) config('services.osrm.timeout', 5)))
+                ->get($path, $query);
+        } catch (ConnectionException $exception) {
+            $this->routingConnectionFailed = true;
+            throw $exception;
+        }
+    }
+
     private const MATCH_CHUNK_SIZE = 100;
 
     private const MIN_DOWNSAMPLE_METERS = 20;
@@ -324,8 +343,7 @@ class RouteTrackingController extends Controller
             ));
 
             try {
-                $response = Http::baseUrl(config('services.osrm.url'))
-                    ->get("/match/v1/driving/{$coordinates}", [
+                $response = $this->routingGet("/match/v1/driving/{$coordinates}", [
                         'timestamps' => $timestamps,
                         'geometries' => 'geojson',
                         'overview' => 'full',
@@ -562,8 +580,7 @@ class RouteTrackingController extends Controller
             $coordinates = sprintf('%F,%F;%F,%F', $from['lng'], $from['lat'], $to['lng'], $to['lat']);
 
             try {
-                $response = Http::baseUrl(config('services.osrm.url'))
-                    ->get("/route/v1/driving/{$coordinates}", [
+                $response = $this->routingGet("/route/v1/driving/{$coordinates}", [
                         'geometries' => 'geojson',
                         'overview' => 'full',
                     ]);

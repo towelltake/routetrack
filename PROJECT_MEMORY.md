@@ -540,3 +540,20 @@ Both Vue script syntax checks and diff checks passed; browser/build unverified.
 Updated productivity/efficiency graph notes and matching card tooltips to say
 LPO Customers instead of Ignored customers. Internal status keys and calculations
 are unchanged. Diff check passed; this is a text-only change.
+
+## Route Tracking slow-load investigation: 2026-09-20
+
+Live URL could not be accessed using the web tool; production timing/root cause
+is unconfirmed. Bare Route Tracking initially loads filters.json; a route/date
+link also runs compare.json. Compare sequentially calls OSRM for planned legs
+and actual GPS chunks. Added a shared routingGet helper with configurable
+OSRM_CONNECT_TIMEOUT (2s) and OSRM_TIMEOUT (5s). A connection failure suppresses
+further OSRM attempts within that controller request, using existing labelled
+straight-line/raw-GPS fallbacks. Healthy responses and all auth checks remain
+unchanged. This bounds individual failed network waits, not total DB/server time
+or the cumulative time of many successful routing calls. Dashboard idle request
+is not invoked directly by Route Tracking.
+Added PHP regression tests for one failed attempt per request, retry in a later
+request, and healthy routing calls. Diff check passed; tests cannot run without
+PHP/vendor. Requested whether delay is before dropdown or after Compare and the
+slow Network request/duration; awaiting that evidence for live diagnosis.

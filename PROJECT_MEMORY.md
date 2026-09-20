@@ -627,3 +627,13 @@ queries. Added PHP regression cases for overlap, missing GPS, boundaries and
 unchanged duration; updated time-summary expectation for clipped intervals.
 Vue script syntax and diff checks passed. PHP tests/build/browser verification
 remain unavailable without local runtime/dependencies.
+
+## Compact Route Tracking customer cards: 2026-09-20
+
+Fixed the route-summary-copy > span:last-child rule overriding display:grid on
+the percentage breakdown due to CSS specificity. Restricted that text styling
+to route-summary-meta, restoring side-by-side Collection and Orders/Invoices
+tiles. Reduced customer-card gaps/padding and removed forced 36px note height
+and filler rows; reduced tile padding while keeping prominent percentages.
+Customer card rows size naturally while retaining aligned heights within each
+row. Diff check passed. CSS-only change; browser/build remains unverified.

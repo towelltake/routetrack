@@ -611,3 +611,19 @@ values. Calculation descriptions appear above the table rather than as tiles.
 Stationary Time retains its existing breakdown/expandable-stop layout, as
 requested. No metric formulas or requests changed. Vue script syntax, targeted
 table checks and diff checks passed; browser/build verification unavailable.
+
+## Travel subtraction correction: 2026-09-20
+
+Journey Duration calculation remains unchanged. New TravelTime service computes
+travel as existing journey seconds minus the union of completed customer visit
+intervals, stationary intervals and GPS gaps/uncovered GPS boundaries, clipped
+to the journey window. Returns disjoint visit (all visits including OTP/LPO),
+idle-outside-visits and unknown deductions for the Travel popup. Overlaps count
+once. Missing timing returns unavailable; no GPS evidence leaves time outside
+visits unknown instead of travel. Residual travel remains an estimate: short
+undetected stops and incomplete visit records limit accuracy. Existing stationary,
+CFT and operational calculations are unchanged. Reuses fetched GPS data; no extra
+queries. Added PHP regression cases for overlap, missing GPS, boundaries and
+unchanged duration; updated time-summary expectation for clipped intervals.
+Vue script syntax and diff checks passed. PHP tests/build/browser verification
+remain unavailable without local runtime/dependencies.

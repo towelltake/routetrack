@@ -292,7 +292,13 @@ class RouteTrackingController extends Controller
         $detector = app(StationaryDetection::class);
         $stationary = $detector->detect($rawPoints);
         $gpsGaps = $detector->detectGaps($rawPoints);
+        $usableTimes = array_values(array_filter(array_map(
+            fn ($point) => $detector->usable($point) ? strtotime($point->effective_timestamp) : false, $rawPoints
+        ), fn ($time) => $time !== false));
         $stationaryData = [
+            'journey_start_timestamp' => $timing['start'],
+            'travel_gps_first' => $usableTimes ? min($usableTimes) : null,
+            'travel_gps_last' => $usableTimes ? max($usableTimes) : null,
             'stationary_periods' => $stationary,
             'stationary_seconds' => array_sum(array_column($stationary, 'duration_seconds')),
             'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
@@ -957,7 +963,7 @@ class RouteTrackingController extends Controller
             ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60);
         $actual['face_time_variance_percent'] = $actual['planned_cft'] > 0
             ? round(100 * ($actual['actual_cft'] - $actual['planned_cft']) / $actual['planned_cft'], 1) : null;
-        $actual['travel_time'] = $actual['duration'] === null ? null : max(0, $actual['duration'] - $actual['stationary_seconds']);
+        $actual = array_replace($actual, app(\App\Services\TravelTime::class)->summarize($actual, $visits));
         foreach ($actual['stationary_periods'] as &$period) {
             $periodStart = strtotime($period['start_time']);
             $periodEnd = strtotime($period['end_time']);

@@ -205,7 +205,7 @@ const metricDetails = computed(() => {
     return ({
         duration: [['Journey duration', stationaryDuration(actual.duration)], ['Journey start', details.start_time], ['Journey end', details.end_time || 'Open journey - uses last reported location']],
         operational: [['Operational time', stationaryDuration(actual.operational_time)], ['First non-OTP check-in', actual.operational_start], ['Last non-OTP checkout', actual.operational_end], ['Calculation', 'First non-OTP check-in to last non-OTP checkout, including time between visits. Missing final checkout means unavailable.']],
-        travel: [['Travel time', stationaryDuration(actual.travel_time)], ['Journey duration', stationaryDuration(actual.duration)], ['Stationary time', stationaryDuration(actual.stationary_seconds)], ['Calculation', 'Journey duration minus GPS-detected stationary time. GPS gaps can affect this estimate.']],
+        travel: [['Travel time', stationaryDuration(actual.travel_time)], ['Journey duration', stationaryDuration(actual.duration)], ['Customer visits (including OTP)', stationaryDuration(actual.travel_visit_seconds)], ['Idle outside visits', stationaryDuration(actual.travel_idle_seconds)], ['Unknown / GPS gaps', stationaryDuration(actual.travel_unknown_seconds)], ['Calculation', 'Estimated travel = unchanged journey duration minus customer visits, idle outside visits and unknown GPS time. Intervals are clipped to the journey and overlaps count once. This remainder is an estimate, not confirmed movement.']],
     })[summaryModal.value] ?? [];
 });
 const timeTableColumns = computed(() => {

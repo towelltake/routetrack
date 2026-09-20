@@ -25,7 +25,7 @@ test('route time excludes OTP visits once and splits partially overlapping stati
         'visit_end_date' => '2026-09-10', 'visit_end_time' => $end,
         'visit_duration_minutes' => $minutes, 'otp_logs' => $otp,
     ];
-    $actual = ['duration' => 7200, 'stationary_seconds' => 4200, 'stationary_periods' => [
+    $actual = ['journey_start_timestamp' => strtotime('2026-09-10 08:55:00'), 'travel_gps_first' => strtotime('2026-09-10 08:55:00'), 'travel_gps_last' => strtotime('2026-09-10 11:10:00'), 'duration' => 7200, 'stationary_seconds' => 4200, 'stationary_periods' => [
         ['start_time' => '2026-09-10 09:00:00', 'end_time' => '2026-09-10 10:00:00', 'duration_seconds' => 3600],
         ['start_time' => '2026-09-10 11:00:00', 'end_time' => '2026-09-10 11:10:00', 'duration_seconds' => 600],
     ]];
@@ -41,7 +41,7 @@ test('route time excludes OTP visits once and splits partially overlapping stati
     expect($summary['face_time'])->toBe(3300)
         ->and($summary['otp_customer_time'])->toBe(1500)
         ->and($summary['actual_cft'])->toBe(1800)
-        ->and($summary['travel_time'])->toBe(3000)
+        ->and($summary['travel_time'])->toBe(3300)
         ->and($summary['stationary_with_customer_seconds'])->toBe(2400)
         ->and($summary['stationary_without_customer_seconds'])->toBe(1800)
         ->and($summary['stationary_periods'][0]['customer_visits'])->toHaveCount(3)

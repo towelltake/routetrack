@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { Head } from "@inertiajs/vue3";
 import { useTemplateStore } from "@/stores/template";
 import axios from "axios";
+import { formatVisitMinutes } from "./duration";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
@@ -79,8 +80,10 @@ const cftVisitRows = computed(() => customerVisits.value.map(visit => {
     const planned = excluded ? 0 : Math.max(0, Number(visit.default_face_time_minutes) || 0);
     const actual = excluded ? 0 : visit.visit_duration_minutes;
     return { ...visit, excluded, plannedCft: planned, actualCft: actual,
+        variancePercent: !excluded && actual != null && planned > 0 ? Math.round(1000 * (actual - planned) / planned) / 10 : null,
         varianceCft: !excluded && actual != null && planned > 0 ? actual - planned : null };
 }));
+const popupCftRows = computed(() => summaryModal.value === 'otp_time' ? cftVisitRows.value.filter(row => row.excluded) : cftVisitRows.value);
 const cftOtpCount = computed(() => cftVisitRows.value.filter(visit => visit.excluded).length);
 const cftDuration = minutes => minutes == null ? 'Unavailable' : stationaryDuration(minutes * 60);
 const cftVariance = minutes => minutes == null ? 'Unavailable' : `${minutes > 0 ? '+' : minutes < 0 ? '-' : ''}${cftDuration(Math.abs(minutes))}`;
@@ -146,24 +149,24 @@ const routeSummaryGroups = computed(() => {
             { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", action: "route", value: planned.route_closed ? "Closed" : "Live", meta: "View journey details" },
         ] },
         { key: "customers", title: "Customers", cards: [
+            { label: "Productivity", action: "productivity", icon: "fa-check-double", tone: "green", value: efficiency?.productivity_percent == null ? 'N/A' : efficiency.productivity_percent + '%', meta: `${efficiency?.productive_visits ?? 0} of ${efficiency?.completed_visits ?? 0} completed visits productive`, breakdown: [{ label: "Collection", value: efficiency?.collection_productivity_percent }, { label: "Orders/Invoices", value: efficiency?.sales_order_productivity_percent }], definition: "Eligible completed visits with collections, orders or invoices. LPO Customers are excluded. Each productive visit counts once; source breakdowns can overlap." },
             { label: "Efficiency", action: "efficiency", breakdown: [{ label: "Collection", value: efficiency?.collection_efficiency_percent }, { label: "Orders/Invoices", value: efficiency?.sales_order_efficiency_percent }], icon: "fa-gauge-high", tone: "green", value: efficiency?.efficiency_percent == null ? "—" : `${Number(efficiency.efficiency_percent).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`, meta: `${efficiency?.unique_productive_customers ?? 0} of ${efficiency?.unique_visited_customers ?? 0} unique customers productive`, definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited in this journey. Customers marked for productivity exclusion are omitted from both counts. Repeated visits count once. Collection and sales/order breakdowns can overlap." },
             { label: "Customer Coverage", icon: "fa-store", tone: "blue", action: "customers", value: pct(customerVisitSummary.value.planned ? customerVisitSummary.value.plannedVisited / customerVisitSummary.value.planned : null), meta: `${customerVisitSummary.value.plannedVisited} of ${customerVisitSummary.value.planned} visited · ${customerVisitSummary.value.plannedNotVisited} pending` },
             { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", action: "unplanned", value: customerVisitSummary.value.unplannedVisited, meta: "View customer list" },
             { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
         ] },
         { key: "distance", title: "Distance", cards: [
-            { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
-            { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
+            { label: "Planned Distance", action: "planned_distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
+            { label: "Actual Distance", action: "actual_distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
-            { label: "Customer Face Time", icon: "fa-user-clock", tone: "green", action: "cft", value: stationaryDuration(actual.actual_cft), meta: "Completed visits without OTP" },
-            { label: "Actual Duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
-            { label: "Operational Time", icon: "fa-user-clock", tone: "green", value: actual.operational_time == null ? "N/A" : stationaryDuration(actual.operational_time), meta: actual.operational_time == null ? "No complete non-OTP visit window" : `${actual.operational_start} to ${actual.operational_end}`, definition: "First non-OTP customer check-in to the last non-OTP customer checkout, including time between visits." },
-            { label: "OTP Customer Time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
-            { label: "Face Time Compliance", action: "cft", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "0%" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
+            { label: "Journey Duration", action: "duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
+            { label: "Operational Time", action: "operational", icon: "fa-user-clock", tone: "green", value: actual.operational_time == null ? "N/A" : stationaryDuration(actual.operational_time), meta: actual.operational_time == null ? "No complete non-OTP visit window" : `${actual.operational_start} to ${actual.operational_end}`, definition: "First non-OTP customer check-in to the last non-OTP customer checkout, including time between visits." },
+            { label: "Face Time Compliance", action: "cft", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "N/A" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
                 comparison: { actual: actual.actual_cft, planned: actual.planned_cft },
                 meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
-            { label: "Travel Time", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
+            { label: "OTP Customer Time", action: "otp_time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
+            { label: "Travel Time", action: "travel", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
             { label: "Stationary Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_seconds), meta: "View stop breakdown" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
@@ -176,7 +179,10 @@ const routeSummaryGroups = computed(() => {
 });
 
 const summaryTitle = computed(() => ({
-    cft: "Customer Face Time",
+    cft: "Face Time Compliance",
+    productivity: "Productivity - Customer Visits",
+    duration: "Journey Duration", operational: "Operational Time", otp_time: "OTP Customer Time",
+    travel: "Travel Time", planned_distance: "Planned Distance", actual_distance: "Actual Distance",
     efficiency: "Efficiency — Unique Customers",
     route: "Route Journey Details",
     customers: "Customer Coverage",
@@ -192,6 +198,19 @@ const summaryTitle = computed(() => ({
 const summaryCustomers = computed(() => summaryModal.value === "unplanned"
     ? customerVisits.value.filter((visit) => visit.journey_status === "unplanned")
     : numberedCustomers.value);
+const productivityRows = computed(() => customerVisits.value.map(visit => ({ ...efficiencyCustomers([visit])[0], logkey: visit.logkey, incomplete: visit.visit_duration_minutes == null })));
+const metricDetails = computed(() => {
+    if (!result.value) return [];
+    const { actual, planned } = result.value;
+    const details = planned.route_details ?? {};
+    return ({
+        duration: [['Journey duration', stationaryDuration(actual.duration)], ['Journey start', details.start_time], ['Journey end', details.end_time || 'Open journey - uses last reported location']],
+        operational: [['Operational time', stationaryDuration(actual.operational_time)], ['First non-OTP check-in', actual.operational_start], ['Last non-OTP checkout', actual.operational_end], ['Calculation', 'First non-OTP check-in to last non-OTP checkout, including time between visits. Missing final checkout means unavailable.']],
+        travel: [['Travel time', stationaryDuration(actual.travel_time)], ['Journey duration', stationaryDuration(actual.duration)], ['Stationary time', stationaryDuration(actual.stationary_seconds)], ['Calculation', 'Journey duration minus GPS-detected stationary time. GPS gaps can affect this estimate.']],
+        planned_distance: [['Planned distance', km(planned.distance) + ' km'], ['Geometry source', planned.geometry_source], ['Fallback segments', planned.fallback_legs ?? 0]],
+        actual_distance: [['Actual distance', km(actual.distance) + ' km'], ['Geometry source', actual.geometry_source], ['GPS points', actual.point_count]],
+    })[summaryModal.value] ?? [];
+});
 const efficiencyRows = computed(() => efficiencyCustomers(customerVisits.value));
 
 const routeQualityWarnings = computed(() => {
@@ -443,14 +462,7 @@ function customerDisplayCode(customer) {
 }
 
 function faceTimeLabel(customer) {
-    if (customer.visit_duration_minutes === null) {
-        return "Not Available";
-    }
-
-    const hours = Math.floor(customer.visit_duration_minutes / 60);
-    const minutes = customer.visit_duration_minutes % 60;
-
-    return hours ? `${hours}h : ${String(minutes).padStart(2, "0")} min` : `${minutes} min`;
+    return formatVisitMinutes(customer.visit_duration_minutes);
 }
 
 function faceTimeVariance(customer) {
@@ -458,7 +470,7 @@ function faceTimeVariance(customer) {
         return null;
     }
 
-    return customer.visit_duration_minutes - customer.default_face_time_minutes;
+    return Math.round((customer.visit_duration_minutes - customer.default_face_time_minutes) * 10) / 10;
 }
 
 function openOtpDetails(visit) {
@@ -531,11 +543,9 @@ function money(value) {
 function customerVisitDetails(customer) {
     const start = [customer.visit_start_date, customer.visit_start_time].filter(Boolean).join(", ");
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
-    const duration = customer.visit_duration_minutes !== null
-        ? `${Math.floor(customer.visit_duration_minutes / 60)}h ${customer.visit_duration_minutes % 60}m`
-        : null;
+    const duration = customer.visit_duration_minutes != null ? formatVisitMinutes(customer.visit_duration_minutes) : null;
 
-    return [start && `Visit Start: ${start}`, end && `Visit End: ${end}`, duration && `Visit Duration: ${duration}`]
+    return [start && `Visit Start: ${start}`, end && `Visit End: ${end}`, duration && `Visit Duration: ${duration.replace("<", "&lt;")}`]
         .filter(Boolean)
         .map((line) => `<br>${line}`)
         .join("");
@@ -784,8 +794,7 @@ function minutes(seconds) {
 }
 
 function stationaryDuration(seconds) {
-    const total = minutes(seconds);
-    return total < 60 ? `${total} min` : `${Math.floor(total / 60)}h ${total % 60}m`;
+    return formatVisitMinutes(seconds == null ? null : seconds / 60);
 }
 
 function stationaryTime(timestamp) {
@@ -1097,7 +1106,7 @@ function focusEnd() {
                                 <strong v-if="!card.comparison">{{ card.value }}</strong>
                                 <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
                                 <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance</span></span>
-                                <span v-if="card.meta">{{ card.meta }}</span>
+                                <span v-if="card.meta" class="route-summary-meta">{{ card.meta }}</span>
                                 <span v-if="card.breakdown" class="route-metric-breakdown"><span v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><b>{{ item.value == null ? '—' : `${Number(item.value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%` }}</b><span>{{ item.label }}</span></span></span>
                             </span>
                             <i v-if="card.action" class="fa fa-chevron-right route-summary-open" aria-hidden="true"></i>
@@ -1453,9 +1462,10 @@ function focusEnd() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="route-summary-modal-title"
+                @keydown.esc.stop="closeSummary"
                 @click.self="closeSummary"
             >
-                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="['stationary', 'cft'].includes(summaryModal) ? 'modal-xl' : 'modal-lg'">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="['stationary', 'cft', 'otp_time', 'productivity'].includes(summaryModal) ? 'modal-xl' : 'modal-lg'">
                     <div class="modal-content">
                         <div class="modal-header">
                             <div>
@@ -1465,21 +1475,27 @@ function focusEnd() {
                             <button type="button" class="btn-close" aria-label="Close" @click="closeSummary"></button>
                         </div>
                         <div class="modal-body">
-                            <div v-if="summaryModal === 'cft'">
-                                <p>Customer Face Time: <strong>{{ stationaryDuration(result.actual.actual_cft) }}</strong></p>
+                            <dl v-if="metricDetails.length" class="route-detail-grid mb-0"><div v-for="[label, value] in metricDetails" :key="label"><dt>{{ label }}</dt><dd>{{ value ?? 'Unavailable' }}</dd></div></dl>
+                            <div v-else-if="['cft', 'otp_time'].includes(summaryModal)">
+                                <p>{{ summaryModal === 'otp_time' ? 'OTP Customer Time' : 'Customer Face Time' }}: <strong>{{ stationaryDuration(summaryModal === 'otp_time' ? result.actual.otp_customer_time : result.actual.actual_cft) }}</strong></p>
                                 <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Times are in h:mm; variance is actual minus planned.</p>
                                 <div class="table-responsive"><table class="table table-sm">
-                                    <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance</th><th scope="col">Status</th></tr></thead>
+                                    <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
                                     <tbody>
-                                        <tr v-for="visit in cftVisitRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded }">
+                                        <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded }">
                                             <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}</td>
                                             <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td>
-                                            <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ cftVariance(visit.varianceCft) }}</td>
+                                            <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ cftVariance(visit.varianceCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
                                             <td>{{ visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
                                         </tr>
-                                        <tr v-if="!cftVisitRows.length"><td colspan="10">No customer visits for this journey.</td></tr>
+                                        <tr v-if="!popupCftRows.length"><td colspan="11">No customer visits for this journey.</td></tr>
                                     </tbody>
                                 </table></div>
+                            </div>
+                            <div v-else-if="summaryModal === 'productivity'">
+                                <p class="small text-muted">Each eligible completed visit counts once. LPO Customers are excluded and shown in yellow. Incomplete visits do not count.</p>
+                                <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Customer</th><th>Check-in</th><th>Checkout</th><th>Status</th><th>Collection</th><th>Orders/Invoices</th></tr></thead>
+                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
                             </div>
                             <div v-else-if="summaryModal === 'efficiency'">
                                 <p class="small text-muted">Each customer counts once. LPO Customers are shown in yellow for reference and excluded from both metric counts.</p>
@@ -2482,4 +2498,59 @@ function focusEnd() {
 }
 .lpo-customer-row > td { background: #fef9c3; color: #854d0e; --bs-table-bg: #fef9c3; --bs-table-accent-bg: transparent; }
 .lpo-customer-row .text-muted { color: #854d0e !important; }
+
+.route-summary-groups { gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.route-summary-group-route { grid-column: span 3; }
+.route-summary-group-distance { grid-column: span 9; }
+.route-summary-group-customers { grid-column: 1 / -1; order: 1; }
+.route-summary-group-time { order: 2; }
+.route-summary-group-transactions { order: 3; }
+.route-summary-group-customers .route-summary-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.route-summary-cards { align-items: stretch; grid-auto-rows: 1fr; gap: 12px; }
+.route-summary-card { display: grid; grid-template-columns: 32px minmax(0, 1fr) 12px; align-content: start; gap: 12px 8px; padding: 16px; min-width: 0; border-radius: 12px; }
+.route-summary-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.route-summary-icon { width: 32px; height: 32px; border-radius: 9px; }
+.route-summary-copy { display: contents; }
+.route-summary-label { grid-column: 2; align-self: center; font-size: 12px; font-weight: 650; }
+.route-summary-open { grid-column: 3; grid-row: 1; }
+.route-summary-copy > strong, .route-summary-meta, .route-face-comparison, .route-face-variance, .route-summary-copy > .route-metric-breakdown { grid-column: 1 / -1; }
+.route-summary-copy > strong { font-size: 26px; font-weight: 750; margin: 0; font-variant-numeric: tabular-nums; }
+.route-summary-copy > .route-summary-meta { display: block; font-size: 12px; line-height: 1.5; color: #64748b; }
+.route-summary-copy > .route-metric-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; align-self: end; }
+.route-summary-group-customers .route-summary-card { grid-template-rows: 32px auto minmax(36px, auto) 1fr; }
+.route-summary-group-customers .route-summary-meta { grid-row: 3; }
+.route-summary-group-customers .route-metric-breakdown { grid-row: 4; }
+@media (max-width: 1000px) { .route-summary-group-route, .route-summary-group-distance { grid-column: 1 / -1; } }
+@media (max-width: 1200px) { .route-summary-group-customers .route-summary-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+ .route-summary-group-route, .route-summary-group-distance { grid-column: 1 / -1; }
+ .route-summary-group-customers .route-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) { .route-summary-group-customers .route-summary-cards { grid-template-columns: 1fr; } }
+
+/* Match the dashboard detail dialogs while preserving OTP/LPO row colors. */
+.route-tracking-otp-modal { background: #0f172a88; padding: 16px; }
+.route-tracking-otp-modal .modal-dialog { width: min(1250px, 96vw); max-width: 1250px; margin: 16px auto; min-height: calc(100% - 32px); }
+.route-tracking-otp-modal .modal-content { max-height: 88vh; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #172b45; box-shadow: 0 24px 64px #0f172a33; overflow: hidden; }
+.route-tracking-otp-modal .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; background: #fff; gap: 16px; }
+.route-tracking-otp-modal .modal-title { font-size: 18px; font-weight: 700; color: #172b45; }
+.route-tracking-otp-modal .modal-header .text-muted { font-size: 12px; margin-top: 5px; }
+.route-tracking-otp-modal .modal-body { padding: 16px 20px; overflow-y: auto; font-size: 13px; }
+.route-tracking-otp-modal .modal-footer { padding: 12px 20px; border-top: 1px solid #e2e8f0; }
+.route-tracking-otp-modal .modal-footer .btn { padding: 7px 16px; border: 1px solid #e2e8f0; background: #f8fafc; color: #334155; border-radius: 6px; }
+.route-tracking-otp-modal .table { width: 100%; font-size: 12px; border-collapse: collapse; --bs-table-color: #172b45; }
+.route-tracking-otp-modal .table th, .route-tracking-otp-modal .table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+.route-tracking-otp-modal .table th { background: #f8fafc; color: #475569; font-weight: 650; white-space: nowrap; }
+.route-tracking-otp-modal .table td { overflow-wrap: anywhere; }
+.route-tracking-otp-modal .table small { display: block; margin-top: 4px; font-size: 11px; }
+.route-tracking-otp-modal .route-detail-grid { gap: 14px; }
+.route-tracking-otp-modal .route-detail-grid > div { padding: 14px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; }
+.route-tracking-otp-modal .route-detail-grid dt { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+.route-tracking-otp-modal .route-detail-grid dd { font-size: 14px; color: #172b45; margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+ .route-tracking-otp-modal { padding: 8px; }
+ .route-tracking-otp-modal .modal-dialog { width: 100%; margin: 8px auto; }
+ .route-tracking-otp-modal .modal-header, .route-tracking-otp-modal .modal-body { padding: 14px; }
+ .route-tracking-otp-modal .route-detail-grid { grid-template-columns: 1fr; }
+}
 </style>

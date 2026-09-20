@@ -19,7 +19,9 @@ test('route efficiency ignores every toplpo visit in numerator and denominator',
     ]);
     expect($method->invoke($controller, $visits))->toMatchArray([
         'unique_visited_customers' => 3, 'unique_productive_customers' => 1, 'efficiency_percent' => 33.3,
+        'completed_visits' => 1, 'productive_visits' => 1, 'productivity_percent' => 100.0,
     ])->and($method->invoke($controller, $visits->filter(fn ($visit) => (int) ($visit['toplpo'] ?? 0) === 1)))->toMatchArray([
+        'completed_visits' => 0, 'productive_visits' => 0, 'productivity_percent' => null,
         'unique_visited_customers' => 0, 'unique_productive_customers' => 0, 'efficiency_percent' => null,
     ]);
 });
@@ -41,6 +43,8 @@ test('route efficiency combines collections and sales orders without double coun
     $method = new ReflectionMethod(RouteTrackingController::class, 'summarizeEfficiency');
     $controller = app(RouteTrackingController::class);
     expect($method->invoke($controller, $visits))->toMatchArray([
+        'completed_visits' => 6, 'productive_visits' => 4, 'productivity_percent' => 66.7,
+        'sales_order_productivity_percent' => 50.0, 'collection_productivity_percent' => 33.3,
         'unique_visited_customers' => 5,
         'unique_productive_customers' => 3,
         'efficiency_percent' => 60.0,

@@ -1077,11 +1077,20 @@ class RouteTrackingController extends Controller
             }
             return false;
         };
+        $completed = $visits->filter(fn ($visit) => ($visit['visit_duration_minutes'] ?? null) !== null)->count();
+        $productiveVisits = $visits->filter(fn ($visit) => $qualifies($visit, ['sales', 'orders', 'collections']))->count();
+        $salesVisits = $visits->filter(fn ($visit) => $qualifies($visit, ['sales', 'orders']))->count();
+        $collectionVisits = $visits->filter(fn ($visit) => $qualifies($visit, ['collections']))->count();
         $productive = $visits->filter(fn ($visit) => $qualifies($visit, ['sales', 'orders', 'collections']))->unique('customercode')->count();
         $salesOrder = $visits->filter(fn ($visit) => $qualifies($visit, ['sales', 'orders']))->unique('customercode')->count();
         $collections = $visits->filter(fn ($visit) => $qualifies($visit, ['collections']))->unique('customercode')->count();
 
         return [
+            'completed_visits' => $completed,
+            'productive_visits' => $productiveVisits,
+            'productivity_percent' => $completed ? round(100 * $productiveVisits / $completed, 1) : null,
+            'sales_order_productivity_percent' => $completed ? round(100 * $salesVisits / $completed, 1) : null,
+            'collection_productivity_percent' => $completed ? round(100 * $collectionVisits / $completed, 1) : null,
             'unique_visited_customers' => $visited,
             'unique_productive_customers' => $productive,
             'efficiency_percent' => $visited ? round(100 * $productive / $visited, 1) : null,

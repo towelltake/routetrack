@@ -557,3 +557,40 @@ Added PHP regression tests for one failed attempt per request, retry in a later
 request, and healthy routing calls. Diff check passed; tests cannot run without
 PHP/vendor. Requested whether delay is before dropdown or after Compare and the
 slow Network request/duration; awaiting that evidence for live diagnosis.
+
+## Route Tracking card redesign and productivity: 2026-09-20
+
+Restyled Route Tracking summary using full-width card values/notes and two-column
+percentage tiles, avoiding narrow flex content. Customer cards get a dedicated
+responsive full-width group, with separate route/distance row. Time cards are now
+exactly Journey Duration, Operational Time, Face Time Compliance, OTP Customer
+Time, Travel Time, Stationary Time. Every summary card has an action; added timing
+and distance details and an OTP-only visit grid. CFT popup also shows variance %.
+Operational Time already uses the shared OperationalTime service with all-type
+OTP boundaries, same as Dashboard; formula unchanged. Added completed-visit
+Productivity alongside unique-customer Efficiency, with Collection and
+Orders/Invoices breakdowns. Both use existing positive/nonvoid transaction rules
+and exclude toplpo=1 before numerator/denominator calculation. Productivity popup
+retains all visits, marks incomplete visits and highlights LPO Customers yellow.
+No additional requests or GPS processing introduced. Missing timing now displays
+Unavailable rather than being formatted as zero in popup details.
+Validation: 20 JS tests passed; Vue script syntax, runtime card order/action
+assertions and diff checks passed. Extended PHP tests for productivity repeat
+visits, source overlap, incomplete visits, empty totals and LPO exclusion. PHP
+suite/build/browser rendering remain unverified without local dependencies.
+
+## Route Tracking popup styling and duration formatting: 2026-09-20
+
+Matched summary, OTP and transaction modal surfaces to Dashboard details:
+wide responsive 1250px dialogs, rounded borders, muted backdrop, consistent
+headers, padded readable grids and pale table headers. OTP-red and LPO-yellow
+row styles remain intact. Summary supports Escape while focused in the popup.
+Added shared presentation helper routetracking/duration.js for visit labels,
+map popup duration and time summaries. Fractional minutes round before hour/minute
+splitting (59.9 becomes 1h 00m); positive durations under a minute display <1 min.
+Missing/invalid values display Unavailable. Map HTML escapes the less-than sign.
+Underlying duration calculations are unchanged; visit variance text is rounded
+to one decimal to prevent floating-point text overflow.
+Validation: all 22 JS tests passed, including new duration boundary/invalid-data
+cases; Vue script syntax and diff checks passed. Build and browser verification
+remain unavailable without local frontend dependencies.

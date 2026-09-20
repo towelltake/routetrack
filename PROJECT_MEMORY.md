@@ -594,3 +594,20 @@ to one decimal to prevent floating-point text overflow.
 Validation: all 22 JS tests passed, including new duration boundary/invalid-data
 cases; Vue script syntax and diff checks passed. Build and browser verification
 remain unavailable without local frontend dependencies.
+
+## Route Tracking popup simplification: 2026-09-20
+
+Planned Distance and Actual Distance cards are display-only again: removed their
+actions, chevrons and popup detail definitions. Other card actions remain.
+The shared CFT/OTP visit grid now shows only Variance (%) rather than both duration
+variance and percentage; adjusted explanatory text and empty-row column span.
+Vue script syntax, targeted display assertions and diff check passed.
+
+## Route Tracking time popup tables: 2026-09-20
+
+Operational Time, Journey Duration and Travel Time now use dashboard-style
+horizontal tables with Route and Salesman columns plus the relevant timing
+values. Calculation descriptions appear above the table rather than as tiles.
+Stationary Time retains its existing breakdown/expandable-stop layout, as
+requested. No metric formulas or requests changed. Vue script syntax, targeted
+table checks and diff checks passed; browser/build verification unavailable.

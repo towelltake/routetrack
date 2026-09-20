@@ -86,7 +86,6 @@ const cftVisitRows = computed(() => customerVisits.value.map(visit => {
 const popupCftRows = computed(() => summaryModal.value === 'otp_time' ? cftVisitRows.value.filter(row => row.excluded) : cftVisitRows.value);
 const cftOtpCount = computed(() => cftVisitRows.value.filter(visit => visit.excluded).length);
 const cftDuration = minutes => minutes == null ? 'Unavailable' : stationaryDuration(minutes * 60);
-const cftVariance = minutes => minutes == null ? 'Unavailable' : `${minutes > 0 ? '+' : minutes < 0 ? '-' : ''}${cftDuration(Math.abs(minutes))}`;
 
 const stationaryPeriods = computed(() =>
     (result.value?.actual?.stationary_periods ?? []).map((period, index) => ({
@@ -156,8 +155,8 @@ const routeSummaryGroups = computed(() => {
             { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
         ] },
         { key: "distance", title: "Distance", cards: [
-            { label: "Planned Distance", action: "planned_distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
-            { label: "Actual Distance", action: "actual_distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
+            { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
+            { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
             { label: "Journey Duration", action: "duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
@@ -182,7 +181,7 @@ const summaryTitle = computed(() => ({
     cft: "Face Time Compliance",
     productivity: "Productivity - Customer Visits",
     duration: "Journey Duration", operational: "Operational Time", otp_time: "OTP Customer Time",
-    travel: "Travel Time", planned_distance: "Planned Distance", actual_distance: "Actual Distance",
+    travel: "Travel Time",
     efficiency: "Efficiency — Unique Customers",
     route: "Route Journey Details",
     customers: "Customer Coverage",
@@ -207,10 +206,17 @@ const metricDetails = computed(() => {
         duration: [['Journey duration', stationaryDuration(actual.duration)], ['Journey start', details.start_time], ['Journey end', details.end_time || 'Open journey - uses last reported location']],
         operational: [['Operational time', stationaryDuration(actual.operational_time)], ['First non-OTP check-in', actual.operational_start], ['Last non-OTP checkout', actual.operational_end], ['Calculation', 'First non-OTP check-in to last non-OTP checkout, including time between visits. Missing final checkout means unavailable.']],
         travel: [['Travel time', stationaryDuration(actual.travel_time)], ['Journey duration', stationaryDuration(actual.duration)], ['Stationary time', stationaryDuration(actual.stationary_seconds)], ['Calculation', 'Journey duration minus GPS-detected stationary time. GPS gaps can affect this estimate.']],
-        planned_distance: [['Planned distance', km(planned.distance) + ' km'], ['Geometry source', planned.geometry_source], ['Fallback segments', planned.fallback_legs ?? 0]],
-        actual_distance: [['Actual distance', km(actual.distance) + ' km'], ['Geometry source', actual.geometry_source], ['GPS points', actual.point_count]],
     })[summaryModal.value] ?? [];
 });
+const timeTableColumns = computed(() => {
+    const details = result.value?.planned?.route_details ?? {};
+    return [
+        ['Route', details.routecode ?? selectedRoute.value],
+        ['Salesman', details.salesmanname || 'Unavailable'],
+        ...metricDetails.value.filter(([label]) => label !== 'Calculation'),
+    ];
+});
+const timeTableNote = computed(() => metricDetails.value.find(([label]) => label === 'Calculation')?.[1]);
 const efficiencyRows = computed(() => efficiencyCustomers(customerVisits.value));
 
 const routeQualityWarnings = computed(() => {
@@ -1475,20 +1481,28 @@ function focusEnd() {
                             <button type="button" class="btn-close" aria-label="Close" @click="closeSummary"></button>
                         </div>
                         <div class="modal-body">
-                            <dl v-if="metricDetails.length" class="route-detail-grid mb-0"><div v-for="[label, value] in metricDetails" :key="label"><dt>{{ label }}</dt><dd>{{ value ?? 'Unavailable' }}</dd></div></dl>
+                            <div v-if="metricDetails.length">
+                                <p v-if="timeTableNote" class="small text-muted">{{ timeTableNote }}</p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead><tr><th v-for="[label] in timeTableColumns" :key="label" scope="col">{{ label }}</th></tr></thead>
+                                        <tbody><tr><td v-for="[label, value] in timeTableColumns" :key="label">{{ value ?? 'Unavailable' }}</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
                             <div v-else-if="['cft', 'otp_time'].includes(summaryModal)">
                                 <p>{{ summaryModal === 'otp_time' ? 'OTP Customer Time' : 'Customer Face Time' }}: <strong>{{ stationaryDuration(summaryModal === 'otp_time' ? result.actual.otp_customer_time : result.actual.actual_cft) }}</strong></p>
-                                <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Times are in h:mm; variance is actual minus planned.</p>
+                                <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
                                 <div class="table-responsive"><table class="table table-sm">
-                                    <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
+                                    <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
                                     <tbody>
                                         <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded }">
                                             <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}</td>
                                             <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td>
-                                            <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ cftVariance(visit.varianceCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
+                                            <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
                                             <td>{{ visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
                                         </tr>
-                                        <tr v-if="!popupCftRows.length"><td colspan="11">No customer visits for this journey.</td></tr>
+                                        <tr v-if="!popupCftRows.length"><td colspan="10">No customer visits for this journey.</td></tr>
                                     </tbody>
                                 </table></div>
                             </div>

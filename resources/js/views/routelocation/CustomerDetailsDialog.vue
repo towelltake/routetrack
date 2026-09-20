@@ -3,8 +3,14 @@ import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import axios from 'axios';
 
 const titles = { planned: 'Planned Customer Visits', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productive Visits', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', operational: 'Operational Time', otp_time: 'OTP Customer Time', actual_face: 'Face Time Compliance', outside: 'Time Outside Visits' };
-const isRouteTime = computed(() => ['duration', 'outside'].includes(type.value));
+titles.idle = 'Idle Time Outside Customer Visits';
+const isRouteTime = computed(() => ['duration', 'outside', 'idle'].includes(type.value));
 titles.efficiency = 'Efficiency — Unique Customers';
+const faceVariancePercent = (row) => {
+    if (row.otp_excluded || row.actual_cft == null || !(Number(row.planned_cft) > 0)) return 'N/A';
+    const value = Math.round((Number(row.actual_cft) - Number(row.planned_cft)) / Number(row.planned_cft) * 1000) / 10;
+    return `${value > 0 ? '+' : ''}${value.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
+};
 const signedDuration = (value) => value == null ? 'Unavailable' : `${value > 0 ? '+' : value < 0 ? '-' : ''}${duration(Math.abs(value))}`;
 const isTransaction = computed(() => ['sales', 'orders', 'collections', 'returns'].includes(type.value));
 const duration = (value) => value == null ? 'Unavailable' : `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, '0')}`;
@@ -26,6 +32,7 @@ const group = computed(() => routes.value.find((item) => String(item.routekey) =
 const scopedRows = computed(() => routes.value
     .filter(item => isRouteTime.value || route.value === '' || String(item.routekey) === route.value)
     .flatMap(item => item.rows.map(row => ({ ...row, route_date: item.date, routekey: item.routekey, routecode: item.routecode, salesman: item.salesman }))));
+const statusLabel = value => value === 'Ignored' ? 'LPO Customers' : value;
 const statuses = computed(() => type.value === 'planned' ? ['All', 'Visited', 'Not visited'] : ['productive', 'efficiency'].includes(type.value) ? ['All', 'Productive', 'Nonproductive', 'Ignored'] : ['All']);
 const rows = computed(() => scopedRows.value.filter((row) => (status.value === 'All' || row.status === status.value)
     && `${row.customer_code} ${row.customercode} ${row.customer_name} ${row.otp_type ?? ''} ${row.recorded_by ?? ''} ${row.comments ?? ''} ${row.document ?? ''} ${row.routecode ?? ''} ${row.salesman ?? ''}`.toLowerCase().includes(search.value.trim().toLowerCase())));
@@ -33,7 +40,7 @@ const pages = computed(() => Math.max(1, Math.ceil(rows.value.length / 50)));
 const visibleRows = computed(() => rows.value.slice((page.value - 1) * 50, page.value * 50));
 function chooseDate() { route.value = ''; page.value = 1; }
 function close() { request?.abort(); dialog.value?.close(); }
-async function open(kind, filters) {
+async function open(kind, filters, cachedData = null) {
     request?.abort();
     const current = new AbortController(); request = current;
     type.value = kind; groups.value = []; status.value = 'All';
@@ -41,7 +48,7 @@ async function open(kind, filters) {
     await nextTick();
     if (!dialog.value.open) dialog.value.showModal();
     try {
-        const { data } = await axios.get('/dashboard/customer-details.json', { params: { ...filters, type: kind }, signal: current.signal, timeout: 60000 });
+        const { data } = cachedData ? { data: cachedData } : await axios.get('/dashboard/customer-details.json', { params: { ...filters, type: kind }, signal: current.signal, timeout: 60000 });
         if (request !== current || current.signal.aborted) return;
         groups.value = data.groups; day.value = ''; chooseDate();
     } catch (e) {
@@ -69,13 +76,18 @@ defineExpose({ open, close });
                 <p v-if="!isRouteTime && group" class="salesman">Salesman: {{ group.salesman || 'Not available' }}</p>
                 <p v-if="isRouteTime" class="salesman">Open routes use the last known location time for duration.</p>
                 <div v-if="statuses.length > 1" class="status-tabs" aria-label="Visit status">
-                    <button v-for="tab in statuses" :key="tab" type="button" :class="{ active: status === tab }" :aria-pressed="status === tab" @click="status = tab; page = 1">{{ tab }} ({{ scopedRows.filter((row) => tab === 'All' || row.status === tab).length }})</button>
+                    <button v-for="tab in statuses" :key="tab" type="button" :class="{ active: status === tab }" :aria-pressed="status === tab" @click="status = tab; page = 1">{{ statusLabel(tab) }} ({{ scopedRows.filter((row) => tab === 'All' || row.status === tab).length }})</button>
                 </div>
-                <p v-if="['productive', 'efficiency'].includes(type)" class="salesman">Ignored customers are shown for reference and excluded from both metric counts.<template v-if="type === 'efficiency'"> Each customer appears once per journey.</template></p>
-                <div v-if="type === 'outside'" class="details-table">
+                <p v-if="['productive', 'efficiency'].includes(type)" class="salesman">LPO Customers are shown in yellow for reference and excluded from both metric counts.<template v-if="type === 'efficiency'"> Each customer appears once per journey.</template></p>
+                <div v-if="type === 'idle'" class="details-table">
+                    <p class="salesman">GPS-detected stationary time outside all customer visits, including OTP visits. Travel is excluded. Times in h:mm; unavailable journeys are excluded from the total.</p>
+                    <table><thead><tr><th>Route</th><th>Date</th><th>Salesman</th><th>Start</th><th>End / Last location</th><th>Idle outside visits</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="row.routekey"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.end || 'Unavailable' }}</td><td>{{ duration(row.stationary) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="6">No matching records.</td></tr></tbody></table>
+                </div>
+                <div v-else-if="type === 'outside'" class="details-table">
                     <p class="salesman">Times in h:mm. Time outside visits = total duration minus summed customer visit time.</p>
                     <table><thead><tr><th>Route code</th><th>Date</th><th>Salesman</th><th>Start time</th><th>End time</th><th>Total duration</th><th>Customer visit time</th><th>Time outside visits</th></tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded }"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ duration(row.operational) }}</td><td>{{ duration(row.outside) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="8">No matching records.</td></tr></tbody></table>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ duration(row.operational) }}</td><td>{{ duration(row.outside) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="8">No matching records.</td></tr></tbody></table>
                 </div>
                 <div v-else-if="type === 'operational'" class="details-table">
                     <p class="salesman">First non-OTP check-in to the last non-OTP customer's checkout, including time between visits. Each journey counts once. A missing final checkout is unavailable.</p>
@@ -83,18 +95,18 @@ defineExpose({ open, close });
                     <tbody><tr v-for="row in visibleRows" :key="row.routekey"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.first_customer ?? 'Unavailable' }}</td><td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.last_customer ?? 'Unavailable' }}</td><td>{{ row.check_out || 'Unavailable' }}</td><td>{{ duration(row.actual_cft) }}</td></tr></tbody></table>
                 </div>
                 <div v-else-if="['otp_time', 'actual_face'].includes(type)" class="details-table">
-                    <p class="salesman">Duration in h:mm. Each completed visit counts once. OTP visits shown in red are excluded from Face Time Compliance.<template v-if="type === 'otp_time'"> OTP requests are matched to the nearest visit start for that customer within the same journey; all matched OTP times are listed.</template></p>
-                    <table><thead><tr><th>Route code</th><th>Date</th><th>Customer code</th><th>Customer name</th><th>Check-in time</th><th>Check-out time</th><th>Duration (h:mm)</th><th v-if="type === 'otp_time'">OTP time</th></tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded }"><td>{{ row.routecode }}</td><td>{{ row.date || row.route_date }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}<small v-if="row.otp_excluded">OTP - excluded</small></td><td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.check_out || 'Unavailable' }}</td><td>{{ duration(row.actual_cft) }}</td><td v-if="type === 'otp_time'"><div v-for="(time, index) in row.otp_times" :key="index">{{ time }}</div></td></tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp_time' ? 8 : 7">No matching records.</td></tr></tbody></table>
+                    <p class="salesman">Duration in h:mm.<template v-if="type === 'actual_face'"> Variance (%) = (actual CFT - planned CFT) / planned CFT &times; 100. N/A means no planned time, incomplete visit timing, or an excluded OTP visit.</template> Each completed visit counts once. OTP visits shown in red are excluded from Face Time Compliance.<template v-if="type === 'otp_time'"> OTP requests are matched to the nearest visit start for that customer within the same journey; all matched OTP times are listed.</template></p>
+                    <table><thead><tr><th>Route code</th><th>Date</th><th>Customer code</th><th>Customer name</th><th>Check-in time</th><th>Check-out time</th><th>{{ type === 'actual_face' ? 'Actual CFT (h:mm)' : 'Duration (h:mm)' }}</th><template v-if="type === 'actual_face'"><th>Planned CFT (h:mm)</th><th>Variance (%)</th></template><th v-if="type === 'otp_time'">OTP time</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.routecode }}</td><td>{{ row.date || row.route_date }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}<small v-if="row.otp_excluded">OTP - excluded</small></td><td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.check_out || 'Unavailable' }}</td><td>{{ duration(row.actual_cft) }}</td><template v-if="type === 'actual_face'"><td>{{ duration(row.planned_cft) }}</td><td>{{ faceVariancePercent(row) }}</td></template><td v-if="type === 'otp_time'"><div v-for="(time, index) in row.otp_times" :key="index">{{ time }}</div></td></tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp_time' ? 8 : 9">No matching records.</td></tr></tbody></table>
                 </div>
                 <div v-else-if="type === 'duration'" class="details-table"><table>
                     <thead><tr><th>Date</th><th>Route code</th><th>Salesman name</th><th>Start time</th><th>End time</th><th>Duration (h:mm)</th><th>Route status</th></tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded }"><td>{{ row.route_date }}</td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ row.status }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.route_date }}</td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ statusLabel(row.status) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody>
                 </table></div>
                 <div v-else-if="type === 'cft'" class="details-table">
                     <p class="salesman">OTP visits are shown in red, excluded from actual and planned CFT, and count as zero. Times in h:mm. Variance = actual minus planned. Variance is unavailable when planned CFT is missing or zero, or visit timing is incomplete.</p>
                     <table><thead><tr><th>Date</th><th>Route code</th><th>Salesman</th><th>Customer code</th><th>Planned CFT</th><th>Actual CFT</th><th>Variance</th></tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded }"><td>{{ row.date || row.route_date }}<small>{{ row.time }}</small></td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td :title="row.customer_name">{{ row.customer_code }}<small v-if="row.otp_excluded">OTP - excluded</small></td><td>{{ duration(row.planned_cft) }}</td><td>{{ duration(row.actual_cft) }}</td><td>{{ signedDuration(row.variance) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody></table>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.date || row.route_date }}<small>{{ row.time }}</small></td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td :title="row.customer_name">{{ row.customer_code }}<small v-if="row.otp_excluded">OTP - excluded</small></td><td>{{ duration(row.planned_cft) }}</td><td>{{ duration(row.actual_cft) }}</td><td>{{ signedDuration(row.variance) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody></table>
                 </div>
                 <div v-else class="details-table"><table>
                     <thead><tr><th>Date</th><th>Route code</th><th v-if="type === 'otp'">Salesman</th><th>Customer code</th><th>Customer name</th>
@@ -103,11 +115,11 @@ defineExpose({ open, close });
                         <template v-else-if="type === 'productive'"><th>Visit time</th><th>Status</th><th>Orders</th><th>Collections</th><th>Invoices</th></template>
                         <template v-else><th>Status</th><th>Visits</th></template>
                     </tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded }"><td>{{ row.date || row.route_date }}<small v-if="type === 'otp'">{{ row.time }}</small></td><td>{{ row.routecode }}</td><td v-if="type === 'otp'">{{ row.salesman || 'Not available' }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}<small v-if="row.otp_excluded">OTP - excluded</small></td>
+                    <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.date || row.route_date }}<small v-if="type === 'otp'">{{ row.time }}</small></td><td>{{ row.routecode }}</td><td v-if="type === 'otp'">{{ row.salesman || 'Not available' }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}<small v-if="row.otp_excluded">OTP - excluded</small></td>
                         <template v-if="type === 'otp'"><td>{{ row.otp_type }}</td><td>{{ row.recorded_by || '—' }}</td><td>{{ [row.comments, row.reason].filter(Boolean).join(' · ') || '—' }}</td></template>
                         <template v-else-if="isTransaction"><td>{{ row.source }}</td><td>{{ row.document }}</td><td :class="{ missed: type === 'returns' }">{{ money(row.amount) }}</td><td>{{ row.currency }}</td></template>
-                        <template v-else-if="type === 'productive'"><td>{{ row.time }}</td><td>{{ row.status }}<small v-if="['productive', 'efficiency'].includes(type) && !row.ignored">Collection: {{ row.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ row.sales_order_productive ? "Yes" : "No" }}</small><small v-if="row.ignored">{{ row.exclusion_reason }}</small></td><td>{{ row.orders }}</td><td>{{ row.collections }}</td><td>{{ row.invoices }}</td></template>
-                        <template v-else><td :class="{ missed: row.status === 'Not visited' }">{{ row.status }}<small v-if="['productive', 'efficiency'].includes(type) && !row.ignored">Collection: {{ row.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ row.sales_order_productive ? "Yes" : "No" }}</small><small v-if="row.ignored">{{ row.exclusion_reason }}</small></td><td>{{ row.visit_count }}</td></template>
+                        <template v-else-if="type === 'productive'"><td>{{ row.time }}</td><td>{{ statusLabel(row.status) }}<small v-if="['productive', 'efficiency'].includes(type) && !row.ignored">Collection: {{ row.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ row.sales_order_productive ? "Yes" : "No" }}</small><small v-if="row.ignored">{{ row.exclusion_reason }}</small></td><td>{{ row.orders }}</td><td>{{ row.collections }}</td><td>{{ row.invoices }}</td></template>
+                        <template v-else><td :class="{ missed: row.status === 'Not visited' }">{{ statusLabel(row.status) }}<small v-if="['productive', 'efficiency'].includes(type) && !row.ignored">Collection: {{ row.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ row.sales_order_productive ? "Yes" : "No" }}</small><small v-if="row.ignored">{{ row.exclusion_reason }}</small></td><td>{{ row.visit_count }}</td></template>
                     </tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp' || isTransaction ? 8 : type === 'productive' ? 9 : 6">No matching records.</td></tr></tbody>
                 </table></div>
                 <footer><span>{{ rows.length }} records</span><div><button :disabled="page <= 1" @click="page--">Previous</button><span>{{ page }} / {{ pages }}</span><button :disabled="page >= pages" @click="page++">Next</button></div></footer>
@@ -128,4 +140,5 @@ button { padding: 5px 10px; border: 1px solid #e2e8f0; background: #f8fafc; bord
 select, input { min-width: 0; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; color: #172b45; font-size: 12px; }
 h3 { margin: 18px 0 4px; font-size: 15px; } .status-tabs { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; } .active { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
 .details-table { overflow-x: auto; margin-top: 12px; } table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { padding: 9px; text-align: left; border-bottom: 1px solid #e2e8f0; } th { white-space: nowrap; background: #f8fafc; } td { overflow-wrap: anywhere; } small { display: block; color: #64748b; } .missed { color: #b91c1c; } footer { margin-top: 14px; font-size: 12px; }
+.lpo-customer-row > td, .lpo-customer-row small { background: #fef9c3; color: #854d0e; }
 </style>

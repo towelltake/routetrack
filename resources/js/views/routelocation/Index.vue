@@ -88,12 +88,32 @@ const dateError = computed(() => dateRangeError(fromDate.value, toDate.value));
 const loading = ref(false);
 const metrics = ref(null);
 const timelineFilters = ref({});
+const idle = ref({ minutes: null, loading: false, missing: 0, error: '' });
+const idleDetails = ref(null);
+async function loadIdle(request, signal, params) {
+    idle.value = { minutes: null, loading: true, missing: 0, error: '' };
+    try {
+        const { data } = await axios.get('/dashboard/customer-details.json', { params: { ...params, type: 'idle' }, signal, timeout: 120000 });
+        if (request !== locationRequest || signal.aborted) return;
+        idleDetails.value = data;
+        const rows = data.groups.flatMap(group => group.rows);
+        const measured = rows.filter(row => row.stationary != null);
+        idle.value = { minutes: measured.length || !rows.length ? measured.reduce((sum, row) => sum + Number(row.stationary), 0) : null,
+            missing: rows.length - measured.length, loading: false, error: '' };
+    } catch (e) {
+        if (request === locationRequest && !signal.aborted) idle.value = { minutes: null, loading: false, missing: 0, error: 'Idle time unavailable. Refresh to retry.' };
+    }
+}
 const metricsLoading = ref(true);
 const metricsError = ref(null);
 const analyticsView = ref(null);
 const routeStatusDialog = ref(null);
 const customerDetailsDialog = ref(null);
 function inspectCard(title) {
+    if (title === 'Idle Time Outside Customer Visits') {
+        customerDetailsDialog.value.open('idle', timelineFilters.value, idleDetails.value);
+        return;
+    }
     if (title === 'Customer Face Time') {
         customerDetailsDialog.value.open('cft', { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
         return;
@@ -219,6 +239,8 @@ async function showAllLocations() {
     dashboardRequestController = new AbortController();
     const signal = dashboardRequestController.signal;
     metrics.value = null;
+    idleDetails.value = null;
+    idle.value = { minutes: null, loading: true, missing: 0, error: '' };
     metricsError.value = null;
     locations.value = [];
     markersLayer?.clearLayers();
@@ -300,7 +322,7 @@ async function loadMetrics(request, signal) {
             timeout: 60000,
             params,
         });
-        if (request === locationRequest) { metrics.value = data; timelineFilters.value = params; }
+        if (request === locationRequest) { metrics.value = data; timelineFilters.value = params; loadIdle(request, signal, params); }
     } catch {
         if (request === locationRequest) metricsError.value = "Unable to load the overview figures.";
     } finally {
@@ -410,7 +432,7 @@ function resetFilters() {
             </div>
         </section>
 
-        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
+        <DashboardCards :idle="idle" :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
         <RouteStatusDialog ref="routeStatusDialog" />
         <CustomerDetailsDialog ref="customerDetailsDialog" />
         <div class="dashboard-actions">

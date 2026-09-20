@@ -1482,10 +1482,10 @@ function focusEnd() {
                                 </table></div>
                             </div>
                             <div v-else-if="summaryModal === 'efficiency'">
-                                <p class="small text-muted">Each customer counts once. Ignored customers are shown for reference and excluded from both metric counts.</p>
+                                <p class="small text-muted">Each customer counts once. LPO Customers are shown in yellow for reference and excluded from both metric counts.</p>
                                 <div class="table-responsive"><table class="table table-sm">
                                     <thead><tr><th>Customer code</th><th>Customer name</th><th>Status</th><th>Visits</th></tr></thead>
-                                    <tbody><tr v-for="customer in efficiencyRows" :key="customer.customercode"><td>{{ customer.alternatecode || customer.customercode }}</td><td>{{ customer.customername }}</td><td><span :class="{ 'text-warning': customer.ignored }">{{ customer.status }}</span><small v-if="!customer.ignored" class="d-block text-muted">Collection: {{ customer.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ customer.sales_order_productive ? "Yes" : "No" }}</small><small v-if="customer.ignored" class="d-block text-muted">Customer marked toplpo = 1; excluded from calculations</small></td><td>{{ customer.visit_count }}</td></tr><tr v-if="!efficiencyRows.length"><td colspan="4">No customer visits.</td></tr></tbody>
+                                    <tbody><tr v-for="customer in efficiencyRows" :key="customer.customercode" :class="{ 'lpo-customer-row': customer.ignored }"><td>{{ customer.alternatecode || customer.customercode }}</td><td>{{ customer.customername }}</td><td><span>{{ customer.ignored ? 'LPO Customers' : customer.status }}</span><small v-if="!customer.ignored" class="d-block text-muted">Collection: {{ customer.collection_productive ? "Yes" : "No" }} &middot; Orders/Invoices: {{ customer.sales_order_productive ? "Yes" : "No" }}</small><small v-if="customer.ignored" class="d-block text-muted">Customer marked toplpo = 1; excluded from calculations</small></td><td>{{ customer.visit_count }}</td></tr><tr v-if="!efficiencyRows.length"><td colspan="4">No customer visits.</td></tr></tbody>
                                 </table></div>
                             </div>
                             <dl v-else-if="summaryModal === 'route'" class="route-detail-grid mb-0">
@@ -2480,4 +2480,6 @@ function focusEnd() {
     color: #495057;
     text-align: right;
 }
+.lpo-customer-row > td { background: #fef9c3; color: #854d0e; --bs-table-bg: #fef9c3; --bs-table-accent-bg: transparent; }
+.lpo-customer-row .text-muted { color: #854d0e !important; }
 </style>

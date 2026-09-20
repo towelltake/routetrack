@@ -167,7 +167,7 @@ class DashboardController extends Controller
     public function customerDetails(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,efficiency,sales,orders,collections,returns,duration,cft,outside,operational,otp_time,actual_face']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,efficiency,sales,orders,collections,returns,duration,cft,outside,idle,operational,otp_time,actual_face']])['type'];
         $routes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
@@ -180,7 +180,7 @@ class DashboardController extends Controller
             ->whereDate('journey.routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
             ->orderBy('journey.routestartdate')->orderBy('journey.routecode')->orderBy('journey.routekey')
             ->get(['journey.*', 'route.routename', 'salesman.salesmanname1 as salesman']);
-        if (in_array($type, ['duration', 'outside'])) {
+        if (in_array($type, ['duration', 'outside', 'idle'])) {
             $points = $this->journeyLocations($journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1));
             foreach ($journeys as $journey) $journey->last_location_time = $points->get($journey->routekey)?->effective_timestamp;
         }

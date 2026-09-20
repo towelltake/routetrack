@@ -1,11 +1,11 @@
 <script setup>
 import { computed } from "vue";
 
-const props = defineProps({ metrics: Object, loading: Boolean, error: String });
+const props = defineProps({ metrics: Object, loading: Boolean, error: String, idle: Object });
 const emit = defineEmits(["inspect"]);
 const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
-const signedPercent = (value) => value == null ? "0%" : `${value > 0 ? "+" : ""}${number(value, 1)}%`;
+const signedPercent = (value) => value == null ? "N/A" : `${value > 0 ? "+" : ""}${number(value, 1)}%`;
 const duration = (value) => {
     if (value == null) return "—";
     const minutes = Math.max(0, Math.round(Number(value)));
@@ -24,7 +24,7 @@ const cards = computed(() => {
         { title: "Productive visits", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Orders/Invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
-            definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. Ignored customers are excluded." },
+            definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
         { title: "Sales", icon: "fa-chart-line", tone: "green", amounts: m?.amounts.sales,
             note: "Total invoice sales value", definition: "Total sales value" },
         { title: "Order value", icon: "fa-file-invoice", tone: "blue", amounts: m?.amounts.orders,
@@ -52,19 +52,22 @@ const cards = computed(() => {
         { title: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: signedPercent(m?.face_time_variance_percent),
             comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes },
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
-            definition: "Variance from planned face time, excluding OTP visits" },
+            definition: "Actual and planned customer face time exclude OTP visits. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
             breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Orders/Invoices', value: m?.sales_order_efficiency_percent }],
             note: m ? `${number(m.unique_productive_customers)} of ${number(m.unique_visited_customers)} unique customers productive` : "",
-            definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. Ignored customers are excluded." },
-        { title: "Customer Face Time", icon: "fa-user-clock", tone: "green", value: duration(m?.cft_minutes), unit: "h:mm",
-            note: "Completed visits without OTP", definition: "Sum of completed customer visit durations excluding visits matched to any OTP type. OTP visits remain visible in red in the details." },
+            definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
+        { title: "Idle Time Outside Customer Visits", icon: "fa-hourglass-half", tone: "red", value: props.idle?.loading ? 'Loading...' : duration(props.idle?.minutes), unit: props.idle?.loading ? '' : "h:mm",
+            interactive: !props.idle?.loading,
+            note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
+            detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; total includes measured journeys only' : '',
+            definition: "GPS-detected stationary time outside customer visit intervals, including exclusion of OTP visits. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
     ];
 });
 const groups = computed(() => [
     { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
     { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[2], cards.value[14], cards.value[7]] },
-    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[15], cards.value[12], cards.value[13], cards.value[10]] },
+    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10], cards.value[15]] },
     { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
 ]);
 </script>
@@ -96,11 +99,10 @@ const groups = computed(() => [
                 </div>
                 <div v-else-if="!card.comparison" class="dashboard-metric-value">{{ card.value }} <span v-if="card.unit">{{ card.unit }}</span></div>
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-time-comparison">
-                    <div><span>Actual</span><strong>{{ duration(card.comparison.actual) }}</strong></div>
-                    <div><span>Planned</span><strong>{{ duration(card.comparison.planned) }}</strong></div>
-                    <small>h:mm</small>
+                    <div><span>Actual CFT</span><strong>{{ duration(card.comparison.actual) }}</strong><small>h:mm</small></div>
+                    <div><span>Planned CFT</span><strong>{{ duration(card.comparison.planned) }}</strong><small>h:mm</small></div>
                 </div>
-                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance</span></div>
+                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ percent(item.value) }}</strong><span>{{ item.label }}</span></div></div>
@@ -144,13 +146,13 @@ const groups = computed(() => [
 .dashboard-metric-money + .dashboard-metric-money { margin-top: 7px; }
 .dashboard-metric-note, .dashboard-metric-detail { margin: 0; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .dashboard-metric-open { grid-column: 3; grid-row: 1; align-self: center; color: #94a3b8; font-size: 10px; }
-.dashboard-time-comparison { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+.dashboard-time-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .dashboard-time-comparison span { display: block; color: #64748b; font-size: 11px; }
 .dashboard-time-comparison strong { color: var(--accent); font-size: clamp(21px, 1.6vw, 26px); font-weight: 650; font-variant-numeric: tabular-nums; }
 .dashboard-face-variance { display: flex; align-items: baseline; gap: 8px; padding-top: 9px; border-top: 1px solid #edf2f7; }
 .dashboard-face-variance strong { font-size: 15px; color: var(--accent); }
 .dashboard-face-variance span { font-size: 11px; color: #64748b; }
-.dashboard-time-comparison small { align-self: end; color: #94a3b8; font-size: 10px; }
+.dashboard-time-comparison small { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
 .dashboard-metric-breakdown { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; }
 .dashboard-metric-breakdown > div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 10px; text-align: center; min-width: 0; }

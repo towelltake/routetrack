@@ -12,7 +12,9 @@ class DashboardCustomerDetails
         if ($journeys->isEmpty()) return ['groups' => []];
         $keys = $journeys->pluck('routekey');
         $rows = collect();
-        if (in_array($type, ['duration', 'outside'])) {
+        if ($type === 'idle') {
+            $rows = app(DashboardOutsideVisits::class)->build($journeys);
+        } elseif (in_array($type, ['duration', 'outside'])) {
             $operational = $type === 'outside' ? collect($this->build($journeys, 'cft')['groups'])
                 ->mapWithKeys(fn ($group) => [$group['routekey'] => $group['rows']->sum('recorded_actual_cft')]) : collect();
             $rows = $journeys->map(function ($journey) use ($operational) {
@@ -155,7 +157,7 @@ class DashboardCustomerDetails
                 return $row;
             })->values();
         }
-        $customers = in_array($type, ['duration', 'outside']) ? collect() : DB::table('customermaster')->whereIn('customercode', $rows->pluck('customercode')->unique())
+        $customers = in_array($type, ['duration', 'outside', 'idle']) ? collect() : DB::table('customermaster')->whereIn('customercode', $rows->pluck('customercode')->unique())
             ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
         $grouped = $rows->map(function ($row) use ($customers) {
             $customer = $customers->get($row['customercode']);

@@ -469,3 +469,74 @@ and reopening reuse loaded rows. PHP regression coverage added for ten-row-route
 selection versus explicit all-route response. Twenty JS tests, modified Vue script
 syntax and diff checks passed. PHP tests, production build and browser checks
 remain unverified because local runtime/dependencies are unavailable.
+
+## All-route timeline popup: 2026-09-20
+
+Expand all routes now opens a wide native dialog, consistent with the dashboard
+popups, while the dashboard retains its top-ten preview. Extracted the shared
+chart, percentage summary and values table into JourneyTimelinePlot.vue so both
+views use identical timing/color logic. The popup opens immediately with a loading
+state, fetches on demand, supports retry, and reuses successful data until filters
+or metrics refresh. Close, Escape and backdrop dismiss the dialog and abort pending
+requests; the chart is unmounted while closed. Expansion is also available when
+there are ten or fewer routes. No endpoint or calculation changes.
+Validation: 20 existing JS tests, both Vue script syntax checks and diff checks
+passed. Production build/browser layout remain unverified without node_modules.
+
+## Temporarily hidden planned/CFT graph: 2026-09-20
+
+DashboardGraphs.vue now gates Planned vs customer visit time behind the local
+showPlannedVisitTime=false flag. Set it to true to restore the graph. Its data
+and calculations remain available; other charts and CFT cards are unaffected.
+Vue script syntax and diff checks passed; browser/build not run locally.
+
+## Dashboard stationary idle card: 2026-09-20
+
+Replaced the displayed Customer Face Time card with Idle Time Outside Customer
+Visits, last in the six-card Time row. It uses DashboardOutsideVisits.stationary:
+GPS-detected stationary intervals minus the union of all recorded customer visit
+intervals, including OTP visits. Travel is excluded; existing stop thresholds,
+GPS gap rules and journey boundaries apply. Other timing cards are unchanged.
+The authorized customer-details endpoint accepts type=idle and resolves live
+journey endpoints just as for outside/duration. Dashboard requests idle separately
+after overview metrics render, with the same filters/cancellation signal and stale
+response guards. It shows its own loading/error state, excludes unavailable
+journeys and labels partial totals. Successful route details are retained for the
+idle popup, avoiding recomputation on click. This does add GPS/server work; no
+live performance measurement was performed.
+Validation: 20 JS tests, modified Vue script syntax and diff checks passed. Added
+PHP integration coverage for stationary-minus-visits and unavailable GPS through
+the popup service. PHP tests/build/browser verification remain unavailable locally.
+
+## Face Time Compliance labels: 2026-09-20
+
+Dashboard compliance card now explicitly labels Actual CFT, Planned CFT (each
+with h:mm units) and Variance (%). Uses existing backend values and formula;
+missing planned time now displays N/A for variance instead of 0%. The two time
+values use equal-width columns. The previously hidden planned-vs-visit graph
+remains hidden. Vue script syntax and diff checks passed; build/browser unverified.
+
+## Face Time Compliance popup columns: 2026-09-20
+
+Clarification: planned CFT and variance percentage were requested in the popup
+grid. CustomerDetailsDialog actual_face now displays Actual CFT (h:mm), Planned
+CFT (h:mm) and signed Variance (%). Percentage uses each row's existing actual and
+planned values; zero/missing plan, incomplete actual time and OTP-excluded visits
+show N/A. OTP rows remain red. OTP-time popup columns are unchanged. No new
+requests or backend calculations. Vue syntax, six direct variance cases and diff
+checks passed; browser/build unverified locally.
+
+## LPO popup labels and highlighting: 2026-09-20
+
+Dashboard productivity/efficiency popup status labels and filter tab display
+LPO Customers instead of Ignored, retaining the internal Ignored status so counts
+and filtering stay unchanged. toplpo-excluded rows have a pale yellow background
+and dark amber text. Route Tracking efficiency popup uses the same label and row
+highlight. OTP/CFT red styling remains separate. No calculation changes.
+Both Vue script syntax checks and diff checks passed; browser/build unverified.
+
+## LPO graph wording: 2026-09-20
+
+Updated productivity/efficiency graph notes and matching card tooltips to say
+LPO Customers instead of Ignored customers. Internal status keys and calculations
+are unchanged. Diff check passed; this is a text-only change.

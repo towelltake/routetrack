@@ -1,5 +1,18 @@
 # TRAC / routeTrack project memory
 
+## Unplanned percentages: 2026-09-24
+
+Unplanned Customers now displays without-OTP and with-OTP percentages, each
+divided by all unique visited customers in the selected journeys, with counts
+underneath. Preserves journey/customer uniqueness used by the planned card;
+date ranges divide summed counts. Denominator includes planned/unplanned, OTP,
+LPO and incomplete visits, including journeys without plans. Such journeys still
+cannot contribute to unplanned numerators. Zero denominator yields unavailable.
+New all_unique_visited_customers avoids using the LPO-excluding efficiency count.
+Updated DashboardMetrics, DashboardCards and PHP assertions. All 20 JS tests,
+Vue script syntax and diff checks passed. PHP tests/build/browser remain unverified
+without local runtime/dependencies.
+
 Productive Visits popup's journey Date column is now labelled Route Start Date
 (2026-09-24). Display label only; visit start/end dates remain separate. Diff
 check passed.

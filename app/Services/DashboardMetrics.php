@@ -141,11 +141,15 @@ class DashboardMetrics
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
         $operational = collect($analysis['journeys'])->whereNotNull('operational_minutes');
+        $unplannedWithoutOtp = collect($analysis['journeys'])->sum('unplanned_customers') - $unplannedOtp;
 
         return [
             'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
-            'unplanned_customers_without_otp' => collect($analysis['journeys'])->sum('unplanned_customers') - $unplannedOtp,
+            'unplanned_customers_without_otp' => $unplannedWithoutOtp,
             'unplanned_customers_with_otp' => $unplannedOtp,
+            'all_unique_visited_customers' => count($visited),
+            'unplanned_without_otp_percent' => $visited ? round(100 * $unplannedWithoutOtp / count($visited), 1) : null,
+            'unplanned_with_otp_percent' => $visited ? round(100 * $unplannedOtp / count($visited), 1) : null,
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
             'outside_visit_minutes' => $timed->isEmpty() ? null : round($timed->sum('remaining_time'), 1),
             'operational_minutes' => $operational->isEmpty() ? null : $operational->sum('operational_minutes'),

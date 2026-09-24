@@ -573,6 +573,8 @@ test('unplanned OTP customers are separate, deduplicated and require a journey p
     expect($service->summarize($journeys))->toMatchArray([
         'unplanned_customers' => 3, 'unplanned_customers_without_otp' => 2,
         'unplanned_customers_with_otp' => 1,
+        'all_unique_visited_customers' => 5,
+        'unplanned_without_otp_percent' => 40.0, 'unplanned_with_otp_percent' => 20.0,
     ]);
     $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, 'unplanned')['groups'][0]['rows']);
     expect($rows->firstWhere('customercode', 104))->toMatchArray([
@@ -585,5 +587,7 @@ test('unplanned OTP customers are separate, deduplicated and require a journey p
     ]);
     expect($service->summarize(collect()))->toMatchArray([
         'unplanned_customers_without_otp' => 0, 'unplanned_customers_with_otp' => 0,
+        'all_unique_visited_customers' => 0,
+        'unplanned_without_otp_percent' => null, 'unplanned_with_otp_percent' => null,
     ]);
 });

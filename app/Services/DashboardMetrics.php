@@ -198,6 +198,11 @@ class DashboardMetrics
             'cft_configured_visits' => $configuredVisits,
             'amounts' => $amounts,
             'otp' => ['events' => $otp['events'], 'visits' => $otp['visits']],
+            'otp_reasons' => collect($otp['details'])
+                ->countBy(fn ($event) => trim((string) ($event['otpreason'] ?? '')) ?: 'Unspecified')
+                ->map(fn ($count, $reason) => ['reason' => (string) $reason, 'count' => $count])
+                ->sort(fn ($a, $b) => ($b['count'] <=> $a['count']) ?: strcasecmp($a['reason'], $b['reason']))
+                ->values()->all(),
             'analysis' => $analysis,
         ];
     }

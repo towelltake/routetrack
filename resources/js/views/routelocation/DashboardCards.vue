@@ -26,6 +26,7 @@ const cards = computed(() => {
             breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
             definition: "Unique planned customers visited without any matched OTP / unique scheduled route sequence customers, counted per journey. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. All OTP types count; unplanned customers are excluded." },
         { title: "Productivity", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
+            compactBreakdown: true,
             breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Orders/Invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
@@ -38,6 +39,7 @@ const cards = computed(() => {
         { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(m?.operational_minutes), unit: "h:mm",
             note: "First check-in to last checkout without OTP", detail: m?.operational_missing_journeys ? `${m.operational_missing_journeys} journeys unavailable` : "", definition: "Sum of each journey's first non-OTP check-in to its last non-OTP checkout. Includes intervening time. A missing final checkout makes the journey unavailable." },
         { title: "OTP usage", icon: "fa-key", tone: "purple", value: ratioPercent(m?.otp?.events, m?.total_visits),
+            reasons: m?.otp_reasons ?? [],
             note: m ? `${number(m.otp?.events)} total OTP / ${number(m.total_visits)} total visits` : "",
             definition: "Total OTP events / total visits × 100 for the selected journeys. Includes all OTP types and all visits, including repeats, incomplete visits and LPO customers. Date ranges use summed counts. Multiple OTP events per visit can produce a rate above 100%. No visits means unavailable." },
         { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: percent(m?.unplanned_without_otp_percent),
@@ -60,6 +62,7 @@ const cards = computed(() => {
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
             definition: "Actual and planned customer face time exclude OTP visits. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
+            compactBreakdown: true,
             breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Orders/Invoices', value: m?.sales_order_efficiency_percent }],
             note: m ? `${number(m.unique_productive_customers)} of ${number(m.unique_visited_customers)} unique customers productive` : "",
             definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
@@ -86,7 +89,7 @@ const groups = computed(() => [
             <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
                 <h3 class="dashboard-group-title">{{ group.title }}</h3>
                 <div class="dashboard-metric-grid">
-            <article v-for="card in group.cards" :key="card.title" class="dashboard-metric-card" :class="`tone-${card.tone}`" :title="card.definition"
+            <article v-for="card in group.cards" :key="card.title" class="dashboard-metric-card" :class="[`tone-${card.tone}`, { 'compact-breakdown': card.compactBreakdown }]" :title="card.definition"
                 :role="card.interactive === false ? undefined : 'button'" :tabindex="card.interactive !== false && metrics && !loading ? 0 : -1" :aria-disabled="card.interactive === false ? undefined : !metrics || loading"
                 :aria-label="`${card.title}. ${card.definition}${card.interactive === false ? '' : ' View journey details.'}`"
                 @click="card.interactive !== false && metrics && !loading && emit('inspect', card.title)"
@@ -111,6 +114,15 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
+                <div v-if="!loading && metrics && card.reasons" class="dashboard-otp-reasons">
+                    <h5>OTP by reason</h5>
+                    <dl v-if="card.reasons.length">
+                        <div v-for="item in card.reasons" :key="item.reason" class="dashboard-otp-reason">
+                            <dt>{{ item.reason }}</dt><dd>{{ number(item.count) }}</dd>
+                        </div>
+                    </dl>
+                    <p v-else>No OTP events in this period.</p>
+                </div>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
@@ -169,11 +181,20 @@ const groups = computed(() => [
 .dashboard-metric-breakdown .collection-share { color: #7c3aed; background: #f5f3ff; }
 .dashboard-metric-breakdown .sales-share { color: #2563eb; background: #eff6ff; }
 .dashboard-metric-breakdown .orange-share { color: #c2410c; background: #fff7ed; }
+.dashboard-otp-reasons { grid-column: 1 / -1; grid-row: 4 / span 2; align-self: start; min-width: 0; border-top: 1px solid #ede9fe; padding-top: 14px; margin-top: 4px; }
+.dashboard-otp-reasons h5 { margin: 0 0 10px; color: #64748b; font-size: 11px; font-weight: 700; }
+.dashboard-otp-reasons dl { display: grid; gap: 7px; margin: 0; }
+.dashboard-otp-reason { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: #faf7ff; }
+.dashboard-otp-reason dt { color: #52657b; font-size: 11.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.dashboard-otp-reason dd { margin: 0; min-width: 28px; padding: 3px 7px; border-radius: 6px; color: #7c3aed; background: #ede9fe; font-size: 12px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
+.dashboard-otp-reasons > p { color: #64748b; font-size: 11.5px; margin: 0; }
 .group-customers .dashboard-metric-card { grid-template-rows: 32px auto minmax(34px, auto) 1fr auto; }
 .group-customers .dashboard-metric-value, .group-customers .dashboard-metric-skeleton { grid-row: 2; }
 .group-customers .dashboard-metric-note { grid-row: 3; }
 .group-customers .dashboard-metric-detail { grid-row: 4; }
 .group-customers .dashboard-metric-breakdown { grid-row: 5; align-self: end; margin-top: 0; }
+.group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto; }
+.group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; }
 @media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }

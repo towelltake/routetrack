@@ -1,5 +1,28 @@
 # TRAC / routeTrack project memory
 
+## Efficiency and Productivity tile placement: 2026-09-24
+
+Collection and Orders/Invoices remain side by side inside Efficiency and
+Productivity but now sit immediately below the visit-count note. These two
+cards opt into compactBreakdown, removing the flexible blank grid row that
+previously pushed their tiles to the bottom. Other card layouts and calculations
+are unchanged. Vue script syntax and diff checks passed; browser/build unverified.
+
+## OTP card reason breakdown: 2026-09-24
+
+OTP usage card now fills its space beneath the headline with OTP by reason:
+left-aligned reason labels and right-aligned purple count badges on pale purple
+rows. Shows actual selected-journey event counts, sorted descending then by label.
+DashboardMetrics aggregates existing scoped OTP details into otp_reasons using
+trimmed otpreason; missing/blank reasons become Unspecified. Includes unmatched
+and overnight events already in the OTP numerator, so counts reconcile to it.
+Empty periods show an explicit no-events message. Card click still opens OTP
+details. No additional query or change to access scope or OTP matching.
+Added PHP regression for selected windows, trimmed/blank reasons, unmatched
+overnight events, total reconciliation and empty periods. All 20 existing JS
+tests, Vue script syntax and diff checks passed. PHP tests and build/browser
+remain unverified because PHP/vendor/node_modules are unavailable locally.
+
 ## Route compliance final labels: 2026-09-24
 
 Renamed Routes Started / Total to Route Start Compliance in the card, popup title

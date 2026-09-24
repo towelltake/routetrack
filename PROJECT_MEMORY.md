@@ -1,5 +1,15 @@
 # TRAC / routeTrack project memory
 
+## Top three OTP comments and aligned cards: 2026-09-24
+
+Removed View all comments link and its styles; card now shows only the top three
+comment groups. Clicking the OTP card still opens the full popup breakdown.
+Long comment previews clamp to two lines with full text in the hover title and
+popup. Journey/customer cards share a 360px minimum height, retaining stretching
+and equal grid rows for aligned card edges; content can grow without clipping.
+Vue script syntax, targeted OTP markup and diff checks passed. Full build/browser
+visual verification remains unavailable because node_modules is absent.
+
 ## Top four OTP comments and full popup breakdown: 2026-09-24
 
 OTP card shows the first four comment groups (highest counts), with View all

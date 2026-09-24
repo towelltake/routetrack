@@ -117,11 +117,10 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comments" class="dashboard-otp-comments">
                     <h5>OTP by comments</h5>
                     <dl v-if="card.comments.length">
-                        <div v-for="item in card.comments.slice(0, 4)" :key="item.comment" class="dashboard-otp-comment">
-                            <dt>{{ item.comment }}</dt><dd>{{ number(item.count) }}</dd>
+                        <div v-for="item in card.comments.slice(0, 3)" :key="item.comment" class="dashboard-otp-comment">
+                            <dt :title="item.comment">{{ item.comment }}</dt><dd>{{ number(item.count) }}</dd>
                         </div>
                     </dl>
-                    <button v-if="card.comments.length > 4" type="button" class="dashboard-otp-view-all" @click.stop="emit('inspect', card.title)" @keydown.stop @keyup.stop>View all comments ({{ number(card.comments.length) }}) <span aria-hidden="true">&rarr;</span></button>
                     <p v-if="!card.comments.length">No OTP events in this period.</p>
                 </div>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
@@ -150,6 +149,7 @@ const groups = computed(() => [
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .dashboard-metric-card[aria-disabled="false"]:hover { border-color: var(--accent); box-shadow: 0 4px 14px #172b4510; }
 .dashboard-metric-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.group-journeys .dashboard-metric-card, .group-customers .dashboard-metric-card { min-height: 360px; }
 .tone-green { --accent: #15803d; --tint: #f0fdf4; }
 .tone-purple { --accent: #7c3aed; --tint: #f5f3ff; }
 .tone-orange { --accent: #c2410c; --tint: #fff7ed; }
@@ -186,12 +186,9 @@ const groups = computed(() => [
 .dashboard-otp-comments h5 { margin: 0 0 10px; color: #64748b; font-size: 11px; font-weight: 700; }
 .dashboard-otp-comments dl { display: grid; gap: 7px; margin: 0; }
 .dashboard-otp-comment { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: #faf7ff; }
-.dashboard-otp-comment dt { color: #52657b; font-size: 11.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.dashboard-otp-comment dt { color: #52657b; font-size: 11.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .dashboard-otp-comment dd { margin: 0; min-width: 28px; padding: 3px 7px; border-radius: 6px; color: #7c3aed; background: #ede9fe; font-size: 12px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
 .dashboard-otp-comments > p { color: #64748b; font-size: 11.5px; margin: 0; }
-.dashboard-otp-view-all { display: block; margin-top: 10px; padding: 4px 0; border: 0; background: transparent; color: #7c3aed; font-size: 11.5px; font-weight: 650; cursor: pointer; text-align: left; }
-.dashboard-otp-view-all:hover { text-decoration: underline; }
-.dashboard-otp-view-all:focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; border-radius: 3px; }
 .group-customers .dashboard-metric-card { grid-template-rows: 32px auto minmax(34px, auto) 1fr auto; }
 .group-customers .dashboard-metric-value, .group-customers .dashboard-metric-skeleton { grid-row: 2; }
 .group-customers .dashboard-metric-note { grid-row: 3; }

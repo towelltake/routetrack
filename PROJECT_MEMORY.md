@@ -1,5 +1,15 @@
 # TRAC / routeTrack project memory
 
+## Separate closed routes card: 2026-09-24
+
+Moved closed route counts out of the Routes Started note into a separate orange
+Routes Closed card in the Journeys group. Displays closed / filtered total as a
+percentage with counts below, using the existing route/start-date closure metric.
+Clicking opens the route status popup with Closed selected; the started card
+still opens All. Updated DashboardCards, Index and RouteStatusDialog. All three
+Vue script syntax checks and diff check passed; full build/browser unverified
+because node_modules is absent. No backend calculation changes.
+
 ## Dashboard JP compliance and percentage cards: 2026-09-24
 
 Renamed Planned Customer Visits and its popup to JP compliance, preserving the

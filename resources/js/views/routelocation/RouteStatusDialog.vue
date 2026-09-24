@@ -25,7 +25,7 @@ const started = computed(() => rows.value.filter((route) => route.journeys.lengt
 const isClosed = (route) => route.journeys.length > 0 && route.journeys.every((journey) => journey.closed);
 const closed = computed(() => rows.value.filter(isClosed));
 const filteredRows = computed(() => rows.value.filter((route) => !status.value || (status.value === "closed" ? isClosed(route) : status.value === "started" ? route.journeys.length > 0 : route.journeys.length === 0)));
-async function open(filters) {
+async function open(filters, initialStatus = '') {
     controller?.abort();
     const request = new AbortController();
     controller = request;
@@ -41,7 +41,7 @@ async function open(filters) {
         date.setDate(date.getDate() + 1);
     }
     day.value = '';
-    status.value = '';
+    status.value = initialStatus;
     page.value = 1;
     await nextTick();
     if (!dialog.value.open) dialog.value.showModal();

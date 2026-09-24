@@ -16,7 +16,7 @@ const cards = computed(() => {
     const m = props.metrics;
     return [
         { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
-            note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total · ${number(m.routes_closed)} closed` : "",
+            note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total` : "",
             detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
             definition: "Started routes / filtered total routes × 100. Routes count once per route start date; closed means all journeys for that route and start date are closed. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
@@ -67,10 +67,13 @@ const cards = computed(() => {
             note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
             detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; total includes measured journeys only' : '',
             definition: "GPS-detected stationary time outside customer visit intervals, including exclusion of OTP visits. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
+        { title: "Routes Closed", icon: "fa-flag-checkered", tone: "orange", value: ratioPercent(m?.routes_closed, m?.total_routes),
+            note: m ? `${number(m.routes_closed)} closed / ${number(m.total_routes)} total` : "",
+            definition: "Closed routes / filtered total routes × 100. Routes count once per route start date and are closed when all journeys for that route and start date are closed. Total equals accessible filtered routes multiplied by inclusive calendar days." },
     ];
 });
 const groups = computed(() => [
-    { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
+    { key: "journeys", title: "Journeys", cards: [cards.value[0], cards.value[16]] },
     { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[14], cards.value[2], cards.value[7]] },
     { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10], cards.value[15]] },
     { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },

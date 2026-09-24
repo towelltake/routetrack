@@ -1,5 +1,12 @@
 # TRAC / routeTrack project memory
 
+## Dashboard productivity naming/order: 2026-09-24
+
+Renamed the Productive visits card and popup title to Productivity, updating its
+popup action mapping. Customer card order is Planned, Unplanned, Efficiency,
+Productivity, OTP usage. Calculations unchanged. Three Vue script syntax checks
+and diff check passed; browser/build unverified locally.
+
 ## Unplanned percentages: 2026-09-24
 
 Unplanned Customers now displays without-OTP and with-OTP percentages, each

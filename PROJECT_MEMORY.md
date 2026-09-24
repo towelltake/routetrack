@@ -1,5 +1,15 @@
 # TRAC / routeTrack project memory
 
+## Closed routes inside started card (corrected layout): 2026-09-24
+
+User clarified Routes Closed belongs inside the Routes Started card, matching
+JP compliance's full-width breakdown tile. Removed the separate card and added
+an orange breakdown with closed / filtered total percentage and counts. Shared
+breakdown supports an orange tone; existing purple/blue tiles are unchanged.
+Route card opens the existing All status popup with Closed filtering available.
+Supersedes the separate-card layout below. Three Vue script syntax checks and
+diff check passed; full build/browser remains unverified without dependencies.
+
 ## Separate closed routes card: 2026-09-24
 
 Moved closed route counts out of the Routes Started note into a separate orange

@@ -16,6 +16,7 @@ const cards = computed(() => {
     const m = props.metrics;
     return [
         { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
+            breakdown: [{ label: 'Routes Closed', tone: 'orange', value: m?.total_routes > 0 && m?.routes_closed != null ? 100 * m.routes_closed / m.total_routes : null, count: m ? `${number(m.routes_closed)} closed / ${number(m.total_routes)} total` : '' }],
             note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total` : "",
             detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
             definition: "Started routes / filtered total routes × 100. Routes count once per route start date; closed means all journeys for that route and start date are closed. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
@@ -67,13 +68,10 @@ const cards = computed(() => {
             note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
             detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; total includes measured journeys only' : '',
             definition: "GPS-detected stationary time outside customer visit intervals, including exclusion of OTP visits. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
-        { title: "Routes Closed", icon: "fa-flag-checkered", tone: "orange", value: ratioPercent(m?.routes_closed, m?.total_routes),
-            note: m ? `${number(m.routes_closed)} closed / ${number(m.total_routes)} total` : "",
-            definition: "Closed routes / filtered total routes × 100. Routes count once per route start date and are closed when all journeys for that route and start date are closed. Total equals accessible filtered routes multiplied by inclusive calendar days." },
     ];
 });
 const groups = computed(() => [
-    { key: "journeys", title: "Journeys", cards: [cards.value[0], cards.value[16]] },
+    { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
     { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[14], cards.value[2], cards.value[7]] },
     { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10], cards.value[15]] },
     { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
@@ -113,7 +111,7 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
-                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
+                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
@@ -170,6 +168,7 @@ const groups = computed(() => [
 .dashboard-metric-breakdown span { color: #52657b; font-size: 10px; font-weight: 600; line-height: 1.4; }
 .dashboard-metric-breakdown .collection-share { color: #7c3aed; background: #f5f3ff; }
 .dashboard-metric-breakdown .sales-share { color: #2563eb; background: #eff6ff; }
+.dashboard-metric-breakdown .orange-share { color: #c2410c; background: #fff7ed; }
 .group-customers .dashboard-metric-card { grid-template-rows: 32px auto minmax(34px, auto) 1fr auto; }
 .group-customers .dashboard-metric-value, .group-customers .dashboard-metric-skeleton { grid-row: 2; }
 .group-customers .dashboard-metric-note { grid-row: 3; }

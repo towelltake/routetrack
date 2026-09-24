@@ -127,7 +127,7 @@ function inspectCard(title) {
         customerDetailsDialog.value.open(kind, { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
         return;
     }
-    if (["Routes Started / Total", "Routes Closed"].includes(title)) routeStatusDialog.value.open({ from_date: fromDate.value, to_date: toDate.value, ...selected.value }, title === "Routes Closed" ? "closed" : "");
+    if (title === "Routes Started / Total") routeStatusDialog.value.open({ from_date: fromDate.value, to_date: toDate.value, ...selected.value });
     else analyticsView.value?.openOverview(title);
 }
 const error = ref(null);

@@ -177,6 +177,7 @@ class DashboardMetrics
             'missed_customers' => $missed,
             'journeys_without_plan' => $journeys->count() - $plans->pluck('routekey')->unique()->count(),
             'completed_visits' => $completed,
+            'total_visits' => $visits->count(),
             'productive_visits' => $productive,
             'sales_order_productive_visits' => $salesOrderVisits,
             'collection_productive_visits' => $collectionVisits,

@@ -1,5 +1,23 @@
 # TRAC / routeTrack project memory
 
+## Dashboard JP compliance and percentage cards: 2026-09-24
+
+Renamed Planned Customer Visits and its popup to JP compliance, preserving the
+existing calculation and popup action. Routes Started / Total now displays a
+percentage with filtered started/total and closed counts below. Counts remain
+per route/start date; closed requires all journeys on that route/start date to
+be closed. Route status popup includes closed counts, status labels and filter.
+OTP usage is total OTP events / all visit logs in selected journeys x 100;
+new total_visits includes repeats, incomplete visits and LPO customers. Date
+ranges use summed counts and retain journey-start-date/overnight scope. Zero
+denominators are unavailable; rates above 100% are preserved.
+
+Updated DashboardController, DashboardMetrics, four dashboard Vue files and PHP
+regression assertions for route closure deduplication and total visits. All 20
+existing JavaScript tests, four Vue script syntax checks, card ratio checks and
+diff check passed. PHP tests and full build/browser verification remain unavailable
+because PHP, vendor and node_modules are absent locally.
+
 ## Dashboard productivity naming/order: 2026-09-24
 
 Renamed the Productive visits card and popup title to Productivity, updating its

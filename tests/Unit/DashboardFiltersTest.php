@@ -104,8 +104,9 @@ test('route started card counts filtered route days inclusively without duplicat
         $mock->shouldReceive('summarize')->andReturn([]);
     });
     DB::table('startendday')->insert([
-        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07'],
-        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08'],
+        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 102, 'routestartdate' => '2026-09-08', 'routeclosed' => 1],
     ]);
     $controller = app(DashboardController::class);
     $result = $controller->metrics(Request::create('/', 'GET', [
@@ -113,12 +114,12 @@ test('route started card counts filtered route days inclusively without duplicat
     ]))->getData(true);
     expect($result)->toMatchArray([
         'route_count' => 3, 'period_days' => 2, 'total_routes' => 6,
-        'routes_started' => 4, 'routes_not_started' => 2,
+        'routes_started' => 4, 'routes_not_started' => 2, 'routes_closed' => 1,
     ]);
     $single = $controller->metrics(Request::create('/', 'GET', [
         'date' => '2026-09-07', 'routes' => [7],
     ]))->getData(true);
-    expect($single)->toMatchArray(['route_count' => 1, 'period_days' => 1, 'total_routes' => 1, 'routes_started' => 1]);
+    expect($single)->toMatchArray(['route_count' => 1, 'period_days' => 1, 'total_routes' => 1, 'routes_started' => 1, 'routes_closed' => 0]);
 });
 
 beforeEach(function () {

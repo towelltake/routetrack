@@ -5,6 +5,7 @@ const props = defineProps({ metrics: Object, loading: Boolean, error: String, id
 const emit = defineEmits(["inspect"]);
 const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
+const ratioPercent = (value, total) => total > 0 && value != null ? percent(100 * value / total) : "—";
 const signedPercent = (value) => value == null ? "N/A" : `${value > 0 ? "+" : ""}${number(value, 1)}%`;
 const duration = (value) => {
     if (value == null) return "—";
@@ -14,10 +15,11 @@ const duration = (value) => {
 const cards = computed(() => {
     const m = props.metrics;
     return [
-        { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
-            note: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
-            definition: "Started routes count once per route start date. Total routes equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends. Uses the current route master, including routes without a journey plan." },
-        { title: "Planned Customer Visits", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
+        { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
+            note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total · ${number(m.routes_closed)} closed` : "",
+            detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
+            definition: "Started routes / filtered total routes × 100. Routes count once per route start date; closed means all journeys for that route and start date are closed. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
+        { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
             note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
             detail: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",
             breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
@@ -34,9 +36,9 @@ const cards = computed(() => {
             note: "Total collection receipts value", definition: "Total collection value" },
         { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(m?.operational_minutes), unit: "h:mm",
             note: "First check-in to last checkout without OTP", detail: m?.operational_missing_journeys ? `${m.operational_missing_journeys} journeys unavailable` : "", definition: "Sum of each journey's first non-OTP check-in to its last non-OTP checkout. Includes intervening time. A missing final checkout makes the journey unavailable." },
-        { title: "OTP usage", icon: "fa-key", tone: "purple", value: number(m?.otp.events),
-            note: "All OTP types",
-            definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
+        { title: "OTP usage", icon: "fa-key", tone: "purple", value: ratioPercent(m?.otp?.events, m?.total_visits),
+            note: m ? `${number(m.otp?.events)} total OTP / ${number(m.total_visits)} total visits` : "",
+            definition: "Total OTP events / total visits × 100 for the selected journeys. Includes all OTP types and all visits, including repeats, incomplete visits and LPO customers. Date ranges use summed counts. Multiple OTP events per visit can produce a rate above 100%. No visits means unavailable." },
         { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: percent(m?.unplanned_without_otp_percent),
             note: m ? `${number(m.unplanned_customers_without_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers: unplanned without OTP` : "",
             breakdown: [{ label: 'Unplanned customers with OTP', value: m?.unplanned_with_otp_percent, count: m ? `${number(m.unplanned_customers_with_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers` : '' }],

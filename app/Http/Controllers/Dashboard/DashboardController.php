@@ -253,6 +253,9 @@ class DashboardController extends Controller
         $started = $journeys->unique(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))->count();
         $metrics = app(\App\Services\DashboardMetrics::class)->summarize($journeys);
         $metrics['routes_started'] = $started;
+        $metrics['routes_closed'] = $journeys
+            ->groupBy(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))
+            ->filter(fn ($rows) => $rows->every(fn ($journey) => (int) $journey->routeclosed === 1))->count();
         $metrics['route_count'] = $routeCount;
         $metrics['period_days'] = $days;
         $metrics['total_routes'] = $routeCount * $days;

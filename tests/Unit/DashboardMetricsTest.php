@@ -323,7 +323,7 @@ test('cards aggregate every selected journey without multiplying customers or tr
     expect($result)->toMatchArray([
         'journeys_started' => 2, 'unique_routes' => 1, 'routes_not_started' => null,
         'planned_customers' => 4, 'planned_visited' => 2, 'coverage_percent' => 50.0,
-        'pending_customers' => 1, 'missed_customers' => 1, 'completed_visits' => 5,
+        'pending_customers' => 1, 'missed_customers' => 1, 'completed_visits' => 5, 'total_visits' => 6,
         'productive_visits' => 3, 'nonproductive_visits' => 2, 'productivity_percent' => 60.0,
         'cft_minutes' => 25.0, 'cft_variance_minutes' => -5.0, 'cft_configured_visits' => 2,
         'otp' => ['events' => 4, 'visits' => 2],
@@ -338,7 +338,7 @@ test('cards aggregate every selected journey without multiplying customers or tr
 
 test('empty periods have zero totals and undefined rates rather than fabricated percentages', function () {
     $result = app(DashboardMetrics::class)->summarize(collect());
-    expect($result)->toMatchArray(['journeys_started' => 0, 'coverage_percent' => null, 'productivity_percent' => null,
+    expect($result)->toMatchArray(['journeys_started' => 0, 'total_visits' => 0, 'coverage_percent' => null, 'productivity_percent' => null,
         'cft_minutes' => 0.0, 'cft_variance_minutes' => null, 'otp' => ['events' => 0, 'visits' => 0]])
         ->and($result['amounts']['sales'])->toBe([]);
 });

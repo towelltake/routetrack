@@ -105,24 +105,27 @@ class DashboardCustomerDetails
                 }
             }
             $byJourney = $visits->groupBy('routekey');
-            $plannedOtp = $type === 'planned' ? app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'] : [];
+            $coverageOtp = in_array($type, ['planned', 'unplanned']) ? app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'] : [];
             foreach ($journeys as $journey) {
                 $planCodes = $plans->get($journey->routekey, collect())->pluck('customercode');
                 $journeyVisits = $byJourney->get($journey->routekey, collect());
                 $visitedCounts = $journeyVisits->countBy('customercode');
-                $otpCounts = $journeyVisits->filter(fn ($visit) => !empty($plannedOtp[$visit->routekey.':'.$visit->logkey]))->countBy('customercode');
+                $otpCounts = $journeyVisits->filter(fn ($visit) => !empty($coverageOtp[$visit->routekey.':'.$visit->logkey]))->countBy('customercode');
                 if ($type === 'planned' || $type === 'unplanned') {
                     // An absent plan cannot establish that a customer was unplanned.
                     if ($planCodes->isEmpty()) continue;
                     $codes = $type === 'planned' ? $planCodes : $journeyVisits->pluck('customercode')->unique()->diff($planCodes);
                     foreach ($codes as $code) $rows->push([
                         'routekey' => $journey->routekey, 'id' => $code, 'customercode' => $code,
-                        'status' => $type === 'unplanned' ? 'Unplanned' : ($otpCounts->get($code, 0) ? 'Visited with OTP' : ($visitedCounts->get($code, 0) ? 'Visited without OTP' : 'Not visited')),
+                        'status' => $otpCounts->get($code, 0) ? 'Visited with OTP' : ($visitedCounts->get($code, 0) ? 'Visited without OTP' : 'Not visited'),
                         'otp_visit_count' => $otpCounts->get($code, 0),
                         'visit_count' => $visitedCounts->get($code, 0),
                     ]);
                 } else {
+                    $visitOrdinals = [];
                     foreach ($journeyVisits as $visit) {
+                        $ordinal = ($visitOrdinals[$visit->customercode] ?? 0) + 1;
+                        $visitOrdinals[$visit->customercode] = $ordinal;
                         $ignored = $excludedCustomers->has($visit->customercode);
                         $start = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-') ? strtotime($visit->logstartdate.' '.$visit->logstarttime) : false;
                         $end = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-') ? strtotime($visit->logenddate.' '.$visit->logendtime) : false;
@@ -136,12 +139,15 @@ class DashboardCustomerDetails
                         $rows->push([
                             'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
                             'time' => $visit->logstarttime,
+                            'start_date' => $start !== false ? substr((string) $visit->logstartdate, 0, 10) : null,
                             'end_time' => $end !== false ? $visit->logendtime : null,
                             'end_date' => $end !== false ? substr((string) $visit->logenddate, 0, 10) : null,
                             'ends_later_date' => $start !== false && $end !== false && date('Y-m-d', $end) > date('Y-m-d', $start),
                             'status' => $ignored ? 'Ignored' : ($completed && $productive ? 'Productive' : 'Nonproductive'),
                             'ignored' => $ignored, 'exclusion_reason' => $ignored ? 'Customer marked toplpo = 1; excluded from calculations' : null,
                             'visit_count' => 1,
+                            'visit_number' => $ordinal,
+                            'is_revisit' => $ordinal > 1,
                             'sales_order_productive' => !$ignored && $salesOrder,
                             'collection_productive' => !$ignored && $collection,
                             'invoices' => (int) ($documents['invoices']->get($key)?->documents ?? 0),

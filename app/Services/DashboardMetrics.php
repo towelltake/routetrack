@@ -131,6 +131,12 @@ class DashboardMetrics
             }
         }
 
+        $planKeys = $plans->keyBy(fn ($plan) => $plan->routekey.':'.$plan->customercode);
+        $journeysWithPlans = $plans->pluck('routekey')->flip();
+        $unplannedOtp = $visits->filter(fn ($visit) => $journeysWithPlans->has($visit->routekey)
+            && !$planKeys->has($visit->routekey.':'.$visit->customercode)
+            && isset($otpCustomers[$visit->routekey.':'.$visit->customercode]))
+            ->unique(fn ($visit) => $visit->routekey.':'.$visit->customercode)->count();
         $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
@@ -138,6 +144,8 @@ class DashboardMetrics
 
         return [
             'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
+            'unplanned_customers_without_otp' => collect($analysis['journeys'])->sum('unplanned_customers') - $unplannedOtp,
+            'unplanned_customers_with_otp' => $unplannedOtp,
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
             'outside_visit_minutes' => $timed->isEmpty() ? null : round($timed->sum('remaining_time'), 1),
             'operational_minutes' => $operational->isEmpty() ? null : $operational->sum('operational_minutes'),

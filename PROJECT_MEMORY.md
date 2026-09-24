@@ -1,5 +1,52 @@
 # TRAC / routeTrack project memory
 
+Productive Visits popup's journey Date column is now labelled Route Start Date
+(2026-09-24). Display label only; visit start/end dates remain separate. Diff
+check passed.
+
+## Productive visit date/time layout: 2026-09-24
+
+Productive Visits popup now shows the recorded visit date above its time in both
+start and end columns, including same-day checkouts. Added start_date to detail
+rows rather than using journey date. Later-date checkout remains red; revisit
+badges remain below start time. Missing timestamps show Unavailable. Vue script
+syntax, date/time markup and diff checks passed; build/browser and PHP execution
+remain unverified locally.
+
+## Productive popup revisit badge: 2026-09-24
+
+Productive Visits popup shows a blue Revisit #2/#3/etc. badge under visit start
+time for subsequent visits to the same customer within the same journey. First
+visits are unmarked. DashboardCustomerDetails numbers chronologically sorted logs
+before filtering incomplete visits, resetting per journey/customer; filtering and
+pagination cannot change the badge. Existing OTP/LPO and overnight styling remains.
+Updated existing PHP drilldown assertions for first/repeat visits and journey reset.
+Vue script syntax and diff checks passed. PHP tests and build/browser validation
+remain unavailable with the missing local runtime/dependencies.
+
+## Unplanned popup explicit OTP status: 2026-09-24
+
+Added a dedicated OTP Status column to the Unplanned Customers Visited popup,
+with purple With OTP and neutral Without OTP badges derived from the existing
+otp_visit_count. Existing visit status, OTP count and filters remain available.
+CustomerDetailsDialog only; no calculation or endpoint changes. Vue script syntax,
+targeted markup and diff checks passed; browser/build remains unverified locally.
+
+## Unplanned customer OTP split: 2026-09-24
+
+Unplanned Customers card now shows unique unplanned customers without any matched
+OTP as its main count, with a full-width purple OTP customer count below. Counts
+are per journey/customer; any matched OTP puts a customer only in the OTP group,
+including mixed OTP/non-OTP repeats and incomplete visits. Journeys without plans
+remain excluded. Existing total unplanned analysis/graph metrics are preserved.
+The unplanned popup retains both groups with status filters, purple OTP highlights
+and OTP visit counts, matching the planned popup. Shared breakdown tiles now support
+counts as well as percentages. Updated DashboardMetrics, DashboardCustomerDetails,
+DashboardCards and CustomerDetailsDialog. PHP regression added for deduplication,
+mixed visits, popup statuses, absent plans and empty periods. All 20 existing JS
+tests, both Vue script syntax checks and diff checks passed; PHP tests/build/browser
+checks remain unverified with missing local runtime/dependencies.
+
 ## Productive visit checkout display: 2026-09-24
 
 Dashboard Productive Visits popup now includes Visit end time beside Visit start

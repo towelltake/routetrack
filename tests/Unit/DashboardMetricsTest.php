@@ -301,10 +301,10 @@ test('productive drilldown counts documents per completed visit without mixing j
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $groups = app(DashboardCustomerDetails::class)->build($journeys, 'productive')['groups'];
-    expect($groups[0]['rows'][0])->toMatchArray(['status' => 'Productive', 'invoices' => 2, 'orders' => 1, 'collections' => 0])
-        ->and($groups[0]['rows'][1])->toMatchArray(['status' => 'Productive', 'invoices' => 0, 'orders' => 1])
+    expect($groups[0]['rows'][0])->toMatchArray(['is_revisit' => false, 'visit_number' => 1, 'status' => 'Productive', 'invoices' => 2, 'orders' => 1, 'collections' => 0])
+        ->and($groups[0]['rows'][1])->toMatchArray(['is_revisit' => true, 'visit_number' => 2, 'status' => 'Productive', 'invoices' => 0, 'orders' => 1])
         ->and($groups[1]['rows'])->toHaveCount(3)
-        ->and($groups[1]['rows'][0])->toMatchArray(['status' => 'Productive', 'invoices' => 0, 'orders' => 0, 'collections' => 1]);
+        ->and($groups[1]['rows'][0])->toMatchArray(['is_revisit' => false, 'visit_number' => 1, 'status' => 'Productive', 'invoices' => 0, 'orders' => 0, 'collections' => 1]);
 });
 
 test('OTP drilldown preserves all types and records overnight events under their route start date', function () {
@@ -558,5 +558,32 @@ test('planned customer OTP percentages deduplicate customers within each journey
     expect($service->summarize(collect()))->toMatchArray([
         'planned_visited_without_otp' => 0, 'planned_visited_with_otp' => 0,
         'planned_without_otp_percent' => null, 'planned_with_otp_percent' => null,
+    ]);
+});
+
+
+test('unplanned OTP customers are separate, deduplicated and require a journey plan', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    DB::table('otplogdetail')->insert(['otplogid' => 90, 'routecode' => 1, 'customercode' => 104,
+        'otpdate' => '2026-09-03', 'otptime' => '11:00:00', 'otptype' => 'OTHER']);
+    DB::table('customervisitlog')->insert(['logkey' => 90, 'routekey' => 2, 'customercode' => 104,
+        'logstartdate' => '2026-09-03', 'logstarttime' => '14:00:00',
+        'logenddate' => '2026-09-03', 'logendtime' => '14:10:00', 'cft' => 10]);
+    $service = app(DashboardMetrics::class);
+    expect($service->summarize($journeys))->toMatchArray([
+        'unplanned_customers' => 3, 'unplanned_customers_without_otp' => 2,
+        'unplanned_customers_with_otp' => 1,
+    ]);
+    $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, 'unplanned')['groups'][0]['rows']);
+    expect($rows->firstWhere('customercode', 104))->toMatchArray([
+        'status' => 'Visited with OTP', 'visit_count' => 2, 'otp_visit_count' => 1,
+    ]);
+    expect($rows->firstWhere('customercode', 105)['status'])->toBe('Visited without OTP');
+    DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
+    expect($service->summarize($journeys))->toMatchArray([
+        'unplanned_customers_without_otp' => 0, 'unplanned_customers_with_otp' => 0,
+    ]);
+    expect($service->summarize(collect()))->toMatchArray([
+        'unplanned_customers_without_otp' => 0, 'unplanned_customers_with_otp' => 0,
     ]);
 });

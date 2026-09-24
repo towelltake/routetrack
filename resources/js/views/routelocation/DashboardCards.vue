@@ -37,8 +37,10 @@ const cards = computed(() => {
         { title: "OTP usage", icon: "fa-key", tone: "purple", value: number(m?.otp.events),
             note: "All OTP types",
             definition: "OTP events during selected journey time windows. Visits are matched by customer and visit timestamps. Event count does not imply approval." },
-        { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: number(m?.unplanned_customers),
-            note: "Unique customers per journey", definition: "Customers visited outside the journey plan. Journeys without a plan are excluded." },
+        { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: number(m?.unplanned_customers_without_otp),
+            note: "Unique customers visited without OTP",
+            breakdown: [{ label: 'Customers visited with OTP', value: m?.unplanned_customers_with_otp, format: 'number', count: 'Unique customers per journey' }],
+            definition: "Unique customers visited outside the journey plan without any matched OTP. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. Each customer counts once per journey. Journeys without a plan are excluded." },
         { title: "Total Duration", icon: "fa-clock", tone: "navy", value: duration(m?.duration_minutes), unit: "h:mm",
             note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
             definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
@@ -106,7 +108,7 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
-                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
+                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>

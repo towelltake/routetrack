@@ -17,10 +17,11 @@ const cards = computed(() => {
         { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: m ? `${number(m.routes_started)} / ${number(m.total_routes)}` : "—",
             note: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
             definition: "Started routes count once per route start date. Total routes equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends. Uses the current route master, including routes without a journey plan." },
-        { title: "Planned coverage", icon: "fa-location-dot", tone: "blue", value: percent(m?.coverage_percent),
-            note: m ? `${number(m.planned_visited)} / ${number(m.planned_customers)} covered · ${number(m.pending_customers)} pending · ${number(m.missed_customers)} missed` : "",
-            detail: m?.journeys_without_plan ? `${number(m.journeys_without_plan)} journeys without a plan` : "",
-            definition: "Distinct planned customers visited per journey divided by planned customers per journey. Unvisited customers are pending on open journeys and missed on closed journeys." },
+        { title: "Planned Customer Visits", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
+            note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
+            detail: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",
+            breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
+            definition: "Unique planned customers visited without any matched OTP / unique scheduled route sequence customers, counted per journey. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. All OTP types count; unplanned customers are excluded." },
         { title: "Productive visits", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Orders/Invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
@@ -105,7 +106,7 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
-                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ percent(item.value) }}</strong><span>{{ item.label }}</span></div></div>
+                <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
@@ -155,6 +156,8 @@ const groups = computed(() => [
 .dashboard-time-comparison small { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
 .dashboard-metric-breakdown { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; }
+.dashboard-metric-breakdown.single-breakdown { grid-template-columns: minmax(0, 1fr); }
+.dashboard-metric-breakdown small { color: #64748b; font-size: 11px; line-height: 1.4; }
 .dashboard-metric-breakdown > div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 10px; text-align: center; min-width: 0; }
 .dashboard-metric-breakdown strong { font-size: 24px; font-weight: 800; line-height: 1.1; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
 .dashboard-metric-breakdown span { color: #52657b; font-size: 10px; font-weight: 600; line-height: 1.4; }

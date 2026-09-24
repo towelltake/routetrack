@@ -71,6 +71,7 @@ class DashboardMetrics
         }
 
         $visited = [];
+        $otpCustomers = [];
         $eligibleVisited = [];
         $completed = 0;
         $productive = 0;
@@ -87,6 +88,9 @@ class DashboardMetrics
         $otp = $this->otp($journeys, $visits);
         foreach ($visits as $visit) {
             $visited[$visit->routekey.':'.$visit->customercode] = true;
+            if (!empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) {
+                $otpCustomers[$visit->routekey.':'.$visit->customercode] = true;
+            }
             if (!$visit->productivity_excluded) $eligibleVisited[$visit->routekey.':'.$visit->customercode] = true;
             $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
             $end = $this->timestamp($visit->logenddate, $visit->logendtime);
@@ -113,11 +117,13 @@ class DashboardMetrics
             }
         }
         $covered = 0;
+        $plannedOtp = 0;
         $pending = 0;
         $missed = 0;
         foreach ($plans as $plan) {
             if (isset($visited[$plan->routekey.':'.$plan->customercode])) {
                 $covered++;
+                if (isset($otpCustomers[$plan->routekey.':'.$plan->customercode])) $plannedOtp++;
             } elseif ((int) $byJourney->get($plan->routekey)->routeclosed === 1) {
                 $missed++;
             } else {
@@ -150,6 +156,10 @@ class DashboardMetrics
             'routes_not_started' => null,
             'planned_customers' => $plans->count(),
             'planned_visited' => $covered,
+            'planned_visited_without_otp' => $covered - $plannedOtp,
+            'planned_visited_with_otp' => $plannedOtp,
+            'planned_without_otp_percent' => $plans->isEmpty() ? null : round(100 * ($covered - $plannedOtp) / $plans->count(), 1),
+            'planned_with_otp_percent' => $plans->isEmpty() ? null : round(100 * $plannedOtp / $plans->count(), 1),
             'coverage_percent' => $plans->isEmpty() ? null : round(100 * $covered / $plans->count(), 1),
             'pending_customers' => $pending,
             'missed_customers' => $missed,

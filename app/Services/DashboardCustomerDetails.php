@@ -105,17 +105,20 @@ class DashboardCustomerDetails
                 }
             }
             $byJourney = $visits->groupBy('routekey');
+            $plannedOtp = $type === 'planned' ? app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'] : [];
             foreach ($journeys as $journey) {
                 $planCodes = $plans->get($journey->routekey, collect())->pluck('customercode');
                 $journeyVisits = $byJourney->get($journey->routekey, collect());
                 $visitedCounts = $journeyVisits->countBy('customercode');
+                $otpCounts = $journeyVisits->filter(fn ($visit) => !empty($plannedOtp[$visit->routekey.':'.$visit->logkey]))->countBy('customercode');
                 if ($type === 'planned' || $type === 'unplanned') {
                     // An absent plan cannot establish that a customer was unplanned.
                     if ($planCodes->isEmpty()) continue;
                     $codes = $type === 'planned' ? $planCodes : $journeyVisits->pluck('customercode')->unique()->diff($planCodes);
                     foreach ($codes as $code) $rows->push([
                         'routekey' => $journey->routekey, 'id' => $code, 'customercode' => $code,
-                        'status' => $type === 'unplanned' ? 'Unplanned' : ($visitedCounts->get($code, 0) ? 'Visited' : 'Not visited'),
+                        'status' => $type === 'unplanned' ? 'Unplanned' : ($otpCounts->get($code, 0) ? 'Visited with OTP' : ($visitedCounts->get($code, 0) ? 'Visited without OTP' : 'Not visited')),
+                        'otp_visit_count' => $otpCounts->get($code, 0),
                         'visit_count' => $visitedCounts->get($code, 0),
                     ]);
                 } else {
@@ -133,6 +136,9 @@ class DashboardCustomerDetails
                         $rows->push([
                             'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
                             'time' => $visit->logstarttime,
+                            'end_time' => $end !== false ? $visit->logendtime : null,
+                            'end_date' => $end !== false ? substr((string) $visit->logenddate, 0, 10) : null,
+                            'ends_later_date' => $start !== false && $end !== false && date('Y-m-d', $end) > date('Y-m-d', $start),
                             'status' => $ignored ? 'Ignored' : ($completed && $productive ? 'Productive' : 'Nonproductive'),
                             'ignored' => $ignored, 'exclusion_reason' => $ignored ? 'Customer marked toplpo = 1; excluded from calculations' : null,
                             'visit_count' => 1,

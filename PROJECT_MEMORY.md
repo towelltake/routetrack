@@ -1,5 +1,35 @@
 # TRAC / routeTrack project memory
 
+## Productive visit checkout display: 2026-09-24
+
+Dashboard Productive Visits popup now includes Visit end time beside Visit start
+time. When the recorded checkout date is later than the visit check-in date,
+the checkout time and its date underneath are red, including on LPO rows.
+Missing/invalid checkout timestamps display Unavailable. DashboardCustomerDetails
+supplies end_time, end_date and ends_later_date; CustomerDetailsDialog renders
+them. Metric calculations are unchanged. Vue script syntax and diff checks passed;
+PHP execution and build/browser verification remain unavailable locally.
+
+## Planned customer OTP split: 2026-09-24
+
+Dashboard Planned Customer Visits now displays unique planned customers visited
+without OTP / unique scheduled route sequence customers, with a full-width purple
+OTP percentage and count tile below using the same denominator. Uniqueness remains
+per journey/customer across the selected journeys. Any matched OTP visit places
+that customer in the OTP group only, even with a non-OTP repeat; all OTP types
+qualify. Unplanned customers and unmatched OTP events do not enter these counts.
+Empty plans yield unavailable percentages. Existing overall coverage graph metrics
+remain unchanged; the card uses explicit new with/without-OTP metrics.
+
+The planned popup retains every planned customer, highlights OTP customers purple,
+adds OTP visit counts and filters for visited with/without OTP and not visited.
+Changed DashboardMetrics, DashboardCustomerDetails, DashboardCards, dashboard Index
+and CustomerDetailsDialog. Added PHP regression coverage for repeat visits, journey
+scope, mixed OTP/non-OTP customers, unplanned OTP, popup status and empty plans.
+Validation: 20 JavaScript tests, modified Vue script syntax and diff checks passed.
+PHP tests and full build/browser rendering remain unverified: PHP/vendor and
+node_modules are unavailable locally.
+
 Last inspected: 2026-09-20. Snapshot: branch `main`, commit `6875b7b`
 (laptop handoff documentation). Working tree was clean before this review.
 Author listed in README: Jyothish Thyagarajan. Old workspace:

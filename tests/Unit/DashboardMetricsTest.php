@@ -289,7 +289,7 @@ test('customer drilldowns separate planned visited and not visited and deduplica
     $planned = $service->build($journeys, 'planned')['groups'];
     expect($planned)->toHaveCount(2)
         ->and($planned[0]['rows'])->toHaveCount(2)
-        ->and($planned[0]['rows'][0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'Visited', 'visit_count' => 2])
+        ->and($planned[0]['rows'][0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'Visited with OTP', 'visit_count' => 2, 'otp_visit_count' => 1])
         ->and($planned[0]['rows'][1]['status'])->toBe('Not visited');
     $unplanned = $service->build($journeys, 'unplanned')['groups'];
     expect($unplanned)->toHaveCount(1)->and($unplanned[0]['rows'])->toHaveCount(3);
@@ -528,4 +528,35 @@ test('all-route outside time totals available journeys without subtracting visit
     $all = $service->summarize($journeys);
     expect($all['outside_visit_minutes'])->toEqual(150)
         ->and($all['duration_missing_journeys'])->toBe(0);
+});
+
+
+test('planned customer OTP percentages deduplicate customers within each journey and keep groups disjoint', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $service = app(DashboardMetrics::class);
+    // Customer 101 has repeat visits and multiple OTP requests in journey 1,
+    // including a non-OTP repeat. It belongs only to the OTP customer group.
+    $metrics = $service->summarize($journeys);
+    expect($metrics)->toMatchArray([
+        'planned_customers' => 4, 'planned_visited_without_otp' => 0,
+        'planned_visited_with_otp' => 2, 'planned_without_otp_percent' => 0.0,
+        'planned_with_otp_percent' => 50.0,
+    ]);
+    // The same customer in a second journey counts separately, without OTP.
+    DB::table('otplogdetail')->where('otplogid', 5)->delete();
+    $metrics = $service->summarize($journeys);
+    expect($metrics)->toMatchArray([
+        'planned_visited_without_otp' => 1, 'planned_visited_with_otp' => 1,
+        'planned_without_otp_percent' => 25.0, 'planned_with_otp_percent' => 25.0,
+    ]);
+    // OTP on an unplanned customer cannot inflate either planned numerator.
+    DB::table('otplogdetail')->insert(['otplogid' => 90, 'routecode' => 1, 'customercode' => 104,
+        'otpdate' => '2026-09-03', 'otptime' => '11:00:00', 'otptype' => 'OTHER']);
+    expect($service->summarize($journeys)['planned_visited_with_otp'])->toBe(1);
+    $details = app(DashboardCustomerDetails::class)->build($journeys, 'planned')['groups'];
+    expect($details[1]['rows'][0]['status'])->toBe('Visited without OTP');
+    expect($service->summarize(collect()))->toMatchArray([
+        'planned_visited_without_otp' => 0, 'planned_visited_with_otp' => 0,
+        'planned_without_otp_percent' => null, 'planned_with_otp_percent' => null,
+    ]);
 });

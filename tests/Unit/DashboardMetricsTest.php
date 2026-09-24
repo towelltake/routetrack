@@ -336,19 +336,20 @@ test('cards aggregate every selected journey without multiplying customers or tr
         ->and((float) $result['amounts']['collections'][0]['amount'])->toBe(75.0);
 });
 
-test('OTP reason counts use the same selected journey events including unmatched and overnight requests', function () {
-    DB::table('otplogdetail')->whereIn('otplogid', [1, 2])->update(['otpreason' => ' Master is Wrong ']);
-    DB::table('otplogdetail')->where('otplogid', 3)->update(['otpreason' => 'Orders from HO']);
-    DB::table('otplogdetail')->where('otplogid', 5)->update(['otpreason' => '  ']);
-    DB::table('otplogdetail')->whereIn('otplogid', [4, 6, 7])->update(['otpreason' => 'Outside selection']);
+test('OTP comment counts use the same selected journey events including unmatched and overnight requests', function () {
+    DB::table('otplogdetail')->whereIn('otplogid', [1, 2])->update(['comments' => ' Master is Wrong ']);
+    DB::table('otplogdetail')->where('otplogid', 3)->update(['comments' => 'Orders from HO']);
+    DB::table('otplogdetail')->where('otplogid', 5)->update(['comments' => '  ']);
+    DB::table('otplogdetail')->whereIn('otplogid', [4, 6, 7])->update(['comments' => 'Outside selection']);
+    DB::table('otplogdetail')->update(['otpreason' => 'Different reason, not used for grouping']);
     $service = app(DashboardMetrics::class);
     $result = $service->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
-    expect($result['otp_reasons'])->toBe([
-        ['reason' => 'Master is Wrong', 'count' => 2],
-        ['reason' => 'Orders from HO', 'count' => 1],
-        ['reason' => 'Unspecified', 'count' => 1],
-    ])->and(array_sum(array_column($result['otp_reasons'], 'count')))->toBe($result['otp']['events'])
-        ->and($service->summarize(collect())['otp_reasons'])->toBe([]);
+    expect($result['otp_comments'])->toBe([
+        ['comment' => 'Master is Wrong', 'count' => 2],
+        ['comment' => 'Orders from HO', 'count' => 1],
+        ['comment' => 'Unspecified', 'count' => 1],
+    ])->and(array_sum(array_column($result['otp_comments'], 'count')))->toBe($result['otp']['events'])
+        ->and($service->summarize(collect())['otp_comments'])->toBe([]);
 });
 
 test('empty periods have zero totals and undefined rates rather than fabricated percentages', function () {

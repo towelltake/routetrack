@@ -1,5 +1,17 @@
 # TRAC / routeTrack project memory
 
+## Stacked tiles and OTP comments correction: 2026-09-24
+
+Efficiency and Productivity now show Collection above Orders/Invoices as two
+full-width tiles directly below the count note, matching the supplied reference.
+This supersedes the earlier side-by-side placement. OTP card now groups by trimmed
+comments, not otpreason, and reads otp_comments with comment/count rows. Heading
+is OTP by comments. Empty comments remain Unspecified; selected journey scope,
+count ordering and OTP totals remain unchanged. Updated regression uses distinct
+comments with identical reasons to catch accidental reason grouping. Twenty JS
+tests, Vue script syntax and diff checks passed. PHP tests and full build/browser
+remain unverified with local runtime/dependencies unavailable.
+
 ## Efficiency and Productivity tile placement: 2026-09-24
 
 Collection and Orders/Invoices remain side by side inside Efficiency and

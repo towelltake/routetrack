@@ -39,7 +39,7 @@ const cards = computed(() => {
         { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(m?.operational_minutes), unit: "h:mm",
             note: "First check-in to last checkout without OTP", detail: m?.operational_missing_journeys ? `${m.operational_missing_journeys} journeys unavailable` : "", definition: "Sum of each journey's first non-OTP check-in to its last non-OTP checkout. Includes intervening time. A missing final checkout makes the journey unavailable." },
         { title: "OTP usage", icon: "fa-key", tone: "purple", value: ratioPercent(m?.otp?.events, m?.total_visits),
-            reasons: m?.otp_reasons ?? [],
+            comments: m?.otp_comments ?? [],
             note: m ? `${number(m.otp?.events)} total OTP / ${number(m.total_visits)} total visits` : "",
             definition: "Total OTP events / total visits × 100 for the selected journeys. Includes all OTP types and all visits, including repeats, incomplete visits and LPO customers. Date ranges use summed counts. Multiple OTP events per visit can produce a rate above 100%. No visits means unavailable." },
         { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: percent(m?.unplanned_without_otp_percent),
@@ -114,11 +114,11 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
-                <div v-if="!loading && metrics && card.reasons" class="dashboard-otp-reasons">
-                    <h5>OTP by reason</h5>
-                    <dl v-if="card.reasons.length">
-                        <div v-for="item in card.reasons" :key="item.reason" class="dashboard-otp-reason">
-                            <dt>{{ item.reason }}</dt><dd>{{ number(item.count) }}</dd>
+                <div v-if="!loading && metrics && card.comments" class="dashboard-otp-comments">
+                    <h5>OTP by comments</h5>
+                    <dl v-if="card.comments.length">
+                        <div v-for="item in card.comments" :key="item.comment" class="dashboard-otp-comment">
+                            <dt>{{ item.comment }}</dt><dd>{{ number(item.count) }}</dd>
                         </div>
                     </dl>
                     <p v-else>No OTP events in this period.</p>
@@ -181,20 +181,20 @@ const groups = computed(() => [
 .dashboard-metric-breakdown .collection-share { color: #7c3aed; background: #f5f3ff; }
 .dashboard-metric-breakdown .sales-share { color: #2563eb; background: #eff6ff; }
 .dashboard-metric-breakdown .orange-share { color: #c2410c; background: #fff7ed; }
-.dashboard-otp-reasons { grid-column: 1 / -1; grid-row: 4 / span 2; align-self: start; min-width: 0; border-top: 1px solid #ede9fe; padding-top: 14px; margin-top: 4px; }
-.dashboard-otp-reasons h5 { margin: 0 0 10px; color: #64748b; font-size: 11px; font-weight: 700; }
-.dashboard-otp-reasons dl { display: grid; gap: 7px; margin: 0; }
-.dashboard-otp-reason { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: #faf7ff; }
-.dashboard-otp-reason dt { color: #52657b; font-size: 11.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
-.dashboard-otp-reason dd { margin: 0; min-width: 28px; padding: 3px 7px; border-radius: 6px; color: #7c3aed; background: #ede9fe; font-size: 12px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
-.dashboard-otp-reasons > p { color: #64748b; font-size: 11.5px; margin: 0; }
+.dashboard-otp-comments { grid-column: 1 / -1; grid-row: 4 / span 2; align-self: start; min-width: 0; border-top: 1px solid #ede9fe; padding-top: 14px; margin-top: 4px; }
+.dashboard-otp-comments h5 { margin: 0 0 10px; color: #64748b; font-size: 11px; font-weight: 700; }
+.dashboard-otp-comments dl { display: grid; gap: 7px; margin: 0; }
+.dashboard-otp-comment { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: #faf7ff; }
+.dashboard-otp-comment dt { color: #52657b; font-size: 11.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.dashboard-otp-comment dd { margin: 0; min-width: 28px; padding: 3px 7px; border-radius: 6px; color: #7c3aed; background: #ede9fe; font-size: 12px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
+.dashboard-otp-comments > p { color: #64748b; font-size: 11.5px; margin: 0; }
 .group-customers .dashboard-metric-card { grid-template-rows: 32px auto minmax(34px, auto) 1fr auto; }
 .group-customers .dashboard-metric-value, .group-customers .dashboard-metric-skeleton { grid-row: 2; }
 .group-customers .dashboard-metric-note { grid-row: 3; }
 .group-customers .dashboard-metric-detail { grid-row: 4; }
 .group-customers .dashboard-metric-breakdown { grid-row: 5; align-self: end; margin-top: 0; }
 .group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto; }
-.group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; }
+.group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 @media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }

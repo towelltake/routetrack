@@ -117,11 +117,12 @@ const groups = computed(() => [
                 <div v-if="!loading && metrics && card.comments" class="dashboard-otp-comments">
                     <h5>OTP by comments</h5>
                     <dl v-if="card.comments.length">
-                        <div v-for="item in card.comments" :key="item.comment" class="dashboard-otp-comment">
+                        <div v-for="item in card.comments.slice(0, 4)" :key="item.comment" class="dashboard-otp-comment">
                             <dt>{{ item.comment }}</dt><dd>{{ number(item.count) }}</dd>
                         </div>
                     </dl>
-                    <p v-else>No OTP events in this period.</p>
+                    <button v-if="card.comments.length > 4" type="button" class="dashboard-otp-view-all" @click.stop="emit('inspect', card.title)" @keydown.stop @keyup.stop>View all comments ({{ number(card.comments.length) }}) <span aria-hidden="true">&rarr;</span></button>
+                    <p v-if="!card.comments.length">No OTP events in this period.</p>
                 </div>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
                 </div>
@@ -188,6 +189,9 @@ const groups = computed(() => [
 .dashboard-otp-comment dt { color: #52657b; font-size: 11.5px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
 .dashboard-otp-comment dd { margin: 0; min-width: 28px; padding: 3px 7px; border-radius: 6px; color: #7c3aed; background: #ede9fe; font-size: 12px; font-weight: 750; text-align: right; font-variant-numeric: tabular-nums; }
 .dashboard-otp-comments > p { color: #64748b; font-size: 11.5px; margin: 0; }
+.dashboard-otp-view-all { display: block; margin-top: 10px; padding: 4px 0; border: 0; background: transparent; color: #7c3aed; font-size: 11.5px; font-weight: 650; cursor: pointer; text-align: left; }
+.dashboard-otp-view-all:hover { text-decoration: underline; }
+.dashboard-otp-view-all:focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; border-radius: 3px; }
 .group-customers .dashboard-metric-card { grid-template-rows: 32px auto minmax(34px, auto) 1fr auto; }
 .group-customers .dashboard-metric-value, .group-customers .dashboard-metric-skeleton { grid-row: 2; }
 .group-customers .dashboard-metric-note { grid-row: 3; }

@@ -37,6 +37,16 @@ const statuses = computed(() => type.value === 'planned' ? ['All', 'Visited with
 const rows = computed(() => scopedRows.value.filter((row) => (status.value === 'All' || row.status === status.value)
     && `${row.customer_code} ${row.customercode} ${row.customer_name} ${row.otp_type ?? ''} ${row.recorded_by ?? ''} ${row.comments ?? ''} ${row.document ?? ''} ${row.routecode ?? ''} ${row.salesman ?? ''}`.toLowerCase().includes(search.value.trim().toLowerCase())));
 const pages = computed(() => Math.max(1, Math.ceil(rows.value.length / 50)));
+const otpComments = computed(() => {
+    if (type.value !== 'otp') return [];
+    const counts = new Map();
+    for (const row of rows.value) {
+        const comment = String(row.comments ?? '').trim() || 'Unspecified';
+        counts.set(comment, (counts.get(comment) ?? 0) + 1);
+    }
+    return [...counts].map(([comment, count]) => ({ comment, count }))
+        .sort((a, b) => b.count - a.count || a.comment.localeCompare(b.comment));
+});
 const visibleRows = computed(() => rows.value.slice((page.value - 1) * 50, page.value * 50));
 function chooseDate() { route.value = ''; page.value = 1; }
 function close() { request?.abort(); dialog.value?.close(); }
@@ -75,6 +85,11 @@ defineExpose({ open, close });
                 <h3>{{ day || 'All dates in selected period' }}<template v-if="!isRouteTime && group"> · {{ group.routecode }} — {{ group.routename }}</template><template v-else-if="!isRouteTime"> · All routes / journeys</template></h3>
                 <p v-if="!isRouteTime && group" class="salesman">Salesman: {{ group.salesman || 'Not available' }}</p>
                 <p v-if="isRouteTime" class="salesman">Open routes use the last known location time for duration.</p>
+                <section v-if="type === 'otp'" class="otp-comments-summary" aria-label="All OTP comments">
+                    <h4>All OTP comments</h4>
+                    <dl><div v-for="item in otpComments" :key="item.comment"><dt>{{ item.comment }}</dt><dd>{{ item.count.toLocaleString() }}</dd></div></dl>
+                    <p v-if="!otpComments.length">No matching OTP comments.</p>
+                </section>
                 <div v-if="statuses.length > 1" class="status-tabs" aria-label="Visit status">
                     <button v-for="tab in statuses" :key="tab" type="button" :class="{ active: status === tab }" :aria-pressed="status === tab" @click="status = tab; page = 1">{{ statusLabel(tab) }} ({{ scopedRows.filter((row) => tab === 'All' || row.status === tab).length }})</button>
                 </div>
@@ -129,6 +144,12 @@ defineExpose({ open, close });
 </template>
 
 <style scoped>
+.otp-comments-summary { margin: 16px 0; padding: 14px; border: 1px solid #ede9fe; border-radius: 10px; background: #faf7ff; }
+.otp-comments-summary h4 { margin: 0 0 10px; color: #6d28d9; font-size: 13px; }
+.otp-comments-summary dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 8px 20px; max-height: 280px; overflow-y: auto; margin: 0; }
+.otp-comments-summary dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ede9fe; }
+.otp-comments-summary dt { font-size: 12px; font-weight: 500; overflow-wrap: anywhere; min-width: 0; }
+.otp-comments-summary dd { margin: 0; color: #7c3aed; font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; }
 .visit-timestamp { white-space: nowrap; line-height: 1.6; font-variant-numeric: tabular-nums; }
 .revisit-badge { display: block; width: fit-content; margin-top: 5px; padding: 3px 7px; border-radius: 6px; color: #1d4ed8; background: #dbeafe; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .otp-status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 650; white-space: nowrap; }

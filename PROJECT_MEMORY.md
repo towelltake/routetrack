@@ -1,5 +1,15 @@
 # TRAC / routeTrack project memory
 
+## Top four OTP comments and full popup breakdown: 2026-09-24
+
+OTP card shows the first four comment groups (highest counts), with View all
+comments when additional groups exist. Link opens the existing OTP popup without
+duplicating the card click event. Popup now includes every comment/count group,
+above event details, aggregating all filtered rows before pagination. Date,
+journey and search filters apply to the breakdown; blank comments are Unspecified.
+Long lists scroll within the summary. Two Vue script syntax checks and diff check
+passed; full build/browser remains unverified without local dependencies.
+
 ## Stacked tiles and OTP comments correction: 2026-09-24
 
 Efficiency and Productivity now show Collection above Orders/Invoices as two

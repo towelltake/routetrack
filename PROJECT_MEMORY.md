@@ -1,5 +1,21 @@
 # TRAC / routeTrack project memory
 
+## Closed routes denominator correction: 2026-09-24
+
+Routes Closed orange breakdown now uses closed / started routes x 100, with
+closed / started counts below. No started routes yields unavailable. Updated
+DashboardCards tooltip to explain both denominators. This supersedes earlier
+closed / total notes; the main Routes Started percentage still uses total routes.
+Vue script syntax and diff checks passed; full build/browser unverified locally.
+
+## Route status Not Closed filter: 2026-09-24
+
+Added Not Closed to the Routes Started popup status dropdown. Selects started
+route/start-date groups with at least one open journey, including mixed open and
+closed journey groups. Not Started remains separate. Existing date filtering and
+pagination reset are preserved. RouteStatusDialog Vue script syntax and diff
+checks passed; full build/browser remains unverified without dependencies.
+
 ## Closed routes inside started card (corrected layout): 2026-09-24
 
 User clarified Routes Closed belongs inside the Routes Started card, matching

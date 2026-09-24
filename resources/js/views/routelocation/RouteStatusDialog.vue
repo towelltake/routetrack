@@ -24,7 +24,15 @@ const rows = computed(() => {
 const started = computed(() => rows.value.filter((route) => route.journeys.length));
 const isClosed = (route) => route.journeys.length > 0 && route.journeys.every((journey) => journey.closed);
 const closed = computed(() => rows.value.filter(isClosed));
-const filteredRows = computed(() => rows.value.filter((route) => !status.value || (status.value === "closed" ? isClosed(route) : status.value === "started" ? route.journeys.length > 0 : route.journeys.length === 0)));
+const filteredRows = computed(() => rows.value.filter((route) => {
+    switch (status.value) {
+        case 'closed': return isClosed(route);
+        case 'not-closed': return route.journeys.length > 0 && !isClosed(route);
+        case 'started': return route.journeys.length > 0;
+        case 'not-started': return route.journeys.length === 0;
+        default: return true;
+    }
+}));
 async function open(filters) {
     controller?.abort();
     const request = new AbortController();
@@ -67,7 +75,7 @@ defineExpose({ open, close });
                 <div><label for="route-status-date">Date</label>
                     <select id="route-status-date" v-model="day" @change="page = 1"><option value="">All</option><option v-for="date in dates" :key="date" :value="date">{{ date }}</option></select></div>
                 <div><label for="route-status-filter">Status</label>
-                    <select id="route-status-filter" v-model="status" @change="page = 1"><option value="">All</option><option value="started">Started</option><option value="closed">Closed</option><option value="not-started">Not Started</option></select></div>
+                    <select id="route-status-filter" v-model="status" @change="page = 1"><option value="">All</option><option value="started">Started</option><option value="closed">Closed</option><option value="not-closed">Not Closed</option><option value="not-started">Not Started</option></select></div>
             </div>
             <p v-if="loading" role="status">Loading route status…</p>
             <p v-else-if="error" role="alert">{{ error }}</p>

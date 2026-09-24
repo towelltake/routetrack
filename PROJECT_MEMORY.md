@@ -1,5 +1,32 @@
 # TRAC / routeTrack project memory
 
+## Route compliance final labels: 2026-09-24
+
+Renamed Routes Started / Total to Route Start Compliance in the card, popup title
+and popup action mapping. Renamed Daily Route Close Compliance to Route Close
+Compliance in the orange breakdown and tooltip. Calculations unchanged. Three
+Vue script syntax checks and diff check passed; full build/browser unverified.
+
+## Daily Route Close Compliance label: 2026-09-24
+
+Renamed the orange Routes Closed breakdown to Daily Route Close Compliance and
+updated its tooltip in DashboardCards. Same-date closure calculation unchanged.
+Diff check passed; display-only change, full build/browser unverified locally.
+
+## Routes closed on start date: 2026-09-24
+
+Routes Closed now requires routeclosed = 1 and recorded end calendar date equal
+to start calendar date for every journey in that route/start-date group. Overnight
+closures and missing end dates do not qualify, even inside a multi-day selection.
+Denominator remains started route/date groups. DashboardController shares the
+predicate between the metric and a new closed_same_date route-status field;
+actual closed state remains separate. Popup Closed/Not Closed filters and labels
+use the new rule. Other journey timing and analysis closure behavior is unchanged.
+Updated card tooltip and PHP regression cases for same-day, next-day and missing
+end dates, with existing duplicate/mixed-open coverage retained. Twenty JS tests,
+two Vue script syntax checks and diff check passed. PHP tests and full build/browser
+remain unverified because PHP/vendor/node_modules are unavailable locally.
+
 ## Closed routes denominator correction: 2026-09-24
 
 Routes Closed orange breakdown now uses closed / started routes x 100, with

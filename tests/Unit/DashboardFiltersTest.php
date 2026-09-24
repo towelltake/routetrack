@@ -104,9 +104,9 @@ test('route started card counts filtered route days inclusively without duplicat
         $mock->shouldReceive('summarize')->andReturn([]);
     });
     DB::table('startendday')->insert([
-        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07', 'routeclosed' => 1],
-        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08', 'routeclosed' => 1],
-        ['routecode' => 1, 'routekey' => 102, 'routestartdate' => '2026-09-08', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07', 'routeenddate' => '2026-09-07', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08', 'routeenddate' => '2026-09-08', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 102, 'routestartdate' => '2026-09-08', 'routeenddate' => '2026-09-08', 'routeclosed' => 1],
     ]);
     $controller = app(DashboardController::class);
     $result = $controller->metrics(Request::create('/', 'GET', [
@@ -120,6 +120,21 @@ test('route started card counts filtered route days inclusively without duplicat
         'date' => '2026-09-07', 'routes' => [7],
     ]))->getData(true);
     expect($single)->toMatchArray(['route_count' => 1, 'period_days' => 1, 'total_routes' => 1, 'routes_started' => 1, 'routes_closed' => 0]);
+});
+
+test('closed routes require every journey to close on its start date in cards and popup', function () {
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->andReturn([]);
+    });
+    $controller = app(DashboardController::class);
+    foreach (['2026-09-07' => 1, '2026-09-08' => 0, '' => 0] as $endDate => $expected) {
+        DB::table('startendday')->where('routekey', 1)->update(['routeclosed' => 1, 'routeenddate' => $endDate ?: null]);
+        $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-08', 'routes' => [1]];
+        $metrics = $controller->metrics(Request::create('/', 'GET', $filters))->getData(true);
+        expect($metrics)->toMatchArray(['routes_started' => 1, 'routes_closed' => $expected]);
+        $status = $controller->routeStatus(Request::create('/', 'GET', $filters))->getData(true);
+        expect($status['journeys'][0])->toMatchArray(['closed' => true, 'closed_same_date' => (bool) $expected]);
+    }
 });
 
 beforeEach(function () {

@@ -15,11 +15,11 @@ const duration = (value) => {
 const cards = computed(() => {
     const m = props.metrics;
     return [
-        { title: "Routes Started / Total", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
-            breakdown: [{ label: 'Routes Closed', tone: 'orange', value: m?.routes_started > 0 && m?.routes_closed != null ? 100 * m.routes_closed / m.routes_started : null, count: m ? `${number(m.routes_closed)} closed / ${number(m.routes_started)} started` : '' }],
+        { title: "Route Start Compliance", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
+            breakdown: [{ label: 'Route Close Compliance', tone: 'orange', value: m?.routes_started > 0 && m?.routes_closed != null ? 100 * m.routes_closed / m.routes_started : null, count: m ? `${number(m.routes_closed)} closed / ${number(m.routes_started)} started` : '' }],
             note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total` : "",
             detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
-            definition: "Started routes / filtered total routes × 100. Routes Closed below is closed routes / started routes × 100, unavailable when no routes have started. Routes count once per route start date; closed means all journeys for that route and start date are closed. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
+            definition: "Started routes / filtered total routes × 100. Route Close Compliance below is routes closed on their start date / started routes × 100, unavailable when no routes have started. Routes count once per route start date; every journey for that route and start date must be closed with an end date equal to its start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
             note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
             detail: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",

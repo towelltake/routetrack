@@ -211,6 +211,7 @@ class DashboardController extends Controller
                 'start' => $this->routeDateTime($journey->routestartdate, $journey->routestarttime),
                 'end' => $this->routeDateTime($journey->routeenddate, $journey->routeendtime),
                 'closed' => (int) $journey->routeclosed === 1,
+                'closed_same_date' => $this->closedOnStartDate($journey),
             ]),
         ]);
     }
@@ -255,7 +256,7 @@ class DashboardController extends Controller
         $metrics['routes_started'] = $started;
         $metrics['routes_closed'] = $journeys
             ->groupBy(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))
-            ->filter(fn ($rows) => $rows->every(fn ($journey) => (int) $journey->routeclosed === 1))->count();
+            ->filter(fn ($rows) => $rows->every(fn ($journey) => $this->closedOnStartDate($journey)))->count();
         $metrics['route_count'] = $routeCount;
         $metrics['period_days'] = $days;
         $metrics['total_routes'] = $routeCount * $days;
@@ -291,6 +292,14 @@ class DashboardController extends Controller
         }
 
         return response()->json($metrics);
+    }
+
+    private function closedOnStartDate(object $journey): bool
+    {
+        $startDate = substr((string) $journey->routestartdate, 0, 10);
+        $endDate = substr((string) $journey->routeenddate, 0, 10);
+
+        return (int) $journey->routeclosed === 1 && $startDate !== '' && $startDate === $endDate;
     }
 
     private function mapJourneys(array $filters): \Illuminate\Support\Collection

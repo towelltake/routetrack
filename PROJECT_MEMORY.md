@@ -1,5 +1,12 @@
 # TRAC / routeTrack project memory
 
+## Remove CFT status caption: 2026-09-29
+
+Removed the planned-time status caption (above/below/on plan and missing-plan
+caption) from Dashboard and Route Tracking Face Time Compliance cards. Dashboard
+omits empty note elements; percentage and actual/planned values remain visible.
+Production build and diff check passed.
+
 ## Compact stacked CFT rows: 2026-09-29
 
 Face Time Compliance on Dashboard and Route Tracking now places Actual CFT above

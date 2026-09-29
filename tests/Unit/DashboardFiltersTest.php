@@ -21,8 +21,10 @@ test('dashboard action cards receive counts without eagerly transferring table d
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => [
             ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2, 'visits' => 4, 'date' => '2026-09-07', 'routecode' => 1, 'routekey' => 10, 'closed' => true, 'route' => 'Route 1', 'covered' => 2, 'duration' => 60,
+                'non_otp' => ['planned' => 4, 'covered' => 2, 'completed' => 3, 'productive' => 1, 'eligible_customers' => 2, 'productive_customers' => 1],
                 'timeline' => ['start' => '2026-09-07 08:00:00', 'end' => '2026-09-07 09:00:00', 'visits' => [['2026-09-07 08:15:00', '2026-09-07 08:30:00']]]],
-            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'visits' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null],
+            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'visits' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null,
+                'non_otp' => ['planned' => 2, 'covered' => 1, 'completed' => 1, 'productive' => 1, 'eligible_customers' => 1, 'productive_customers' => 1]],
         ]]]);
     });
     $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
@@ -31,6 +33,10 @@ test('dashboard action cards receive counts without eagerly transferring table d
         ->and($summary['action_summary'])->toMatchArray(['customers' => 3, 'review' => 1, 'repeat' => 2])
         ->and($summary['charts']['daily'])->toHaveCount(1)
         ->and($summary['charts']['daily'][0]['visits'])->toBe(6)
+        ->and($summary['charts']['daily'][0]['non_otp'])->toMatchArray([
+            'planned' => 6, 'covered' => 3, 'completed' => 4, 'productive' => 2,
+            'eligible_customers' => 3, 'productive_customers' => 2,
+        ])
         ->and($summary['charts']['timeline'])->toHaveCount(1)
         ->and($summary['charts']['timeline'][0])->toMatchArray([
             'routekey' => 10, 'start' => '2026-09-07 08:00:00', 'end' => '2026-09-07 09:00:00',

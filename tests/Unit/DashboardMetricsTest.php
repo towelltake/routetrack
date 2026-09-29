@@ -6,6 +6,45 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('performance graphs exclude OTP customers and their repeat visits within each journey', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $service = app(DashboardMetrics::class);
+    $metrics = $service->summarize($journeys);
+    $graphs = collect($metrics['analysis']['journeys'])->keyBy('routekey')->map(fn ($row) => $row['non_otp']);
+    // Customer 101 has both OTP and non-OTP repeats: none belong in these graphs.
+    expect($graphs[1])->toMatchArray([
+        'planned' => 1, 'covered' => 0, 'missed' => 1, 'pending' => 0,
+        'completed' => 0, 'productive' => 0, 'nonproductive' => 0,
+        'eligible_customers' => 0, 'productive_customers' => 0,
+        'sales_order_productive' => 0, 'collection_productive' => 0,
+    ])->and($graphs[2])->toMatchArray([
+        'planned' => 1, 'covered' => 0, 'missed' => 0, 'pending' => 1,
+        'completed' => 2, 'productive' => 0, 'nonproductive' => 2,
+        'eligible_customers' => 3, 'productive_customers' => 0,
+    ]);
+    // Headline cards and the general analysis retain their existing definitions.
+    expect($metrics['productive_visits'])->toBe(3)
+        ->and(collect($metrics['analysis']['journeys'])->sum('productive'))->toBe(3);
+
+    // An OTP in one journey must not exclude the same customer in another.
+    DB::table('otplogdetail')->where('otplogid', 5)->delete();
+    DB::table('invoiceheader')->where('routekey', 2)->where('visitkey', 500)->update(['voidflag' => 0]);
+    DB::table('customermaster')->where('customercode', 105)->update(['toplpo' => 1]);
+    $graphs = collect($service->summarize($journeys)['analysis']['journeys'])->keyBy('routekey')->map(fn ($row) => $row['non_otp']);
+    expect($graphs[2])->toMatchArray([
+        'planned' => 2, 'covered' => 1, 'pending' => 1,
+        'completed' => 2, 'productive' => 1, 'nonproductive' => 1,
+        'eligible_customers' => 3, 'productive_customers' => 1,
+        'sales_order_productive' => 1, 'collection_productive' => 1,
+        'sales_order_customers' => 1, 'collection_customers' => 1,
+    ]);
+    // Even an OTP without a matched visit excludes the planned customer.
+    DB::table('otplogdetail')->insert(['otplogid' => 90, 'routecode' => 1, 'customercode' => 102,
+        'otpdate' => '2026-09-01', 'otptime' => '11:00:00', 'otptype' => 'OTHER']);
+    $first = $service->summarize($journeys)['analysis']['journeys'][0]['non_otp'];
+    expect($first['planned'])->toBe(0)->and($first['missed'])->toBe(0);
+});
+
 test('inactive or missing customers are excluded before dashboard aggregation and drilldowns', function ($status) {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });

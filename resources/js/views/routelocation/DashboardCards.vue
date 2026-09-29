@@ -22,7 +22,6 @@ const cards = computed(() => {
             definition: "Started routes / filtered total routes × 100. Route Close Compliance below is routes closed on their start date / started routes × 100, unavailable when no routes have started. Routes count once per route start date; every journey for that route and start date must be closed with an end date equal to its start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
             note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
-            footer: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",
             breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
             definition: "Unique planned customers visited without any matched OTP / unique scheduled route sequence customers, counted per journey. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. All OTP types count; unplanned customers are excluded." },
         { title: "Productivity", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
@@ -92,7 +91,7 @@ const groups = computed(() => [
                 <h3 class="dashboard-group-title">{{ group.title }}</h3>
                 <div class="dashboard-metric-grid">
                     <article v-if="group.key === 'customers'" class="total-visits-card" aria-label="Total Visits" title="Unique customers visited per journey. Repeat visits count once. Any matched OTP puts the customer in the with-OTP group, even if another visit had no OTP. Includes incomplete visits and LPO customers.">
-                        <h4>Total Visits</h4>
+                        <h4><span class="total-visits-icon" aria-hidden="true"><i class="fa fa-users"></i></span>Total Visits</h4>
                         <p v-if="loading" class="total-visits-state">Loading...</p>
                         <p v-else-if="!metrics" class="total-visits-state">Figures unavailable</p>
                         <div v-else class="total-visits-values">
@@ -138,7 +137,6 @@ const groups = computed(() => [
                 </div>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
                 <p v-if="!loading && metrics && card.excludedLpo != null" class="dashboard-lpo-excluded" title="Unique LPO customers visited per journey; repeat visits within a journey count once.">{{ number(card.excludedLpo) }} LPO {{ card.excludedLpo === 1 ? 'customer' : 'customers' }} excluded</p>
-                <p v-if="!loading && metrics && card.footer" class="dashboard-metric-footer">{{ card.footer }}</p>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
@@ -160,13 +158,14 @@ const groups = computed(() => [
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .group-time .dashboard-metric-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: auto 1fr; grid-template-areas: 'total total efficiency productivity otp' 'jp unplanned efficiency productivity otp'; }
-.total-visits-card { grid-area: total; min-width: 0; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
-.total-visits-card h4 { margin: 0 0 10px; color: #475569; font-size: 12px; font-weight: 650; }
-.total-visits-values { display: grid; grid-template-columns: .8fr 1fr 1fr; gap: 12px; align-items: center; }
-.total-visits-values > div { display: grid; gap: 3px; min-width: 0; }
+.total-visits-card { grid-area: total; min-width: 0; padding: 12px 14px; border: 1px solid #dce6f2; border-radius: 12px; background: #f8faff; box-shadow: 0 2px 8px #172b4505; }
+.total-visits-card h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: #475569; font-size: 12px; font-weight: 650; }
+.total-visits-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #eaf0fc; color: #2563eb; font-size: 11px; }
+.total-visits-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; text-align: center; }
+.total-visits-values > div { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 8px 4px; }
 .total-visits-values strong { font-size: clamp(22px, 1.8vw, 28px); font-weight: 750; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .total-visits-values span, .total-visits-state { font-size: 11px; line-height: 1.4; color: #64748b; }
-.total-visits-count { padding: 10px; border-radius: 8px; background: #f5f3ff; text-align: center; }
+.total-visits-count { border-radius: 8px; background: #edf2fa; }
 .total-visits-count strong { color: #172b45; }
 .total-visits-without strong { color: #2563eb; }
 .total-visits-with strong { color: #c2410c; }
@@ -220,16 +219,14 @@ const groups = computed(() => [
 .group-customers .dashboard-metric-detail { grid-row: 4; }
 .group-customers .dashboard-metric-breakdown { grid-row: 5; align-self: end; margin-top: 0; }
 .group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto 1fr; }
-.dashboard-lpo-excluded { grid-column: 1 / -1; grid-row: 5; align-self: end; margin: 0; padding-top: 8px; color: #64748b; font-size: 11.5px; line-height: 1.45; }
-.dashboard-metric-footer { grid-column: 1 / -1; grid-row: 6; align-self: end; margin: 0; padding-top: 8px; color: #64748b; font-size: 11.5px; line-height: 1.45; }
+.dashboard-lpo-excluded { grid-column: 1 / -1; grid-row: 5; align-self: end; margin: 0; padding-top: 8px; color: #dc2626; font-size: 11.5px; line-height: 1.45; }
 .group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.group-customers .dashboard-metric-card.stacked-coverage { min-height: 0; padding: 10px 12px; gap: 6px 8px; grid-template-columns: 24px minmax(0, 1fr) 10px; grid-template-rows: 24px auto auto 1fr auto; }
+.group-customers .dashboard-metric-card.stacked-coverage { min-height: 0; padding: 10px 12px; gap: 6px 8px; grid-template-columns: 24px minmax(0, 1fr) 10px; grid-template-rows: 24px auto auto 1fr; }
 .stacked-coverage .dashboard-metric-icon { width: 24px; height: 24px; border-radius: 7px; font-size: 11px; }
 .group-customers .stacked-coverage .dashboard-metric-breakdown { grid-row: 4; padding-top: 6px; }
 .stacked-coverage .dashboard-metric-breakdown > div { padding: 8px; gap: 3px; }
 .stacked-coverage .dashboard-metric-breakdown strong { font-size: 22px; }
 .stacked-coverage .dashboard-metric-note, .stacked-coverage .dashboard-metric-breakdown small { font-size: 10.5px; line-height: 1.35; }
-.stacked-coverage .dashboard-metric-footer { grid-row: 5; padding-top: 0; font-size: 10.5px; }
 @media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }

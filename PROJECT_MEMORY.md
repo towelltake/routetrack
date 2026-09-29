@@ -1,5 +1,19 @@
 # TRAC / routeTrack project memory
 
+## Total Visits alignment and subtle tint: 2026-09-29
+
+Total Visits now uses three equal-width, centered columns with consistent padding
+and aligned value tops. Added a compact users icon beside the heading and a subtle
+blue-tinted card surface with a slightly stronger count tile. Tightened outer gaps
+and padding to retain the compact stack. Production build and diff check passed;
+live browser verification remains outstanding.
+
+## Remove JP compliance footer: 2026-09-29
+
+Removed the pending/missed footer line (including its optional no-plan text),
+unused footer markup/styles and the empty final row in the compact coverage cards.
+Underlying counts remain unchanged. Production build and diff check passed.
+
 ## Compact Total Visits / JP / Unplanned stack: 2026-09-29
 
 JP compliance and Unplanned Customers now opt into stacked-coverage styling:

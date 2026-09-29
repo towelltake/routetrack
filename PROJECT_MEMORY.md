@@ -1,5 +1,24 @@
 # TRAC / routeTrack project memory
 
+## JP compliance pending/missed footer: 2026-09-29
+
+Moved JP compliance's pending/missed line (including journeys without a plan when
+present) below the OTP breakdown at the bottom of the card. DashboardCards uses
+a dedicated footer field and final grid row. Calculations are unchanged.
+Production build and diff check passed; browser verification remains outstanding.
+
+## LPO exclusion count on performance cards: 2026-09-29
+
+Efficiency and Productivity display "N LPO customers excluded" below their
+breakdowns, aligned to the card bottom. DashboardMetrics.lpo_customers_excluded
+is all unique visited journey/customers minus eligible unique journey/customers,
+using the existing toplpo exclusion. Repeats count once within a journey; counts
+include incomplete LPO visits and respect active-customer filtering. Zero is shown,
+and singular wording is used for one. Existing formulas are unchanged.
+Extended the existing LPO regression for zero, repeated-customer and all-excluded
+counts. All 20 JS tests, production build and diff checks passed. PHP tests remain
+unexecuted because PHP/vendor are unavailable; browser verification is outstanding.
+
 ## OTP percentage uses unique visits: 2026-09-29
 
 DashboardCards OTP usage now divides total OTP events by the existing

@@ -22,11 +22,12 @@ const cards = computed(() => {
             definition: "Started routes / filtered total routes × 100. Route Close Compliance below is routes closed on their start date / started routes × 100, unavailable when no routes have started. Routes count once per route start date; every journey for that route and start date must be closed with an end date equal to its start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
             note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
-            detail: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",
+            footer: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",
             breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
             definition: "Unique planned customers visited without any matched OTP / unique scheduled route sequence customers, counted per journey. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. All OTP types count; unplanned customers are excluded." },
         { title: "Productivity", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             compactBreakdown: true,
+            excludedLpo: m?.lpo_customers_excluded,
             breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Orders/Invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
@@ -63,6 +64,7 @@ const cards = computed(() => {
             definition: "Actual and planned customer face time exclude OTP visits. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
             compactBreakdown: true,
+            excludedLpo: m?.lpo_customers_excluded,
             breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Orders/Invoices', value: m?.sales_order_efficiency_percent }],
             note: m ? `${number(m.unique_productive_customers)} of ${number(m.unique_visited_customers)} unique customers productive` : "",
             definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
@@ -124,6 +126,8 @@ const groups = computed(() => [
                     <p v-if="!card.comments.length">No OTP events in this period.</p>
                 </div>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
+                <p v-if="!loading && metrics && card.excludedLpo != null" class="dashboard-lpo-excluded" title="Unique LPO customers visited per journey; repeat visits within a journey count once.">{{ number(card.excludedLpo) }} LPO {{ card.excludedLpo === 1 ? 'customer' : 'customers' }} excluded</p>
+                <p v-if="!loading && metrics && card.footer" class="dashboard-metric-footer">{{ card.footer }}</p>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
@@ -194,7 +198,9 @@ const groups = computed(() => [
 .group-customers .dashboard-metric-note { grid-row: 3; }
 .group-customers .dashboard-metric-detail { grid-row: 4; }
 .group-customers .dashboard-metric-breakdown { grid-row: 5; align-self: end; margin-top: 0; }
-.group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto; }
+.group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto 1fr; }
+.dashboard-lpo-excluded { grid-column: 1 / -1; grid-row: 5; align-self: end; margin: 0; padding-top: 8px; color: #64748b; font-size: 11.5px; line-height: 1.45; }
+.dashboard-metric-footer { grid-column: 1 / -1; grid-row: 6; align-self: end; margin: 0; padding-top: 8px; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 @media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }

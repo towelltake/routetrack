@@ -87,12 +87,14 @@ test('toplpo customers are excluded only from efficiency and productivity includ
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $service = app(DashboardMetrics::class);
     $baseline = $service->summarize($journeys);
+    expect($baseline['lpo_customers_excluded'])->toBe(0);
     foreach ([[101, 1], [104, 0], [105, null], [106, 2]] as [$code, $flag]) {
         DB::table('customermaster')->where('customercode', $code)->update(['toplpo' => $flag]);
     }
     $result = $service->summarize($journeys);
     expect($result)->toMatchArray([
         'unique_visited_customers' => 3, 'unique_productive_customers' => 0, 'efficiency_percent' => 0.0,
+        'lpo_customers_excluded' => 2,
         'completed_visits' => 2, 'productive_visits' => 0, 'nonproductive_visits' => 2, 'productivity_percent' => 0.0,
     ]);
     foreach (['planned_customers', 'planned_visited', 'coverage_percent', 'amounts', 'operational_minutes', 'cft_minutes', 'otp'] as $key) {
@@ -118,6 +120,7 @@ test('toplpo customers are excluded only from efficiency and productivity includ
     DB::table('customermaster')->update(['toplpo' => 1]);
     expect($service->summarize($journeys))->toMatchArray([
         'unique_visited_customers' => 0, 'unique_productive_customers' => 0, 'efficiency_percent' => null,
+        'lpo_customers_excluded' => 5,
         'completed_visits' => 0, 'productive_visits' => 0, 'productivity_percent' => null,
     ]);
     $ignored = collect(app(DashboardCustomerDetails::class)->build($journeys, 'productive')['groups'])->flatMap(fn ($group) => $group['rows']);

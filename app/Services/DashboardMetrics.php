@@ -191,6 +191,7 @@ class DashboardMetrics
             'sales_order_efficiency_percent' => $eligibleVisited ? round(100 * count($salesOrderCustomers) / count($eligibleVisited), 1) : null,
             'collection_efficiency_percent' => $eligibleVisited ? round(100 * count($collectionCustomers) / count($eligibleVisited), 1) : null,
             'unique_visited_customers' => count($eligibleVisited),
+            'lpo_customers_excluded' => count($visited) - count($eligibleVisited),
             'unique_productive_customers' => count($productiveCustomers),
             'efficiency_percent' => $eligibleVisited ? round(100 * count($productiveCustomers) / count($eligibleVisited), 1) : null,
             'nonproductive_visits' => $completed - $productive,

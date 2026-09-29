@@ -90,8 +90,12 @@ const groups = computed(() => [
             <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
                 <h3 class="dashboard-group-title">{{ group.title }}</h3>
                 <div class="dashboard-metric-grid">
-                    <article v-if="group.key === 'customers'" class="total-visits-card" aria-label="Total Visits" title="Unique customers visited per journey. Repeat visits count once. Any matched OTP puts the customer in the with-OTP group, even if another visit had no OTP. Includes incomplete visits and LPO customers.">
-                        <h4><span class="total-visits-icon" aria-hidden="true"><i class="fa fa-users"></i></span>Total Visits</h4>
+                    <article v-if="group.key === 'customers'" class="total-visits-card" aria-label="Customer Coverage. View all visits." title="Unique customers visited per journey. Repeat visits count once. Any matched OTP puts the customer in the with-OTP group, even if another visit had no OTP. Includes incomplete visits and LPO customers."
+                        role="button" :tabindex="metrics && !loading ? 0 : -1" :aria-disabled="!metrics || loading"
+                        @click="metrics && !loading && emit('inspect', 'Customer Coverage')"
+                        @keydown.enter="metrics && !loading && emit('inspect', 'Customer Coverage')"
+                        @keydown.space.prevent="metrics && !loading && emit('inspect', 'Customer Coverage')">
+                        <h4><span class="total-visits-icon" aria-hidden="true"><i class="fa fa-users"></i></span>Customer Coverage<i class="fa fa-chevron-right total-visits-open" aria-hidden="true"></i></h4>
                         <p v-if="loading" class="total-visits-state">Loading...</p>
                         <p v-else-if="!metrics" class="total-visits-state">Figures unavailable</p>
                         <div v-else class="total-visits-values">
@@ -160,6 +164,10 @@ const groups = computed(() => [
 .group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: auto 1fr; grid-template-areas: 'total total efficiency productivity otp' 'jp unplanned efficiency productivity otp'; }
 .total-visits-card { grid-area: total; min-width: 0; padding: 12px 14px; border: 1px solid #dce6f2; border-radius: 12px; background: #f8faff; box-shadow: 0 2px 8px #172b4505; }
 .total-visits-card h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: #475569; font-size: 12px; font-weight: 650; }
+.total-visits-card[aria-disabled="false"] { cursor: pointer; }
+.total-visits-card[aria-disabled="false"]:hover { border-color: #93b4e8; }
+.total-visits-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.total-visits-open { margin-left: auto; color: #94a3b8; font-size: 10px; }
 .total-visits-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #eaf0fc; color: #2563eb; font-size: 11px; }
 .total-visits-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; text-align: center; }
 .total-visits-values > div { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 8px 4px; }
@@ -167,7 +175,7 @@ const groups = computed(() => [
 .total-visits-values span, .total-visits-state { font-size: 11px; line-height: 1.4; color: #64748b; }
 .total-visits-count { border-radius: 8px; background: #edf2fa; }
 .total-visits-count strong { color: #172b45; }
-.total-visits-without strong { color: #2563eb; }
+.total-visits-without strong { color: #15803d; }
 .total-visits-with strong { color: #c2410c; }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; display: grid; grid-template-columns: 32px minmax(0, 1fr) 10px; align-content: start; gap: 10px 8px; min-width: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }

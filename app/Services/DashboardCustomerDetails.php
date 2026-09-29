@@ -28,6 +28,32 @@ class DashboardCustomerDetails
                     'outside' => $timing['duration'] === null ? null : max(0, $timing['duration'] - $operational->get($journey->routekey, 0)),
                     'duration' => $timing['duration'], 'status' => (int) $journey->routeclosed === 1 ? 'Closed' : 'Open'];
             });
+        } elseif ($type === 'coverage') {
+            $visits = DB::table('customervisitlog')
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
+                ->whereIn('routekey', $keys)
+                ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
+                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+            $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
+            $ordinals = [];
+            $rows = $visits->map(function ($visit) use ($otp, &$ordinals) {
+                $key = $visit->routekey.':'.$visit->customercode;
+                $ordinal = $ordinals[$key] = ($ordinals[$key] ?? 0) + 1;
+                $timestamp = function ($date, $time) {
+                    if (!$date || !$time || str_starts_with((string) $date, '0000-')) return null;
+                    $value = strtotime(substr((string) $date, 0, 10).' '.$time);
+                    return $value === false ? null : date('Y-m-d H:i:s', $value);
+                };
+                $checkIn = $timestamp($visit->logstartdate, $visit->logstarttime);
+                $checkOut = $timestamp($visit->logenddate, $visit->logendtime);
+                return [
+                    'id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
+                    'date' => $visit->logstartdate && !str_starts_with((string) $visit->logstartdate, '0000-') ? substr((string) $visit->logstartdate, 0, 10) : null,
+                    'check_in' => $checkIn, 'check_out' => $checkOut,
+                    'status' => empty($otp[$visit->routekey.':'.$visit->logkey]) ? 'Non-OTP' : 'OTP',
+                    'visit_number' => $ordinal, 'is_revisit' => $ordinal > 1,
+                ];
+            });
         } elseif ($type === 'operational') {
             $visits = DB::table('customervisitlog')
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))

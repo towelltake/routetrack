@@ -6,6 +6,30 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('customer coverage details retain all visits with OTP status and stable journey revisit numbers', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    DB::table('customermaster')->where('customercode', 101)->update([
+        'toplpo' => 1, 'alternatecode' => 'C101', 'customeraddress1' => 'Customer One',
+    ]);
+    DB::table('customervisitlog')->where('logkey', 12)->update(['logenddate' => '2026-09-02', 'logendtime' => '00:15:00']);
+    DB::table('customervisitlog')->insert(['logkey' => 13, 'routekey' => 1, 'customercode' => 101,
+        'logstartdate' => '2026-09-02', 'logstarttime' => '00:30:00', 'logenddate' => '2026-09-02', 'logendtime' => '00:40:00']);
+    $service = app(DashboardCustomerDetails::class);
+    $rows = collect($service->build($journeys, 'coverage')['groups'])->flatMap(fn ($group) => $group['rows'])->keyBy('id');
+    expect($rows)->toHaveCount(7)
+        ->and($rows[11])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'OTP', 'visit_number' => 1, 'is_revisit' => false])
+        ->and($rows[12])->toMatchArray(['date' => '2026-09-01', 'check_in' => '2026-09-01 10:30:00', 'check_out' => '2026-09-02 00:15:00', 'status' => 'Non-OTP', 'visit_number' => 2, 'is_revisit' => true])
+        ->and($rows[13]['visit_number'])->toBe(3)
+        ->and($rows[21])->toMatchArray(['status' => 'OTP', 'visit_number' => 1, 'is_revisit' => false])
+        ->and($rows[22])->toMatchArray(['check_out' => null, 'status' => 'Non-OTP'])
+        ->and($rows->where('status', 'Non-OTP')->get(13)['visit_number'])->toBe(3);
+    DB::table('customermaster')->where('customercode', 101)->update(['activecustomer' => 0]);
+    $activeRows = collect($service->build($journeys, 'coverage')['groups'])->flatMap(fn ($group) => $group['rows']);
+    expect($activeRows)->toHaveCount(3)->and($activeRows->where('customercode', 101))->toBeEmpty()
+        ->and($service->build(collect(), 'coverage'))->toBe(['groups' => []]);
+});
+
 test('total visits splits unique journey customers into disjoint OTP groups', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $service = app(DashboardMetrics::class);

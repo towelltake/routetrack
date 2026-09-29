@@ -1,5 +1,23 @@
 # TRAC / routeTrack project memory
 
+## Customer Coverage clickable visit details: 2026-09-29
+
+Renamed Total Visits to Customer Coverage and wired click/Enter/Space to the
+existing customer-details popup using type coverage. It retains session access
+and selected journey-start-date filters and active-customer filtering. Shows all
+visit records including repeats, incomplete visits and LPO customers, with actual
+visit date, route, customer name/code, full check-in/checkout timestamps and
+per-visit OTP/Non-OTP status using existing OTP matching. Missing checkout is
+Not recorded. The card remains unique customers per journey.
+
+Revisit #2/#3/etc. is assigned chronologically per journey/customer before UI
+filtering/pagination. Repeat rows and badges are lavender. Existing date/journey,
+search and pagination controls apply, with OTP/Non-OTP tabs added for this type.
+PHP regression covers repeats, journey reset, mixed OTP, overnight checkout,
+incomplete and LPO visits, inactive filtering and empty journeys. All 20 JS tests,
+production build and diff checks passed; PHP tests and live browser verification
+remain unavailable locally without PHP/vendor.
+
 ## Total Visits alignment and subtle tint: 2026-09-29
 
 Total Visits now uses three equal-width, centered columns with consistent padding

@@ -6,6 +6,30 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('total visits splits unique journey customers into disjoint OTP groups', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $service = app(DashboardMetrics::class);
+    // Repeated customer 101 counts once in each journey, regardless of OTP count.
+    // The unmatched OTP for customer 999 does not represent a visited customer.
+    expect($service->summarize($journeys))->toMatchArray([
+        'total_visits' => 6, 'all_unique_visited_customers' => 5,
+        'unique_visited_with_otp' => 2, 'unique_visited_without_otp' => 3,
+    ]);
+    DB::table('customermaster')->where('customercode', 101)->update(['toplpo' => 1]);
+    DB::table('routesequencecustomerstatus')->delete();
+    DB::table('otplogdetail')->insert(['otplogid' => 90, 'routecode' => 1, 'customercode' => 104,
+        'otpdate' => '2026-09-03', 'otptime' => '11:00:00', 'otptype' => 'OTHER']);
+    // Incomplete visits, LPO customers and journeys without plans remain included.
+    expect($service->summarize($journeys))->toMatchArray([
+        'all_unique_visited_customers' => 5, 'unique_visited_with_otp' => 3,
+        'unique_visited_without_otp' => 2,
+    ]);
+    expect($service->summarize(collect()))->toMatchArray([
+        'all_unique_visited_customers' => 0, 'unique_visited_with_otp' => 0,
+        'unique_visited_without_otp' => 0,
+    ]);
+});
+
 test('inactive or missing customers are excluded before dashboard aggregation and drilldowns', function ($status) {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });

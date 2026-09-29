@@ -91,7 +91,18 @@ const groups = computed(() => [
             <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
                 <h3 class="dashboard-group-title">{{ group.title }}</h3>
                 <div class="dashboard-metric-grid">
-            <article v-for="card in group.cards" :key="card.title" class="dashboard-metric-card" :class="[`tone-${card.tone}`, { 'compact-breakdown': card.compactBreakdown }]" :title="card.definition"
+                    <article v-if="group.key === 'customers'" class="total-visits-card" aria-label="Total Visits" title="Unique customers visited per journey. Repeat visits count once. Any matched OTP puts the customer in the with-OTP group, even if another visit had no OTP. Includes incomplete visits and LPO customers.">
+                        <h4>Total Visits</h4>
+                        <p v-if="loading" class="total-visits-state">Loading...</p>
+                        <p v-else-if="!metrics" class="total-visits-state">Figures unavailable</p>
+                        <div v-else class="total-visits-values">
+                            <div class="total-visits-count"><strong>{{ number(metrics.all_unique_visited_customers) }}</strong><span>Total customers covered</span></div>
+                            <div class="total-visits-without"><strong>{{ ratioPercent(metrics.unique_visited_without_otp, metrics.all_unique_visited_customers) }}</strong><span>{{ number(metrics.unique_visited_without_otp) }} / {{ number(metrics.all_unique_visited_customers) }} customers</span><span>Visited without OTP</span></div>
+                            <div class="total-visits-with"><strong>{{ ratioPercent(metrics.unique_visited_with_otp, metrics.all_unique_visited_customers) }}</strong><span>{{ number(metrics.unique_visited_with_otp) }} / {{ number(metrics.all_unique_visited_customers) }} customers</span><span>Visited with OTP</span></div>
+                        </div>
+                    </article>
+            <article v-for="(card, index) in group.cards" :key="card.title" class="dashboard-metric-card" :class="[`tone-${card.tone}`, { 'compact-breakdown': card.compactBreakdown, 'stacked-coverage': group.key === 'customers' && index < 2 }]" :title="card.definition"
+                :style="group.key === 'customers' ? { gridArea: ['jp', 'unplanned', 'efficiency', 'productivity', 'otp'][index] } : undefined"
                 :role="card.interactive === false ? undefined : 'button'" :tabindex="card.interactive !== false && metrics && !loading ? 0 : -1" :aria-disabled="card.interactive === false ? undefined : !metrics || loading"
                 :aria-label="`${card.title}. ${card.definition}${card.interactive === false ? '' : ' View journey details.'}`"
                 @click="card.interactive !== false && metrics && !loading && emit('inspect', card.title)"
@@ -148,7 +159,17 @@ const groups = computed(() => [
 .dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .group-time .dashboard-metric-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: auto 1fr; grid-template-areas: 'total total efficiency productivity otp' 'jp unplanned efficiency productivity otp'; }
+.total-visits-card { grid-area: total; min-width: 0; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
+.total-visits-card h4 { margin: 0 0 10px; color: #475569; font-size: 12px; font-weight: 650; }
+.total-visits-values { display: grid; grid-template-columns: .8fr 1fr 1fr; gap: 12px; align-items: center; }
+.total-visits-values > div { display: grid; gap: 3px; min-width: 0; }
+.total-visits-values strong { font-size: clamp(22px, 1.8vw, 28px); font-weight: 750; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.total-visits-values span, .total-visits-state { font-size: 11px; line-height: 1.4; color: #64748b; }
+.total-visits-count { padding: 10px; border-radius: 8px; background: #f5f3ff; text-align: center; }
+.total-visits-count strong { color: #172b45; }
+.total-visits-without strong { color: #2563eb; }
+.total-visits-with strong { color: #c2410c; }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; display: grid; grid-template-columns: 32px minmax(0, 1fr) 10px; align-content: start; gap: 10px 8px; min-width: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .dashboard-metric-card[aria-disabled="false"]:hover { border-color: var(--accent); box-shadow: 0 4px 14px #172b4510; }
@@ -202,10 +223,19 @@ const groups = computed(() => [
 .dashboard-lpo-excluded { grid-column: 1 / -1; grid-row: 5; align-self: end; margin: 0; padding-top: 8px; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .dashboard-metric-footer { grid-column: 1 / -1; grid-row: 6; align-self: end; margin: 0; padding-top: 8px; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.group-customers .dashboard-metric-card.stacked-coverage { min-height: 0; padding: 10px 12px; gap: 6px 8px; grid-template-columns: 24px minmax(0, 1fr) 10px; grid-template-rows: 24px auto auto 1fr auto; }
+.stacked-coverage .dashboard-metric-icon { width: 24px; height: 24px; border-radius: 7px; font-size: 11px; }
+.group-customers .stacked-coverage .dashboard-metric-breakdown { grid-row: 4; padding-top: 6px; }
+.stacked-coverage .dashboard-metric-breakdown > div { padding: 8px; gap: 3px; }
+.stacked-coverage .dashboard-metric-breakdown strong { font-size: 22px; }
+.stacked-coverage .dashboard-metric-note, .stacked-coverage .dashboard-metric-breakdown small { font-size: 10.5px; line-height: 1.35; }
+.stacked-coverage .dashboard-metric-footer { grid-row: 5; padding-top: 0; font-size: 10.5px; }
 @media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }
 @media (max-width: 1050px) { .group-customers .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-metric-card { padding: 12px; } }
 @media (max-width: 420px) { .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1050px) and (min-width: 701px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total efficiency' 'jp unplanned efficiency' 'productivity otp otp'; } }
+@media (max-width: 700px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total' 'jp unplanned' 'efficiency productivity' 'otp otp'; } .total-visits-card { padding: 12px; } .total-visits-values { gap: 8px; } }
 </style>

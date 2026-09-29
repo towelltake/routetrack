@@ -1,5 +1,31 @@
 # TRAC / routeTrack project memory
 
+## Compact Total Visits / JP / Unplanned stack: 2026-09-29
+
+JP compliance and Unplanned Customers now opt into stacked-coverage styling:
+removed their 360px minimum, reduced padding/icon/gaps and breakdown spacing,
+and moved breakdown/footer into consecutive rows. The Total Visits header and
+the pair share the existing customer section height instead of adding a header
+above two full-height cards. Content can grow when needed to avoid clipping.
+Other cards retain their existing minimum height. Production build and diff
+check passed; live browser layout verification remains outstanding.
+
+## Total Visits summary above planned/unplanned cards: 2026-09-29
+
+Added a horizontal Total Visits card spanning JP compliance and Unplanned Customers.
+Shows total unique customers visited per journey and blue without-OTP/orange
+with-OTP percentages with numerator/denominator counts. DashboardMetrics exposes
+unique_visited_with_otp and unique_visited_without_otp from existing visited and
+matched-OTP customer sets. Any matched OTP places that journey/customer only in
+the OTP group, including mixed repeat visits; unmatched OTP events do not create
+visits. Includes active LPO/incomplete visits and journeys without plans. Empty
+totals show zero counts with unavailable percentages. Other card formulas remain.
+CSS grid areas preserve placement above the pair at desktop/tablet/mobile widths.
+Added PHP coverage for repeated/mixed OTP customers, unmatched events, LPO and
+incomplete visits, absent plans and empty periods. All 20 JS tests, production
+build and diff check passed. PHP tests and live browser verification remain
+unavailable locally without PHP/vendor.
+
 ## JP compliance pending/missed footer: 2026-09-29
 
 Moved JP compliance's pending/missed line (including journeys without a plan when

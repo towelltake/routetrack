@@ -151,6 +151,8 @@ class DashboardMetrics
             'unplanned_customers_without_otp' => $unplannedWithoutOtp,
             'unplanned_customers_with_otp' => $unplannedOtp,
             'all_unique_visited_customers' => count($visited),
+            'unique_visited_with_otp' => count($otpCustomers),
+            'unique_visited_without_otp' => count($visited) - count($otpCustomers),
             'unplanned_without_otp_percent' => $visited ? round(100 * $unplannedWithoutOtp / count($visited), 1) : null,
             'unplanned_with_otp_percent' => $visited ? round(100 * $unplannedOtp / count($visited), 1) : null,
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),

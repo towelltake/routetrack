@@ -1,0 +1,15 @@
+packages:
+  - app
+  - shared
+
+# Allow native modules' postinstall scripts to run. All are first-party
+# dependencies we control — better-sqlite3 + keytar are also rebuilt against
+# Electron's ABI by `electron-builder install-app-deps` (app postinstall).
+# sharp ships prebuilt binaries; the postinstall step just verifies the
+# platform-matched copy is in place. Safe to allow.
+allowBuilds:
+  better-sqlite3: true
+  electron: true
+  esbuild: true
+  keytar: true
+  sharp: true

@@ -1,0 +1,26 @@
+{
+  "name": "journey-plan-app-root",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Desktop app for Towell Group salesmen journey-plan optimization (Electron + React + OR-Tools).",
+  "scripts": {
+    "dev": "pnpm --filter @journey/app dev",
+    "build": "pnpm --filter @journey/app build",
+    "dist": "pnpm --filter @journey/app dist",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "sidecar:install": "uv --project sidecar sync",
+    "sidecar:dev": "uv --project sidecar run uvicorn sidecar.main:app --reload --port 0",
+    "sidecar:build": "uv --project sidecar run python -m sidecar.build_sidecar",
+    "sidecar:test": "uv --project sidecar run pytest",
+    "osrm:setup": "pwsh -NoProfile -ExecutionPolicy Bypass -File sidecar/scripts/setup-osrm.ps1",
+    "osrm:setup:force": "pwsh -NoProfile -ExecutionPolicy Bypass -File sidecar/scripts/setup-osrm.ps1 -Force",
+    "memory:check": "node scripts/check-memory-size.cjs"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@11.1.2"
+}

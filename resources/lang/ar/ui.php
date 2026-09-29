@@ -101,6 +101,7 @@ return [
 	'pos_tracking' => 'تتبع نقاط البيع',
 	'survey_tracking' => 'تتبع الاستبيان',
 	'gps_routing' => 'SFA',
+	'journey_plan_optimisation' => 'تحسين خطة الزيارات',
 	'route_tracking' => 'تتبع المسار',
 	'route_location' => 'لوحة التحكم',
 	'route_replay' => 'إعادة عرض المسار',

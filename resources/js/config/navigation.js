@@ -6,6 +6,7 @@ export const navigation = [
       { label: "dashboard", to: "/dashboard", icon: "fa fa-location-crosshairs", permission: "route location" },
       { label: "route_tracking", to: "/route-tracking", icon: "fa fa-code-compare", permission: "route tracking" },
       { label: "customer_location", to: "/customer-location", icon: "fa fa-map-location-dot", permission: "customer location" },
+      { label: "journey_plan_optimisation", to: "/journey-plan", icon: "fa fa-calendar-days", permission: "journey plan optimisation" },
     ],
   },
 ];

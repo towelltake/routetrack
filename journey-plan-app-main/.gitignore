@@ -1,0 +1,85 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.uv-cache/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Build outputs
+dist/
+out/
+build/
+# Un-ignore the electron-builder buildResources dir at app/build/ — it holds
+# committed source assets like icon.ico that ship with the installer.
+!app/build/
+*.tsbuildinfo
+installer/
+app/resources/sidecar/
+sidecar/dist/
+sidecar/build/
+# PyInstaller auto-generates sidecar.spec on each build; the real spec lives at
+# sidecar/sidecar/build_sidecar.py.
+sidecar.spec
+# OSRM runtime — produced by `pnpm osrm:setup`, not committed. 2.6 GB total
+# across binaries, oneTBB DLLs, profiles, the GCC-states MLD graph, and the
+# .tmp download cache. Treat as per-machine state, like .venv or node_modules.
+sidecar/osrm/
+
+# Electron / Vite
+.vite/
+
+# Local databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Local Claude state (project-scoped)
+.claude/
+
+# Customer data — never commit real customer master files
+*.xlsx
+*.xls
+*.csv
+*.bak
+*.bak-*
+!docs/**/*.xlsx
+!docs/**/*.csv
+!app/src/**/fixtures/*.xlsx
+!app/src/**/fixtures/*.csv
+!sidecar/tests/**/fixtures/*.xlsx
+!sidecar/tests/**/fixtures/*.csv
+
+# Local forensic snapshots (DB corruption captures, etc). Useful in-session,
+# never want them in git.
+/backups/
+
+# Local scratch dir for icon-extract / DB-copy debugging
+tmp/

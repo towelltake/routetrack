@@ -254,6 +254,7 @@ return [
 	'pos_tracking' => 'POS Tracking',
 	'survey_tracking' => 'Survey Tracking',
 	'gps_routing' => 'SFA',
+	'journey_plan_optimisation' => 'Journey Plan Optimisation',
 	'route_tracking' => 'Route Tracking',
 	'route_location' => 'Dashboard',
 	'route_replay' => 'Route Replay',

@@ -1,5 +1,38 @@
 # TRAC / routeTrack project memory
 
+## Journey Plan Optimisation initial integration: 2026-09-29
+
+Owner supplied `journey-plan-app-main/` (Electron/React, SQLite, Python OR-Tools)
+and `sfa_struct1.sql` and requested equivalent functionality in TRAC, additional
+business logic and direct table updates. These supplied files remain unchanged.
+Added SFA submenu and native Laravel/Inertia/Vue/Leaflet review screen at
+`/journey-plan`. Authenticated endpoints intersect session route/company/subarea
+access and read the explicit SFA connection. Reads recurring `routesequence` with
+customer names/coordinates/frequency, showing existing week codes and raw flags.
+Includes week record search, day sequence, map, manual reorder, CSV preview and
+nearest-neighbour straight-line preview preserving the first stop/all customers;
+never accepts an automatic distance increase. Missing coordinates block automatic
+preview; list retains all customers. Preview supports at most 1,000 customers/day.
+
+This is a partial integration, NOT full desktop functionality. No database writes,
+draft persistence, constraint solver, road routing, assignment or capacity logic
+has been implemented. Asked owner for week numbering, restriction flag semantics,
+frequency/additional business rules and direct-update scope; answers pending.
+Positive sequences are explicitly labelled candidates, not confirmed scheduled
+visits. Do not guess the flag mapping or edit historical journey status rows.
+See `JOURNEY_PLAN_INTEGRATION.md` for mapping gaps and remaining implementation.
+
+Main files: `app/Http/Controllers/JourneyPlan/JourneyPlanController.php`,
+`routes/journeyplan.php`, `resources/js/views/journeyplan/Index.vue`, `planning.js`.
+Validation: 23 JS tests passed, including 3 optimisation regressions; diff check
+passed. Added isolated SQLite PHP tests for route/company/geographic scope, absent
+access and unauthorized plan reads; PHP/vendor unavailable, so not executed.
+Installed frontend dependencies from the unchanged lockfile after the sandbox
+registry/cache denial was resolved through escalation. New Vue script/template
+compilation and the full `npm.cmd run build` passed (906 modules). PHP tests and
+live browser/database integration remain unverified. No schema imports/migrations
+or live business database commands were run.
+
 ## Top three OTP comments and aligned cards: 2026-09-24
 
 Removed View all comments link and its styles; card now shows only the top three

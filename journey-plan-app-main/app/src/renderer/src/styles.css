@@ -1,0 +1,1098 @@
+/* =====================================================================
+   Editorial Hybrid — Stage 1 (foundation + sidebar + base components)
+   Fraunces display serif for h1/h2, Inter for body. Paper-and-ink palette.
+   ===================================================================== */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
+
+:root {
+  /* Paper-and-ink palette — warm newsprint, deep ink */
+  --bg: #FAF7F2;            /* warm cream, newsprint feel */
+  --panel: #FFFFFF;          /* clean card */
+  --panel-2: #F2EDE3;        /* warmer section bg, sticky table headers */
+  --border: #E3DBCC;         /* hairline beige */
+  --text: #1A1714;           /* near-black ink */
+  --muted: #6B645C;          /* warm gray */
+
+  /* Logo-derived accents, muted for editorial use on cream */
+  --accent: #1E4D8C;         /* deep editorial blue (logo blue, calmed) */
+  --accent-hover: #163B6C;
+  --accent-soft: rgba(30, 77, 140, 0.10);
+  --accent-warm: #A8511F;    /* chestnut, restrained logo orange */
+
+  --ok: #2F7D32;
+  --pending: #6B645C;
+  --err: #B91C1C;
+  --warn: #B45309;
+
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  font-family: var(--font-body);
+  /* Inter stylistic sets: cv11 = single-storey g (cleaner), ss01 = open digits */
+  font-feature-settings: 'cv11', 'ss01';
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Editorial typography — serif for prominent titles, sans for UI labels */
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  /* opsz 60 = display-sized cut (more contrast); SOFT 30 = slightly softened terminals */
+  font-variation-settings: 'opsz' 60, 'SOFT' 30;
+  color: var(--text);
+  line-height: 1.15;
+  margin: 0;
+}
+
+h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+button {
+  background: var(--accent);
+  color: white;
+  border: 0;
+  border-radius: 4px;
+  padding: 9px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+button:hover:not(:disabled) { background: var(--accent-hover); filter: none; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.danger { background: var(--err); }
+button.danger:hover:not(:disabled) { background: #8F1414; }
+
+input, select {
+  display: block;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 11px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  margin-top: 4px;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.row > label { flex: 1 1 200px; }
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.warn { color: var(--warn); }
+
+code {
+  background: var(--panel-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 90%;
+}
+
+/* Wizard (first-run) */
+.wizard {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px;
+}
+.wizard h1 { font-size: 24px; margin: 0; }
+.wizard .subtitle { color: var(--muted); margin: 4px 0 24px; }
+.wizard .card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+}
+
+/* Layout shell */
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100%;
+  /* New stacking context so the cream-paper sidebar + content sit visually
+     above the topo overlay, while content's transparent areas let it show through. */
+  position: relative;
+  z-index: 1;
+}
+
+/* Topographic contour overlay (TopoBg component) */
+.topo-bg {
+  position: fixed;
+  inset: -40px;
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.topo-bg svg { display: block; width: 100%; height: 100%; }
+
+/* Respect user motion preference — no parallax for reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  .topo-bg { transition: none; }
+}
+
+.sidebar {
+  background: var(--panel-2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px 16px;
+}
+.sidebar header {
+  padding: 0 6px 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+  text-align: center;
+}
+.sidebar .masthead-logo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 10px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 1px 3px rgba(26, 23, 20, 0.10);
+}
+.sidebar header h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 64, 'SOFT' 30;
+  line-height: 1.05;
+  margin: 0;
+}
+.sidebar header .version {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.sidebar nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.sidebar nav a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 9px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  transition: background 100ms ease, color 100ms ease;
+}
+.sidebar nav a:hover { color: var(--text); background: rgba(26, 23, 20, 0.05); }
+.sidebar nav a.active {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.dataset-footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 8px 0;
+  font-size: 12px;
+}
+.dataset-footer strong {
+  display: block;
+  font-size: 13px;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.dataset-footer small { color: var(--muted); }
+
+/* Screen */
+.content {
+  overflow: auto;
+  padding: 24px 28px;
+}
+.screen { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+/* Plan screen overrides height with min-height so its calendar + dropped-customers
+   <details> can grow past the viewport and let the outer .content scroll. Map and
+   Customer screens keep the definite height: 100% because `.map-container { flex: 1 }`
+   needs a definite parent height to compute "remaining space" — otherwise the map
+   collapses to its min-height and tiles see a 0 viewport. */
+.screen.plan-screen { height: auto; min-height: 100%; }
+.screen-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.screen-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  font-variation-settings: 'opsz' 72, 'SOFT' 30;
+  line-height: 1.1;
+}
+/* Map screen overrides its own padding (.map-screen { padding: 0 }); restore the
+   newspaper rule under its title row without inheriting the outer screen padding. */
+.map-screen .screen-header { padding-bottom: 12px; }
+.screen-header .filters { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.screen-header .filters input,
+.screen-header .filters select { margin-top: 0; max-width: 200px; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 22px;
+}
+.card h3 {
+  /* Newspaper section-label: rule above, tight small caps */
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0 0 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+.card + .card { margin-top: 14px; }
+
+/* Tables */
+.table-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: auto;
+  flex: 1;
+  min-height: 200px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td {
+  padding: 9px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--muted);
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr:hover td { background: rgba(26, 23, 20, 0.025); }
+tr.selected { background: var(--accent-soft); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.badge.ok { background: rgba(34, 197, 94, 0.15); color: var(--ok); }
+.badge.pending { background: rgba(156, 163, 175, 0.15); color: var(--pending); }
+.badge.failed { background: rgba(239, 68, 68, 0.15); color: var(--err); }
+
+/* OSRM matrix-backend badge in the Plan screen header */
+.screen-title-row { display: flex; align-items: center; gap: 12px; }
+.osrm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: help;
+}
+.osrm-badge .osrm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.osrm-badge--up { background: rgba(34, 197, 94, 0.15); color: var(--ok); }
+.osrm-badge--down { background: rgba(239, 68, 68, 0.15); color: var(--err); }
+.osrm-badge--unknown { background: rgba(156, 163, 175, 0.15); color: var(--muted); }
+
+/* Import screen */
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.preview-table {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.preview-table table { font-size: 12px; }
+.preview-table td { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.errors {
+  max-height: 280px;
+  overflow: auto;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12px;
+}
+
+/* Side panel */
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow: auto;
+  box-shadow: -6px 0 22px rgba(26, 23, 20, 0.08), -1px 0 0 var(--border);
+  /* Leaflet controls and panes go up to z-index 1000; stay above them. */
+  z-index: 1100;
+}
+.side-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.side-panel header h3 {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 36, 'SOFT' 30;
+  line-height: 1.15;
+  text-transform: none;
+  padding-right: 8px;
+}
+.side-panel header button {
+  background: transparent;
+  color: var(--muted);
+  padding: 4px 10px;
+  font-size: 18px;
+}
+.side-panel label { margin-top: 12px; }
+.side-panel .panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.side-panel dl { margin: 0; }
+.side-panel dt { color: var(--muted); font-size: 11px; text-transform: uppercase; margin-top: 12px; }
+.side-panel dd { margin: 4px 0 0; font-size: 14px; }
+
+/* Day picker */
+.day-picker {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px 12px;
+  margin: 8px 0;
+}
+.day-picker legend { color: var(--muted); font-size: 12px; padding: 0 6px; }
+.day-picker .day-toggle {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-right: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+.day-picker .day-toggle input {
+  width: auto;
+  margin: 0;
+}
+
+/* Map screen */
+.map-screen { padding: 0; }
+.map-screen .screen-header { padding: 16px 24px 0; }
+.diag-row {
+  padding: 4px 24px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.map-container {
+  flex: 1;
+  min-height: 400px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+
+/* Plan calendar grid */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.week-nav-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.week-nav-label strong { color: var(--text); }
+.week-nav-today { margin-left: auto; }
+
+.calendar-grid-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+}
+.calendar-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  width: max-content;
+  min-width: 100%;
+}
+/* Week view: only 7 day columns, so each cell can fan out wider. Use
+   table-layout: fixed and a calc()-based width so all seven columns
+   share whatever horizontal space remains after the salesman column. */
+.calendar-grid.week-view {
+  table-layout: fixed;
+  width: 100%;
+}
+.calendar-grid.week-view th.corner-cell,
+.calendar-grid.week-view th.salesman-cell {
+  width: 160px;
+}
+.calendar-grid.week-view th.date-cell,
+.calendar-grid.week-view td.grid-cell {
+  /* --visible-day-count is set inline on the table by PlanCalendarGrid based on
+     how many DOWs at least one salesman works (5 for Sun-Thu, 7 if someone has
+     a non-standard week). Lets the columns expand to fill the row. */
+  width: calc((100% - 160px) / var(--visible-day-count, 7));
+  min-width: 170px;
+}
+.calendar-grid th,
+.calendar-grid td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  vertical-align: top;
+}
+.calendar-grid th.corner-cell {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  background: var(--panel-2);
+  min-width: 140px;
+  text-align: left;
+  padding: 8px 12px;
+}
+.calendar-grid th.date-cell {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel-2);
+  min-width: 96px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.calendar-grid th.date-cell.weekend { background: #EBE5D6; color: var(--muted); }
+.calendar-grid th.date-cell .date-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.calendar-grid th.date-cell .date-dow {
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+.calendar-grid th.salesman-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--panel);
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 500;
+  color: var(--text);
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.calendar-grid td.grid-cell {
+  min-width: 96px;
+  min-height: 64px;
+  padding: 4px;
+  background: var(--panel);
+}
+.calendar-grid td.grid-cell.weekend { background: #F2EDE0; }
+.calendar-grid td.grid-cell.drop-over {
+  background: var(--accent-soft);
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+.visit-chip {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.25;
+  user-select: none;
+  box-shadow: 0 1px 0 rgba(26, 23, 20, 0.04);
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+.visit-chip:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(26, 23, 20, 0.08);
+}
+.visit-chip:active { cursor: grabbing; }
+.visit-chip .chip-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0; /* lets the name column shrink so flex truncation works */
+}
+.visit-chip .chip-line-1 .chip-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text);
+}
+.visit-chip .chip-seq {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+}
+/* Visit whose end-time (start + facetime) lands past the salesman's working
+   hours. Solver soft-capacity (2026-05-20) assigns these instead of dropping;
+   we surface them red so the user can drag them onto a freer day. Red
+   sequence number + red left border on the chip. */
+.visit-chip.overcap {
+  border-left: 3px solid #dc2626;
+}
+.visit-chip.overcap .chip-seq {
+  color: #dc2626;
+}
+.visit-chip.overcap .chip-time {
+  color: #dc2626;
+  font-weight: 600;
+}
+.visit-chip .chip-time {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--muted);
+}
+.visit-chip .chip-address {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+/* Plan status badges */
+.badge.status-draft { background: rgba(156, 163, 175, 0.15); color: var(--muted); }
+.badge.status-final { background: rgba(34, 197, 94, 0.15); color: var(--ok); }
+
+.result {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-size: 13px;
+}
+.result.err { background: rgba(239, 68, 68, 0.15); color: var(--err); }
+.result.warn { background: rgba(245, 158, 11, 0.18); color: #b45309; }
+
+/* Standalone day-toggle (used outside .day-picker) */
+.day-toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text);
+}
+.day-toggle input { width: auto; margin: 0; }
+
+/* Diagnostics log */
+.diagnostics-log {
+  margin: 8px 0 0;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.progress-block {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.progress-bar {
+  height: 8px;
+  background: var(--panel);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 200ms ease-out;
+}
+
+/* ---- Assignments screen (Phase 7a) ---- */
+
+/* Like .plan-screen — allow vertical scroll for the long table + load mini-table
+   when the dataset is large. Default .screen sets height:100% which clips it. */
+.assignments-screen { height: auto; min-height: 100%; }
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.header-actions button.primary { background: var(--accent); }
+
+.banner {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+.banner code {
+  background: rgba(26, 23, 20, 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.banner-error {
+  background: rgba(185, 28, 28, 0.08);
+  color: #7F1414;
+  border-color: rgba(185, 28, 28, 0.30);
+}
+.banner-stale {
+  background: rgba(180, 83, 9, 0.10);
+  color: #7A3408;
+  border-color: rgba(180, 83, 9, 0.30);
+}
+.banner-info {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(30, 77, 140, 0.30);
+}
+
+.stats-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+.stat-chip strong { color: var(--text); font-weight: 600; }
+.stat-chip.ok { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.25); }
+.stat-chip.ok strong { color: var(--ok); }
+.stat-chip.override { background: var(--accent-soft); border-color: rgba(30, 77, 140, 0.25); }
+.stat-chip.override strong { color: var(--accent); }
+.stat-chip.warn { background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.25); }
+.stat-chip.warn strong { color: var(--warn); }
+
+.load-table {
+  margin: 8px 0 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.load-table summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+.load-mini { margin-top: 8px; }
+.load-mini th, .load-mini td { padding: 6px 10px; font-size: 12px; }
+
+/* Standalone filter row (not the in-header version) */
+.assignments-screen .filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.assignments-screen .filters input,
+.assignments-screen .filters select {
+  margin: 0;
+  max-width: 200px;
+}
+
+/* Row tints */
+.assignments-table tr.row-override td { background: rgba(30, 77, 140, 0.06); }
+.assignments-table tr.row-unassigned td { background: rgba(180, 83, 9, 0.06); }
+.assignments-table select { margin: 0; padding: 4px 8px; font-size: 12px; min-width: 140px; }
+
+/* ============================================================
+   Analytics dashboard
+   ============================================================ */
+.analytics-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.analytics-plan-list {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+}
+.analytics-plan-list h3 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.analytics-plan-list ul { list-style: none; padding: 0; margin: 0; }
+.analytics-plan-list li { margin-bottom: 6px; }
+.analytics-plan-list button {
+  width: 100%;
+  text-align: left;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+.analytics-plan-list button:hover:not(:disabled) { background: var(--panel-2); filter: none; }
+.analytics-plan-list button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.analytics-body { flex: 1; min-width: 0; }
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.kpi-tile {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.kpi-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--muted);
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 60, 'SOFT' 30;
+  line-height: 1.05;
+}
+.kpi-tile--good { border-left: 3px solid var(--ok); }
+.kpi-tile--warn { border-left: 3px solid var(--warn); }
+.kpi-tile--bad { border-left: 3px solid var(--err); }
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(540px, 1fr));
+  gap: 16px;
+}
+.chart-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 18px 18px;
+  overflow: hidden;
+}
+.chart-card header {
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.chart-card header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-variation-settings: 'opsz' 36, 'SOFT' 30;
+  color: var(--text);
+}
+.chart-card header p { margin: 4px 0 0 0; font-size: 12px; color: var(--muted); }
+.chart-card-body { width: 100%; }
+
+/* Recharts theming for the editorial light palette */
+.chart-card .recharts-cartesian-axis-tick text,
+.chart-card .recharts-legend-item-text,
+.chart-card .recharts-text { fill: var(--muted) !important; font-size: 11px; }
+.chart-card .recharts-cartesian-grid line { stroke: var(--border); stroke-dasharray: 2 4; }
+.chart-card .recharts-default-tooltip {
+  background: var(--panel) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(26, 23, 20, 0.08) !important;
+  padding: 8px 12px !important;
+}
+.chart-card .recharts-tooltip-label { color: var(--text) !important; font-weight: 600; font-size: 12px; }
+.chart-card .recharts-tooltip-item { color: var(--text) !important; font-size: 12px; }
+.chart-card .recharts-tooltip-item-name,
+.chart-card .recharts-tooltip-item-separator,
+.chart-card .recharts-tooltip-item-unit { color: var(--muted) !important; }
+
+.util-table {
+  width: 100%;
+  margin-top: 12px;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.util-table th,
+.util-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.util-table th {
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+/* Territory label. Kept to one line so a salesman straddling several regions
+   can't push the analytics tables past the PDF page width — the full list is
+   in the cell's title attribute. */
+.cell-region {
+  color: var(--muted);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cell-good { color: var(--ok); font-weight: 600; }
+.cell-warn { color: var(--warn); font-weight: 600; }
+.cell-bad { color: var(--err); font-weight: 600; }
+
+.dow-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+/* Each row is its own grid, so the label column must be a FIXED width for the
+   columns to align across rows. 210px fits the longest realistic names
+   ("Suggested — Salalah #12"); anything longer ellipsizes (tooltip has the
+   full name). */
+.dow-row { display: grid; grid-template-columns: 210px repeat(7, 1fr); gap: 2px; }
+.dow-cell {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.dow-cell--label {
+  /* block + line-height (not flex) so text-overflow: ellipsis actually
+     renders — ellipsis doesn't apply to text nodes inside a flex container. */
+  display: block;
+  line-height: 32px;
+  text-align: left;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dow-cell--header {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.freq-details { margin-top: 12px; }
+.freq-details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+
+/* Plan list — delete button (used by both PlanScreen left rail and Analytics) */
+.plan-delete-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 400;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.plan-delete-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--err);
+  border-color: var(--err);
+  filter: none;
+}
+.plan-delete-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.analytics-plan-list li.plan-list-row {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+.analytics-plan-list li.plan-list-row > button:first-child { flex: 1; }
+
+/* ============================================================
+   PDF snapshot mode — body.print-mode is added by printMode.ts
+   in the hidden export window only (main/export/pdf.ts).
+   ============================================================ */
+/* White paper instead of the cream app background: printBackground is on
+   (needed for the heatmap cells and KPI tiles), and cream over every page
+   reads as a tint on print-outs. */
+body.print-mode { background: #fff; }
+/* Undo the app-shell viewport locking: printToPDF clips anything inside a
+   scroll region, so the document must flow to its natural height. */
+body.print-mode .layout { display: block; height: auto; }
+body.print-mode .content { overflow: visible; height: auto; padding: 0; }
+body.print-mode .screen { display: block; height: auto; }
+body.print-mode .analytics-layout { display: block; }
+body.print-mode .chart-grid { display: block; }
+body.print-mode .chart-card {
+  break-inside: avoid; /* hint only — cards taller than a page still split */
+  margin-bottom: 14px;
+}
+body.print-mode .kpi-strip { break-inside: avoid; }
+body.print-mode .util-table tr { break-inside: avoid; }
+/* Safety net: recharts bakes the measured pixel width into each SVG, but the
+   viewBox lets it shrink proportionally if the paper is narrower. */
+body.print-mode .chart-card svg { max-width: 100%; height: auto; }
+
+.print-header {
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--text);
+  margin-bottom: 16px;
+}
+.print-header h1 {
+  font-size: 26px;
+  font-variation-settings: 'opsz' 72, 'SOFT' 30;
+}
+.print-header p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}

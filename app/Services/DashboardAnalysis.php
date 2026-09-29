@@ -17,6 +17,12 @@ class DashboardAnalysis
         foreach ($journeys as $journey) {
             $plan = $plansByJourney->get($journey->routekey, collect())->keyBy('customercode');
             $journeyVisits = $visitsByJourney->get($journey->routekey, collect());
+            // Graph exclusions apply to the entire customer within this journey,
+            // including repeats and OTP events without a matched visit.
+            $otpCustomers = $otpByJourney->get($journey->routekey, collect())->pluck('customercode')->flip();
+            $graphPlan = $plan->reject(fn ($customer) => $otpCustomers->has($customer->customercode));
+            $graph = ['planned' => $graphPlan->count(), 'completed' => 0, 'productive' => 0,
+                'sales_order_productive' => 0, 'collection_productive' => 0];
             $operational = app(OperationalTime::class)->fromLogs($journeyVisits, $otp['by_visit'] ?? []);
             $closed = (int) $journey->routeclosed === 1;
             ['start' => $start, 'end' => $end, 'duration' => $duration] = $this->journeyTiming($journey);
@@ -72,7 +78,10 @@ class DashboardAnalysis
                 }
                 $minutes = ($visitEnd - $visitStart) / 60;
                 $row['timeline']['visits'][] = [date('Y-m-d H:i:s', $visitStart), date('Y-m-d H:i:s', $visitEnd)];
-                if (!($visit->productivity_excluded ?? false)) $row['completed']++;
+                if (!($visit->productivity_excluded ?? false)) {
+                    $row['completed']++;
+                    if (!$otpCustomers->has($customer)) $graph['completed']++;
+                }
                 $recordedVisitMinutes += $minutes;
                 $hasOtp = !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]);
                 if ($hasOtp) $row['timeline']['otp_visits'][] = [date('Y-m-d H:i:s', $visitStart), date('Y-m-d H:i:s', $visitEnd)];
@@ -90,6 +99,11 @@ class DashboardAnalysis
                     if ($salesOrder) { $row['sales_order_productive']++; $salesOrderCustomers[$customer] = true; }
                     if ($collection) { $row['collection_productive']++; $collectionCustomers[$customer] = true; }
                     if ($salesOrder || $collection) { $row['productive']++; $productiveCustomers[$customer] = true; }
+                    if (!$otpCustomers->has($customer)) {
+                        if ($salesOrder) $graph['sales_order_productive']++;
+                        if ($collection) $graph['collection_productive']++;
+                        if ($salesOrder || $collection) $graph['productive']++;
+                    }
                 }
             }
             $row['covered'] = $plan->keys()->filter(fn ($code) => isset($seen[(string) $code]))->count();
@@ -99,6 +113,15 @@ class DashboardAnalysis
             $row['productive_customers'] = count($productiveCustomers);
             $row['sales_order_customers'] = count($salesOrderCustomers);
             $row['collection_customers'] = count($collectionCustomers);
+            $graph['covered'] = $graphPlan->keys()->filter(fn ($code) => isset($seen[(string) $code]))->count();
+            $graph['pending'] = $closed ? 0 : $graph['planned'] - $graph['covered'];
+            $graph['missed'] = $closed ? $graph['planned'] - $graph['covered'] : 0;
+            $graph['nonproductive'] = $graph['completed'] - $graph['productive'];
+            foreach (['eligible_customers' => $eligibleCustomers, 'productive_customers' => $productiveCustomers,
+                'sales_order_customers' => $salesOrderCustomers, 'collection_customers' => $collectionCustomers] as $metric => $customers) {
+                $graph[$metric] = count(array_diff_key($customers, $otpCustomers->all()));
+            }
+            $row['non_otp'] = $graph;
             if ($duration !== null) {
                 $row['visit_time'] = $recordedVisitMinutes;
                 $row['remaining_time'] = max(0, $duration - $row['visit_time']);

@@ -6,10 +6,11 @@ import { chartOptions, percentageDataset, percentageSeries } from './analytics';
 
 const props = defineProps({ metrics: Object, loading: Boolean, timelineFilters: Object });
 const daily = computed(() => props.metrics?.charts?.daily ?? []);
+const nonOtpDaily = computed(() => daily.value.map(row => ({ label: row.label, ...row.non_otp })));
 const routes = computed(() => props.metrics?.charts?.routes ?? []);
-const coverage = computed(() => percentageSeries(daily.value, [['Covered', 'covered', '#14b8a6'], ['Pending', 'pending', '#fbbf24'], ['Missed', 'missed', '#fb7185']], row => row.planned));
+const coverage = computed(() => percentageSeries(nonOtpDaily.value, [['Covered', 'covered', '#14b8a6'], ['Pending', 'pending', '#fbbf24'], ['Missed', 'missed', '#fb7185']], row => row.planned));
 const productiveSeries = (fields, denominator) => {
-    const data = percentageSeries(daily.value, fields, denominator);
+    const data = percentageSeries(nonOtpDaily.value, fields, denominator);
     return { ...data, percentageMetrics: data.datasets.slice(0, 1), breakdownMetrics: data.datasets.slice(1) };
 };
 const productivity = computed(() => productiveSeries([
@@ -35,9 +36,9 @@ const grouped = chartOptions();
 
 <template>
     <section class="dashboard-graphs" aria-label="Performance graphs">
-        <DashboardChart title="Customer coverage" description="Planned customers by journey start date" :data="coverage" :options="stacked" :loading="loading" note="Percentages use planned customers. Journeys without a plan are excluded from coverage." />
-        <DashboardChart title="Visit productivity" description="Total includes collections, sales orders and invoices" :data="productivity" :options="grouped" :loading="loading" note="Percentages use eligible completed visits. A visit with both collection and sales/order counts once in the total and in both breakdowns. LPO Customers are excluded." />
-        <DashboardChart title="Customer efficiency" description="Unique productive customers, including collections" :data="efficiency" :options="grouped" :loading="loading" note="Percentages use unique eligible customers per journey. Collection and sales/order can overlap; each customer counts once in the total per journey. LPO Customers are excluded." />
+        <DashboardChart title="Customer coverage" description="Planned customers by journey start date" :data="coverage" :options="stacked" :loading="loading" note="Percentages use planned customers. Customers with any OTP event in the journey are excluded from counts and denominators. Journeys without a plan are excluded from coverage." />
+        <DashboardChart title="Visit productivity" description="Total includes collections, sales orders and invoices" :data="productivity" :options="grouped" :loading="loading" note="Percentages use eligible completed visits. Customers with any OTP event in the journey, including all their repeat visits, and LPO Customers are excluded. Collection and sales/order can overlap; each visit counts once in the total." />
+        <DashboardChart title="Customer efficiency" description="Unique productive customers, including collections" :data="efficiency" :options="grouped" :loading="loading" note="Percentages use unique eligible customers per journey. Customers with any OTP event in the journey and LPO Customers are excluded from counts and denominators. Collection and sales/order can overlap; each customer counts once in the total per journey." />
         <DashboardChart title="Journey-plan exceptions" description="Where actual visits differ from the plan" :data="exceptions" :options="horizontal" :loading="loading" note="Each percentage uses all recorded visits. Categories can overlap and do not add up to 100%. Unplanned and out-of-sequence counts require a journey plan." />
         <DashboardChart v-if="showPlannedVisitTime" title="Planned vs customer visit time" description="Top 10 routes with recorded planned CFT, excluding OTP visits" :data="cft" :options="horizontal" :loading="loading" note="Percentages use planned CFT for the same completed non-OTP visits. Planned time is 100%; customer visit time can exceed 100%. Summary covers the displayed routes." />
         <JourneyTimeChart class="time-graph" :journeys="metrics?.charts?.timeline ?? []" :route-count="metrics?.charts?.timeline_route_count" :filters="timelineFilters" :loading="loading" />

@@ -285,6 +285,11 @@ class DashboardController extends Controller
                 $result = ['label' => $field === 'date' ? $key : $key.' - '.$rows->first()['route']];
                 foreach (['sales_order_productive', 'collection_productive', 'eligible_customers', 'productive_customers', 'sales_order_customers', 'collection_customers', 'planned', 'covered', 'pending', 'missed', 'visits', 'productive', 'nonproductive', 'unplanned', 'out_of_sequence', 'repeat', 'expected_cft', 'configured_actual_cft', 'configured_visits', 'duration', 'visit_time', 'remaining_time'] as $metric) $result[$metric] = $rows->sum($metric);
                 $result['duration_count'] = $rows->whereNotNull('duration')->count();
+                foreach (['planned', 'covered', 'pending', 'missed', 'completed', 'productive', 'nonproductive',
+                    'sales_order_productive', 'collection_productive', 'eligible_customers', 'productive_customers',
+                    'sales_order_customers', 'collection_customers'] as $metric) {
+                    $result['non_otp'][$metric] = $rows->sum('non_otp.'.$metric);
+                }
                 return $result;
             })->values();
             $metrics['charts'] = ['daily' => $chartGroups('date')->sortBy('label')->values(), 'routes' => $chartGroups('routecode')];

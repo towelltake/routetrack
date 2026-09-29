@@ -1,5 +1,16 @@
 # TRAC / routeTrack project memory
 
+## OTP percentage uses unique visits: 2026-09-29
+
+DashboardCards OTP usage now divides total OTP events by the existing
+all_unique_visited_customers metric, not total_visits. Each customer counts once
+per journey; repeats within that journey do not increase the denominator. The
+same customer in another journey counts again, and ranges sum journey counts.
+Active-customer filtering, incomplete visits and LPO inclusion are preserved.
+The numerator still counts all OTP events; zero unique visits is unavailable.
+Updated the visible count note and tooltip. All 20 JavaScript tests, production
+build and diff checks passed; live browser verification remains outstanding.
+
 ## Active customers throughout the application: 2026-09-29
 
 Only customers whose current customermaster.activecustomer equals 1 are included,

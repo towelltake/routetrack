@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CustomerMaster;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -12,15 +13,17 @@ class DashboardMetrics
         $keys = $journeys->pluck('routekey');
         $byJourney = $journeys->keyBy('routekey');
         $plans = DB::table('routesequencecustomerstatus')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('routekey', $keys)->where('schelduledflag', 1)
             ->select('routekey', 'customercode')->selectRaw('COALESCE(MIN(CASE WHEN sequencenumber > 0 THEN sequencenumber END), 0) as sequencenumber')
             ->groupBy('routekey', 'customercode')->get();
         $visits = DB::table('customervisitlog as v')
+            ->whereIn('v.customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('v.routekey', $keys)
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
             ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime',
                 DB::raw('COALESCE(v.cft, 0) as expected_minutes')]);
-        $excludedCustomers = DB::table('customermaster')->where('toplpo', 1)
+        $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
             ->whereIn('customercode', $visits->pluck('customercode')->unique())
             ->pluck('customercode')->flip();
         foreach ($visits as $visit) $visit->productivity_excluded = $excludedCustomers->has($visit->customercode);
@@ -34,7 +37,7 @@ class DashboardMetrics
         $amounts = [];
         $journeyAmounts = [];
         foreach (['sales' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $type => [$table, $amount]) {
-            $query = DB::table($table)->whereIn('routekey', $keys)
+            $query = DB::table($table)->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $keys)
                 ->where(fn ($query) => $query->whereNull('voidflag')->orWhere('voidflag', 0));
             $transactions[$type] = (clone $query)->where($amount, '>', 0)->whereNotNull('visitkey')->where('visitkey', '>', 0)
                 ->select('routekey', 'visitkey')->distinct()->get()
@@ -47,7 +50,7 @@ class DashboardMetrics
         }
         $returnSources = null;
         foreach (['invoiceheader', 'salesorderheader'] as $table) {
-            $source = DB::table($table)->whereIn('routekey', $keys)->where('voidflag', 0)
+            $source = DB::table($table)->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $keys)->where('voidflag', 0)
                 ->whereRaw('COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0) > 0')
                 ->selectRaw('routekey, COALESCE(currencycode, 0) as currencycode, COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0) as amount');
             if ($returnSources === null) $returnSources = $source;
@@ -229,7 +232,8 @@ class DashboardMetrics
                 ->filter(fn ($time) => $time !== null && $time > $start)->min();
             $windows[$journey->routecode][] = ['key' => $journey->routekey, 'start' => $start, 'end' => $end, 'next' => $next];
         }
-        $events = DB::table('otplogdetail')->whereIn('routecode', array_keys($windows))
+        $events = DB::table('otplogdetail')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routecode', array_keys($windows))
             ->whereDate('otpdate', '>=', substr((string) $journeys->min('routestartdate'), 0, 10))
             ->orderBy('otpdate')->orderBy('otptime')->orderBy('otplogid')
             ->get(['otplogid', 'routecode', 'customercode', 'otpdate', 'otptime', 'otptype', 'username', 'otpreason', 'comments']);

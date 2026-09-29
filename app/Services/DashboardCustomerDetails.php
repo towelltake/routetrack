@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CustomerMaster;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +29,9 @@ class DashboardCustomerDetails
                     'duration' => $timing['duration'], 'status' => (int) $journey->routeclosed === 1 ? 'Closed' : 'Open'];
             });
         } elseif ($type === 'operational') {
-            $visits = DB::table('customervisitlog')->whereIn('routekey', $keys)
+            $visits = DB::table('customervisitlog')
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
+                ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
                 ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
@@ -39,7 +42,7 @@ class DashboardCustomerDetails
                     'check_in' => $window['start'], 'check_out' => $window['end'], 'actual_cft' => $window['minutes'],
                     'first_customer' => $window['first_customer'], 'last_customer' => $window['last_customer']];
             });
-            $boundaryCustomers = DB::table('customermaster')
+            $boundaryCustomers = CustomerMaster::query()
                 ->whereIn('customercode', $rows->pluck('first_customer')->merge($rows->pluck('last_customer'))->filter()->unique())
                 ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
             $rows = $rows->map(function ($row) use ($boundaryCustomers) {
@@ -50,7 +53,9 @@ class DashboardCustomerDetails
                 return $row;
             });
         } elseif (in_array($type, ['cft', 'otp_time', 'actual_face'])) {
-            $visits = DB::table('customervisitlog')->whereIn('routekey', $keys)
+            $visits = DB::table('customervisitlog')
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
+                ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
                 ->get(['logkey', 'routekey', 'customercode', 'cft', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
@@ -82,22 +87,26 @@ class DashboardCustomerDetails
                     'recorded_by' => $event['username'], 'comments' => $event['comments'], 'reason' => $event['otpreason'],
                 ]);
         } else {
-            $plans = DB::table('routesequencecustomerstatus')->whereIn('routekey', $keys)->where('schelduledflag', 1)
+            $plans = DB::table('routesequencecustomerstatus')
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
+                ->whereIn('routekey', $keys)->where('schelduledflag', 1)
                 ->select('routekey', 'customercode')->distinct()->get()->groupBy('routekey');
-            $visits = DB::table('customervisitlog')->whereIn('routekey', $keys)
+            $visits = DB::table('customervisitlog')
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
+                ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
                 ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
             $documents = [];
             $operations = collect();
             if (in_array($type, ['productive', 'efficiency'])) {
-                $excludedCustomers = DB::table('customermaster')->where('toplpo', 1)
+                $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
                     ->whereIn('customercode', $visits->pluck('customercode')->unique())->pluck('customercode')->flip();
                 $operations = DB::table('customeroperationscontrol')->whereIn('routekey', $keys)->where('log_id', '>', 0)
                     ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
                     ->unique(fn ($row) => $row->routekey.':'.$row->log_id)->keyBy(fn ($row) => $row->routekey.':'.$row->log_id);
                 foreach (['invoices' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $label => [$table, $amount]) {
                     // Match the Dashboard card's existing productivity rules and count headers before joins.
-                    $documents[$label] = DB::table($table)->whereIn('routekey', $keys)
+                    $documents[$label] = DB::table($table)->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $keys)
                         ->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0))
                         ->where('visitkey', '>', 0)
                         ->selectRaw("routekey, visitkey, COUNT(*) as documents, SUM(CASE WHEN {$amount} > 0 THEN 1 ELSE 0 END) as positive_documents")
@@ -169,7 +178,7 @@ class DashboardCustomerDetails
                 return $row;
             })->values();
         }
-        $customers = in_array($type, ['duration', 'outside', 'idle']) ? collect() : DB::table('customermaster')->whereIn('customercode', $rows->pluck('customercode')->unique())
+        $customers = in_array($type, ['duration', 'outside', 'idle']) ? collect() : CustomerMaster::query()->whereIn('customercode', $rows->pluck('customercode')->unique())
             ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
         $grouped = $rows->map(function ($row) use ($customers) {
             $customer = $customers->get($row['customercode']);
@@ -188,7 +197,7 @@ class DashboardCustomerDetails
         foreach ($type === 'returns' ? ['sales', 'orders'] : [$type] as $source) {
             [$table, $amount] = $sources[$source];
             $expression = $type === 'returns' ? 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)' : "COALESCE({$amount}, 0)";
-            $query = DB::table($table)->whereIn('routekey', $keys);
+            $query = DB::table($table)->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $keys);
             if ($type === 'returns') $query->where('voidflag', 0)->whereRaw($expression.' > 0');
             else $query->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0));
             $records = $query->orderBy('transactiondate')->orderBy('transactiontime')->get([

@@ -1,5 +1,17 @@
 # Route Tracking
 
+## Active customer requirement
+
+All customer data is restricted to `customermaster.activecustomer = 1`, including
+Customer Location, Dashboard and Route Tracking plans, visits, OTP, transaction
+details/totals and customer-derived timing. This uses the current master status
+even for historical dates. Missing master records and other/null statuses are
+excluded. Route, company and geographic access restrictions still apply.
+
+`CustomerMaster` applies this rule through a global scope. Raw query builders and
+joins must explicitly filter the master alias or restrict customer codes using
+`CustomerMaster::query()->select('customercode')` before aggregating.
+
 ## SFA Dashboard filters
 
 ### Headline cards

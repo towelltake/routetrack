@@ -1,5 +1,26 @@
 # TRAC / routeTrack project memory
 
+## Active customers throughout the application: 2026-09-29
+
+Only customers whose current customermaster.activecustomer equals 1 are included,
+also when viewing historical dates. CustomerMaster now has an active_customer
+global scope, covering Customer Location and customer lookups. Raw customer
+queries explicitly filter joined master aliases or use the scoped model as a
+customercode subquery; Eloquent scopes do not automatically apply to raw queries.
+DashboardMetrics, DashboardCustomerDetails, DashboardOutsideVisits and
+RouteTrackingController filter plans, visits, OTP, transaction headers/returns,
+timing inputs and direct transaction detail requests before aggregation. Inactive,
+null/other-status and missing-master customers are excluded. Current route/company/
+geographic access checks, legacy linking keys and journey duration rules remain.
+No business records or schema were changed.
+
+Added ActiveCustomerFilteringTest for model/map/route data and transaction access,
+dashboard regressions for all excluded status cases and matching drilldowns/totals,
+idle and visit-transaction regressions; updated existing in-memory fixtures with
+active master records and transaction customer codes. All 20 JavaScript dashboard
+tests and git diff --check passed. PHP unit tests could not run: php is not on PATH
+and vendor is absent. Backend/browser verification remains outstanding.
+
 ## Route filter salesman labels: 2026-09-29
 
 Dashboard and Route Tracking share DashboardController::filters and

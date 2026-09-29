@@ -6,6 +6,39 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('inactive or missing customers are excluded before dashboard aggregation and drilldowns', function ($status) {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    if ($status === 'missing') DB::table('customermaster')->where('customercode', 101)->delete();
+    else DB::table('customermaster')->where('customercode', 101)->update(['activecustomer' => $status]);
+
+    foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
+        foreach (['transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) {
+            DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
+        }
+    }
+    DB::table('invoiceheader')->update(['totalreturnamount' => 10]);
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics)->toMatchArray([
+        'planned_customers' => 2, 'planned_visited' => 0, 'total_visits' => 3,
+        'unique_visited_customers' => 3, 'completed_visits' => 2, 'productive_visits' => 0,
+        'cft_minutes' => 15.0, 'otp' => ['events' => 1, 'visits' => 0],
+    ]);
+    expect(collect($metrics['analysis']['journeys'])->sum('visits'))->toBe(3);
+    foreach (['sales', 'orders', 'collections', 'returns'] as $type) {
+        expect($metrics['amounts'][$type])->toBe([]);
+    }
+    foreach (['planned', 'unplanned', 'productive', 'efficiency', 'cft', 'actual_face', 'otp_time', 'otp', 'sales', 'orders', 'collections', 'returns'] as $type) {
+        $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])->flatMap(fn ($group) => $group['rows']);
+        expect($rows->where('customercode', 101))->toHaveCount(0);
+    }
+    $operational = app(DashboardCustomerDetails::class)->build($journeys, 'operational')['groups'];
+    expect($operational[0]['rows'][0]['actual_cft'])->toBeNull();
+    $summary = (new ReflectionMethod(\App\Http\Controllers\RouteTracking\RouteTrackingController::class, 'summarizeTransactions'))
+        ->invoke(app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class), 1);
+    foreach ($summary as $type) expect($type['count'])->toBe(0);
+})->with(['inactive' => [0], 'null' => [null], 'other status' => [2], 'missing master' => ['missing']]);
+
 test('CFT popups retain OTP visits as excluded zero contributions while cards and graphs omit them', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
@@ -55,7 +88,7 @@ test('toplpo customers are excluded only from efficiency and productivity includ
     $service = app(DashboardMetrics::class);
     $baseline = $service->summarize($journeys);
     foreach ([[101, 1], [104, 0], [105, null], [106, 2]] as [$code, $flag]) {
-        DB::table('customermaster')->insert(['customercode' => $code, 'toplpo' => $flag]);
+        DB::table('customermaster')->where('customercode', $code)->update(['toplpo' => $flag]);
     }
     $result = $service->summarize($journeys);
     expect($result)->toMatchArray([
@@ -173,7 +206,7 @@ test('face time details retain individual visits and handle missing plans incomp
 
 test('transaction drilldowns list headers once and returns only from both sources with negative amounts', function () {
     foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
-        foreach (['customercode integer', 'transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
+        foreach (['transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
         DB::table($table)->update(['customercode' => 101, 'transactionkey' => 1, 'documentnumber' => 'D1', 'transactiondate' => '2026-09-02', 'transactiontime' => '10:00:00']);
     }
     $journeys = DB::table('startendday')->where('routekey', 1)->get();
@@ -238,14 +271,18 @@ beforeEach(function () {
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
-        'invoiceheader (routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
-        'salesorderheader (routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
-        'arheader (routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
+        'invoiceheader (customercode integer default 101, routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
+        'salesorderheader (customercode integer default 101, routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
+        'arheader (customercode integer default 101, routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
         'currencymaster (currencycode integer, currencysymbol text)',
-        'customermaster (customercode integer, alternatecode text, customeraddress1 text, toplpo integer)',
+        'customermaster (customercode integer primary key, activecustomer integer default 1, alternatecode text, customeraddress1 text, toplpo integer)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, otpreason text, comments text)',
     ] as $table) {
         DB::statement('CREATE TABLE '.$table);
+    }
+    // Existing scenarios use active customers, including OTP-only customer 999.
+    foreach ([101, 102, 103, 104, 105, 106, 999] as $code) {
+        DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1]);
     }
     DB::table('startendday')->insert([
         ['routekey' => 1, 'routecode' => 1, 'routestartdate' => '2026-09-01', 'routestarttime' => '08:00:00', 'routeenddate' => '2026-09-02', 'routeendtime' => '02:00:00', 'routeclosed' => 1],
@@ -284,7 +321,7 @@ beforeEach(function () {
 test('customer drilldowns separate planned visited and not visited and deduplicate unplanned customers', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
-    DB::table('customermaster')->insert(['customercode' => 101, 'alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
+    DB::table('customermaster')->where('customercode', 101)->update(['alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
     $service = app(DashboardCustomerDetails::class);
     $planned = $service->build($journeys, 'planned')['groups'];
     expect($planned)->toHaveCount(2)
@@ -406,7 +443,7 @@ test('dashboard operational and OTP time cards reconcile with customer detail ro
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $journeys[1]->last_location_time = '2026-09-03 12:00:00';
-    DB::table('customermaster')->insert(['customercode' => 101, 'alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
+    DB::table('customermaster')->where('customercode', 101)->update(['alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
     $metrics = app(DashboardMetrics::class)->summarize($journeys);
     expect($metrics['operational_minutes'])->toEqual(135)
         ->and($metrics['otp_customer_minutes'])->toEqual(50)
@@ -484,7 +521,7 @@ test('OTP matched to an incomplete visit does not borrow time from another compl
 
 test('route transaction cards and documents match dashboard totals without requiring visit links', function () {
     foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
-        foreach (['customercode integer', 'transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
+        foreach (['transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
         DB::table($table)->update(['customercode' => 101, 'transactionkey' => 1, 'documentnumber' => 'D1', 'transactiondate' => '2026-09-01', 'transactiontime' => '10:00:00']);
     }
     // Include headers with no visit link and null void flags, but exclude void documents.

@@ -63,8 +63,11 @@ test('visit transactions use dashboard amount fields and void rules', function (
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
     DB::purge('transaction_sources_test');
+    DB::statement('CREATE TABLE customermaster (customercode integer, activecustomer integer)');
+    DB::table('customermaster')->insert(['customercode' => 8, 'activecustomer' => 1]);
+    DB::table('customermaster')->insert(['customercode' => 9, 'activecustomer' => 0]);
     foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
-        DB::statement("CREATE TABLE {$table} (transactionkey integer, routekey integer, visitkey integer, documentnumber text, transactiondate text, transactiontime text, totalsalesamount real, totalinvoiceamount real, totalreturnamount real, totaldamagedamount real, amountpaid real, voidflag integer)");
+        DB::statement("CREATE TABLE {$table} (customercode integer default 8, transactionkey integer, routekey integer, visitkey integer, documentnumber text, transactiondate text, transactiontime text, totalsalesamount real, totalinvoiceamount real, totalreturnamount real, totaldamagedamount real, amountpaid real, voidflag integer)");
     }
     foreach (['invoiceheader', 'salesorderheader'] as $table) {
         foreach ([0, 1, null, 2] as $index => $flag) {
@@ -79,6 +82,10 @@ test('visit transactions use dashboard amount fields and void rules', function (
             'transactionkey' => 5, 'routekey' => 7, 'visitkey' => 8,
             'totalsalesamount' => 50, 'totalreturnamount' => null,
             'totaldamagedamount' => null, 'voidflag' => 0,
+        ]);
+        DB::table($table)->insert([
+            'transactionkey' => 6, 'routekey' => 7, 'visitkey' => 8, 'customercode' => 9,
+            'totalsalesamount' => 1000, 'totalinvoiceamount' => 1000, 'voidflag' => 0,
         ]);
     }
     $controller = app(RouteTrackingController::class);
@@ -128,7 +135,7 @@ test('full route OTP list includes all request types even when no customer visit
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
     DB::purge('route_otp_test');
-    DB::statement('CREATE TABLE customermaster (customercode integer, customeraddress1 text, alternatecode text)');
+    DB::statement('CREATE TABLE customermaster (customercode integer, activecustomer integer default 1, customeraddress1 text, alternatecode text)');
     DB::statement('CREATE TABLE otplogdetail (otplogid integer, username text, customercode integer, routecode integer, otptype text, otpdate text, otptime text, comments text, otpreason text)');
     DB::table('customermaster')->insert(['customercode' => 8, 'customeraddress1' => 'Customer Eight', 'alternatecode' => 'C008']);
     DB::table('otplogdetail')->insert([

@@ -11,7 +11,9 @@ beforeEach(function () {
         'tracking.stationary_minutes' => 5, 'tracking.stationary_radius_m' => 30, 'tracking.stationary_max_gap_seconds' => 120, 'tracking.max_accuracy_m' => 50]);
     DB::purge('outside_test'); DB::purge('tracking_pgsql');
     DB::statement('CREATE TABLE startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)');
-    DB::statement('CREATE TABLE customervisitlog (routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text)');
+    DB::statement('CREATE TABLE customervisitlog (customercode integer default 1, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text)');
+    DB::statement('CREATE TABLE customermaster (customercode integer, activecustomer integer)');
+    DB::table('customermaster')->insert(['customercode' => 1, 'activecustomer' => 1]);
     // Legacy devices have no accuracy/provider columns.
     DB::connection('tracking_pgsql')->statement('CREATE TABLE trac_routetrack (id integer, routecode integer, date text, time text, latitude real, longitude real)');
     DB::table('startendday')->insert(['routekey' => 1, 'routecode' => 10, 'routestartdate' => '2026-09-09', 'routestarttime' => '08:00:00', 'routeenddate' => '2026-09-09', 'routeendtime' => '09:00:00', 'routeclosed' => 1]);
@@ -21,6 +23,16 @@ function outsideJourney(): \Illuminate\Support\Collection
 {
     return DB::table('startendday')->where('routekey', 1)->get()->each(function ($row) { $row->salesman = 'Salesman'; });
 }
+
+test('inactive customers do not contribute visit time to the idle calculation', function () {
+    DB::table('customervisitlog')->insert([
+        'routekey' => 1, 'logstartdate' => '2026-09-09', 'logstarttime' => '08:10:00',
+        'logenddate' => '2026-09-09', 'logendtime' => '08:30:00',
+    ]);
+    expect(app(DashboardOutsideVisits::class)->build(outsideJourney())[0]['customer_cft'])->toEqual(20);
+    DB::table('customermaster')->update(['activecustomer' => 0]);
+    expect(app(DashboardOutsideVisits::class)->build(outsideJourney())[0]['customer_cft'])->toEqual(0);
+});
 
 test('outside visit times merge overlap and subtract only the stationary portion outside visits', function () {
     foreach ([['08:10:00', '08:25:00'], ['08:20:00', '08:30:00']] as [$start, $end]) DB::table('customervisitlog')->insert([

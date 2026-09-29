@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CustomerMaster;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -10,7 +11,8 @@ class DashboardOutsideVisits
     public function build(Collection $journeys): Collection
     {
         if ($journeys->isEmpty()) return collect();
-        $visits = DB::table('customervisitlog')->whereIn('routekey', $journeys->pluck('routekey'))
+        $visits = DB::table('customervisitlog')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $journeys->pluck('routekey'))
             ->get(['routekey', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime'])->groupBy('routekey');
         $starts = DB::table('startendday')->whereIn('routecode', $journeys->pluck('routecode')->unique())
             ->whereDate('routestartdate', '>=', substr((string) $journeys->min('routestartdate'), 0, 10))

@@ -12,7 +12,7 @@ test('planned customer face time uses only the visit log CFT in minutes', functi
     DB::purge('cft_test');
 
     foreach ([
-        'customermaster (customercode integer, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
+        'customermaster (customercode integer, activecustomer integer default 1, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
         'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
     ] as $table) {
@@ -56,6 +56,8 @@ test('planned face time totals targets for every planned customer', function () 
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
     DB::purge('planned_cft_test');
+    DB::statement('CREATE TABLE customermaster (customercode integer, activecustomer integer)');
+    foreach ([1, 2, 3, 99] as $code) DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1]);
     DB::statement('CREATE TABLE customervisitlog (routekey integer, customercode integer, cft integer)');
     DB::table('customervisitlog')->insert([
         ['routekey' => 100, 'customercode' => 1, 'cft' => 15],

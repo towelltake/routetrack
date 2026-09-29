@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountSalesman;
 use App\Models\AreaMaster;
 use App\Models\CompanyMaster;
+use App\Models\CustomerMaster;
 use App\Models\RouteMaster;
 use App\Models\SubAreaMaster;
 use App\Services\StationaryDetection;
@@ -253,6 +254,7 @@ class RouteTrackingController extends Controller
             'collections' => 'arheader',
         ];
         $header = DB::table($headers[$validated['type']])
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('transactionkey', $validated['transactionkey'])
             ->where('routekey', $validated['routekey'])
             ->where('visitkey', $validated['visitkey'])
@@ -726,6 +728,7 @@ class RouteTrackingController extends Controller
         }
 
         $visitRouteKey = DB::table('customervisitlog')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routecode', $routecode)
             ->whereDate('logstartdate', $date)
             ->max('routekey');
@@ -742,6 +745,7 @@ class RouteTrackingController extends Controller
         }
 
         $statusRouteKey = DB::table('routesequencecustomerstatus')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routecode', $routecode)
             ->where('seqweekday', $this->legacySeqWeekday($date))
             ->where('seqweeknumber', $this->legacySeqWeekNumber($date))
@@ -830,6 +834,7 @@ class RouteTrackingController extends Controller
     {
         return DB::table('routesequencecustomerstatus as rscs')
             ->join('customermaster as cm', 'cm.customercode', '=', 'rscs.customercode')
+            ->where('cm.activecustomer', 1)
             ->where('rscs.routekey', $routekey)
             ->where('rscs.schelduledflag', 1)
             ->whereNotNull('fixedlatitude')
@@ -871,6 +876,7 @@ class RouteTrackingController extends Controller
         }
 
         $minutes = DB::table('customervisitlog')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->whereIn('customercode', $customerCodes)
             ->sum(DB::raw('COALESCE(cft, 0)'));
@@ -881,6 +887,7 @@ class RouteTrackingController extends Controller
     private function fetchJourneyPlan(int $routekey): Collection
     {
         return DB::table('routesequencecustomerstatus')
+            ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->where('schelduledflag', 1)
             ->orderByRaw('CASE WHEN COALESCE(sequencenumber, 0) > 0 THEN 0 ELSE 1 END')
@@ -929,6 +936,7 @@ class RouteTrackingController extends Controller
     {
         return DB::table('otplogdetail as otp')
             ->leftJoin('customermaster as customer', 'customer.customercode', '=', 'otp.customercode')
+            ->where('customer.activecustomer', 1)
             ->where('otp.routecode', $routecode)
             ->whereDate('otp.otpdate', $date)
             ->orderBy('otp.otpdate')
@@ -1040,6 +1048,7 @@ class RouteTrackingController extends Controller
             }
 
             return DB::table($config['table'])
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->where('routekey', $routekey)
                 ->whereIn('visitkey', $visitKeys)
                 ->where(fn ($query) => $query->whereNull('voidflag')->orWhere('voidflag', 0))
@@ -1122,7 +1131,7 @@ class RouteTrackingController extends Controller
             ];
         }
         $codes = collect($summary)->flatMap(fn ($row) => $row['documents'])->pluck('customercode')->unique();
-        $customers = $codes->isEmpty() ? collect() : DB::table('customermaster')->whereIn('customercode', $codes)
+        $customers = $codes->isEmpty() ? collect() : CustomerMaster::query()->whereIn('customercode', $codes)
             ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
         foreach ($summary as &$row) {
             $row['documents'] = $row['documents']->map(function ($document) use ($customers) {
@@ -1147,6 +1156,7 @@ class RouteTrackingController extends Controller
 
         $visits = DB::table('customervisitlog as cvl')
             ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
+            ->where('cm.activecustomer', 1)
             ->where('cvl.routekey', $routekey)
             ->orderBy('cvl.logstartdate')
             ->orderBy('cvl.logstarttime')

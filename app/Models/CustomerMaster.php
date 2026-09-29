@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class CustomerMaster extends Model
@@ -11,6 +12,14 @@ class CustomerMaster extends Model
     protected $primaryKey = 'customercode';
 
     public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        // Raw DB queries and joins must also restrict their source rows to active customers.
+        static::addGlobalScope('active_customer', function (Builder $query) {
+            $query->where($query->getModel()->qualifyColumn('activecustomer'), 1);
+        });
+    }
 
     protected $fillable = [
         'routecode',

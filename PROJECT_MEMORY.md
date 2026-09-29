@@ -1,6 +1,59 @@
 # TRAC / routeTrack project memory
 
+## Browser planning workspace: 2026-09-29
+
+Owner approved building the missing planning workflow; saving to the backend
+business database remains explicitly out of scope. `/journey-plan` now opens
+Planning workspace by default, retaining the earlier Existing SFA plan tab.
+Workspace includes Customers, Salesmen, Assignments, Plan, Analytics and Team
+estimate. Loads multiple authorized routes through the unchanged read endpoint,
+deduplicates customer codes, and creates an editable planning salesman per route
+(not a confirmed mapping to unique SFA salesmen). Unambiguous source ownership
+seeds assignments. Customer frequency/face-time defaults are explicitly editable;
+legacy frequency and restriction codes are NOT interpreted. Supports up to 500
+customers, editable coordinates, allowed days, area/region/channel, fixed salesman,
+time windows, working days/hours, visit target and optional outbound/return travel.
+
+New `workspace.js` implements deterministic native JS heuristic assignment and
+four-week planning in `planner.worker.js` with cancellation. It is NOT the desktop
+OR-Tools solver and does NOT use OSRM. Estimates use great-circle distance with
+editable speed. Weekly patterns preserve frequency 2 alternate-week and frequency
+3 1/2/4 or 1/3/4 rules; load balances per rep. Repeated days/spaced visits are soft
+preferences. Same customer cannot be scheduled twice per day. Unplaced visits are
+counted individually. Pins override geographic/channel eligibility, while allowed
+weekdays remain mandatory. Time windows, shift hours and visit targets have soft
+penalties and warnings; optional return travel contributes to daily overload.
+
+Plan view provides week/salesman filters, day cards, visit times, map, move controls,
+unmet demand and CSV export. Same-rep move shifts one visit; cross-rep handover moves
+all customer visits in the preview, checking every destination before changing any
+day. Affected days are resequenced. Manual date moves may change weekly cadence;
+frequency analytics checks total four-week demand. Generated plans snapshot inputs;
+subsequent edits mark them stale. Analytics covers frequency, face/travel/wait time,
+utilisation, overload and weekly visit totals. Team estimate is arithmetic workload
+and visit capacity with a travel allowance, NOT a solver-backed staffing guarantee.
+All draft state is in page memory only, with an explicit leave/refresh loss notice.
+
+Files: `resources/js/views/journeyplan/{Index,Workspace,PlanMap}.vue`, `workspace.js`,
+`planner.worker.js`, `tests/journey-workspace.test.mjs`. No backend endpoint, schema,
+source desktop app, SQL dump or business data changes. Owner-provided table mappings,
+road routing, desktop solver parity, persistent draft/versioning and database writes
+remain future work. Prior initial-integration limitations below are historical where
+superseded here.
+
+Validation: 32 JS tests passed (9 new tests cover frequency 1–20, per-visit drops,
+eligibility, windows, overflow, commute, handover atomicity, snapshots and balancing).
+All three Vue components compile; full Vite production build passed (910 modules,
+including worker asset); diff check passed. PHP/live database/browser interaction
+checks remain unverified locally. Existing PHP access tests were not rerun because
+no PHP/backend changes were made and the local runtime remains unavailable.
+
 ## Journey Plan Optimisation initial integration: 2026-09-29
+
+Owner subsequently clarified: backend database saving is the LAST step and is
+out of scope for now. First explain the supplied application's current planning
+logic; owner will then guide exact SFA table/field mappings. Do not treat direct
+database updates as the next implementation task or prerequisite for planning.
 
 Owner supplied `journey-plan-app-main/` (Electron/React, SQLite, Python OR-Tools)
 and `sfa_struct1.sql` and requested equivalent functionality in TRAC, additional

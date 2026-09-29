@@ -5,6 +5,8 @@ import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { days, hasCoordinates, optimiseOrder, routeDistance } from './planning';
+import Workspace from './Workspace.vue';
+const mode = ref('workspace');
 
 const routes = ref([]), routecode = ref(''), rows = ref([]), route = ref(null);
 const week = ref(''), day = ref('sunseq'), tab = ref('sequence'), search = ref('');
@@ -78,6 +80,7 @@ async function draw() {
 watch(routecode, load);
 watch([week, day], () => { proposal.value = null; });
 watch(displayed, draw);
+watch(mode, draw);
 onMounted(async () => {
   map = L.map(mapElement.value).setView([23.6, 58.4], 7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
@@ -90,8 +93,10 @@ onBeforeUnmount(() => { request?.abort(); map?.remove(); map = null; });
 
 <template>
   <Head title="Journey Plan Optimisation" />
-  <BasePageHeading title="Journey Plan Optimisation" subtitle="Review recurring route plans and preview a new customer sequence." />
-  <div class="content">
+  <BasePageHeading title="Journey Plan Optimisation" subtitle="Prepare customer rules, assign salesmen and review a four-week plan." />
+  <div class="content pb-0"><div class="btn-group"><button class="btn" :class="mode === 'workspace' ? 'btn-primary' : 'btn-alt-secondary'" @click="mode = 'workspace'">Planning workspace</button><button class="btn" :class="mode === 'existing' ? 'btn-primary' : 'btn-alt-secondary'" @click="mode = 'existing'">Existing SFA plan</button></div><p v-if="error && mode === 'workspace'" class="alert alert-danger mt-3" role="alert">{{ error }}</p></div>
+  <Workspace v-show="mode === 'workspace'" :routes="routes" />
+  <div v-show="mode === 'existing'" class="content">
     <div v-if="error" class="alert alert-danger" role="alert">{{ error }}</div>
     <div class="block block-rounded">
       <div class="block-content block-content-full">

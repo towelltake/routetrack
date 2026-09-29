@@ -1,22 +1,5 @@
 # TRAC / routeTrack project memory
 
-## Exclude OTP customers from three performance graphs: 2026-09-29
-
-Customer coverage, Visit productivity and Customer efficiency use dedicated
-non_otp counts from DashboardAnalysis, summed by DashboardController before
-percentage calculation. Any OTP event in a journey excludes that customer from
-all three graph numerators and denominators, including non-OTP repeat visits and
-planned customers with unmatched OTP events. Exclusion resets per journey; LPO
-exclusions remain for productivity/efficiency. DashboardGraphs consumes these
-counts and explains the exclusions. Existing headline cards, general analysis,
-journey exceptions and timing definitions are unchanged.
-
-Added PHP regressions for mixed repeats, journey boundaries, unmatched OTP,
-LPO exclusion, collection/sales overlap, zero denominators and chart payloads.
-All 20 JavaScript tests, production build and diff checks passed. PHP regressions
-remain unexecuted because PHP/vendor are unavailable locally; browser verification
-is outstanding.
-
 ## Active customers throughout the application: 2026-09-29
 
 Only customers whose current customermaster.activecustomer equals 1 are included,

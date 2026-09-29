@@ -1,7 +1,240 @@
 # TRAC / routeTrack project memory
 
-Last inspected: 2026-09-16. Snapshot: branch `main`, commit `61ffe82`
-(merge of PR #9). Working tree was clean before this documentation task.
+## Top three OTP comments and aligned cards: 2026-09-24
+
+Removed View all comments link and its styles; card now shows only the top three
+comment groups. Clicking the OTP card still opens the full popup breakdown.
+Long comment previews clamp to two lines with full text in the hover title and
+popup. Journey/customer cards share a 360px minimum height, retaining stretching
+and equal grid rows for aligned card edges; content can grow without clipping.
+Vue script syntax, targeted OTP markup and diff checks passed. Full build/browser
+visual verification remains unavailable because node_modules is absent.
+
+## Top four OTP comments and full popup breakdown: 2026-09-24
+
+OTP card shows the first four comment groups (highest counts), with View all
+comments when additional groups exist. Link opens the existing OTP popup without
+duplicating the card click event. Popup now includes every comment/count group,
+above event details, aggregating all filtered rows before pagination. Date,
+journey and search filters apply to the breakdown; blank comments are Unspecified.
+Long lists scroll within the summary. Two Vue script syntax checks and diff check
+passed; full build/browser remains unverified without local dependencies.
+
+## Stacked tiles and OTP comments correction: 2026-09-24
+
+Efficiency and Productivity now show Collection above Orders/Invoices as two
+full-width tiles directly below the count note, matching the supplied reference.
+This supersedes the earlier side-by-side placement. OTP card now groups by trimmed
+comments, not otpreason, and reads otp_comments with comment/count rows. Heading
+is OTP by comments. Empty comments remain Unspecified; selected journey scope,
+count ordering and OTP totals remain unchanged. Updated regression uses distinct
+comments with identical reasons to catch accidental reason grouping. Twenty JS
+tests, Vue script syntax and diff checks passed. PHP tests and full build/browser
+remain unverified with local runtime/dependencies unavailable.
+
+## Efficiency and Productivity tile placement: 2026-09-24
+
+Collection and Orders/Invoices remain side by side inside Efficiency and
+Productivity but now sit immediately below the visit-count note. These two
+cards opt into compactBreakdown, removing the flexible blank grid row that
+previously pushed their tiles to the bottom. Other card layouts and calculations
+are unchanged. Vue script syntax and diff checks passed; browser/build unverified.
+
+## OTP card reason breakdown: 2026-09-24
+
+OTP usage card now fills its space beneath the headline with OTP by reason:
+left-aligned reason labels and right-aligned purple count badges on pale purple
+rows. Shows actual selected-journey event counts, sorted descending then by label.
+DashboardMetrics aggregates existing scoped OTP details into otp_reasons using
+trimmed otpreason; missing/blank reasons become Unspecified. Includes unmatched
+and overnight events already in the OTP numerator, so counts reconcile to it.
+Empty periods show an explicit no-events message. Card click still opens OTP
+details. No additional query or change to access scope or OTP matching.
+Added PHP regression for selected windows, trimmed/blank reasons, unmatched
+overnight events, total reconciliation and empty periods. All 20 existing JS
+tests, Vue script syntax and diff checks passed. PHP tests and build/browser
+remain unverified because PHP/vendor/node_modules are unavailable locally.
+
+## Route compliance final labels: 2026-09-24
+
+Renamed Routes Started / Total to Route Start Compliance in the card, popup title
+and popup action mapping. Renamed Daily Route Close Compliance to Route Close
+Compliance in the orange breakdown and tooltip. Calculations unchanged. Three
+Vue script syntax checks and diff check passed; full build/browser unverified.
+
+## Daily Route Close Compliance label: 2026-09-24
+
+Renamed the orange Routes Closed breakdown to Daily Route Close Compliance and
+updated its tooltip in DashboardCards. Same-date closure calculation unchanged.
+Diff check passed; display-only change, full build/browser unverified locally.
+
+## Routes closed on start date: 2026-09-24
+
+Routes Closed now requires routeclosed = 1 and recorded end calendar date equal
+to start calendar date for every journey in that route/start-date group. Overnight
+closures and missing end dates do not qualify, even inside a multi-day selection.
+Denominator remains started route/date groups. DashboardController shares the
+predicate between the metric and a new closed_same_date route-status field;
+actual closed state remains separate. Popup Closed/Not Closed filters and labels
+use the new rule. Other journey timing and analysis closure behavior is unchanged.
+Updated card tooltip and PHP regression cases for same-day, next-day and missing
+end dates, with existing duplicate/mixed-open coverage retained. Twenty JS tests,
+two Vue script syntax checks and diff check passed. PHP tests and full build/browser
+remain unverified because PHP/vendor/node_modules are unavailable locally.
+
+## Closed routes denominator correction: 2026-09-24
+
+Routes Closed orange breakdown now uses closed / started routes x 100, with
+closed / started counts below. No started routes yields unavailable. Updated
+DashboardCards tooltip to explain both denominators. This supersedes earlier
+closed / total notes; the main Routes Started percentage still uses total routes.
+Vue script syntax and diff checks passed; full build/browser unverified locally.
+
+## Route status Not Closed filter: 2026-09-24
+
+Added Not Closed to the Routes Started popup status dropdown. Selects started
+route/start-date groups with at least one open journey, including mixed open and
+closed journey groups. Not Started remains separate. Existing date filtering and
+pagination reset are preserved. RouteStatusDialog Vue script syntax and diff
+checks passed; full build/browser remains unverified without dependencies.
+
+## Closed routes inside started card (corrected layout): 2026-09-24
+
+User clarified Routes Closed belongs inside the Routes Started card, matching
+JP compliance's full-width breakdown tile. Removed the separate card and added
+an orange breakdown with closed / filtered total percentage and counts. Shared
+breakdown supports an orange tone; existing purple/blue tiles are unchanged.
+Route card opens the existing All status popup with Closed filtering available.
+Supersedes the separate-card layout below. Three Vue script syntax checks and
+diff check passed; full build/browser remains unverified without dependencies.
+
+## Separate closed routes card: 2026-09-24
+
+Moved closed route counts out of the Routes Started note into a separate orange
+Routes Closed card in the Journeys group. Displays closed / filtered total as a
+percentage with counts below, using the existing route/start-date closure metric.
+Clicking opens the route status popup with Closed selected; the started card
+still opens All. Updated DashboardCards, Index and RouteStatusDialog. All three
+Vue script syntax checks and diff check passed; full build/browser unverified
+because node_modules is absent. No backend calculation changes.
+
+## Dashboard JP compliance and percentage cards: 2026-09-24
+
+Renamed Planned Customer Visits and its popup to JP compliance, preserving the
+existing calculation and popup action. Routes Started / Total now displays a
+percentage with filtered started/total and closed counts below. Counts remain
+per route/start date; closed requires all journeys on that route/start date to
+be closed. Route status popup includes closed counts, status labels and filter.
+OTP usage is total OTP events / all visit logs in selected journeys x 100;
+new total_visits includes repeats, incomplete visits and LPO customers. Date
+ranges use summed counts and retain journey-start-date/overnight scope. Zero
+denominators are unavailable; rates above 100% are preserved.
+
+Updated DashboardController, DashboardMetrics, four dashboard Vue files and PHP
+regression assertions for route closure deduplication and total visits. All 20
+existing JavaScript tests, four Vue script syntax checks, card ratio checks and
+diff check passed. PHP tests and full build/browser verification remain unavailable
+because PHP, vendor and node_modules are absent locally.
+
+## Dashboard productivity naming/order: 2026-09-24
+
+Renamed the Productive visits card and popup title to Productivity, updating its
+popup action mapping. Customer card order is Planned, Unplanned, Efficiency,
+Productivity, OTP usage. Calculations unchanged. Three Vue script syntax checks
+and diff check passed; browser/build unverified locally.
+
+## Unplanned percentages: 2026-09-24
+
+Unplanned Customers now displays without-OTP and with-OTP percentages, each
+divided by all unique visited customers in the selected journeys, with counts
+underneath. Preserves journey/customer uniqueness used by the planned card;
+date ranges divide summed counts. Denominator includes planned/unplanned, OTP,
+LPO and incomplete visits, including journeys without plans. Such journeys still
+cannot contribute to unplanned numerators. Zero denominator yields unavailable.
+New all_unique_visited_customers avoids using the LPO-excluding efficiency count.
+Updated DashboardMetrics, DashboardCards and PHP assertions. All 20 JS tests,
+Vue script syntax and diff checks passed. PHP tests/build/browser remain unverified
+without local runtime/dependencies.
+
+Productive Visits popup's journey Date column is now labelled Route Start Date
+(2026-09-24). Display label only; visit start/end dates remain separate. Diff
+check passed.
+
+## Productive visit date/time layout: 2026-09-24
+
+Productive Visits popup now shows the recorded visit date above its time in both
+start and end columns, including same-day checkouts. Added start_date to detail
+rows rather than using journey date. Later-date checkout remains red; revisit
+badges remain below start time. Missing timestamps show Unavailable. Vue script
+syntax, date/time markup and diff checks passed; build/browser and PHP execution
+remain unverified locally.
+
+## Productive popup revisit badge: 2026-09-24
+
+Productive Visits popup shows a blue Revisit #2/#3/etc. badge under visit start
+time for subsequent visits to the same customer within the same journey. First
+visits are unmarked. DashboardCustomerDetails numbers chronologically sorted logs
+before filtering incomplete visits, resetting per journey/customer; filtering and
+pagination cannot change the badge. Existing OTP/LPO and overnight styling remains.
+Updated existing PHP drilldown assertions for first/repeat visits and journey reset.
+Vue script syntax and diff checks passed. PHP tests and build/browser validation
+remain unavailable with the missing local runtime/dependencies.
+
+## Unplanned popup explicit OTP status: 2026-09-24
+
+Added a dedicated OTP Status column to the Unplanned Customers Visited popup,
+with purple With OTP and neutral Without OTP badges derived from the existing
+otp_visit_count. Existing visit status, OTP count and filters remain available.
+CustomerDetailsDialog only; no calculation or endpoint changes. Vue script syntax,
+targeted markup and diff checks passed; browser/build remains unverified locally.
+
+## Unplanned customer OTP split: 2026-09-24
+
+Unplanned Customers card now shows unique unplanned customers without any matched
+OTP as its main count, with a full-width purple OTP customer count below. Counts
+are per journey/customer; any matched OTP puts a customer only in the OTP group,
+including mixed OTP/non-OTP repeats and incomplete visits. Journeys without plans
+remain excluded. Existing total unplanned analysis/graph metrics are preserved.
+The unplanned popup retains both groups with status filters, purple OTP highlights
+and OTP visit counts, matching the planned popup. Shared breakdown tiles now support
+counts as well as percentages. Updated DashboardMetrics, DashboardCustomerDetails,
+DashboardCards and CustomerDetailsDialog. PHP regression added for deduplication,
+mixed visits, popup statuses, absent plans and empty periods. All 20 existing JS
+tests, both Vue script syntax checks and diff checks passed; PHP tests/build/browser
+checks remain unverified with missing local runtime/dependencies.
+
+## Productive visit checkout display: 2026-09-24
+
+Dashboard Productive Visits popup now includes Visit end time beside Visit start
+time. When the recorded checkout date is later than the visit check-in date,
+the checkout time and its date underneath are red, including on LPO rows.
+Missing/invalid checkout timestamps display Unavailable. DashboardCustomerDetails
+supplies end_time, end_date and ends_later_date; CustomerDetailsDialog renders
+them. Metric calculations are unchanged. Vue script syntax and diff checks passed;
+PHP execution and build/browser verification remain unavailable locally.
+
+## Planned customer OTP split: 2026-09-24
+
+Dashboard Planned Customer Visits now displays unique planned customers visited
+without OTP / unique scheduled route sequence customers, with a full-width purple
+OTP percentage and count tile below using the same denominator. Uniqueness remains
+per journey/customer across the selected journeys. Any matched OTP visit places
+that customer in the OTP group only, even with a non-OTP repeat; all OTP types
+qualify. Unplanned customers and unmatched OTP events do not enter these counts.
+Empty plans yield unavailable percentages. Existing overall coverage graph metrics
+remain unchanged; the card uses explicit new with/without-OTP metrics.
+
+The planned popup retains every planned customer, highlights OTP customers purple,
+adds OTP visit counts and filters for visited with/without OTP and not visited.
+Changed DashboardMetrics, DashboardCustomerDetails, DashboardCards, dashboard Index
+and CustomerDetailsDialog. Added PHP regression coverage for repeat visits, journey
+scope, mixed OTP/non-OTP customers, unplanned OTP, popup status and empty plans.
+Validation: 20 JavaScript tests, modified Vue script syntax and diff checks passed.
+PHP tests and full build/browser rendering remain unverified: PHP/vendor and
+node_modules are unavailable locally.
+
+Last inspected: 2026-09-20. Snapshot: branch `main`, commit `6875b7b`
+(laptop handoff documentation). Working tree was clean before this review.
 Author listed in README: Jyothish Thyagarajan. Old workspace:
 `D:\PHP Development\routeTrack` (the new laptop may use any path).
 
@@ -155,6 +388,274 @@ and `StationaryDetectionTest.php` for exact behavior.
 
 These are observed limitations, not newly authorized repair tasks.
 
+## New laptop review: 2026-09-20
+
+Reviewed the handoff against registered routes, active Vue screens, authentication,
+access queries, dashboard services, tracking calculations and relevant tests.
+No application behavior was changed. Current workspace is
+`C:\Development\RouteTack\routetrack`.
+
+Additional current-code details that supersede older documentation:
+
+- Dashboard `routes_started` counts distinct route/start-date pairs, while
+  `journeys_started` counts journeys. `total_routes` is matching active accessible
+  routes multiplied by inclusive calendar days, including weekends;
+  `routes_not_started` is the nonnegative difference. Metrics/status include routes
+  without sequence data; filter catalog and map require sequence membership.
+- Sales uses `invoiceheader.totalsalesamount`, orders use
+  `salesorderheader.totalinvoiceamount`, and collections use `arheader.amountpaid`.
+  Dashboard returns combine good/damaged returns from invoices and orders and
+  display negative values. Returns require `voidflag = 0`; ordinary sales/order/
+  collection totals accept null or zero void flags. Preserve these distinctions.
+- Dashboard includes operational time, OTP customer time, actual/planned face
+  time, variance, total duration, outside-visit time and returns cards in addition
+  to coverage/productivity/financial cards. Performance, review and map views open
+  on demand; summary requests omit full journey analysis, with details fetched
+  separately. Filter changes cancel or invalidate stale requests.
+- Route Tracking GPS geometry, stops and gaps use the selected calendar date.
+  Its journey duration independently uses journey start/end or last reported GPS
+  before the next journey, potentially spanning midnight. These scopes differ.
+- Customer Location currently exposes company and optional route selection,
+  customer search/jump, clustered markers and a searchable list capped at 200
+  visible entries. A company is required to Apply. Area/subarea and OSRM endpoints
+  exist, but the active view does not call them.
+
+Local readiness: Node `v24.20.0` is available. PHP and Composer were not found on
+the current PATH (this does not establish that they are absent elsewhere).
+`.env`, `vendor/autoload.php`, `node_modules/` and the frontend build manifest are
+absent. Dependencies were not installed and private configuration was not created.
+Both database connections and OSRM remain unverified.
+
+Validation: all 10 standalone JavaScript tests passed using
+`node --test tests/dashboard-filters.test.mjs tests/dashboard-analytics.test.mjs`.
+PHP tests, Artisan route listing, frontend build and browser/database integration
+could not be verified with the present setup. The 81 PHP tests recorded below are
+historical results from the old laptop, not results from this review.
+
+## Efficiency metric: 2026-09-20
+
+Implemented Efficiency in Dashboard Customer performance and Route Tracking
+Customers summary cards. Formula: unique productive customers / unique visited
+customers * 100, rounded to one decimal; no visited customers yields null (dash).
+Uniqueness is per journey/customer, with Dashboard combining those counts across
+the selected journeys rather than averaging percentages. This scope was stated
+when implementing after the owner approved the proposed metric.
+
+All logged customers count in the denominator, including incomplete and unplanned
+visits. A customer qualifies once if any completed visit has a linked positive,
+non-void invoice sale or sales order under existing productivity rules. Repeated
+visits/multiple documents cannot inflate counts; collections and returns alone
+do not qualify. Existing Productive visits calculations remain unchanged.
+
+Backend files: `DashboardMetrics.php` and `RouteTrackingController.php`.
+UI files: `routelocation/DashboardCards.vue`, `routetracking/Index.vue`.
+The cards show percentage and numerator/denominator, with a definition tooltip;
+Efficiency is a summary metric without a dedicated drilldown.
+Regression cases added to `DashboardMetricsTest.php` and
+`RouteTrackingTransactionSummaryTest.php` cover journey/customer deduplication,
+qualification, incomplete visits and empty denominators. PHP execution and Vue
+build/browser validation remain blocked by the local setup described above.
+The existing 10 JavaScript tests and `git diff --check` passed after this change.
+
+## Graph percentages: 2026-09-20
+
+All five Dashboard graphs now default to percentage bars, with a Values toggle
+retaining counts/minutes. Each graph includes percentage summary metrics;
+tooltips and accessible tables show raw values and percentages together.
+Denominators: coverage uses planned customers; productivity uses completed
+visits; each exception category uses all recorded visits; planned/operational CFT
+uses planned CFT; journey time uses measured duration. Top-ten time/CFT summaries
+cover only displayed routes. Summaries divide summed numerators by summed valid
+denominators, not an average of row percentages. Zero/missing denominators remain
+unavailable. Values above 100% are preserved; exception categories overlap.
+
+Changed `DashboardGraphs.vue`, `DashboardChart.vue`, and `analytics.js`.
+DashboardController chart summaries now include `visits` for exception rates.
+Added JavaScript percentage tests and a PHP summary-denominator assertion.
+Validation: 13 JavaScript tests passed, changed Vue script syntax checks passed,
+and `git diff --check` passed. PHP tests, Vue template compilation/build and live
+browser checks remain unverified due to the missing runtime/dependencies.
+
+## Journey clock timeline: 2026-09-20
+
+Replaced only "Where journey time goes" with `JourneyTimeChart.vue`: a horizontal
+00:00-24:00 axis, floating interval bars at actual recorded times, and separate
+journey/calendar-date rows. Top ten routes are selected by summed measured journey
+duration within the authorized filters. Multiple journeys retain separate rows;
+overnight journeys split at midnight. Open journeys use the existing last reported
+location cutoff. Missing or nonpositive durations produce no timeline bar.
+
+`DashboardAnalysis.php` includes recorded start/end and completed visit intervals;
+the controller exposes the selected routes' timeline in the chart summary.
+`journeyTimeline.js` interprets these as database wall-clock values without browser
+timezone conversion, clips visits to journey bounds and merges overlaps. Gray
+segments mean no completed visit recorded, not proven driving/idle time. Timeline
+percentages use merged intervals and remain visible above the chart and in the
+table/tooltips; existing summed visit-time metrics are unchanged and can differ.
+Other graphs retain the percentage/value toggles.
+
+Validation: all 16 JavaScript tests passed, including clock positioning, clipping,
+overlaps, midnight splitting, separate journeys and unavailable timing. PHP tests
+added for interval serialization and summary payload. Vue script syntax and
+`git diff --check` passed. PHP execution, full build and browser validation remain
+unavailable with the current local setup.
+
+## Customer productivity exclusion: 2026-09-20
+
+The owner added `customermaster.toplpo`. Customers whose flag equals 1 are now
+excluded from BOTH numerator and denominator for Dashboard Productivity and
+Efficiency, and Route Tracking Efficiency. Null, zero and other values remain
+eligible; absent master records are not automatically excluded. An entirely
+excluded population yields unavailable percentages rather than zero percent.
+
+DashboardMetrics loads flagged visited customer codes and annotates visits for
+DashboardAnalysis. Both aggregate and per-journey productive/completed counts
+respect the exclusion, including charts and comparison tables. The productive
+customer drilldown uses the same exclusion. Route Tracking reads `cm.toplpo` into
+visit records and filters only its efficiency calculation. Coverage, visits,
+plans, timing/CFT, OTP, financial totals and timeline intervals retain flagged
+customers. No migration or SQL import was run; runtime schema must contain the
+owner's new column. User SQL-file changes were preserved.
+
+Tests added for excluded productive/nonproductive/repeated customers, null/zero/
+other flags, all-excluded denominators, dashboard drilldown/analysis consistency,
+and retaining time/coverage/financial data. Test customer schemas include toplpo.
+Validation: existing 16 JavaScript tests and `git diff --check` passed. PHP tests
+and frontend build/browser verification remain blocked by missing PHP/dependencies.
+
+## Ignored customers in metric popups: 2026-09-20
+
+Dashboard Productivity details now retain flagged visits (including incomplete
+flagged visits) with status Ignored and an exclusion reason. Added a Dashboard
+Efficiency drilldown through the same authorized customer-details endpoint,
+grouped once per journey/customer; any qualifying completed visit makes an
+eligible customer productive. Both dialogs default to All and offer Productive,
+Nonproductive and Ignored filters. All-excluded populations remain inspectable.
+Route Tracking Efficiency now opens its summary modal with unique customers,
+visit counts, status and exclusion reasons using existing authorized visit data.
+Ignored rows remain excluded from all metric numerators and denominators.
+
+Files: DashboardCustomerDetails, DashboardController, DashboardCards, dashboard
+Index/CustomerDetailsDialog, tracking Index, and analytics.js. Updated PHP tests
+for visible ignored rows, grouped efficiency and all-excluded data; added a JS
+test for the tracking popup. Validation: 17 JavaScript tests passed and diff/script
+syntax checks passed. PHP tests and full build/browser checks remain unavailable
+with the present local setup. This supersedes the earlier note that Efficiency
+had no drilldown and Productivity details omitted flagged customers.
+
+## Collection productivity and efficiency: 2026-09-20
+
+Positive non-void collections now qualify as productive, alongside invoice sales
+and sales orders. This supersedes the earlier collection-only exclusion. Existing
+visit linkage, completed-visit requirement, null/zero void flag handling and
+toplpo exclusions are retained. Productivity uses eligible completed visits;
+Efficiency uses unique eligible customers per journey. Totals use the union of
+qualifying sources: collection and sales/order breakdowns can overlap, but neither
+multiple documents nor overlapping sources inflate the combined total.
+
+Dashboard cards show combined rates with Collection and Sales orders + invoices
+rates below. Productivity and a new Efficiency graph show combined and source
+series as grouped bars, combined summary above, source rates below; all rates use
+the same denominator. Route Tracking Efficiency shows the same breakdown.
+Dashboard analysis/summary and comparison table reflect collection productivity.
+Metric popups identify collection versus sales/order qualification, retaining
+ignored rows. Financial, coverage and timing metrics are unchanged.
+
+Regression expectations updated for collection-only visits. Added overlap,
+duplicate document, nonpositive/void collection and excluded customer cases.
+Validation: 18 JavaScript tests passed. PHP tests remain unexecuted because PHP
+and vendor dependencies are absent. Full Vue build/browser checks remain pending
+frontend dependencies. Script syntax and diff whitespace checks passed.
+
+## Operational time window: 2026-09-20
+
+Operational Time now means first non-OTP customer check-in to the checkout of
+the last customer visit (ordered by check-in) without OTP, per journey. This is
+elapsed time including intervening gaps/travel and any OTP visits between those
+boundaries, not summed service time. An unfinished/invalid last checkout or no
+usable non-OTP visits yields unavailable, not an earlier checkout or the current
+clock. Overnight dates are preserved. Dashboard sums available journey windows
+and reports unavailable journey counts.
+
+Shared `app/Services/OperationalTime.php` normalizes Dashboard and Route Tracking
+visits. Tracking uses DashboardMetrics' all-type, journey-bounded OTP association
+for operational boundaries via `operational_otp`; existing GPS-IN OTP fields for
+face time and visit displays retain their prior behavior. Repeated visits to the
+same customer are considered separately. toplpo only affects productivity, not
+operational boundaries.
+
+Dashboard card, performance table and operational popup use the new window;
+popup shows one row per journey with first/last customer and timestamps. Tracking
+card shows the same span and timestamps. Actual/planned CFT, summed completed
+visit time, travel/stationary calculations and the visit timeline are unchanged.
+Time Outside Visits remains duration minus summed completed visits (not the new
+operational span); its popup and CFT graph labels now say customer visit time.
+
+Tests: OperationalTimeTest covers matching screen adapters, OTP boundary
+exclusion, intervening time, midnight, missing checkout and all-OTP/empty data.
+Updated dashboard operational totals and popup expectations. 18 JavaScript tests,
+Vue script syntax checks and diff whitespace checks passed. PHP tests and full
+build/browser checks remain unverified with the missing local runtime/dependencies.
+
+## Customer Face Time excludes OTP: 2026-09-20
+
+Customer Face Time now excludes every visit matched to any OTP type, consistently
+on Dashboard and Route Tracking. Dashboard `cft_minutes`, actual CFT analysis,
+configured CFT comparison/variance and CFT graphs omit OTP durations/targets.
+Tracking CFT/OTP time and planned comparison use the shared journey OTP flag
+(`operational_otp`), falling back to attached OTP logs for legacy test inputs.
+Non-OTP repeat visits to the same customer remain eligible. Operational Time
+continues to use the previously implemented first/last non-OTP boundaries.
+
+Added explicit Customer Face Time cards on both screens. CFT and compliance
+popups retain all visit rows, with OTP visits in red and an explicit excluded
+label. Dashboard exposes `otp_excluded` and `recorded_actual_cft`, while counted
+actual/planned CFT is zero and variance unavailable for excluded visits. Tracking
+popup shows recorded duration alongside counted CFT. Incomplete non-OTP visits
+remain unavailable, not fabricated durations. toplpo does not exclude CFT.
+
+Preserved all-visit duration separately (`recorded_visit_minutes`, tracking
+`face_time`, analysis `visit_time`) for Time Outside Visits and the chronological
+visit timeline. These include recorded OTP visits and retain their existing
+meaning. Dashboard Outside details sum recorded rather than counted CFT.
+
+Validation: 18 JavaScript tests passed; diff and modified Vue script syntax checks
+passed. Added/updated PHP regression cases for all-type OTP exclusion, retained
+popup rows, repeat visits, graph totals and keeping raw timing unchanged. PHP
+tests, full frontend build and browser rendering remain unverified because the
+local runtime/dependencies are missing.
+
+## Route Tracking CFT popup refinement: 2026-09-20
+
+Route Tracking Customer Face Time opens an extra-wide, scrollable popup using
+every recorded visit without customer deduplication or OTP filtering. Added
+numbered visits, separate customer code/name, planned CFT, actual counted CFT and
+variance alongside check-in/out and recorded duration. OTP visits are red with
+an explicit excluded label, zero counted CFT/plan and unavailable variance.
+The heading reports total visits and OTP visits; empty results have a message.
+No calculation or endpoint behavior changed in this refinement.
+Validation: 18 existing JS tests, Vue script syntax and diff checks passed;
+full build and browser rendering remain unverified without local dependencies.
+
+## Percentage breakdown presentation: 2026-09-20
+
+Dashboard productivity/efficiency and Route Tracking efficiency breakdowns now
+show bold 24px percentages above their labels in two softly tinted tiles:
+purple for Collection, blue for Sales orders + invoices. Responsive grids stack
+tiles when narrow. Calculation behavior is unchanged. Diff and Vue script syntax
+checks passed; full build/rendering was not verified in this workspace.
+
+## Card alignment and shorter labels: 2026-09-20
+
+Renamed displayed sales/order breakdown labels to Orders/Invoices in Dashboard
+cards, graphs, comparisons and popups and Route Tracking cards/popups. Dashboard
+customer cards now align title/value/note rows and anchor full-width, equal-column
+percentage tiles to the bottom. Journey section uses two columns of the outer
+twelve-column grid, giving the five customer cards more room. Six time cards use
+six columns on wide screens and balanced three/two columns at smaller widths.
+No calculation changes. Diff and Vue script syntax checks passed; visual/build
+verification remains unavailable without installed frontend dependencies.
+
 ## Verification and continuing work
 
 Existing tests cover dashboard filters/metrics, outside visits, CFT, journey
@@ -168,3 +669,211 @@ After a customization, update this file with its purpose, changed behavior,
 important decisions and checks. Keep credentials and live customer data out.
 If a historical decision cannot be found in code, tests, Git or these notes, say
 it is unknown instead of inventing a rationale.
+
+## Journey timeline display refinement: 2026-09-20
+
+Removed journey numbers from visible route/date labels while preserving unique
+internal row keys for multiple journeys. Renamed the canvas container to avoid
+OneUI's global timeline pseudo-element drawing the unwanted left-hand line.
+Dashboard summary now returns all authorized, filtered journeys with usable
+boundaries. The chart defaults to the ten routes with greatest total duration;
+Expand all routes / Collapse to top 10 controls the displayed selection.
+OTP intervals use the existing all-type by_visit matching. Non-OTP visit segments
+are teal, OTP segments purple and outside-recorded-visit segments red. OTP takes
+precedence for overlapping intervals; all durations still count once. Outside
+visits is labelled idle / travel, since this data cannot isolate GPS idle time.
+Percentages and the values table include all three categories and follow the
+currently displayed routes. No operational/CFT metric formulas were changed.
+Validation: 20 JavaScript tests passed, Vue script syntax and diff checks passed.
+Updated PHP timeline expectation; PHP tests, build and visual verification remain
+unavailable without local PHP/vendor/frontend dependencies.
+
+## Deferred timeline expansion: 2026-09-20
+
+Supersedes the eager all-route timeline response above. Dashboard summary sends
+only the top ten routes' timeline rows plus timeline_route_count. Expand requests
+metrics.json with timeline_only=1 and the filter snapshot used for the displayed
+summary. That response includes only timeline rows, through the same authorized
+metrics query and validation. Existing backend metric calculations still run;
+this optimization reduces initial payload and browser work, not database work.
+The chart caches expanded rows until refresh/filter change, cancels stale requests,
+resets expansion on new data, and shows loading and retryable errors. Collapse
+and reopening reuse loaded rows. PHP regression coverage added for ten-row-route
+selection versus explicit all-route response. Twenty JS tests, modified Vue script
+syntax and diff checks passed. PHP tests, production build and browser checks
+remain unverified because local runtime/dependencies are unavailable.
+
+## All-route timeline popup: 2026-09-20
+
+Expand all routes now opens a wide native dialog, consistent with the dashboard
+popups, while the dashboard retains its top-ten preview. Extracted the shared
+chart, percentage summary and values table into JourneyTimelinePlot.vue so both
+views use identical timing/color logic. The popup opens immediately with a loading
+state, fetches on demand, supports retry, and reuses successful data until filters
+or metrics refresh. Close, Escape and backdrop dismiss the dialog and abort pending
+requests; the chart is unmounted while closed. Expansion is also available when
+there are ten or fewer routes. No endpoint or calculation changes.
+Validation: 20 existing JS tests, both Vue script syntax checks and diff checks
+passed. Production build/browser layout remain unverified without node_modules.
+
+## Temporarily hidden planned/CFT graph: 2026-09-20
+
+DashboardGraphs.vue now gates Planned vs customer visit time behind the local
+showPlannedVisitTime=false flag. Set it to true to restore the graph. Its data
+and calculations remain available; other charts and CFT cards are unaffected.
+Vue script syntax and diff checks passed; browser/build not run locally.
+
+## Dashboard stationary idle card: 2026-09-20
+
+Replaced the displayed Customer Face Time card with Idle Time Outside Customer
+Visits, last in the six-card Time row. It uses DashboardOutsideVisits.stationary:
+GPS-detected stationary intervals minus the union of all recorded customer visit
+intervals, including OTP visits. Travel is excluded; existing stop thresholds,
+GPS gap rules and journey boundaries apply. Other timing cards are unchanged.
+The authorized customer-details endpoint accepts type=idle and resolves live
+journey endpoints just as for outside/duration. Dashboard requests idle separately
+after overview metrics render, with the same filters/cancellation signal and stale
+response guards. It shows its own loading/error state, excludes unavailable
+journeys and labels partial totals. Successful route details are retained for the
+idle popup, avoiding recomputation on click. This does add GPS/server work; no
+live performance measurement was performed.
+Validation: 20 JS tests, modified Vue script syntax and diff checks passed. Added
+PHP integration coverage for stationary-minus-visits and unavailable GPS through
+the popup service. PHP tests/build/browser verification remain unavailable locally.
+
+## Face Time Compliance labels: 2026-09-20
+
+Dashboard compliance card now explicitly labels Actual CFT, Planned CFT (each
+with h:mm units) and Variance (%). Uses existing backend values and formula;
+missing planned time now displays N/A for variance instead of 0%. The two time
+values use equal-width columns. The previously hidden planned-vs-visit graph
+remains hidden. Vue script syntax and diff checks passed; build/browser unverified.
+
+## Face Time Compliance popup columns: 2026-09-20
+
+Clarification: planned CFT and variance percentage were requested in the popup
+grid. CustomerDetailsDialog actual_face now displays Actual CFT (h:mm), Planned
+CFT (h:mm) and signed Variance (%). Percentage uses each row's existing actual and
+planned values; zero/missing plan, incomplete actual time and OTP-excluded visits
+show N/A. OTP rows remain red. OTP-time popup columns are unchanged. No new
+requests or backend calculations. Vue syntax, six direct variance cases and diff
+checks passed; browser/build unverified locally.
+
+## LPO popup labels and highlighting: 2026-09-20
+
+Dashboard productivity/efficiency popup status labels and filter tab display
+LPO Customers instead of Ignored, retaining the internal Ignored status so counts
+and filtering stay unchanged. toplpo-excluded rows have a pale yellow background
+and dark amber text. Route Tracking efficiency popup uses the same label and row
+highlight. OTP/CFT red styling remains separate. No calculation changes.
+Both Vue script syntax checks and diff checks passed; browser/build unverified.
+
+## LPO graph wording: 2026-09-20
+
+Updated productivity/efficiency graph notes and matching card tooltips to say
+LPO Customers instead of Ignored customers. Internal status keys and calculations
+are unchanged. Diff check passed; this is a text-only change.
+
+## Route Tracking slow-load investigation: 2026-09-20
+
+Live URL could not be accessed using the web tool; production timing/root cause
+is unconfirmed. Bare Route Tracking initially loads filters.json; a route/date
+link also runs compare.json. Compare sequentially calls OSRM for planned legs
+and actual GPS chunks. Added a shared routingGet helper with configurable
+OSRM_CONNECT_TIMEOUT (2s) and OSRM_TIMEOUT (5s). A connection failure suppresses
+further OSRM attempts within that controller request, using existing labelled
+straight-line/raw-GPS fallbacks. Healthy responses and all auth checks remain
+unchanged. This bounds individual failed network waits, not total DB/server time
+or the cumulative time of many successful routing calls. Dashboard idle request
+is not invoked directly by Route Tracking.
+Added PHP regression tests for one failed attempt per request, retry in a later
+request, and healthy routing calls. Diff check passed; tests cannot run without
+PHP/vendor. Requested whether delay is before dropdown or after Compare and the
+slow Network request/duration; awaiting that evidence for live diagnosis.
+
+## Route Tracking card redesign and productivity: 2026-09-20
+
+Restyled Route Tracking summary using full-width card values/notes and two-column
+percentage tiles, avoiding narrow flex content. Customer cards get a dedicated
+responsive full-width group, with separate route/distance row. Time cards are now
+exactly Journey Duration, Operational Time, Face Time Compliance, OTP Customer
+Time, Travel Time, Stationary Time. Every summary card has an action; added timing
+and distance details and an OTP-only visit grid. CFT popup also shows variance %.
+Operational Time already uses the shared OperationalTime service with all-type
+OTP boundaries, same as Dashboard; formula unchanged. Added completed-visit
+Productivity alongside unique-customer Efficiency, with Collection and
+Orders/Invoices breakdowns. Both use existing positive/nonvoid transaction rules
+and exclude toplpo=1 before numerator/denominator calculation. Productivity popup
+retains all visits, marks incomplete visits and highlights LPO Customers yellow.
+No additional requests or GPS processing introduced. Missing timing now displays
+Unavailable rather than being formatted as zero in popup details.
+Validation: 20 JS tests passed; Vue script syntax, runtime card order/action
+assertions and diff checks passed. Extended PHP tests for productivity repeat
+visits, source overlap, incomplete visits, empty totals and LPO exclusion. PHP
+suite/build/browser rendering remain unverified without local dependencies.
+
+## Route Tracking popup styling and duration formatting: 2026-09-20
+
+Matched summary, OTP and transaction modal surfaces to Dashboard details:
+wide responsive 1250px dialogs, rounded borders, muted backdrop, consistent
+headers, padded readable grids and pale table headers. OTP-red and LPO-yellow
+row styles remain intact. Summary supports Escape while focused in the popup.
+Added shared presentation helper routetracking/duration.js for visit labels,
+map popup duration and time summaries. Fractional minutes round before hour/minute
+splitting (59.9 becomes 1h 00m); positive durations under a minute display <1 min.
+Missing/invalid values display Unavailable. Map HTML escapes the less-than sign.
+Underlying duration calculations are unchanged; visit variance text is rounded
+to one decimal to prevent floating-point text overflow.
+Validation: all 22 JS tests passed, including new duration boundary/invalid-data
+cases; Vue script syntax and diff checks passed. Build and browser verification
+remain unavailable without local frontend dependencies.
+
+## Route Tracking popup simplification: 2026-09-20
+
+Planned Distance and Actual Distance cards are display-only again: removed their
+actions, chevrons and popup detail definitions. Other card actions remain.
+The shared CFT/OTP visit grid now shows only Variance (%) rather than both duration
+variance and percentage; adjusted explanatory text and empty-row column span.
+Vue script syntax, targeted display assertions and diff check passed.
+
+## Route Tracking time popup tables: 2026-09-20
+
+Operational Time, Journey Duration and Travel Time now use dashboard-style
+horizontal tables with Route and Salesman columns plus the relevant timing
+values. Calculation descriptions appear above the table rather than as tiles.
+Stationary Time retains its existing breakdown/expandable-stop layout, as
+requested. No metric formulas or requests changed. Vue script syntax, targeted
+table checks and diff checks passed; browser/build verification unavailable.
+
+## Travel subtraction correction: 2026-09-20
+
+Journey Duration calculation remains unchanged. New TravelTime service computes
+travel as existing journey seconds minus the union of completed customer visit
+intervals, stationary intervals and GPS gaps/uncovered GPS boundaries, clipped
+to the journey window. Returns disjoint visit (all visits including OTP/LPO),
+idle-outside-visits and unknown deductions for the Travel popup. Overlaps count
+once. Missing timing returns unavailable; no GPS evidence leaves time outside
+visits unknown instead of travel. Residual travel remains an estimate: short
+undetected stops and incomplete visit records limit accuracy. Existing stationary,
+CFT and operational calculations are unchanged. Reuses fetched GPS data; no extra
+queries. Added PHP regression cases for overlap, missing GPS, boundaries and
+unchanged duration; updated time-summary expectation for clipped intervals.
+Vue script syntax and diff checks passed. PHP tests/build/browser verification
+remain unavailable without local runtime/dependencies.
+
+## Compact Route Tracking customer cards: 2026-09-20
+
+Fixed the route-summary-copy > span:last-child rule overriding display:grid on
+the percentage breakdown due to CSS specificity. Restricted that text styling
+to route-summary-meta, restoring side-by-side Collection and Orders/Invoices
+tiles. Reduced customer-card gaps/padding and removed forced 36px note height
+and filler rows; reduced tile padding while keeping prominent percentages.
+Customer card rows size naturally while retaining aligned heights within each
+row. Diff check passed. CSS-only change; browser/build remains unverified.
+
+## Route Tracking idle card only: 2026-09-20
+
+Renamed the Stationary Time card to Idle Time and bound its displayed value to
+stationary_without_customer_seconds (the popup's Idle time without customer
+visits total). Card note explicitly identifies that measure. The stationary
+popup, click action and calculations remain unchanged. Diff check passed.

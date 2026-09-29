@@ -37,6 +37,8 @@ return [
 
     'osrm' => [
         'url' => env('OSRM_URL', 'http://localhost:5001'),
+        'connect_timeout' => env('OSRM_CONNECT_TIMEOUT', 2),
+        'timeout' => env('OSRM_TIMEOUT', 5),
     ],
 
 ];

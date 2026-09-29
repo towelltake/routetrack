@@ -20,6 +20,10 @@ class DashboardMetrics
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
             ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime',
                 DB::raw('COALESCE(v.cft, 0) as expected_minutes')]);
+        $excludedCustomers = DB::table('customermaster')->where('toplpo', 1)
+            ->whereIn('customercode', $visits->pluck('customercode')->unique())
+            ->pluck('customercode')->flip();
+        foreach ($visits as $visit) $visit->productivity_excluded = $excludedCustomers->has($visit->customercode);
         $operations = DB::table('customeroperationscontrol')
             ->whereIn('routekey', $keys)->where('log_id', '>', 0)
             ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
@@ -67,8 +71,15 @@ class DashboardMetrics
         }
 
         $visited = [];
+        $otpCustomers = [];
+        $eligibleVisited = [];
         $completed = 0;
         $productive = 0;
+        $productiveCustomers = [];
+        $salesOrderCustomers = [];
+        $collectionCustomers = [];
+        $salesOrderVisits = 0;
+        $collectionVisits = 0;
         $actualSeconds = 0;
         $configuredSeconds = 0;
         $expectedMinutes = 0;
@@ -77,14 +88,18 @@ class DashboardMetrics
         $otp = $this->otp($journeys, $visits);
         foreach ($visits as $visit) {
             $visited[$visit->routekey.':'.$visit->customercode] = true;
+            if (!empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) {
+                $otpCustomers[$visit->routekey.':'.$visit->customercode] = true;
+            }
+            if (!$visit->productivity_excluded) $eligibleVisited[$visit->routekey.':'.$visit->customercode] = true;
             $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
             $end = $this->timestamp($visit->logenddate, $visit->logendtime);
             if ($start === null || $end === null || $end < $start) {
                 continue;
             }
-            $completed++;
+            if (!$visit->productivity_excluded) $completed++;
             $actualSeconds += $end - $start;
-            if ($visit->expected_minutes > 0) {
+            if ($visit->expected_minutes > 0 && empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) {
                 $configuredVisits++;
                 $configuredSeconds += $end - $start;
                 $expectedMinutes += (int) $visit->expected_minutes;
@@ -92,16 +107,23 @@ class DashboardMetrics
             }
             $operation = $operations->get($visit->routekey.':'.$visit->logkey);
             $transactionKey = $visit->routekey.':'.($operation?->visitkey ?? '');
-            if ($transactions['sales']->has($transactionKey) || $transactions['orders']->has($transactionKey)) {
+            $salesOrder = !$visit->productivity_excluded && ($transactions['sales']->has($transactionKey) || $transactions['orders']->has($transactionKey));
+            $collection = !$visit->productivity_excluded && $transactions['collections']->has($transactionKey);
+            if ($salesOrder) { $salesOrderVisits++; $salesOrderCustomers[$visit->routekey.':'.$visit->customercode] = true; }
+            if ($collection) { $collectionVisits++; $collectionCustomers[$visit->routekey.':'.$visit->customercode] = true; }
+            if ($salesOrder || $collection) {
                 $productive++;
+                $productiveCustomers[$visit->routekey.':'.$visit->customercode] = true;
             }
         }
         $covered = 0;
+        $plannedOtp = 0;
         $pending = 0;
         $missed = 0;
         foreach ($plans as $plan) {
             if (isset($visited[$plan->routekey.':'.$plan->customercode])) {
                 $covered++;
+                if (isset($otpCustomers[$plan->routekey.':'.$plan->customercode])) $plannedOtp++;
             } elseif ((int) $byJourney->get($plan->routekey)->routeclosed === 1) {
                 $missed++;
             } else {
@@ -109,15 +131,30 @@ class DashboardMetrics
             }
         }
 
+        $planKeys = $plans->keyBy(fn ($plan) => $plan->routekey.':'.$plan->customercode);
+        $journeysWithPlans = $plans->pluck('routekey')->flip();
+        $unplannedOtp = $visits->filter(fn ($visit) => $journeysWithPlans->has($visit->routekey)
+            && !$planKeys->has($visit->routekey.':'.$visit->customercode)
+            && isset($otpCustomers[$visit->routekey.':'.$visit->customercode]))
+            ->unique(fn ($visit) => $visit->routekey.':'.$visit->customercode)->count();
         $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
+        $operational = collect($analysis['journeys'])->whereNotNull('operational_minutes');
+        $unplannedWithoutOtp = collect($analysis['journeys'])->sum('unplanned_customers') - $unplannedOtp;
 
         return [
             'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
+            'unplanned_customers_without_otp' => $unplannedWithoutOtp,
+            'unplanned_customers_with_otp' => $unplannedOtp,
+            'all_unique_visited_customers' => count($visited),
+            'unplanned_without_otp_percent' => $visited ? round(100 * $unplannedWithoutOtp / count($visited), 1) : null,
+            'unplanned_with_otp_percent' => $visited ? round(100 * $unplannedOtp / count($visited), 1) : null,
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
             'outside_visit_minutes' => $timed->isEmpty() ? null : round($timed->sum('remaining_time'), 1),
-            'operational_minutes' => $actualSeconds / 60,
+            'operational_minutes' => $operational->isEmpty() ? null : $operational->sum('operational_minutes'),
+            'operational_available_journeys' => $operational->count(),
+            'operational_missing_journeys' => $journeys->count() - $operational->count(),
             'otp_customer_minutes' => $otp['customer_minutes'],
             'actual_face_minutes' => $actualFaceMinutes,
             'planned_face_minutes' => $plannedFaceMinutes,
@@ -131,19 +168,41 @@ class DashboardMetrics
             'routes_not_started' => null,
             'planned_customers' => $plans->count(),
             'planned_visited' => $covered,
+            'planned_visited_without_otp' => $covered - $plannedOtp,
+            'planned_visited_with_otp' => $plannedOtp,
+            'planned_without_otp_percent' => $plans->isEmpty() ? null : round(100 * ($covered - $plannedOtp) / $plans->count(), 1),
+            'planned_with_otp_percent' => $plans->isEmpty() ? null : round(100 * $plannedOtp / $plans->count(), 1),
             'coverage_percent' => $plans->isEmpty() ? null : round(100 * $covered / $plans->count(), 1),
             'pending_customers' => $pending,
             'missed_customers' => $missed,
             'journeys_without_plan' => $journeys->count() - $plans->pluck('routekey')->unique()->count(),
             'completed_visits' => $completed,
+            'total_visits' => $visits->count(),
             'productive_visits' => $productive,
+            'sales_order_productive_visits' => $salesOrderVisits,
+            'collection_productive_visits' => $collectionVisits,
+            'sales_order_productivity_percent' => $completed ? round(100 * $salesOrderVisits / $completed, 1) : null,
+            'collection_productivity_percent' => $completed ? round(100 * $collectionVisits / $completed, 1) : null,
+            'sales_order_productive_customers' => count($salesOrderCustomers),
+            'collection_productive_customers' => count($collectionCustomers),
+            'sales_order_efficiency_percent' => $eligibleVisited ? round(100 * count($salesOrderCustomers) / count($eligibleVisited), 1) : null,
+            'collection_efficiency_percent' => $eligibleVisited ? round(100 * count($collectionCustomers) / count($eligibleVisited), 1) : null,
+            'unique_visited_customers' => count($eligibleVisited),
+            'unique_productive_customers' => count($productiveCustomers),
+            'efficiency_percent' => $eligibleVisited ? round(100 * count($productiveCustomers) / count($eligibleVisited), 1) : null,
             'nonproductive_visits' => $completed - $productive,
             'productivity_percent' => $completed ? round(100 * $productive / $completed, 1) : null,
-            'cft_minutes' => round($actualSeconds / 60, 1),
+            'cft_minutes' => round($actualFaceMinutes, 1),
+            'recorded_visit_minutes' => $actualSeconds / 60,
             'cft_variance_minutes' => $configuredVisits ? round($configuredSeconds / 60 - $expectedMinutes, 1) : null,
             'cft_configured_visits' => $configuredVisits,
             'amounts' => $amounts,
             'otp' => ['events' => $otp['events'], 'visits' => $otp['visits']],
+            'otp_comments' => collect($otp['details'])
+                ->countBy(fn ($event) => trim((string) ($event['comments'] ?? '')) ?: 'Unspecified')
+                ->map(fn ($count, $comment) => ['comment' => (string) $comment, 'count' => $count])
+                ->sort(fn ($a, $b) => ($b['count'] <=> $a['count']) ?: strcasecmp($a['comment'], $b['comment']))
+                ->values()->all(),
             'analysis' => $analysis,
         ];
     }

@@ -272,6 +272,7 @@ CREATE TABLE `customermaster` (
   `ccid` varchar(50) DEFAULT NULL,
   `channel` varchar(50) DEFAULT NULL,
   `customerfacetime` int DEFAULT '0',
+  `toplpo` tinyint unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`customercode`),
   UNIQUE KEY `u_alternatecode` (`alternatecode`),
   KEY `FK_CustomerMaster_PromotionKey` (`promotionkey`),
@@ -279,7 +280,7 @@ CREATE TABLE `customermaster` (
   KEY `channel` (`channel`),
   CONSTRAINT `FK_CustomerMaster_PromokeyHeader` FOREIGN KEY (`promotionkey`) REFERENCES `promokeyheader` (`promotionkey`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_CustomerMaster_RouteMaster` FOREIGN KEY (`routecode`) REFERENCES `routemaster` (`routecode`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=320732114 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=320732175 DEFAULT CHARSET=utf8;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

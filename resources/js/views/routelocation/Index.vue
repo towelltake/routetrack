@@ -87,18 +87,47 @@ const toDate = ref(restored?.to ?? DEFAULT_DATE);
 const dateError = computed(() => dateRangeError(fromDate.value, toDate.value));
 const loading = ref(false);
 const metrics = ref(null);
+const timelineFilters = ref({});
+const idle = ref({ minutes: null, loading: false, missing: 0, error: '' });
+const idleDetails = ref(null);
+async function loadIdle(request, signal, params) {
+    idle.value = { minutes: null, loading: true, missing: 0, error: '' };
+    try {
+        const { data } = await axios.get('/dashboard/customer-details.json', { params: { ...params, type: 'idle' }, signal, timeout: 120000 });
+        if (request !== locationRequest || signal.aborted) return;
+        idleDetails.value = data;
+        const rows = data.groups.flatMap(group => group.rows);
+        const measured = rows.filter(row => row.stationary != null);
+        idle.value = { minutes: measured.length || !rows.length ? measured.reduce((sum, row) => sum + Number(row.stationary), 0) : null,
+            missing: rows.length - measured.length, loading: false, error: '' };
+    } catch (e) {
+        if (request === locationRequest && !signal.aborted) idle.value = { minutes: null, loading: false, missing: 0, error: 'Idle time unavailable. Refresh to retry.' };
+    }
+}
 const metricsLoading = ref(true);
 const metricsError = ref(null);
 const analyticsView = ref(null);
 const routeStatusDialog = ref(null);
 const customerDetailsDialog = ref(null);
 function inspectCard(title) {
-    const kind = { 'Planned coverage': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productive visits': 'productive', 'Sales': 'sales', 'Order value': 'orders', 'Collections': 'collections', 'Returns': 'returns', 'Total Duration': 'duration', 'Operational Time': 'operational', 'OTP Customer Time': 'otp_time', 'Face Time Compliance': 'actual_face', 'Time Outside Visits': 'outside' }[title];
+    if (title === 'Idle Time Outside Customer Visits') {
+        customerDetailsDialog.value.open('idle', timelineFilters.value, idleDetails.value);
+        return;
+    }
+    if (title === 'Customer Face Time') {
+        customerDetailsDialog.value.open('cft', { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+        return;
+    }
+    if (title === 'Efficiency') {
+        customerDetailsDialog.value.open('efficiency', { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+        return;
+    }
+    const kind = { 'JP compliance': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productivity': 'productive', 'Sales': 'sales', 'Order value': 'orders', 'Collections': 'collections', 'Returns': 'returns', 'Total Duration': 'duration', 'Operational Time': 'operational', 'OTP Customer Time': 'otp_time', 'Face Time Compliance': 'actual_face', 'Time Outside Visits': 'outside' }[title];
     if (kind) {
         customerDetailsDialog.value.open(kind, { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
         return;
     }
-    if (title === "Routes Started / Total") routeStatusDialog.value.open({ from_date: fromDate.value, to_date: toDate.value, ...selected.value });
+    if (title === "Route Start Compliance") routeStatusDialog.value.open({ from_date: fromDate.value, to_date: toDate.value, ...selected.value });
     else analyticsView.value?.openOverview(title);
 }
 const error = ref(null);
@@ -210,6 +239,8 @@ async function showAllLocations() {
     dashboardRequestController = new AbortController();
     const signal = dashboardRequestController.signal;
     metrics.value = null;
+    idleDetails.value = null;
+    idle.value = { minutes: null, loading: true, missing: 0, error: '' };
     metricsError.value = null;
     locations.value = [];
     markersLayer?.clearLayers();
@@ -283,14 +314,15 @@ async function loadLocations(request) {
 }
 
 async function loadMetrics(request, signal) {
+    const params = { from_date: fromDate.value, to_date: toDate.value, ...selected.value, summary: 1 };
     metricsLoading.value = true;
     try {
         const { data } = await axios.get("/dashboard/metrics.json", {
             signal,
             timeout: 60000,
-            params: { from_date: fromDate.value, to_date: toDate.value, ...selected.value, summary: 1 },
+            params,
         });
-        if (request === locationRequest) metrics.value = data;
+        if (request === locationRequest) { metrics.value = data; timelineFilters.value = params; loadIdle(request, signal, params); }
     } catch {
         if (request === locationRequest) metricsError.value = "Unable to load the overview figures.";
     } finally {
@@ -400,7 +432,7 @@ function resetFilters() {
             </div>
         </section>
 
-        <DashboardCards :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
+        <DashboardCards :idle="idle" :metrics="metrics" :loading="metricsLoading" :error="metricsError" @inspect="inspectCard" />
         <RouteStatusDialog ref="routeStatusDialog" />
         <CustomerDetailsDialog ref="customerDetailsDialog" />
         <div class="dashboard-actions">
@@ -408,7 +440,7 @@ function resetFilters() {
             <article class="attention"><i class="fa fa-flag"></i><h2>Journeys needing attention</h2><strong>{{ summary.review ?? '\u2014' }} <small>journeys to review</small></strong><p>{{ summary.repeat ?? '\u2014' }} repeat visits &middot; Execution and data issues</p><button :disabled="!metrics || !!dateError" @click="openAction('attention')">Review journeys <span aria-hidden="true">&rarr;</span></button></article>
             <article class="live"><i class="fa fa-map-location-dot"></i><h2>Track your live routes</h2><strong>{{ summary.tracking_routes ?? '\u2014' }} <small>routes with tracking</small></strong><p>Last known locations for the selected routes and period</p><button :disabled="!filtersReady || !!dateError" @click="openAction('live')">Open live map <span aria-hidden="true">&rarr;</span></button></article>
         </div>
-        <DashboardGraphs :metrics="metrics" :loading="metricsLoading" />
+        <DashboardGraphs :metrics="metrics" :loading="metricsLoading" :timeline-filters="timelineFilters" />
         <dialog ref="actionDialog" class="dashboard-action-dialog" @cancel.prevent="closeAction">
             <header><h2>{{ activeView === 'live' ? 'Track your live routes' : activeView === 'attention' ? 'Journeys needing attention' : 'Performance comparison' }}</h2><button @click="closeAction" aria-label="Close">&times;</button></header>
             <p v-if="detailError && activeView !== 'live'" role="alert">{{ detailError }}</p>

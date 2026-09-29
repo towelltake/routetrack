@@ -20,8 +20,9 @@ test('filter catalog derives divisions clusters and entities only from permitted
 test('dashboard action cards receive counts without eagerly transferring table details', function () {
     $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
         $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => [
-            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 2, 'duration' => 60],
-            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null],
+            ['customer_codes' => ['1', '2'], 'issues' => [['label' => 'Missed customers']], 'repeat' => 2, 'visits' => 4, 'date' => '2026-09-07', 'routecode' => 1, 'routekey' => 10, 'closed' => true, 'route' => 'Route 1', 'covered' => 2, 'duration' => 60,
+                'timeline' => ['start' => '2026-09-07 08:00:00', 'end' => '2026-09-07 09:00:00', 'visits' => [['2026-09-07 08:15:00', '2026-09-07 08:30:00']]]],
+            ['customer_codes' => ['2', '3'], 'issues' => [], 'repeat' => 0, 'visits' => 2, 'date' => '2026-09-07', 'routecode' => 1, 'route' => 'Route 1', 'covered' => 1, 'duration' => null],
         ]]]);
     });
     $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
@@ -29,6 +30,12 @@ test('dashboard action cards receive counts without eagerly transferring table d
     expect($summary)->not->toHaveKey('analysis')
         ->and($summary['action_summary'])->toMatchArray(['customers' => 3, 'review' => 1, 'repeat' => 2])
         ->and($summary['charts']['daily'])->toHaveCount(1)
+        ->and($summary['charts']['daily'][0]['visits'])->toBe(6)
+        ->and($summary['charts']['timeline'])->toHaveCount(1)
+        ->and($summary['charts']['timeline'][0])->toMatchArray([
+            'routekey' => 10, 'start' => '2026-09-07 08:00:00', 'end' => '2026-09-07 09:00:00',
+            'visits' => [['2026-09-07 08:15:00', '2026-09-07 08:30:00']],
+        ])
         ->and($summary['charts']['routes'][0])->toMatchArray(['covered' => 3, 'duration' => 60, 'duration_count' => 1])
         ->and($summary['charts']['daily'][0])->not->toHaveKey('customer_codes');
     $details = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['details' => 1]))->getData(true);
@@ -97,8 +104,9 @@ test('route started card counts filtered route days inclusively without duplicat
         $mock->shouldReceive('summarize')->andReturn([]);
     });
     DB::table('startendday')->insert([
-        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07'],
-        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08'],
+        ['routecode' => 1, 'routekey' => 100, 'routestartdate' => '2026-09-07', 'routeenddate' => '2026-09-07', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 101, 'routestartdate' => '2026-09-08', 'routeenddate' => '2026-09-08', 'routeclosed' => 1],
+        ['routecode' => 1, 'routekey' => 102, 'routestartdate' => '2026-09-08', 'routeenddate' => '2026-09-08', 'routeclosed' => 1],
     ]);
     $controller = app(DashboardController::class);
     $result = $controller->metrics(Request::create('/', 'GET', [
@@ -106,12 +114,27 @@ test('route started card counts filtered route days inclusively without duplicat
     ]))->getData(true);
     expect($result)->toMatchArray([
         'route_count' => 3, 'period_days' => 2, 'total_routes' => 6,
-        'routes_started' => 4, 'routes_not_started' => 2,
+        'routes_started' => 4, 'routes_not_started' => 2, 'routes_closed' => 1,
     ]);
     $single = $controller->metrics(Request::create('/', 'GET', [
         'date' => '2026-09-07', 'routes' => [7],
     ]))->getData(true);
-    expect($single)->toMatchArray(['route_count' => 1, 'period_days' => 1, 'total_routes' => 1, 'routes_started' => 1]);
+    expect($single)->toMatchArray(['route_count' => 1, 'period_days' => 1, 'total_routes' => 1, 'routes_started' => 1, 'routes_closed' => 0]);
+});
+
+test('closed routes require every journey to close on its start date in cards and popup', function () {
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->andReturn([]);
+    });
+    $controller = app(DashboardController::class);
+    foreach (['2026-09-07' => 1, '2026-09-08' => 0, '' => 0] as $endDate => $expected) {
+        DB::table('startendday')->where('routekey', 1)->update(['routeclosed' => 1, 'routeenddate' => $endDate ?: null]);
+        $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-08', 'routes' => [1]];
+        $metrics = $controller->metrics(Request::create('/', 'GET', $filters))->getData(true);
+        expect($metrics)->toMatchArray(['routes_started' => 1, 'routes_closed' => $expected]);
+        $status = $controller->routeStatus(Request::create('/', 'GET', $filters))->getData(true);
+        expect($status['journeys'][0])->toMatchArray(['closed' => true, 'closed_same_date' => (bool) $expected]);
+    }
 });
 
 beforeEach(function () {
@@ -277,4 +300,25 @@ test('tracking card counts distinct routes with usable PostgreSQL locations just
         ->and($summary['tracking_routes'])->toBe(count($map));
     $request = Request::create('/', 'GET', ['date' => '2026-09-07', 'routes' => [1, 2]]);
     expect($controller->metrics($request)->getData(true)['action_summary']['tracking_routes'])->toBe(0);
+});
+
+test('timeline expansion is deferred until requested and returns only timeline data', function () {
+    $rows = collect(range(1, 12))->map(fn ($id) => [
+        'routekey' => $id, 'routecode' => $id, 'route' => 'Route '.$id,
+        'closed' => true, 'date' => '2026-09-07', 'duration' => $id * 60,
+        'customer_codes' => [], 'issues' => [], 'repeat' => 0,
+        'timeline' => ['start' => '2026-09-07 08:00:00',
+            'end' => sprintf('2026-09-07 %02d:00:00', 8 + $id), 'visits' => [], 'otp_visits' => []],
+    ])->all();
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) use ($rows) {
+        $mock->shouldReceive('summarize')->twice()->andReturn(['analysis' => ['journeys' => $rows]]);
+    });
+    $filters = ['from_date' => '2026-09-07', 'to_date' => '2026-09-07'];
+    $summary = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['summary' => 1]))->getData(true);
+    expect($summary['charts']['timeline'])->toHaveCount(10)
+        ->and($summary['charts']['timeline_route_count'])->toBe(12)
+        ->and(array_column($summary['charts']['timeline'], 'routecode'))->not->toContain(1, 2);
+    $expanded = app(DashboardController::class)->metrics(Request::create('/', 'GET', $filters + ['timeline_only' => 1]))->getData(true);
+    expect(array_keys($expanded))->toBe(['timeline'])
+        ->and($expanded['timeline'])->toHaveCount(12);
 });

@@ -51,3 +51,16 @@ test('reporting gaps and points belonging to the next journey do not inflate sta
     ]);
     expect(app(DashboardOutsideVisits::class)->build(outsideJourney())[0]['stationary'])->toEqual(10);
 });
+
+test('idle details retain stationary minutes and unavailable journeys in the customer popup', function () {
+    $journeys = outsideJourney()->each(function ($row) { $row->routename = 'Test route'; });
+    for ($minute = 0; $minute <= 10; $minute++) DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
+        'id' => $minute, 'routecode' => 10, 'date' => '2026-09-09', 'time' => sprintf('08:%02d:00', $minute), 'latitude' => 23.5, 'longitude' => 58.5,
+    ]);
+    DB::table('customervisitlog')->insert(['routekey' => 1, 'logstartdate' => '2026-09-09', 'logstarttime' => '08:02:00', 'logenddate' => '2026-09-09', 'logendtime' => '08:07:00']);
+    $result = app(\App\Services\DashboardCustomerDetails::class)->build($journeys, 'idle');
+    expect($result['groups'][0]['rows'][0]['stationary'])->toEqual(5);
+    DB::connection('tracking_pgsql')->table('trac_routetrack')->delete();
+    $result = app(\App\Services\DashboardCustomerDetails::class)->build($journeys, 'idle');
+    expect($result['groups'][0]['rows'][0]['stationary'])->toBeNull();
+});

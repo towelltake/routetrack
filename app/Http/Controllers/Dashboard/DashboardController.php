@@ -167,7 +167,7 @@ class DashboardController extends Controller
     public function customerDetails(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,sales,orders,collections,returns,duration,cft,outside,operational,otp_time,actual_face']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,efficiency,sales,orders,collections,returns,duration,cft,outside,idle,operational,otp_time,actual_face']])['type'];
         $routes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))
@@ -180,7 +180,7 @@ class DashboardController extends Controller
             ->whereDate('journey.routestartdate', '<=', $filters['to_date'] ?? $filters['date'])
             ->orderBy('journey.routestartdate')->orderBy('journey.routecode')->orderBy('journey.routekey')
             ->get(['journey.*', 'route.routename', 'salesman.salesmanname1 as salesman']);
-        if (in_array($type, ['duration', 'outside'])) {
+        if (in_array($type, ['duration', 'outside', 'idle'])) {
             $points = $this->journeyLocations($journeys->filter(fn ($journey) => (int) $journey->routeclosed !== 1));
             foreach ($journeys as $journey) $journey->last_location_time = $points->get($journey->routekey)?->effective_timestamp;
         }
@@ -211,6 +211,7 @@ class DashboardController extends Controller
                 'start' => $this->routeDateTime($journey->routestartdate, $journey->routestarttime),
                 'end' => $this->routeDateTime($journey->routeenddate, $journey->routeendtime),
                 'closed' => (int) $journey->routeclosed === 1,
+                'closed_same_date' => $this->closedOnStartDate($journey),
             ]),
         ]);
     }
@@ -253,12 +254,24 @@ class DashboardController extends Controller
         $started = $journeys->unique(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))->count();
         $metrics = app(\App\Services\DashboardMetrics::class)->summarize($journeys);
         $metrics['routes_started'] = $started;
+        $metrics['routes_closed'] = $journeys
+            ->groupBy(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))
+            ->filter(fn ($rows) => $rows->every(fn ($journey) => $this->closedOnStartDate($journey)))->count();
         $metrics['route_count'] = $routeCount;
         $metrics['period_days'] = $days;
         $metrics['total_routes'] = $routeCount * $days;
         $metrics['routes_not_started'] = max(0, $metrics['total_routes'] - $started);
 
         $analysis = collect($metrics['analysis']['journeys'] ?? []);
+        $timeline = $analysis->filter(fn ($row) => $row['duration'] !== null && !empty($row['timeline']['start']) && !empty($row['timeline']['end']));
+        $timelineRoutes = $timeline->groupBy('routecode')->sortByDesc(fn ($rows) => $rows->sum('duration'))->keys();
+        $timelineRows = fn ($rows) => $rows->map(fn ($row) => [
+            'routekey' => $row['routekey'], 'routecode' => $row['routecode'],
+            'route' => $row['route'], 'closed' => $row['closed'], ...$row['timeline'],
+        ])->values();
+        if ($request->boolean('timeline_only')) {
+            return response()->json(['timeline' => $timelineRows($timeline)]);
+        }
         $metrics['action_summary'] = [
             'customers' => $analysis->flatMap(fn ($row) => $row['customer_codes'])->unique()->count(),
             'review' => $analysis->filter(fn ($row) => count($row['issues']) > 0)->count(),
@@ -268,15 +281,25 @@ class DashboardController extends Controller
         if ($request->boolean('summary')) {
             $chartGroups = fn ($field) => $analysis->groupBy($field)->map(function ($rows, $key) use ($field) {
                 $result = ['label' => $field === 'date' ? $key : $key.' - '.$rows->first()['route']];
-                foreach (['planned', 'covered', 'pending', 'missed', 'productive', 'nonproductive', 'unplanned', 'out_of_sequence', 'repeat', 'expected_cft', 'configured_actual_cft', 'configured_visits', 'duration', 'visit_time', 'remaining_time'] as $metric) $result[$metric] = $rows->sum($metric);
+                foreach (['sales_order_productive', 'collection_productive', 'eligible_customers', 'productive_customers', 'sales_order_customers', 'collection_customers', 'planned', 'covered', 'pending', 'missed', 'visits', 'productive', 'nonproductive', 'unplanned', 'out_of_sequence', 'repeat', 'expected_cft', 'configured_actual_cft', 'configured_visits', 'duration', 'visit_time', 'remaining_time'] as $metric) $result[$metric] = $rows->sum($metric);
                 $result['duration_count'] = $rows->whereNotNull('duration')->count();
                 return $result;
             })->values();
             $metrics['charts'] = ['daily' => $chartGroups('date')->sortBy('label')->values(), 'routes' => $chartGroups('routecode')];
+            $metrics['charts']['timeline_route_count'] = $timelineRoutes->count();
+            $metrics['charts']['timeline'] = $timelineRows($timeline->whereIn('routecode', $timelineRoutes->take(10)));
             unset($metrics['analysis']);
         }
 
         return response()->json($metrics);
+    }
+
+    private function closedOnStartDate(object $journey): bool
+    {
+        $startDate = substr((string) $journey->routestartdate, 0, 10);
+        $endDate = substr((string) $journey->routeenddate, 0, 10);
+
+        return (int) $journey->routeclosed === 1 && $startDate !== '' && $startDate === $endDate;
     }
 
     private function mapJourneys(array $filters): \Illuminate\Support\Collection

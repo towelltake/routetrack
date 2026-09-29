@@ -22,7 +22,17 @@ const rows = computed(() => {
     return (day.value ? [day.value] : dates.value).flatMap(date => data.value.routes.map((route) => ({ ...route, date, journeys: byRoute.get(`${date}:${route.routecode}`) ?? [] })));
 });
 const started = computed(() => rows.value.filter((route) => route.journeys.length));
-const filteredRows = computed(() => rows.value.filter((route) => !status.value || (status.value === "started" ? route.journeys.length > 0 : route.journeys.length === 0)));
+const isClosed = (route) => route.journeys.length > 0 && route.journeys.every((journey) => journey.closed_same_date);
+const closed = computed(() => rows.value.filter(isClosed));
+const filteredRows = computed(() => rows.value.filter((route) => {
+    switch (status.value) {
+        case 'closed': return isClosed(route);
+        case 'not-closed': return route.journeys.length > 0 && !isClosed(route);
+        case 'started': return route.journeys.length > 0;
+        case 'not-started': return route.journeys.length === 0;
+        default: return true;
+    }
+}));
 async function open(filters) {
     controller?.abort();
     const request = new AbortController();
@@ -59,24 +69,25 @@ defineExpose({ open, close });
 
 <template>
     <dialog ref="dialog" class="route-status-dialog" aria-labelledby="route-status-title" @cancel="close" @click="($event.target === dialog) && close()">
-        <header><div><h2 id="route-status-title">Routes Started / Total</h2><p>Active routes grouped by route-start date</p></div><button type="button" aria-label="Close" @click="close">×</button></header>
+        <header><div><h2 id="route-status-title">Route Start Compliance</h2><p>Active routes grouped by route-start date</p></div><button type="button" aria-label="Close" @click="close">×</button></header>
         <div class="route-status-body">
             <div class="d-flex flex-wrap gap-3 align-items-center">
                 <div><label for="route-status-date">Date</label>
                     <select id="route-status-date" v-model="day" @change="page = 1"><option value="">All</option><option v-for="date in dates" :key="date" :value="date">{{ date }}</option></select></div>
                 <div><label for="route-status-filter">Status</label>
-                    <select id="route-status-filter" v-model="status" @change="page = 1"><option value="">All</option><option value="started">Started</option><option value="not-started">Not Started</option></select></div>
+                    <select id="route-status-filter" v-model="status" @change="page = 1"><option value="">All</option><option value="started">Started</option><option value="closed">Closed</option><option value="not-closed">Not Closed</option><option value="not-started">Not Started</option></select></div>
             </div>
             <p v-if="loading" role="status">Loading route status…</p>
             <p v-else-if="error" role="alert">{{ error }}</p>
             <template v-else>
-                <h3>{{ day || 'All dates in selected period' }} · {{ started.length }} started / {{ rows.length }} routes</h3>
+                <p>Closed means every journey closed on its start date. Not Closed includes routes closed on another date or with a missing end date.</p>
+                <h3>{{ day || 'All dates in selected period' }} · {{ started.length }} started / {{ rows.length }} routes · {{ closed.length }} closed</h3>
                 <section>
                     <div class="route-status-table"><table><thead><tr><th>Date</th><th>Route code</th><th>Route name</th><th>Salesman name</th><th>Status</th><th>Start time</th><th>Route end time</th></tr></thead>
                         <tbody><template v-for="route in filteredRows.slice((page - 1) * 50, page * 50)" :key="`${route.date}:${route.routecode}`">
                             <tr v-for="journey in route.journeys.length ? route.journeys : [null]" :key="journey?.routekey ?? 'not-started'">
                                 <td>{{ route.date }}</td><td>{{ route.routecode }}</td><td>{{ route.routename }}</td><td>{{ (journey ? journey.salesman : route.salesman) || 'Not available' }}</td>
-                                <td>{{ journey ? 'Started' : 'Not Started' }}</td>
+                                <td>{{ journey ? journey.closed_same_date ? 'Closed' : journey.closed ? 'Not closed on start date' : 'Not Closed' : 'Not Started' }}</td>
                                 <td>{{ journey ? journey.start || 'Time unavailable' : '—' }}</td><td>{{ journey ? journey.end || (journey.closed ? 'Time unavailable' : 'Open') : '—' }}</td>
                             </tr>
                         </template><tr v-if="!filteredRows.length"><td colspan="7">No routes match the selected filters.</td></tr></tbody>

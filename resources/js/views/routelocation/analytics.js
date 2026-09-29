@@ -24,13 +24,13 @@ export function groupJourneys(rows, dimension = "route") {
         });
         const group = groups.get(id);
         group.rows.push(row);
-        for (const key of ["planned", "covered", "pending", "missed", "visits", "completed", "productive", "nonproductive", "unplanned", "out_of_sequence", "repeat", "actual_cft", "expected_cft", "configured_actual_cft", "configured_visits", "missing_cft", "incomplete_visits", "otp"]) {
+        for (const key of ["sales_order_productive", "collection_productive", "eligible_customers", "productive_customers", "sales_order_customers", "collection_customers", "planned", "covered", "pending", "missed", "visits", "completed", "productive", "nonproductive", "unplanned", "out_of_sequence", "repeat", "actual_cft", "expected_cft", "configured_actual_cft", "configured_visits", "missing_cft", "incomplete_visits", "otp"]) {
             group[key] = (group[key] ?? 0) + (Number(row[key]) || 0);
         }
         for (const code of row.customer_codes) group.customers.add(code);
         group.closed += row.closed ? 1 : 0;
         group.issues += row.issues.length > 0 ? 1 : 0;
-        for (const key of ["duration", "visit_time", "remaining_time", "distance"]) {
+        for (const key of ["duration", "visit_time", "remaining_time", "distance", "operational_minutes"]) {
             if (row[key] != null) {
                 group[key] = (group[key] ?? 0) + Number(row[key]);
                 if (key === "duration" || key === "distance") group[`${key}_count`]++;
@@ -64,3 +64,46 @@ export function chartOptions({ horizontal = false, stacked = false, onClick } = 
 }
 
 export const dataset = (label, data, color) => ({ label, data, backgroundColor: color, borderRadius: 4, maxBarThickness: 28 });
+
+export function efficiencyCustomers(visits) {
+    const customers = new Map();
+    for (const visit of visits) {
+        const key = String(visit.customercode);
+        if (!customers.has(key)) customers.set(key, { ...visit, visit_count: 0, productive: false, sales_order_productive: false, collection_productive: false, ignored: false });
+        const customer = customers.get(key);
+        customer.visit_count++;
+        customer.ignored ||= Number(visit.toplpo) === 1;
+        customer.sales_order_productive ||= visit.visit_duration_minutes != null && ['sales', 'orders'].some(type =>
+            (visit.transactions?.[type] ?? []).some(document => !document.voided && Number(document.amount) > 0));
+        customer.collection_productive ||= visit.visit_duration_minutes != null &&
+            (visit.transactions?.collections ?? []).some(document => !document.voided && Number(document.amount) > 0);
+        customer.productive = customer.sales_order_productive || customer.collection_productive;
+    }
+    return [...customers.values()].map(customer => ({ ...customer,
+        sales_order_productive: !customer.ignored && customer.sales_order_productive,
+        collection_productive: !customer.ignored && customer.collection_productive,
+        status: customer.ignored ? 'Ignored' : customer.productive ? 'Productive' : 'Nonproductive' }));
+}
+
+export function percentageDataset(label, values, color, denominators) {
+    const percentages = values.map((value, index) => value == null || denominators[index] == null ? null : rate(value, denominators[index]));
+    const valid = values.map((value, index) => ({ value, total: denominators[index] }))
+        .filter(({ value, total }) => value != null && total > 0);
+    return {
+        ...dataset(label, values, color), percentages,
+        percentage: rate(valid.reduce((sum, row) => sum + Number(row.value), 0), valid.reduce((sum, row) => sum + Number(row.total), 0)),
+    };
+}
+
+export function percentageSeries(rows, fields, denominator) {
+    return {
+        labels: rows.map(row => row.label),
+        datasets: fields.map(([label, key, color]) => percentageDataset(label, rows.map(row => row[key]), color, rows.map(denominator))),
+    };
+}
+
+export function chartValueLabel(set, index) {
+    const value = set.data[index] == null ? 'Unavailable' : number(set.data[index], 1);
+    const percentage = set.percentages?.[index];
+    return `${value} (${percentage == null ? 'percentage unavailable' : `${number(percentage, 1)}%`})`;
+}

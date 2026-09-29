@@ -4,13 +4,28 @@ use App\Http\Controllers\RouteTracking\RouteTrackingController;
 
 uses(Tests\TestCase::class);
 
+test('CFT uses all journey OTP types even when the GPS IN list is empty', function () {
+    $visits = collect([
+        ['customercode' => 1, 'visit_duration_minutes' => 20, 'default_face_time_minutes' => 30, 'operational_otp' => true, 'otp_logs' => []],
+        ['customercode' => 1, 'visit_duration_minutes' => 10, 'default_face_time_minutes' => 15, 'operational_otp' => false, 'otp_logs' => []],
+        ['customercode' => 2, 'visit_duration_minutes' => null, 'default_face_time_minutes' => 50, 'operational_otp' => true, 'otp_logs' => []],
+    ]);
+    $result = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(
+        app(RouteTrackingController::class), ['duration' => 3600, 'stationary_seconds' => 0, 'stationary_periods' => []], $visits,
+    );
+    expect($result['actual_cft'])->toEqual(600)
+        ->and($result['planned_cft'])->toEqual(900)
+        ->and($result['otp_customer_time'])->toEqual(1200)
+        ->and($result['face_time'])->toEqual(1800);
+});
+
 test('route time excludes OTP visits once and splits partially overlapping stationary periods', function () {
     $visit = fn ($key, $start, $end, $minutes, $otp = []) => [
         'logkey' => $key, 'visit_start_date' => '2026-09-10', 'visit_start_time' => $start,
         'visit_end_date' => '2026-09-10', 'visit_end_time' => $end,
         'visit_duration_minutes' => $minutes, 'otp_logs' => $otp,
     ];
-    $actual = ['duration' => 7200, 'stationary_seconds' => 4200, 'stationary_periods' => [
+    $actual = ['journey_start_timestamp' => strtotime('2026-09-10 08:55:00'), 'travel_gps_first' => strtotime('2026-09-10 08:55:00'), 'travel_gps_last' => strtotime('2026-09-10 11:10:00'), 'duration' => 7200, 'stationary_seconds' => 4200, 'stationary_periods' => [
         ['start_time' => '2026-09-10 09:00:00', 'end_time' => '2026-09-10 10:00:00', 'duration_seconds' => 3600],
         ['start_time' => '2026-09-10 11:00:00', 'end_time' => '2026-09-10 11:10:00', 'duration_seconds' => 600],
     ]];
@@ -26,7 +41,7 @@ test('route time excludes OTP visits once and splits partially overlapping stati
     expect($summary['face_time'])->toBe(3300)
         ->and($summary['otp_customer_time'])->toBe(1500)
         ->and($summary['actual_cft'])->toBe(1800)
-        ->and($summary['travel_time'])->toBe(3000)
+        ->and($summary['travel_time'])->toBe(3300)
         ->and($summary['stationary_with_customer_seconds'])->toBe(2400)
         ->and($summary['stationary_without_customer_seconds'])->toBe(1800)
         ->and($summary['stationary_periods'][0]['customer_visits'])->toHaveCount(3)

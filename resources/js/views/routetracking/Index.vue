@@ -162,7 +162,7 @@ const routeSummaryGroups = computed(() => {
             { label: "Journey Duration", action: "duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
             { label: "Operational Time", action: "operational", icon: "fa-user-clock", tone: "green", value: actual.operational_time == null ? "N/A" : stationaryDuration(actual.operational_time), meta: actual.operational_time == null ? "No complete non-OTP visit window" : `${actual.operational_start} to ${actual.operational_end}`, definition: "First non-OTP customer check-in to the last non-OTP customer checkout, including time between visits." },
             { label: "Face Time Compliance", action: "cft", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "N/A" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
-                comparison: { actual: actual.actual_cft, planned: actual.planned_cft },
+                comparison: { actual: actual.actual_cft, planned: actual.planned_cft, variance: actual.face_time_variance_percent },
                 meta: actual.face_time_variance_percent == null ? "No planned time available" : actual.face_time_variance_percent > 0 ? "Above planned time" : actual.face_time_variance_percent < 0 ? "Below planned time" : "On planned time" },
             { label: "OTP Customer Time", action: "otp_time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
             { label: "Travel Time", action: "travel", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
@@ -1110,8 +1110,8 @@ function focusEnd() {
                             <span class="route-summary-copy">
                                 <span class="route-summary-label">{{ card.label }}</span>
                                 <strong v-if="!card.comparison">{{ card.value }}</strong>
-                                <span v-if="card.comparison" class="route-face-comparison"><span>Actual <b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span>Planned <b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
-                                <span v-if="card.comparison" class="route-face-variance"><b>{{ card.value }}</b><span>Variance</span></span>
+                                <span v-if="card.comparison" class="route-face-variance" :class="{ 'negative-variance': card.comparison.variance < 0 }"><b>{{ card.value }}</b><span>Variance</span></span>
+                                <span v-if="card.comparison" class="route-face-comparison"><span><span>Actual CFT</span><b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span><span>Planned CFT</span><b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
                                 <span v-if="card.meta" class="route-summary-meta">{{ card.meta }}</span>
                                 <span v-if="card.breakdown" class="route-metric-breakdown"><span v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><b>{{ item.value == null ? '—' : `${Number(item.value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%` }}</b><span>{{ item.label }}</span></span></span>
                             </span>
@@ -1897,10 +1897,12 @@ function focusEnd() {
 
 .route-summary-icon { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border-radius: 7px; background: var(--wash); color: var(--tone); font-size: 11px; }
 .route-summary-copy { min-width: 0; flex: 1; }
-.route-face-comparison { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0; font-size: 11px; color: #64748b; }
-.route-face-comparison b { display: block; margin-top: 3px; color: var(--tone); font-size: 22px; font-variant-numeric: tabular-nums; }
-.route-face-variance { display: flex; align-items: baseline; gap: 8px; padding-top: 8px; margin-bottom: 6px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
-.route-face-variance b { color: var(--tone); font-size: 15px; }
+.route-face-comparison { display: grid; gap: 4px; margin: 6px 0; padding-top: 9px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
+.route-face-comparison > span { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 6px; min-width: 0; line-height: 1.25; }
+.route-face-comparison b { color: var(--tone); font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+.route-face-variance { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 11px; color: #64748b; }
+.route-face-variance b { color: var(--tone); font-size: clamp(23px, 1.8vw, 28px); font-weight: 750; line-height: 1.15; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.route-face-variance.negative-variance b { color: #dc2626; }
 .route-summary-label, .route-summary-copy > .route-summary-meta { display: block; color: #64748b; font-size: 10.5px; line-height: 1.3; }
 .route-summary-copy strong { display: block; margin: 2px 0; color: var(--tone); font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
 .route-summary-open { align-self: center; color: #94a3b8; font-size: 9px; }

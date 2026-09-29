@@ -1,5 +1,27 @@
 # TRAC / routeTrack project memory
 
+## Compact stacked CFT rows: 2026-09-29
+
+Face Time Compliance on Dashboard and Route Tracking now places Actual CFT above
+Planned CFT in compact rows, labels left and values right. Values use 14px text
+and 4px row gaps to fit the existing card space; variance remains the main metric.
+This supersedes the side-by-side layout below. Build and diff check passed;
+live browser layout verification remains outstanding.
+
+## Face Time card metric hierarchy: 2026-09-29
+
+Dashboard and Route Tracking now show variance percentage first as the primary
+Face Time Compliance metric (23–28px), retaining negative red/positive green.
+Actual and planned CFT sit side by side below a divider with smaller 14–18px
+values, equal-width columns and wrapping protection for long durations.
+Production build and diff check passed; live browser verification outstanding.
+
+## Face Time variance color: 2026-09-29
+
+Dashboard and Route Tracking Face Time Compliance cards show negative variance
+percentages in red; positive values retain green. Styling uses the numeric
+variance, leaving calculations unchanged. Production build and diff check passed.
+
 ## Planned CFT customer and cluster fallback: 2026-09-29
 
 Dashboard, Route Tracking and CFT popups now share `CustomerFaceTime::minutesFor`.

@@ -58,7 +58,7 @@ const cards = computed(() => {
         { title: "OTP Customer Time", icon: "fa-key", tone: "purple", value: duration(m?.otp_customer_minutes), unit: "h:mm",
             note: "Visits with OTP", definition: "Total visit time for customers with OTP" },
         { title: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: signedPercent(m?.face_time_variance_percent),
-            comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes },
+            comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes, variance: m?.face_time_variance_percent },
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
             definition: "Actual and planned customer face time exclude OTP visits. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
@@ -123,11 +123,11 @@ const groups = computed(() => [
                     <div v-if="!card.amounts.length" class="dashboard-metric-value">0</div>
                 </div>
                 <div v-else-if="!card.comparison" class="dashboard-metric-value">{{ card.value }} <span v-if="card.unit">{{ card.unit }}</span></div>
+                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance" :class="{ 'negative-variance': card.comparison.variance < 0 }"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-time-comparison">
                     <div><span>Actual CFT</span><strong>{{ duration(card.comparison.actual) }}</strong><small>h:mm</small></div>
                     <div><span>Planned CFT</span><strong>{{ duration(card.comparison.planned) }}</strong><small>h:mm</small></div>
                 </div>
-                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
                 <div v-if="!loading && metrics && card.comments" class="dashboard-otp-comments">
@@ -197,13 +197,15 @@ const groups = computed(() => [
 .dashboard-metric-money + .dashboard-metric-money { margin-top: 7px; }
 .dashboard-metric-note, .dashboard-metric-detail { margin: 0; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .dashboard-metric-open { grid-column: 3; grid-row: 1; align-self: center; color: #94a3b8; font-size: 10px; }
-.dashboard-time-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dashboard-time-comparison { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid #edf2f7; }
+.dashboard-time-comparison > div { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 6px; min-width: 0; line-height: 1.25; }
 .dashboard-time-comparison span { display: block; color: #64748b; font-size: 11px; }
-.dashboard-time-comparison strong { color: var(--accent); font-size: clamp(21px, 1.6vw, 26px); font-weight: 650; font-variant-numeric: tabular-nums; }
-.dashboard-face-variance { display: flex; align-items: baseline; gap: 8px; padding-top: 9px; border-top: 1px solid #edf2f7; }
-.dashboard-face-variance strong { font-size: 15px; color: var(--accent); }
+.dashboard-time-comparison strong { color: var(--accent); font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+.dashboard-face-variance { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.dashboard-face-variance strong { font-size: clamp(23px, 1.8vw, 28px); font-weight: 750; line-height: 1.15; color: var(--accent); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dashboard-face-variance.negative-variance strong { color: #dc2626; }
 .dashboard-face-variance span { font-size: 11px; color: #64748b; }
-.dashboard-time-comparison small { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; }
+.dashboard-time-comparison small { color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
 .dashboard-metric-breakdown { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; }
 .dashboard-metric-breakdown.single-breakdown { grid-template-columns: minmax(0, 1fr); }

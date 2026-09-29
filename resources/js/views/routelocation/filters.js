@@ -33,9 +33,12 @@ export function filterOptions(rows, selected, field) {
     for (const row of matches) {
         const value = row[field.value];
         if (value === null || value === undefined || String(value).trim() === "") continue;
+        const salesmanName = row.salesmanname?.trim();
         options.set(String(value), {
             value,
-            label: field.key === "routes" ? `${value} - ${row[field.text] ?? ""}` : (row[field.text] || String(value)),
+            label: field.key === "routes"
+                ? `${value} - ${row[field.text] ?? ""}${salesmanName ? ` - ${salesmanName}` : ""}`
+                : (row[field.text] || String(value)),
         });
     }
     return [...options.values()].sort((a, b) => a.label.localeCompare(b.label));

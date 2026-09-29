@@ -1,5 +1,16 @@
 # TRAC / routeTrack project memory
 
+## Route filter salesman labels: 2026-09-29
+
+Dashboard and Route Tracking share DashboardController::filters and
+routelocation/filters.js. Route options now display code - route name - salesman
+name, using the current routemaster.salesmancode assignment and
+salesman.salesmanname1. A left join retains routes without a salesman; blank names
+leave the previous label intact. Route values and access restrictions are unchanged.
+All 20 dashboard JavaScript tests, production build (npm.cmd run build), and diff
+checks passed. PHP/backend execution and browser verification remain unverified;
+PHP and vendor dependencies are unavailable locally.
+
 ## Top three OTP comments and aligned cards: 2026-09-24
 
 Removed View all comments link and its styles; card now shows only the top three

@@ -52,9 +52,11 @@ class DashboardController extends Controller
     public function filters(): JsonResponse
     {
         return response()->json($this->matchingRoutes()
+            ->leftJoin('salesman', 'salesman.salesmancode', '=', 'routemaster.salesmancode')
             ->orderBy('routemaster.routename')
             ->get([
                 'routemaster.routecode', 'routemaster.routename',
+                'salesman.salesmanname1 as salesmanname',
                 'company.cmpycode', 'company.name', 'company.entity',
                 'clustermaster.clustercode', 'clustermaster.clustername',
                 'regionmaster.regionmstcode', 'regionmaster.regionmstname',

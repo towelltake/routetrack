@@ -6,6 +6,30 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('dashboard cards and details share division and channel CFT fallback', function () {
+    DB::table('customermaster')->where('customercode', 101)->update([
+        'customerfacetime' => 0, 'DivisionCode' => 'D1', 'channel' => 'Retail',
+    ]);
+    DB::table('customerclustermapping')->insert([
+        ['divisioncode' => 'D1', 'channel' => 'Retail', 'cft' => 20],
+        ['divisioncode' => 'D2', 'channel' => 'Retail', 'cft' => 80],
+        ['divisioncode' => 'D1', 'channel' => 'Wholesale', 'cft' => 90],
+    ]);
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics['planned_face_minutes'])->toEqual(35)
+        ->and($metrics['actual_face_minutes'])->toEqual(25);
+    foreach (['cft', 'actual_face'] as $type) {
+        $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])
+            ->flatMap(fn ($group) => $group['rows'])->keyBy('id');
+        expect($rows[12]['planned_cft'])->toEqual(20)
+            ->and($rows[11]['planned_cft'])->toEqual(0)
+            ->and($rows[21]['planned_cft'])->toEqual(0)
+            ->and($rows->whereNotNull('actual_cft')->sum('planned_cft'))->toEqual($metrics['planned_face_minutes']);
+    }
+});
+
 test('customer coverage details retain all visits with OTP status and stable journey revisit numbers', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
@@ -229,8 +253,8 @@ test('efficiency counts unique visited and productive customers per journey', fu
 });
 
 test('actual face time remains available when every planned CFT is zero or null', function () {
-    DB::table('customervisitlog')->update(['cft' => 0]);
-    DB::table('customervisitlog')->where('logkey', 11)->update(['cft' => null]);
+    DB::table('customermaster')->update(['customerfacetime' => 0]);
+    DB::table('customermaster')->where('customercode', 101)->update(['customerfacetime' => null]);
     $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
     expect($result['planned_cft_minutes'])->toEqual(0)
         ->and($result['cft_minutes'])->toEqual(25)
@@ -239,8 +263,8 @@ test('actual face time remains available when every planned CFT is zero or null'
 });
 
 test('face time details retain individual visits and handle missing plans incomplete timing and overnight visits', function () {
-    DB::table('customervisitlog')->where('logkey', 12)->update(['cft' => 20]);
-    DB::table('customervisitlog')->where('logkey', 23)->update(['cft' => null]);
+    DB::table('customermaster')->where('customercode', 101)->update(['customerfacetime' => 20]);
+    DB::table('customermaster')->where('customercode', 105)->update(['customerfacetime' => null]);
     DB::table('customervisitlog')->insert(['logkey' => 99, 'routekey' => 1, 'customercode' => 101, 'cft' => 20,
         'logstartdate' => '2026-09-01', 'logstarttime' => '23:50:00', 'logenddate' => '2026-09-02', 'logendtime' => '00:20:00']);
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
@@ -320,20 +344,21 @@ beforeEach(function () {
     foreach ([
         'startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
+        'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
         'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
         'invoiceheader (customercode integer default 101, routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'salesorderheader (customercode integer default 101, routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'arheader (customercode integer default 101, routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',
         'currencymaster (currencycode integer, currencysymbol text)',
-        'customermaster (customercode integer primary key, activecustomer integer default 1, alternatecode text, customeraddress1 text, toplpo integer)',
+        'customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer primary key, activecustomer integer default 1, alternatecode text, customeraddress1 text, toplpo integer)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, otpreason text, comments text)',
     ] as $table) {
         DB::statement('CREATE TABLE '.$table);
     }
     // Existing scenarios use active customers, including OTP-only customer 999.
     foreach ([101, 102, 103, 104, 105, 106, 999] as $code) {
-        DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1]);
+        DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1, 'customerfacetime' => [101 => 10, 104 => 15, 105 => 15][$code] ?? 0]);
     }
     DB::table('startendday')->insert([
         ['routekey' => 1, 'routecode' => 1, 'routestartdate' => '2026-09-01', 'routestarttime' => '08:00:00', 'routeenddate' => '2026-09-02', 'routeendtime' => '02:00:00', 'routeclosed' => 1],
@@ -601,7 +626,7 @@ test('route transaction cards and documents match dashboard totals without requi
 
 test('face time variance excludes OTP planned allowances and incomplete visits', function ($target, $expectedPlan, $expectedVariance) {
     DB::table('customervisitlog')->whereIn('logkey', [11, 21, 22])->update(['cft' => 999]);
-    DB::table('customervisitlog')->whereIn('logkey', [12, 23])->update(['cft' => $target]);
+    DB::table('customermaster')->whereIn('customercode', [101, 105])->update(['customerfacetime' => $target]);
     $metrics = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
     expect($metrics['actual_face_minutes'])->toEqual(25)
         ->and($metrics['planned_face_minutes'])->toEqual($expectedPlan)

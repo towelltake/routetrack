@@ -93,7 +93,7 @@ Visit start, end, and duration use:
 
 If the end date or time is unavailable, Visit End and Visit Duration are omitted.
 
-Default customer face time (`default_face_time_minutes`) uses `customermaster.customerfacetime`. If it is null or zero, it falls back to `channelmaster.customercft`, joined by `channelcode`. If that value is also null or zero, or no matching channel exists, the default is zero. Values are minutes. Visit variance compares actual visit duration against this default; actual visit duration and total face time still use the recorded visit timestamps.
+Planned customer face time uses a positive `customermaster.customerfacetime`, otherwise a positive `customerclustermapping.cft`, matching both `customermaster.DivisionCode = customerclustermapping.divisioncode` and `customermaster.channel = customerclustermapping.channel`. Missing or nonpositive targets resolve to zero. Values are minutes. Dashboard, Route Tracking and their popups share `CustomerFaceTime`; historical visits use current customer settings. Existing per-visit counting and OTP exclusions remain in place. Actual face time still uses recorded visit timestamps.
 
 ## Planned Not Visited
 

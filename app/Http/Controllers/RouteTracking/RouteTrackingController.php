@@ -10,6 +10,7 @@ use App\Models\CustomerMaster;
 use App\Models\RouteMaster;
 use App\Models\SubAreaMaster;
 use App\Services\StationaryDetection;
+use App\Services\CustomerFaceTime;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -875,11 +876,13 @@ class RouteTrackingController extends Controller
             return 0;
         }
 
-        $minutes = DB::table('customervisitlog')
+        $visitCustomers = DB::table('customervisitlog')
             ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->whereIn('customercode', $customerCodes)
-            ->sum(DB::raw('COALESCE(cft, 0)'));
+            ->pluck('customercode');
+        $faceTime = app(CustomerFaceTime::class)->minutesFor($visitCustomers);
+        $minutes = $visitCustomers->sum(fn ($code) => $faceTime->get($code, 0));
 
         return (int) round((float) $minutes * 60);
     }
@@ -1173,9 +1176,9 @@ class RouteTrackingController extends Controller
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
                 'cm.toplpo',
-                DB::raw('COALESCE(cvl.cft, 0) as default_face_time_minutes'),
-            ])
-            ->map(function (object $visit) use ($operations, $routekey) {
+            ]);
+        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
+        $visits = $visits->map(function (object $visit) use ($operations, $routekey, $faceTime) {
                 $operation = $operations->get($visit->logkey);
                 $coordinates = $this->validOmanCoordinates($operation?->latitude, $operation?->longitude)
                     ?? $this->validOmanCoordinates($visit->fixedlatitude, $visit->fixedlongitude);
@@ -1198,7 +1201,7 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
-                    'default_face_time_minutes' => (int) $visit->default_face_time_minutes,
+                    'default_face_time_minutes' => $faceTime->get($visit->customercode, 0),
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? ($endTimestamp - $startTimestamp) / 60
                         : null,

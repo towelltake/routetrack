@@ -1,5 +1,26 @@
 # TRAC / routeTrack project memory
 
+## Planned CFT customer and cluster fallback: 2026-09-29
+
+Dashboard, Route Tracking and CFT popups now share `CustomerFaceTime::minutesFor`.
+It uses positive `customermaster.customerfacetime`, otherwise positive
+`customerclustermapping.cft`, matching BOTH master `DivisionCode` to mapping
+`divisioncode` and master `channel` to mapping `channel`. These are text fields;
+numeric `channelcode` is not the join. Missing/nonpositive targets resolve to zero
+minutes. Confirmed against user-provided `sfa_struct1.sql`; no schema was imported
+or changed. This supersedes older notes about visit-log or channelmaster targets.
+
+Current master settings apply to historical visits. Existing journey/date/access
+scope, active-customer filtering, visit counting, actual timing and OTP exclusions
+are preserved. Dashboard analysis consumes the same resolved targets. Screen and
+popup help text describes the fallback. Regression fixtures now configure master
+targets; tests cover override precedence, matching both keys, absent/nonpositive
+targets, popup/card consistency and OTP exclusion.
+
+Validation: 20 JavaScript tests, production build and diff check passed. PHP tests
+could not run because PHP and vendor dependencies are unavailable locally; PHP
+regression execution and live database/browser verification remain outstanding.
+
 ## Customer Coverage clickable visit details: 2026-09-29
 
 Renamed Total Visits to Customer Coverage and wired click/Enter/Space to the

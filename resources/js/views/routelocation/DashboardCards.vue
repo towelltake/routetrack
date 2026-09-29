@@ -60,7 +60,7 @@ const cards = computed(() => {
         { title: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: signedPercent(m?.face_time_variance_percent),
             comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes },
             note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
-            definition: "Actual and planned customer face time exclude OTP visits. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
+            definition: "Actual and planned customer face time exclude OTP visits. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
             compactBreakdown: true,
             excludedLpo: m?.lpo_customers_excluded,

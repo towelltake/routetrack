@@ -21,8 +21,9 @@ class DashboardMetrics
             ->whereIn('v.customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('v.routekey', $keys)
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
-            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime',
-                DB::raw('COALESCE(v.cft, 0) as expected_minutes')]);
+            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime']);
+        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
+        foreach ($visits as $visit) $visit->expected_minutes = $faceTime->get($visit->customercode, 0);
         $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
             ->whereIn('customercode', $visits->pluck('customercode')->unique())
             ->pluck('customercode')->flip();

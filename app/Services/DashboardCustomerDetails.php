@@ -83,15 +83,16 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'cft', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+            $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
-            $rows = $visits->map(function ($visit) use ($otp, $type) {
+            $rows = $visits->map(function ($visit) use ($otp, $type, $faceTime) {
                     $validStart = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-');
                     $validEnd = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-');
                     $start = $validStart ? strtotime(substr($visit->logstartdate, 0, 10).' '.$visit->logstarttime) : false;
                     $end = $validEnd ? strtotime(substr($visit->logenddate, 0, 10).' '.$visit->logendtime) : false;
                     $actual = $start !== false && $end !== false && $end >= $start ? ($end - $start) / 60 : null;
-                    $planned = max(0, (float) ($visit->cft ?? 0));
+                    $planned = $faceTime->get($visit->customercode, 0);
                     $excluded = $type !== 'otp_time' && !empty($otp[$visit->routekey.':'.$visit->logkey]);
                     return ['id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
                         'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $excluded ? 0 : $planned,

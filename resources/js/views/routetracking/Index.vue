@@ -1492,7 +1492,7 @@ function focusEnd() {
                             </div>
                             <div v-else-if="['cft', 'otp_time'].includes(summaryModal)">
                                 <p>{{ summaryModal === 'otp_time' ? 'OTP Customer Time' : 'Customer Face Time' }}: <strong>{{ stationaryDuration(summaryModal === 'otp_time' ? result.actual.otp_customer_time : result.actual.actual_cft) }}</strong></p>
-                                <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
+                                <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
                                 <div class="table-responsive"><table class="table table-sm">
                                     <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
                                     <tbody>

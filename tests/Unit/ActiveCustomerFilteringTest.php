@@ -15,10 +15,11 @@ beforeEach(function () {
     ]]);
     DB::purge('active_customer_test');
     foreach ([
-        'customermaster (customercode integer primary key, activecustomer integer, customername text, customeraddress1 text, customeraddress2 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
+        'customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer primary key, activecustomer integer, customername text, customeraddress1 text, customeraddress2 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
         'routemaster (routecode integer, cmpycode integer, subareacode integer)',
         'routesequence (routecode integer, customercode integer)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer, servicedflag integer, scannedflag integer)',
+        'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
         'customervisitlog (routekey integer, logkey integer, customercode integer, cft integer, logstartdate text, logstarttime text, logenddate text, logendtime text)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, comments text, otpreason text)',

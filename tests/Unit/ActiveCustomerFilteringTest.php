@@ -78,6 +78,21 @@ test('route plans visits OTP and planned CFT exclude inactive and missing master
         ->invoke($controller, 10)->pluck('customercode')->all())->toBe([1]);
 });
 
+test('route visits retain all linked operation keys and keep latest coordinates', function () {
+    foreach ([[1, 10, 50], [2, 10, 50], [3, 10, 60], [4, 99, 70]] as [$id, $route, $key]) {
+        DB::table('customeroperationscontrol')->insert([
+            'primary_id' => $id, 'routekey' => $route, 'log_id' => 1, 'visitkey' => $key,
+            'latitude' => 23.6, 'longitude' => 58.6,
+        ]);
+    }
+    $visits = (new ReflectionMethod(RouteTrackingController::class, 'fetchCustomerVisits'))
+        ->invoke(app(RouteTrackingController::class), 10, 7);
+    expect($visits)->toHaveCount(1)
+        ->and($visits->first())->toMatchArray([
+            'visitkey' => 60, 'visitkeys' => [60, 50], 'lat' => 23.6, 'lng' => 58.6,
+        ]);
+});
+
 test('transaction details reject inactive customers and still enforce route access for active customers', function () {
     $controller = app(RouteTrackingController::class);
     foreach ([1 => 200, 2 => 404, 3 => 404, 4 => 404, 5 => 404] as $code => $expected) {

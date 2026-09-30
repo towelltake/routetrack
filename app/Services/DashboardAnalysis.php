@@ -82,11 +82,11 @@ class DashboardAnalysis
                     $row['expected_cft'] += $visit->expected_minutes;
                     $row['configured_actual_cft'] += $minutes;
                 }
-                $operation = $operations->get($visit->routekey.':'.$visit->logkey);
-                $key = $visit->routekey.':'.($operation?->visitkey ?? '');
+                $transactionKeys = $operations->get($visit->routekey.':'.$visit->logkey, collect())
+                    ->pluck('visitkey')->unique()->map(fn ($key) => $visit->routekey.':'.$key);
                 if (!($visit->productivity_excluded ?? false)) {
-                    $salesOrder = $transactions['sales']->has($key) || $transactions['orders']->has($key);
-                    $collection = $transactions['collections']->has($key);
+                    $salesOrder = $transactionKeys->contains(fn ($key) => $transactions['sales']->has($key) || $transactions['orders']->has($key));
+                    $collection = $transactionKeys->contains(fn ($key) => $transactions['collections']->has($key));
                     if ($salesOrder) { $row['sales_order_productive']++; $salesOrderCustomers[$customer] = true; }
                     if ($collection) { $row['collection_productive']++; $collectionCustomers[$customer] = true; }
                     if ($salesOrder || $collection) { $row['productive']++; $productiveCustomers[$customer] = true; }

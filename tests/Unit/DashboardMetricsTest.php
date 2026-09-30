@@ -6,6 +6,39 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
+test('all operation keys contribute to one visit without duplicating productivity or documents', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    // Log 11 already links to 500. Split its collection onto another key,
+    // repeat both links, then add a latest operation with no transactions.
+    foreach ([[10, 500], [11, 700], [12, 700], [13, 900]] as [$id, $key]) {
+        DB::table('customeroperationscontrol')->insert(['primary_id' => $id, 'routekey' => 1, 'log_id' => 11, 'visitkey' => $key]);
+    }
+    DB::table('arheader')->insert(['routekey' => 1, 'visitkey' => 700, 'amountpaid' => 20, 'voidflag' => 0]);
+    // Same log id in another journey must not contribute its documents.
+    DB::table('customeroperationscontrol')->insert(['primary_id' => 14, 'routekey' => 2, 'log_id' => 11, 'visitkey' => 701]);
+    DB::table('arheader')->insert(['routekey' => 2, 'visitkey' => 701, 'amountpaid' => 30, 'voidflag' => 0]);
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics)->toMatchArray([
+        'completed_visits' => 5, 'productive_visits' => 3, 'productivity_percent' => 60.0,
+        'unique_visited_customers' => 5, 'unique_productive_customers' => 2, 'efficiency_percent' => 40.0,
+        'sales_order_productive_visits' => 2, 'collection_productive_visits' => 2,
+    ]);
+    $analysis = collect($metrics['analysis']['journeys']);
+    expect($analysis->sum('productive'))->toBe(3)
+        ->and($analysis->sum('collection_productive'))->toBe(2)
+        ->and($analysis->sum('productive_customers'))->toBe(2);
+    $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, 'productive')['groups'])
+        ->flatMap(fn ($group) => $group['rows']);
+    expect($rows->firstWhere('id', 11))->toMatchArray([
+        'status' => 'Productive', 'invoices' => 2, 'orders' => 1, 'collections' => 1,
+        'sales_order_productive' => true, 'collection_productive' => true,
+    ]);
+    $customers = collect(app(DashboardCustomerDetails::class)->build($journeys, 'efficiency')['groups'])
+        ->flatMap(fn ($group) => $group['rows']);
+    expect($customers->where('status', 'Productive'))->toHaveCount(2);
+});
+
 test('dashboard cards and details share division and channel CFT fallback', function () {
     DB::table('customermaster')->where('customercode', 101)->update([
         'customerfacetime' => 0, 'DivisionCode' => 'D1', 'channel' => 'Retail',

@@ -532,7 +532,7 @@ async function showTransactionDetails(transaction) {
                 type: transaction.type,
                 transactionkey: transaction.transactionkey,
                 routekey: selectedTransactionVisit.value.routekey,
-                visitkey: selectedTransactionVisit.value.visitkey,
+                visitkey: transaction.visitkey,
             },
         });
         transactionDetails.value = data;

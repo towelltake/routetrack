@@ -129,8 +129,8 @@ class DashboardCustomerDetails
                 $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
                     ->whereIn('customercode', $visits->pluck('customercode')->unique())->pluck('customercode')->flip();
                 $operations = DB::table('customeroperationscontrol')->whereIn('routekey', $keys)->where('log_id', '>', 0)
-                    ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
-                    ->unique(fn ($row) => $row->routekey.':'.$row->log_id)->keyBy(fn ($row) => $row->routekey.':'.$row->log_id);
+                    ->where('visitkey', '>', 0)->get(['routekey', 'log_id', 'visitkey'])
+                    ->groupBy(fn ($row) => $row->routekey.':'.$row->log_id);
                 foreach (['invoices' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $label => [$table, $amount]) {
                     // Match the Dashboard card's existing productivity rules and count headers before joins.
                     $documents[$label] = DB::table($table)->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $keys)
@@ -167,10 +167,12 @@ class DashboardCustomerDetails
                         $end = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-') ? strtotime($visit->logenddate.' '.$visit->logendtime) : false;
                         $completed = $start !== false && $end !== false && $end >= $start;
                         if ($type === 'productive' && !$completed && !$ignored) continue;
-                        $operation = $operations->get($journey->routekey.':'.$visit->logkey);
-                        $key = $journey->routekey.':'.($operation?->visitkey ?? '');
-                        $salesOrder = $completed && (($documents['invoices']->get($key)?->positive_documents ?? 0) > 0 || ($documents['orders']->get($key)?->positive_documents ?? 0) > 0);
-                        $collection = $completed && ($documents['collections']->get($key)?->positive_documents ?? 0) > 0;
+                        $transactionKeys = $operations->get($journey->routekey.':'.$visit->logkey, collect())
+                            ->pluck('visitkey')->unique()->map(fn ($key) => $journey->routekey.':'.$key);
+                        $visitDocuments = collect($documents)->map(fn ($headers) => $transactionKeys
+                            ->map(fn ($key) => $headers->get($key))->filter());
+                        $salesOrder = $completed && ($visitDocuments['invoices']->sum('positive_documents') > 0 || $visitDocuments['orders']->sum('positive_documents') > 0);
+                        $collection = $completed && $visitDocuments['collections']->sum('positive_documents') > 0;
                         $productive = $salesOrder || $collection;
                         $rows->push([
                             'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
@@ -186,9 +188,9 @@ class DashboardCustomerDetails
                             'is_revisit' => $ordinal > 1,
                             'sales_order_productive' => !$ignored && $salesOrder,
                             'collection_productive' => !$ignored && $collection,
-                            'invoices' => (int) ($documents['invoices']->get($key)?->documents ?? 0),
-                            'orders' => (int) ($documents['orders']->get($key)?->documents ?? 0),
-                            'collections' => (int) ($documents['collections']->get($key)?->documents ?? 0),
+                            'invoices' => (int) $visitDocuments['invoices']->sum('documents'),
+                            'orders' => (int) $visitDocuments['orders']->sum('documents'),
+                            'collections' => (int) $visitDocuments['collections']->sum('documents'),
                         ]);
                     }
                 }

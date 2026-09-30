@@ -1,5 +1,27 @@
 # TRAC / routeTrack project memory
 
+## All operation links for productivity and efficiency: 2026-09-30
+
+Dashboard and Route Tracking now inspect all distinct positive visitkeys linked
+through the same routekey and customeroperationscontrol.log_id to a visit log.
+Any qualifying invoice, order or collection makes the completed visit productive;
+a newer operation without transactions no longer hides older transactions. Each
+visit counts once and each productive customer counts once per journey. Existing
+completion, positive amount, void, active-customer, LPO and access rules remain.
+
+DashboardMetrics, DashboardAnalysis and DashboardCustomerDetails use grouped
+operation links; drilldown document counts deduplicate repeated visitkeys. Route
+Tracking retains the latest operation for coordinates and exposes all visitkeys
+for transaction loading. Its popup requests details using the document's visitkey.
+Financial totals and timing formulas are unchanged.
+
+Added PHP regressions for older productive/latest empty operations, split
+collection and sales keys, duplicate links, journey isolation, drilldown counts
+and Route Tracking key extraction. Twenty JavaScript tests, production build and
+diff check passed. PHP regression execution remains outstanding: php is not on
+PATH and vendor dependencies are absent. Live browser/database validation remains
+outstanding.
+
 ## Remove CFT status caption: 2026-09-29
 
 Removed the planned-time status caption (above/below/on plan and missing-plan

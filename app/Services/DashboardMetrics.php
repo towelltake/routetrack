@@ -30,9 +30,8 @@ class DashboardMetrics
         foreach ($visits as $visit) $visit->productivity_excluded = $excludedCustomers->has($visit->customercode);
         $operations = DB::table('customeroperationscontrol')
             ->whereIn('routekey', $keys)->where('log_id', '>', 0)
-            ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
-            ->unique(fn ($row) => $row->routekey.':'.$row->log_id)
-            ->keyBy(fn ($row) => $row->routekey.':'.$row->log_id);
+            ->where('visitkey', '>', 0)->get(['routekey', 'log_id', 'visitkey'])
+            ->groupBy(fn ($row) => $row->routekey.':'.$row->log_id);
 
         $transactions = [];
         $amounts = [];
@@ -109,10 +108,10 @@ class DashboardMetrics
                 $expectedMinutes += (int) $visit->expected_minutes;
                 if (!isset($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) $plannedFaceMinutes += (float) $visit->expected_minutes;
             }
-            $operation = $operations->get($visit->routekey.':'.$visit->logkey);
-            $transactionKey = $visit->routekey.':'.($operation?->visitkey ?? '');
-            $salesOrder = !$visit->productivity_excluded && ($transactions['sales']->has($transactionKey) || $transactions['orders']->has($transactionKey));
-            $collection = !$visit->productivity_excluded && $transactions['collections']->has($transactionKey);
+            $transactionKeys = $operations->get($visit->routekey.':'.$visit->logkey, collect())
+                ->pluck('visitkey')->unique()->map(fn ($key) => $visit->routekey.':'.$key);
+            $salesOrder = !$visit->productivity_excluded && $transactionKeys->contains(fn ($key) => $transactions['sales']->has($key) || $transactions['orders']->has($key));
+            $collection = !$visit->productivity_excluded && $transactionKeys->contains(fn ($key) => $transactions['collections']->has($key));
             if ($salesOrder) { $salesOrderVisits++; $salesOrderCustomers[$visit->routekey.':'.$visit->customercode] = true; }
             if ($collection) { $collectionVisits++; $collectionCustomers[$visit->routekey.':'.$visit->customercode] = true; }
             if ($salesOrder || $collection) {

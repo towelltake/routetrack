@@ -16,9 +16,9 @@ export const useTemplateStore = defineStore("template", {
     // Default template settings
     // Various of them are also set in each layout variation under layouts/variations/ folder
     settings: {
-      colorTheme: "", // 'amethyst', 'city', 'flat', 'modern', 'smooth'
-      darkMode: "system", // 'on', 'off', 'system'
-      darkModeActive: null,
+      colorTheme: "", // Fixed default palette
+      darkMode: "off", // Light mode only
+      darkModeActive: false,
       sidebarLeft: true,
       sidebarMini: false,
       sidebarDark: true,
@@ -190,56 +190,21 @@ export const useTemplateStore = defineStore("template", {
         this.settings.mainContent = "narrow";
       }
     },
-    // Set Dark Mode
-    darkMode(payload) {
-      if (["on", "off", "system"].includes(payload.mode)) {
-        const lHtml = document.documentElement;
-
-        if (payload.mode === "on") {
-          this.settings.darkMode = "on";
-          this.settings.darkModeActive = true;
-          lHtml.classList.add("dark");
-        } else if (payload.mode === "off") {
-          this.settings.darkMode = "off";
-          this.settings.darkModeActive = false;
-          lHtml.classList.remove("dark");
-        } else if (payload.mode === "system") {
-          this.settings.darkMode = "system";
-
-          if (
-            window.matchMedia &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches
-          ) {
-            this.settings.darkModeActive = true;
-            lHtml.classList.add("dark");
-          } else {
-            this.settings.darkModeActive = false;
-            lHtml.classList.remove("dark");
-          }
-        }
-
-        localStorage.setItem("oneuiVueDarkMode", this.settings.darkMode);
-      }
+    // Keep light mode even when old callers request a saved or system theme.
+    darkMode() {
+      this.settings.darkMode = "off";
+      this.settings.darkModeActive = false;
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("oneuiVueDarkMode", "off");
     },
-    // Sets active color theme
-    setColorTheme(payload) {
-      const lHtml = document.documentElement;
-
-      // Matches all classes which start with 'theme-'
-      let regx = new RegExp("\\btheme-[^ ]*[ ]?\\b", "g");
-
-      // Set new theme
-      this.settings.colorTheme = payload.theme || "";
-
-      // Remove all classes which start with 'theme-' from body element
-      lHtml.className = lHtml.className.replace(regx, "");
-
-      // If theme is set, add the theme class to body element
-      if (payload.theme) {
-        lHtml.classList.add("theme-" + payload.theme);
+    // Keep the default palette and clear any previously selected color theme.
+    setColorTheme() {
+      this.settings.colorTheme = "";
+      const classes = document.documentElement.classList;
+      for (const name of [...classes]) {
+        if (name.startsWith("theme-")) classes.remove(name);
       }
-
-      localStorage.setItem("oneuiVueColorTheme", payload.theme);
+      localStorage.removeItem("oneuiVueColorTheme");
     },
     // Sets side transitions
     setSideTransitions(payload) {

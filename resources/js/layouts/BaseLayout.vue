@@ -28,23 +28,9 @@ watch(
   { immediate: true },
 );
 
-// Set dark mode based on localStorage or on store settings (if not saved before)
-const savedDarkMode = localStorage.getItem("oneuiVueDarkMode");
-
-if (["on", "off", "system"].includes(savedDarkMode)) {
-  store.darkMode({ mode: savedDarkMode });
-} else {
-  store.darkMode({ mode: store.settings.darkMode });
-}
-
-// Set color theme based on localStorage or on store settings (if not saved before)
-const savedTheme = localStorage.getItem("oneuiVueColorTheme");
-
-if (savedTheme) {
-  store.setColorTheme({ theme: savedTheme });
-} else {
-  store.setColorTheme({ theme: store.settings.colorTheme });
-}
+// Appearance is fixed for every page, including previously saved preferences.
+store.darkMode();
+store.setColorTheme();
 
 // Render main classes based on store options
 const classContainer = computed(() => {
@@ -72,15 +58,6 @@ const classContainer = computed(() => {
 
 // When the component is mounted
 onMounted(() => {
-  // Add event listener for dark mode system
-  window
-    .matchMedia("(prefers-color-scheme: dark)")
-    .addEventListener("change", () => {
-      if (store.settings.darkMode === "system") {
-        store.darkMode({ mode: "system" });
-      }
-    });
-
   // Remove side transitions on window resizing
   let winResize = false;
 

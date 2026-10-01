@@ -78,8 +78,14 @@ const submit = () => {
       </div>
 
       <div
-        class="hero-static col-lg-8 d-flex flex-column align-items-center bg-white"
+        class="hero-static col-lg-8 d-flex flex-column align-items-center bg-white login-form-panel"
       >
+        <img
+          src="/assets/TOWELL%20LOGO.png"
+          alt=""
+          aria-hidden="true"
+          class="login-towell-watermark"
+        />
         <div class="p-3 w-100 d-lg-none text-center">
           <Link href="/" class="link-fx fw-semibold fs-3 text-dark">
             TRAC
@@ -216,6 +222,33 @@ const submit = () => {
   max-width: 100%;
   height: auto;
   margin-inline: auto;
+}
+
+.login-form-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.login-towell-watermark {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  right: -8rem;
+  width: clamp(18rem, 26vw, 32rem);
+  height: min(80vh, 44rem);
+  object-fit: contain;
+  transform: translateY(-50%) rotate(-22deg);
+  filter: grayscale(1);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+@media (max-width: 991.98px) {
+  .login-towell-watermark {
+    right: -12rem;
+    opacity: 0.04;
+  }
 }
 
 .login-panel {

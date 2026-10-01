@@ -1,5 +1,25 @@
 # TRAC / routeTrack project memory
 
+## Towell login watermark: 2026-10-01
+
+Login.vue uses public/assets/TOWELL LOGO.png as a decorative grayscale watermark
+behind the right login panel, tilted -22 degrees, oversized and clipped at the
+right edge. Opacity is 8% on desktop and 4% on smaller screens, with no pointer
+events or accessibility announcement. The white background and form layout
+remain. Production build and diff check passed; browser visual check outstanding.
+
+## Fixed light appearance: 2026-10-01
+
+Removed dark-mode and color/settings dropdowns from the shared sidebar.
+BaseLayout now applies light mode and the default palette on every mount,
+overriding saved preferences; it no longer listens for OS theme changes. Store
+actions enforce those defaults even for older callers. Removed alternate color
+stylesheet imports from app.js. The existing dark sidebar styling is part of the
+default light layout and remains; its appearance controls are removed.
+Production build, diff check and direct Pinia assertions for forced light mode,
+saved preference cleanup and preservation of unrelated HTML classes passed.
+Live browser verification remains outstanding.
+
 ## Company logos in login left footer: 2026-10-01
 
 Login.vue now shows four public/assets/Companies logos beneath enhance.png,

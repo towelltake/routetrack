@@ -1,5 +1,17 @@
 # TRAC / routeTrack project memory
 
+## Login visual refinement: 2026-10-01
+
+Login.vue uses a 44/56 desktop split and a centered 400px form to reduce the
+gap between the illustration and login. Reduced Enhance logo size and heading
+spacing, softened and reduced the Towell watermark, and constrained company
+footer width. Inputs have subtle borders, rounded corners and brand-red focus
+states; the login button is solid red with visible keyboard focus and a readable
+disabled state. Actions wrap on narrow screens. The password-reset divider only
+renders when reset is available. Authentication behavior is unchanged.
+Validation: production build (npm.cmd run build) and git diff --check passed.
+Live browser visual verification remains outstanding.
+
 ## Dashboard Time averages and totals: 2026-10-01
 
 DashboardCards has an Average / Totals switch beside Time, defaulting to Average

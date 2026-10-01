@@ -90,9 +90,9 @@ const submit = () => {
             TRAC
           </Link>
         </div>
-        <div class="p-4 w-100 flex-grow-1 d-flex align-items-center">
-          <div class="w-100">
-            <div class="text-center mb-5">
+        <div class="p-4 w-100 flex-grow-1 d-flex align-items-center login-form-wrap">
+          <div class="w-100 login-form-content">
+            <div class="text-center login-form-heading">
               <img
                 src="/assets/eg.png"
                 alt="Enhance Group"
@@ -104,7 +104,7 @@ const submit = () => {
             </div>
 
             <div class="row g-0 justify-content-center">
-              <div class="col-sm-8 col-xl-4">
+              <div class="col-12">
                 <div
                   v-if="status"
                   class="alert alert-success d-flex align-items-center justify-content-center fs-sm fw-medium mb-5"
@@ -157,7 +157,7 @@ const submit = () => {
                     </div>
                   </div>
                   <div
-                    class="d-flex justify-content-between align-items-center mb-4"
+                    class="d-flex justify-content-between align-items-center mb-4 login-actions"
                   >
                     <div class="form-check">
                       <input
@@ -173,16 +173,16 @@ const submit = () => {
                     <div>
                       <button
                         type="submit"
-                        class="btn btn-alt-primary"
-                        :class="{ 'opacity-25': form.processing }"
+                        class="btn login-submit"
+                        :aria-busy="form.processing"
                         :disabled="form.processing"
                       >
-                        <i class="fa fa-fw fa-sign-in-alt me-1 opacity-50"></i>
+                        <i class="fa fa-fw fa-sign-in-alt me-1"></i>
                         {{ t.log_in ?? "Log In" }}
                       </button>
                     </div>
                   </div>
-                  <div class="border-top py-3 text-center">
+                  <div v-if="canResetPassword" class="border-top py-3 text-center">
                     <Link
                       v-if="canResetPassword"
                       href="/forgot-password"
@@ -217,10 +217,108 @@ const submit = () => {
 
 .login-logo {
   display: block;
-  width: 180px;
+  width: 164px;
   max-width: 100%;
   height: auto;
   margin-inline: auto;
+}
+
+.login-form-wrap {
+  justify-content: center;
+}
+
+.login-form-content {
+  max-width: 400px;
+}
+
+.login-form-heading {
+  margin-bottom: 2.5rem;
+}
+
+.login-form-heading p {
+  margin-bottom: 0;
+}
+
+.login-form-content .form-label {
+  margin-bottom: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #33454e;
+}
+
+.login-form-content .form-control {
+  min-height: 54px;
+  border: 1px solid #e2e7eb;
+  border-radius: 12px;
+  background: #f6f8fa;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.login-form-content .form-control:focus {
+  background: #fff;
+  border-color: #e72b24;
+  box-shadow: 0 0 0 3px rgb(231 43 36 / 10%);
+}
+
+.login-form-content .form-control.is-invalid {
+  border-color: var(--bs-danger, #dc3545);
+}
+
+.login-actions {
+  gap: 1rem;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+.login-form-content .form-check-input:checked {
+  background-color: #d9231c;
+  border-color: #d9231c;
+}
+
+.login-form-content .form-check-input:focus {
+  border-color: #e72b24;
+  box-shadow: 0 0 0 3px rgb(231 43 36 / 10%);
+}
+
+.login-submit {
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #d9231c;
+  border-radius: 10px;
+  background: #d9231c;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgb(217 35 28 / 16%);
+}
+
+.login-submit:hover,
+.login-submit:active,
+.login-submit:focus-visible {
+  background: #bd1e18;
+  border-color: #bd1e18;
+  color: #fff;
+}
+
+.login-submit:focus-visible {
+  outline: 3px solid rgb(217 35 28 / 25%);
+  outline-offset: 3px;
+}
+
+.login-submit:disabled {
+  background: #d9231c;
+  border-color: #d9231c;
+  color: #fff;
+  opacity: 0.65;
+}
+
+@media (min-width: 992px) {
+  .login-panel {
+    width: 44%;
+  }
+
+  .login-form-panel {
+    width: 56%;
+  }
 }
 
 .login-form-panel {
@@ -233,13 +331,13 @@ const submit = () => {
   position: absolute;
   z-index: -1;
   top: 50%;
-  right: 1.5rem;
-  width: clamp(9rem, 18vw, 22rem);
+  right: 2rem;
+  width: clamp(8rem, 13vw, 16rem);
   max-width: calc(100% - 3rem);
-  height: min(70vh, 36rem);
+  height: min(54vh, 27rem);
   object-fit: contain;
   transform: translateY(-50%);
-  opacity: 0.08;
+  opacity: 0.045;
   pointer-events: none;
 }
 
@@ -252,7 +350,7 @@ const submit = () => {
 }
 
 .login-panel {
-  padding: 2rem;
+  padding: clamp(2rem, 4vw, 4rem);
   gap: 1.5rem;
   background: #fff;
 }
@@ -261,7 +359,7 @@ const submit = () => {
   display: block;
   width: 100%;
   height: auto;
-  max-height: calc(100vh - 10rem);
+  max-height: calc(100vh - 13rem);
   margin-block: auto;
   object-fit: contain;
 }
@@ -272,7 +370,20 @@ const submit = () => {
   align-items: center;
   gap: 0.75rem;
   width: 100%;
+  max-width: 520px;
   flex-shrink: 0;
+}
+
+@media (max-width: 575.98px) {
+  .login-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-form-content .form-control {
+    transition: none;
+  }
 }
 
 .login-company-logo {

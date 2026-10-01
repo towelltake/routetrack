@@ -29,8 +29,8 @@ and diff check passed; live browser verification remains outstanding.
 ## Towell login watermark: 2026-10-01
 
 Login.vue uses public/assets/TOWELL LOGO.png as a decorative original-color watermark
-behind the right login panel, tilted -22 degrees, oversized and clipped at the
-right edge. Opacity is 8% on desktop and 4% on smaller screens, with no pointer
+behind the right login panel, upright and fully visible at a reduced responsive
+size with an inset from the right edge. Opacity is 8% on desktop and 4% on smaller screens, with no pointer
 events or accessibility announcement. The white background and form layout
 remain. Production build and diff check passed; browser visual check outstanding.
 

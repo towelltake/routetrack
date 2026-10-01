@@ -233,18 +233,20 @@ const submit = () => {
   position: absolute;
   z-index: -1;
   top: 50%;
-  right: -8rem;
-  width: clamp(18rem, 26vw, 32rem);
-  height: min(80vh, 44rem);
+  right: 1.5rem;
+  width: clamp(9rem, 18vw, 22rem);
+  max-width: calc(100% - 3rem);
+  height: min(70vh, 36rem);
   object-fit: contain;
-  transform: translateY(-50%) rotate(-22deg);
+  transform: translateY(-50%);
   opacity: 0.08;
   pointer-events: none;
 }
 
 @media (max-width: 991.98px) {
   .login-towell-watermark {
-    right: -12rem;
+    right: 1rem;
+    width: clamp(8rem, 30vw, 12rem);
     opacity: 0.04;
   }
 }

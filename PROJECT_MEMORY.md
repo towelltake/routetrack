@@ -22,9 +22,9 @@ Live browser verification remains outstanding.
 
 ## Company logos in login left footer: 2026-10-01
 
-Login.vue now shows four public/assets/Companies logos beneath enhance.png,
-confined to the desktop left panel. Filename order is MCS, Fairtrade, CSTC, MDC
-(the two files prefixed 3 sort alphabetically). Logos use four equal columns,
+Login.vue now shows three public/assets/Companies logos beneath enhance.png,
+confined to the desktop left panel. Updated filename order is Enhance Group
+(1 EG .png), Fairtrade, MDC. Logos use three equal columns,
 contain sizing and company-name alt text. Illustration height reserves space for
 the footer; white background and existing mobile-hidden panel behavior remain.
 Production build and diff check passed; live browser verification outstanding.

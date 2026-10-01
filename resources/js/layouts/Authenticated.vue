@@ -79,7 +79,7 @@ function markLogoutRedirect() {
 </script>
 
 <template>
-  <BaseLayout>
+  <BaseLayout class="authenticated-layout">
     <!-- Sidebar Content -->
     <!-- Using the available v-slot, we can override the default Sidebar content from layouts/partials/Sidebar.vue -->
     <template #sidebar-content>
@@ -355,6 +355,12 @@ function markLogoutRedirect() {
 </template>
 
 <style scoped>
+#page-container.authenticated-layout :deep(#page-header .content-header) {
+  width: 100%;
+  max-width: none;
+  padding-inline-start: 0;
+}
+
 .header-logo {
   display: block;
   height: 44px;

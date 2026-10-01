@@ -17,9 +17,8 @@ const page = usePage();
 const t = computed(() => page.props.translations?.ui ?? {});
 
 const companyLogos = [
-  { file: "1 MCS-logo-1.png", name: "Matrah Cold Stores LLC" },
+  { file: "1 EG .png", name: "Enhance Group" },
   { file: "2 Fairtrade-logo.png", name: "Fairtrade LLC" },
-  { file: "3 CSTC-logo-1.jpg", name: "Cold Storage & Trading Company LLC" },
   { file: "3 MDC-logo-1.png", name: "Majan Distribution Co. LLC" },
 ].sort((a, b) => a.file.localeCompare(b.file, "en", { numeric: true }));
 
@@ -267,7 +266,7 @@ const submit = () => {
 
 .login-company-footer {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   gap: 0.75rem;
   width: 100%;

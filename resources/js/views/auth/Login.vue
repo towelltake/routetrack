@@ -16,6 +16,13 @@ const store = useTemplateStore();
 const page = usePage();
 const t = computed(() => page.props.translations?.ui ?? {});
 
+const companyLogos = [
+  { file: "1 MCS-logo-1.png", name: "Matrah Cold Stores LLC" },
+  { file: "2 Fairtrade-logo.png", name: "Fairtrade LLC" },
+  { file: "3 CSTC-logo-1.jpg", name: "Cold Storage & Trading Company LLC" },
+  { file: "3 MDC-logo-1.png", name: "Majan Distribution Co. LLC" },
+].sort((a, b) => a.file.localeCompare(b.file, "en", { numeric: true }));
+
 const form = useForm({
   username: "",
   password: "",
@@ -53,12 +60,21 @@ const submit = () => {
 
   <BaseBackground class="bg-white">
     <div class="row g-0 login-shell">
-      <div class="hero-static col-lg-4 d-none d-lg-flex align-items-center justify-content-center login-panel">
+      <div class="hero-static col-lg-4 d-none d-lg-flex flex-column align-items-center login-panel">
         <img
           src="/assets/enhance.png"
           alt="Enhance Group retail and distribution"
           class="login-panel-image"
         />
+        <footer class="login-company-footer" aria-label="Group companies">
+          <img
+            v-for="company in companyLogos"
+            :key="company.file"
+            :src="`/assets/Companies/${encodeURIComponent(company.file)}`"
+            :alt="company.name"
+            class="login-company-logo"
+          />
+        </footer>
       </div>
 
       <div
@@ -204,6 +220,7 @@ const submit = () => {
 
 .login-panel {
   padding: 2rem;
+  gap: 1.5rem;
   background: #fff;
 }
 
@@ -211,7 +228,24 @@ const submit = () => {
   display: block;
   width: 100%;
   height: auto;
-  max-height: calc(100vh - 4rem);
+  max-height: calc(100vh - 10rem);
+  margin-block: auto;
+  object-fit: contain;
+}
+
+.login-company-footer {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.login-company-logo {
+  display: block;
+  width: 100%;
+  height: 64px;
   object-fit: contain;
 }
 </style>

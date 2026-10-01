@@ -239,7 +239,6 @@ const submit = () => {
   height: min(80vh, 44rem);
   object-fit: contain;
   transform: translateY(-50%) rotate(-22deg);
-  filter: grayscale(1);
   opacity: 0.08;
   pointer-events: none;
 }

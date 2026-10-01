@@ -102,12 +102,6 @@ function markLogoutRedirect() {
       </button>
       <!-- END Toggle Sidebar -->
 
-      <img
-        src="/assets/eg.png"
-        alt="Enhance Group"
-        class="header-logo me-2"
-      />
-
       <div
         v-if="availableSettingsModules.length && !isRtl"
         class="dropdown d-inline-block"
@@ -358,15 +352,7 @@ function markLogoutRedirect() {
 #page-container.authenticated-layout :deep(#page-header .content-header) {
   width: 100%;
   max-width: none;
-  padding-inline-start: 0;
-}
-
-.header-logo {
-  display: block;
-  height: 44px;
-  width: auto;
-  object-fit: contain;
-  flex-shrink: 0;
+  padding-inline-start: 8px;
 }
 
 .settings-mega-menu {

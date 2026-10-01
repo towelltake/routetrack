@@ -1,5 +1,31 @@
 # TRAC / routeTrack project memory
 
+## Dashboard Time averages and totals: 2026-10-01
+
+DashboardCards has an Average / Totals switch beside Time, defaulting to Average
+on mount. All five headline durations plus Actual/Planned CFT divide unrounded
+minutes by metrics.routes_started before h:mm formatting. This is the existing
+filtered routecode/start-date count, summed across the selected inclusive date
+range, not journeys_started or only measured journeys. Missing durations stay
+unavailable; zero/absent route starts yield unavailable averages. CFT variance,
+journey availability counts, other card groups and drilldown records are unchanged.
+Idle minutes use the same divisor when their asynchronous response arrives.
+
+The switch displays its denominator and has keyboard/ARIA support. Time cards
+perform a staggered 360-degree rotation on mode changes; reduced-motion users
+get an immediate update. No animation on initial load. Mode persists while
+filters change, without saving across page mounts. Helper: routelocation/time-display.js.
+Validation: all 25 dashboard JS tests (including five new averaging cases),
+production build and diff check passed. Browser visual verification outstanding.
+
+## Sidebar logo and header spacing: 2026-10-01
+
+Moved eg.png from Authenticated.vue's header into the shared Sidebar.vue home
+link, replacing TRAC 1.0. Logo remains 44px high and header height is unchanged.
+Authenticated header content uses full width with 8px inline-start padding,
+removing the earlier narrow-layout gap beside the hamburger. Production build
+and diff check passed; live browser verification remains outstanding.
+
 ## Towell login watermark: 2026-10-01
 
 Login.vue uses public/assets/TOWELL LOGO.png as a decorative original-color watermark

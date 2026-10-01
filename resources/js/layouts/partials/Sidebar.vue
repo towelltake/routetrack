@@ -87,14 +87,8 @@ onMounted(() => {
       <div class="content-header">
         <slot name="header">
           <!-- Logo -->
-          <Link href="/" class="fw-semibold text-dual">
-            <span class="smini-visible">
-              <i class="fa fa-circle-notch text-primary"></i>
-            </span>
-            <span class="smini-hide fs-5 tracking-wider">
-              TRAC
-              <span class="fw-normal">1.0</span>
-            </span>
+          <Link href="/" class="d-inline-flex align-items-center">
+            <img src="/assets/eg.png" alt="Enhance Group" class="sidebar-logo" />
           </Link>
           <!-- END Logo -->
         </slot>
@@ -132,3 +126,12 @@ onMounted(() => {
   </nav>
   <!-- END Sidebar -->
 </template>
+
+<style scoped>
+.sidebar-logo {
+  display: block;
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+}
+</style>

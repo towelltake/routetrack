@@ -1,5 +1,12 @@
 # TRAC / routeTrack project memory
 
+## Towell login watermark hidden: 2026-10-01
+
+Login.vue temporarily hides the Towell watermark with display: none on its
+scoped class, on all screen sizes. Asset and positioning styles remain for
+restoration. Diff check passed; production build passed. Browser visual
+verification remains outstanding.
+
 ## Login visual refinement: 2026-10-01
 
 Login.vue uses a 44/56 desktop split and a centered 400px form to reduce the

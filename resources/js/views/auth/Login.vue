@@ -328,6 +328,7 @@ const submit = () => {
 }
 
 .login-towell-watermark {
+  display: none;
   position: absolute;
   z-index: -1;
   top: 50%;

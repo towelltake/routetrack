@@ -1,5 +1,14 @@
 # TRAC / routeTrack project memory
 
+## Enhance Group branding and dashboard heading: 2026-10-01
+
+Login.vue replaces the Log In heading with the supplied public/assets/eg.png
+logo, centered at 180px wide above the welcome message. Authenticated.vue shows
+the same logo immediately after the hamburger button at 44px high within the
+existing 4rem header; header height is unchanged. Both images have Enhance Group
+alt text. Dashboard Index.vue removes the Field performance subtitle. Production
+builds and diff checks passed; live browser visual validation remains outstanding.
+
 ## All operation links for productivity and efficiency: 2026-09-30
 
 Dashboard and Route Tracking now inspect all distinct positive visitkeys linked

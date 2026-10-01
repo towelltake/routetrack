@@ -128,7 +128,11 @@ const submit = () => {
         <div class="p-4 w-100 flex-grow-1 d-flex align-items-center">
           <div class="w-100">
             <div class="text-center mb-5">
-              <h1 class="fw-black mb-2">{{ t.log_in ?? "Log In" }}</h1>
+              <img
+                src="/assets/eg.png"
+                alt="Enhance Group"
+                class="login-logo mb-3"
+              />
               <p class="fw-medium text-muted">
                 {{ t.login_welcome_message ?? "Welcome, please log in." }}
               </p>
@@ -246,6 +250,14 @@ const submit = () => {
   background:
     radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 26%),
     linear-gradient(90deg, #0f172a 0%, #13253f 26%, #f8fafc 26%, #f8fafc 100%);
+}
+
+.login-logo {
+  display: block;
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
 }
 
 .login-panel {

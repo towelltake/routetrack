@@ -362,7 +362,6 @@ function resetFilters() {
     <div class="content route-location-content" @click.capture="saveDashboard">
         <div class="route-location-page-heading">
             <h1 class="h3 fw-bold mb-1">Dashboard</h1>
-            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Field performance across every route journey</h2>
         </div>
 
         <section class="dashboard-filters" aria-labelledby="dashboard-filters-title">

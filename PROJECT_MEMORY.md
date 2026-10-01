@@ -1,5 +1,14 @@
 # TRAC / routeTrack project memory
 
+## Login illustration panel: 2026-10-01
+
+Replaced the login left panel's marketing copy, desktop footer and dark grid
+background with public/assets/enhance.png on white. The illustration is centered,
+scales within the existing desktop column and viewport without cropping, and
+retains the previous mobile-hidden behavior. Removed unused panel CSS. Login
+form and eg.png logo remain. Production build and diff check passed; live browser
+visual validation remains outstanding.
+
 ## Enhance Group branding and dashboard heading: 2026-10-01
 
 Login.vue replaces the Log In heading with the supplied public/assets/eg.png

@@ -28,6 +28,32 @@ class DashboardCustomerDetails
                     'outside' => $timing['duration'] === null ? null : max(0, $timing['duration'] - $operational->get($journey->routekey, 0)),
                     'duration' => $timing['duration'], 'status' => (int) $journey->routeclosed === 1 ? 'Closed' : 'Open'];
             });
+        } elseif ($type === 'coverage') {
+            $visits = DB::table('customervisitlog')
+                ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
+                ->whereIn('routekey', $keys)
+                ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
+                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+            $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
+            $ordinals = [];
+            $rows = $visits->map(function ($visit) use ($otp, &$ordinals) {
+                $key = $visit->routekey.':'.$visit->customercode;
+                $ordinal = $ordinals[$key] = ($ordinals[$key] ?? 0) + 1;
+                $timestamp = function ($date, $time) {
+                    if (!$date || !$time || str_starts_with((string) $date, '0000-')) return null;
+                    $value = strtotime(substr((string) $date, 0, 10).' '.$time);
+                    return $value === false ? null : date('Y-m-d H:i:s', $value);
+                };
+                $checkIn = $timestamp($visit->logstartdate, $visit->logstarttime);
+                $checkOut = $timestamp($visit->logenddate, $visit->logendtime);
+                return [
+                    'id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
+                    'date' => $visit->logstartdate && !str_starts_with((string) $visit->logstartdate, '0000-') ? substr((string) $visit->logstartdate, 0, 10) : null,
+                    'check_in' => $checkIn, 'check_out' => $checkOut,
+                    'status' => empty($otp[$visit->routekey.':'.$visit->logkey]) ? 'Non-OTP' : 'OTP',
+                    'visit_number' => $ordinal, 'is_revisit' => $ordinal > 1,
+                ];
+            });
         } elseif ($type === 'operational') {
             $visits = DB::table('customervisitlog')
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
@@ -57,15 +83,16 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'cft', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+            $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
-            $rows = $visits->map(function ($visit) use ($otp, $type) {
+            $rows = $visits->map(function ($visit) use ($otp, $type, $faceTime) {
                     $validStart = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-');
                     $validEnd = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-');
                     $start = $validStart ? strtotime(substr($visit->logstartdate, 0, 10).' '.$visit->logstarttime) : false;
                     $end = $validEnd ? strtotime(substr($visit->logenddate, 0, 10).' '.$visit->logendtime) : false;
                     $actual = $start !== false && $end !== false && $end >= $start ? ($end - $start) / 60 : null;
-                    $planned = max(0, (float) ($visit->cft ?? 0));
+                    $planned = $faceTime->get($visit->customercode, 0);
                     $excluded = $type !== 'otp_time' && !empty($otp[$visit->routekey.':'.$visit->logkey]);
                     return ['id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
                         'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $excluded ? 0 : $planned,
@@ -102,8 +129,8 @@ class DashboardCustomerDetails
                 $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
                     ->whereIn('customercode', $visits->pluck('customercode')->unique())->pluck('customercode')->flip();
                 $operations = DB::table('customeroperationscontrol')->whereIn('routekey', $keys)->where('log_id', '>', 0)
-                    ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
-                    ->unique(fn ($row) => $row->routekey.':'.$row->log_id)->keyBy(fn ($row) => $row->routekey.':'.$row->log_id);
+                    ->where('visitkey', '>', 0)->get(['routekey', 'log_id', 'visitkey'])
+                    ->groupBy(fn ($row) => $row->routekey.':'.$row->log_id);
                 foreach (['invoices' => ['invoiceheader', 'totalsalesamount'], 'orders' => ['salesorderheader', 'totalinvoiceamount'], 'collections' => ['arheader', 'amountpaid']] as $label => [$table, $amount]) {
                     // Match the Dashboard card's existing productivity rules and count headers before joins.
                     $documents[$label] = DB::table($table)->whereIn('customercode', CustomerMaster::query()->select('customercode'))->whereIn('routekey', $keys)
@@ -140,10 +167,12 @@ class DashboardCustomerDetails
                         $end = $visit->logenddate && $visit->logendtime && !str_starts_with($visit->logenddate, '0000-') ? strtotime($visit->logenddate.' '.$visit->logendtime) : false;
                         $completed = $start !== false && $end !== false && $end >= $start;
                         if ($type === 'productive' && !$completed && !$ignored) continue;
-                        $operation = $operations->get($journey->routekey.':'.$visit->logkey);
-                        $key = $journey->routekey.':'.($operation?->visitkey ?? '');
-                        $salesOrder = $completed && (($documents['invoices']->get($key)?->positive_documents ?? 0) > 0 || ($documents['orders']->get($key)?->positive_documents ?? 0) > 0);
-                        $collection = $completed && ($documents['collections']->get($key)?->positive_documents ?? 0) > 0;
+                        $transactionKeys = $operations->get($journey->routekey.':'.$visit->logkey, collect())
+                            ->pluck('visitkey')->unique()->map(fn ($key) => $journey->routekey.':'.$key);
+                        $visitDocuments = collect($documents)->map(fn ($headers) => $transactionKeys
+                            ->map(fn ($key) => $headers->get($key))->filter());
+                        $salesOrder = $completed && ($visitDocuments['invoices']->sum('positive_documents') > 0 || $visitDocuments['orders']->sum('positive_documents') > 0);
+                        $collection = $completed && $visitDocuments['collections']->sum('positive_documents') > 0;
                         $productive = $salesOrder || $collection;
                         $rows->push([
                             'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
@@ -159,9 +188,9 @@ class DashboardCustomerDetails
                             'is_revisit' => $ordinal > 1,
                             'sales_order_productive' => !$ignored && $salesOrder,
                             'collection_productive' => !$ignored && $collection,
-                            'invoices' => (int) ($documents['invoices']->get($key)?->documents ?? 0),
-                            'orders' => (int) ($documents['orders']->get($key)?->documents ?? 0),
-                            'collections' => (int) ($documents['collections']->get($key)?->documents ?? 0),
+                            'invoices' => (int) $visitDocuments['invoices']->sum('documents'),
+                            'orders' => (int) $visitDocuments['orders']->sum('documents'),
+                            'collections' => (int) $visitDocuments['collections']->sum('documents'),
                         ]);
                     }
                 }

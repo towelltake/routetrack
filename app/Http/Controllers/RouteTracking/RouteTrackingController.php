@@ -10,6 +10,7 @@ use App\Models\CustomerMaster;
 use App\Models\RouteMaster;
 use App\Models\SubAreaMaster;
 use App\Services\StationaryDetection;
+use App\Services\CustomerFaceTime;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -875,11 +876,13 @@ class RouteTrackingController extends Controller
             return 0;
         }
 
-        $minutes = DB::table('customervisitlog')
+        $visitCustomers = DB::table('customervisitlog')
             ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->whereIn('customercode', $customerCodes)
-            ->sum(DB::raw('COALESCE(cft, 0)'));
+            ->pluck('customercode');
+        $faceTime = app(CustomerFaceTime::class)->minutesFor($visitCustomers);
+        $minutes = $visitCustomers->sum(fn ($code) => $faceTime->get($code, 0));
 
         return (int) round((float) $minutes * 60);
     }
@@ -1037,7 +1040,9 @@ class RouteTrackingController extends Controller
 
     private function attachVisitTransactions(Collection $visits, int $routekey): Collection
     {
-        $visitKeys = $visits->pluck('visitkey')->filter()->unique();
+        $keysForVisit = fn (array $visit) => collect($visit['visitkeys'] ?? [$visit['visitkey'] ?? null])
+            ->filter(fn ($key) => $key > 0)->unique()->values();
+        $visitKeys = $visits->flatMap($keysForVisit)->unique();
         $transactions = collect([
             'sales' => ['table' => 'invoiceheader', 'amount' => 'totalsalesamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
             'orders' => ['table' => 'salesorderheader', 'amount' => 'totalinvoiceamount', 'returns' => 'COALESCE(totalreturnamount, 0) + COALESCE(totaldamagedamount, 0)'],
@@ -1069,10 +1074,11 @@ class RouteTrackingController extends Controller
                 ->groupBy('visitkey');
         });
 
-        return $visits->map(function (array $visit) use ($transactions) {
-            $visitKey = (int) ($visit['visitkey'] ?? 0);
+        return $visits->map(function (array $visit) use ($transactions, $keysForVisit) {
+            $visitKeys = $keysForVisit($visit);
             $visit['transactions'] = collect(['sales', 'orders', 'collections'])
-                ->mapWithKeys(fn (string $type) => [$type => $transactions[$type]->get($visitKey, collect())->values()])
+                ->mapWithKeys(fn (string $type) => [$type => $visitKeys
+                    ->flatMap(fn ($key) => $transactions[$type]->get($key, collect()))->values()])
                 ->all();
 
             return $visit;
@@ -1151,8 +1157,7 @@ class RouteTrackingController extends Controller
             ->where('log_id', '>', 0)
             ->orderByDesc('primary_id')
             ->get(['log_id', 'visitkey', 'latitude', 'longitude'])
-            ->unique('log_id')
-            ->keyBy('log_id');
+            ->groupBy('log_id');
 
         $visits = DB::table('customervisitlog as cvl')
             ->leftJoin('customermaster as cm', 'cm.customercode', '=', 'cvl.customercode')
@@ -1173,10 +1178,12 @@ class RouteTrackingController extends Controller
                 'cm.fixedlatitude',
                 'cm.fixedlongitude',
                 'cm.toplpo',
-                DB::raw('COALESCE(cvl.cft, 0) as default_face_time_minutes'),
-            ])
-            ->map(function (object $visit) use ($operations, $routekey) {
-                $operation = $operations->get($visit->logkey);
+            ]);
+        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
+        $visits = $visits->map(function (object $visit) use ($operations, $routekey, $faceTime) {
+                $visitOperations = $operations->get($visit->logkey, collect());
+                // Keep the latest operation for coordinates, but use every linked key for transactions.
+                $operation = $visitOperations->first();
                 $coordinates = $this->validOmanCoordinates($operation?->latitude, $operation?->longitude)
                     ?? $this->validOmanCoordinates($visit->fixedlatitude, $visit->fixedlongitude);
                 $startDate = $this->validVisitDate($visit->logstartdate);
@@ -1190,6 +1197,8 @@ class RouteTrackingController extends Controller
                     'logkey' => (int) $visit->logkey,
                     'routekey' => $routekey,
                     'visitkey' => $operation?->visitkey ? (int) $operation->visitkey : null,
+                    'visitkeys' => $visitOperations->pluck('visitkey')->filter(fn ($key) => $key > 0)
+                        ->map(fn ($key) => (int) $key)->unique()->values()->all(),
                     'customercode' => (int) $visit->customercode,
                     'toplpo' => (int) ($visit->toplpo ?? 0),
                     'alternatecode' => $visit->alternatecode,
@@ -1198,7 +1207,7 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
-                    'default_face_time_minutes' => (int) $visit->default_face_time_minutes,
+                    'default_face_time_minutes' => $faceTime->get($visit->customercode, 0),
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? ($endTimestamp - $startTimestamp) / 60
                         : null,

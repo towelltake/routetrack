@@ -16,6 +16,12 @@ const store = useTemplateStore();
 const page = usePage();
 const t = computed(() => page.props.translations?.ui ?? {});
 
+const companyLogos = [
+  { file: "1 EG .png", name: "Enhance Group" },
+  { file: "2 Fairtrade-logo.png", name: "Fairtrade LLC" },
+  { file: "3 MDC-logo-1.png", name: "Majan Distribution Co. LLC" },
+].sort((a, b) => a.file.localeCompare(b.file, "en", { numeric: true }));
+
 const form = useForm({
   username: "",
   password: "",
@@ -51,91 +57,54 @@ const submit = () => {
 <template>
   <Head :title="t.log_in ?? 'Log In'" />
 
-  <BaseBackground>
+  <BaseBackground class="bg-white">
     <div class="row g-0 login-shell">
-      <div
-        class="hero-static col-lg-4 d-none d-lg-flex flex-column justify-content-center login-panel"
-      >
-        <div class="p-4 p-xl-5 flex-grow-1 d-flex align-items-center">
-          <div class="w-100 login-panel-content">
-            <div class="login-eyebrow text-uppercase">
-              {{ t.field_execution_platform ?? "Field Execution Platform" }}
-            </div>
-            <Link href="/" class="link-fx fw-semibold login-brand text-white">
-              TRAC
-            </Link>
-            <h2 class="login-panel-title text-white mt-4 mb-3">
-              {{
-                t.login_panel_title ??
-                "Control sales, distribution, inventory, and collections from one workspace."
-              }}
-            </h2>
-            <p class="login-panel-copy text-white-75 mb-4">
-              {{
-                t.login_panel_copy ??
-                "TRAC supports route operations with structured execution, transaction visibility, merchandizing follow-up, and reporting built for daily field use."
-              }}
-            </p>
-            <div class="login-panel-points">
-              <div class="login-point">
-                <span class="login-point-marker"></span>
-                <span>{{
-                  t.login_point_route_execution ??
-                  "Route execution and outlet coverage tracking"
-                }}</span>
-              </div>
-              <div class="login-point">
-                <span class="login-point-marker"></span>
-                <span>{{
-                  t.login_point_inventory_control ??
-                  "Inventory, invoicing, settlement, and pending balance control"
-                }}</span>
-              </div>
-              <div class="login-point">
-                <span class="login-point-marker"></span>
-                <span>{{
-                  t.login_point_operational_reports ??
-                  "Operational reports for field, accounts, and merchandising teams"
-                }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div
-          class="p-4 p-xl-5 d-xl-flex justify-content-between align-items-center fs-sm"
-        >
-          <p class="fw-medium text-white-50 mb-0">
-            <strong>{{ store.app.version }}</strong>
-            &copy; {{ store.app.copyright }}
-          </p>
-          <div class="text-white-50 py-2">
-            {{
-              t.authorized_access_internal_operations ??
-              "Authorized access for internal operations teams"
-            }}
-          </div>
-        </div>
+      <div class="hero-static col-lg-4 d-none d-lg-flex flex-column align-items-center login-panel">
+        <img
+          src="/assets/enhance.png"
+          alt="Enhance Group retail and distribution"
+          class="login-panel-image"
+        />
+        <footer class="login-company-footer" aria-label="Group companies">
+          <img
+            v-for="company in companyLogos"
+            :key="company.file"
+            :src="`/assets/Companies/${encodeURIComponent(company.file)}`"
+            :alt="company.name"
+            class="login-company-logo"
+          />
+        </footer>
       </div>
 
       <div
-        class="hero-static col-lg-8 d-flex flex-column align-items-center bg-body-extra-light"
+        class="hero-static col-lg-8 d-flex flex-column align-items-center bg-white login-form-panel"
       >
+        <img
+          src="/assets/TOWELL%20LOGO.png"
+          alt=""
+          aria-hidden="true"
+          class="login-towell-watermark"
+        />
         <div class="p-3 w-100 d-lg-none text-center">
           <Link href="/" class="link-fx fw-semibold fs-3 text-dark">
             TRAC
           </Link>
         </div>
-        <div class="p-4 w-100 flex-grow-1 d-flex align-items-center">
-          <div class="w-100">
-            <div class="text-center mb-5">
-              <h1 class="fw-black mb-2">{{ t.log_in ?? "Log In" }}</h1>
+        <div class="p-4 w-100 flex-grow-1 d-flex align-items-center login-form-wrap">
+          <div class="w-100 login-form-content">
+            <div class="text-center login-form-heading">
+              <img
+                src="/assets/eg.png"
+                alt="Enhance Group"
+                class="login-logo mb-3"
+              />
               <p class="fw-medium text-muted">
                 {{ t.login_welcome_message ?? "Welcome, please log in." }}
               </p>
             </div>
 
             <div class="row g-0 justify-content-center">
-              <div class="col-sm-8 col-xl-4">
+              <div class="col-12">
                 <div
                   v-if="status"
                   class="alert alert-success d-flex align-items-center justify-content-center fs-sm fw-medium mb-5"
@@ -188,7 +157,7 @@ const submit = () => {
                     </div>
                   </div>
                   <div
-                    class="d-flex justify-content-between align-items-center mb-4"
+                    class="d-flex justify-content-between align-items-center mb-4 login-actions"
                   >
                     <div class="form-check">
                       <input
@@ -204,16 +173,16 @@ const submit = () => {
                     <div>
                       <button
                         type="submit"
-                        class="btn btn-alt-primary"
-                        :class="{ 'opacity-25': form.processing }"
+                        class="btn login-submit"
+                        :aria-busy="form.processing"
                         :disabled="form.processing"
                       >
-                        <i class="fa fa-fw fa-sign-in-alt me-1 opacity-50"></i>
+                        <i class="fa fa-fw fa-sign-in-alt me-1"></i>
                         {{ t.log_in ?? "Log In" }}
                       </button>
                     </div>
                   </div>
-                  <div class="border-top py-3 text-center">
+                  <div v-if="canResetPassword" class="border-top py-3 text-center">
                     <Link
                       v-if="canResetPassword"
                       href="/forgot-password"
@@ -243,96 +212,185 @@ const submit = () => {
 <style scoped>
 .login-shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 26%),
-    linear-gradient(90deg, #0f172a 0%, #13253f 26%, #f8fafc 26%, #f8fafc 100%);
+  background: #fff;
 }
 
-.login-panel {
+.login-logo {
+  display: block;
+  width: 164px;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.login-form-wrap {
+  justify-content: center;
+}
+
+.login-form-content {
+  max-width: 400px;
+}
+
+.login-form-heading {
+  margin-bottom: 2.5rem;
+}
+
+.login-form-heading p {
+  margin-bottom: 0;
+}
+
+.login-form-content .form-label {
+  margin-bottom: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #33454e;
+}
+
+.login-form-content .form-control {
+  min-height: 54px;
+  border: 1px solid #e2e7eb;
+  border-radius: 12px;
+  background: #f6f8fa;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.login-form-content .form-control:focus {
+  background: #fff;
+  border-color: #e72b24;
+  box-shadow: 0 0 0 3px rgb(231 43 36 / 10%);
+}
+
+.login-form-content .form-control.is-invalid {
+  border-color: var(--bs-danger, #dc3545);
+}
+
+.login-actions {
+  gap: 1rem;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+.login-form-content .form-check-input:checked {
+  background-color: #d9231c;
+  border-color: #d9231c;
+}
+
+.login-form-content .form-check-input:focus {
+  border-color: #e72b24;
+  box-shadow: 0 0 0 3px rgb(231 43 36 / 10%);
+}
+
+.login-submit {
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #d9231c;
+  border-radius: 10px;
+  background: #d9231c;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgb(217 35 28 / 16%);
+}
+
+.login-submit:hover,
+.login-submit:active,
+.login-submit:focus-visible {
+  background: #bd1e18;
+  border-color: #bd1e18;
+  color: #fff;
+}
+
+.login-submit:focus-visible {
+  outline: 3px solid rgb(217 35 28 / 25%);
+  outline-offset: 3px;
+}
+
+.login-submit:disabled {
+  background: #d9231c;
+  border-color: #d9231c;
+  color: #fff;
+  opacity: 0.65;
+}
+
+@media (min-width: 992px) {
+  .login-panel {
+    width: 44%;
+  }
+
+  .login-form-panel {
+    width: 56%;
+  }
+}
+
+.login-form-panel {
   position: relative;
+  isolation: isolate;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.94)),
-    linear-gradient(135deg, #0b1220 0%, #163355 52%, #0f172a 100%);
 }
 
-.login-panel::before {
-  content: "";
+.login-towell-watermark {
+  display: none;
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.45));
-}
-
-.login-panel::after {
-  content: "";
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  right: -140px;
-  bottom: -100px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.22), transparent 68%);
-}
-
-.login-panel-content {
-  position: relative;
-  z-index: 1;
-  max-width: 30rem;
-}
-
-.login-eyebrow {
-  letter-spacing: 0.18em;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: rgba(191, 219, 254, 0.92);
-}
-
-.login-brand {
-  font-size: 2.35rem;
-  letter-spacing: 0.04em;
-}
-
-.login-panel-title {
-  font-size: 2rem;
-  line-height: 1.15;
-  font-weight: 800;
-}
-
-.login-panel-copy {
-  font-size: 1rem;
-  line-height: 1.75;
-}
-
-.login-panel-points {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.login-point {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  color: rgba(226, 232, 240, 0.92);
-  line-height: 1.5;
-}
-
-.login-point-marker {
-  width: 10px;
-  height: 10px;
-  margin-top: 0.45rem;
-  flex: 0 0 10px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 100%);
-  box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.12);
+  z-index: -1;
+  top: 50%;
+  right: 2rem;
+  width: clamp(8rem, 13vw, 16rem);
+  max-width: calc(100% - 3rem);
+  height: min(54vh, 27rem);
+  object-fit: contain;
+  transform: translateY(-50%);
+  opacity: 0.045;
+  pointer-events: none;
 }
 
 @media (max-width: 991.98px) {
-  .login-shell {
-    background: #f8fafc;
+  .login-towell-watermark {
+    right: 1rem;
+    width: clamp(8rem, 30vw, 12rem);
+    opacity: 0.04;
   }
+}
+
+.login-panel {
+  padding: clamp(2rem, 4vw, 4rem);
+  gap: 1.5rem;
+  background: #fff;
+}
+
+.login-panel-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 13rem);
+  margin-block: auto;
+  object-fit: contain;
+}
+
+.login-company-footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 520px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 575.98px) {
+  .login-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-form-content .form-control {
+    transition: none;
+  }
+}
+
+.login-company-logo {
+  display: block;
+  width: 100%;
+  height: 64px;
+  object-fit: contain;
 }
 </style>

@@ -1,8 +1,17 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import { displayedTimeMinutes } from "./time-display";
 
 const props = defineProps({ metrics: Object, loading: Boolean, error: String, idle: Object });
 const emit = defineEmits(["inspect"]);
+const timeMode = ref("average");
+const timeModeChanged = ref(false);
+const setTimeMode = (mode) => {
+    if (mode === timeMode.value) return;
+    timeModeChanged.value = true;
+    timeMode.value = mode;
+};
+const timeMinutes = (value) => displayedTimeMinutes(value, props.metrics?.routes_started, timeMode.value);
 const number = (value, digits = 0) => value == null ? "—" : Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
 const percent = (value) => value == null ? "—" : `${number(value, 1)}%`;
 const ratioPercent = (value, total) => total > 0 && value != null ? percent(100 * value / total) : "—";
@@ -22,11 +31,11 @@ const cards = computed(() => {
             definition: "Started routes / filtered total routes × 100. Route Close Compliance below is routes closed on their start date / started routes × 100, unavailable when no routes have started. Routes count once per route start date; every journey for that route and start date must be closed with an end date equal to its start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
             note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
-            detail: m ? `${number(m.pending_customers)} pending / ${number(m.missed_customers)} missed${m.journeys_without_plan ? ` / ${number(m.journeys_without_plan)} journeys without a plan` : ''}` : "",
             breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
             definition: "Unique planned customers visited without any matched OTP / unique scheduled route sequence customers, counted per journey. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. All OTP types count; unplanned customers are excluded." },
         { title: "Productivity", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             compactBreakdown: true,
+            excludedLpo: m?.lpo_customers_excluded,
             breakdown: [{ label: 'Collection', value: m?.collection_productivity_percent }, { label: 'Orders/Invoices', value: m?.sales_order_productivity_percent }],
             note: m ? `${number(m.productive_visits)} of ${number(m.completed_visits)} visits productive` : "",
             definition: "Eligible completed visits with a positive, non-voided collection, sale or order / eligible completed visits. Each visit counts once in the total. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
@@ -36,40 +45,40 @@ const cards = computed(() => {
             note: "Total orders value", definition: "Total order value" },
         { title: "Collections", icon: "fa-wallet", tone: "navy", amounts: m?.amounts.collections,
             note: "Total collection receipts value", definition: "Total collection value" },
-        { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(m?.operational_minutes), unit: "h:mm",
+        { title: "Operational Time", icon: "fa-clock", tone: "green", value: duration(timeMinutes(m?.operational_minutes)), unit: "h:mm",
             note: "First check-in to last checkout without OTP", detail: m?.operational_missing_journeys ? `${m.operational_missing_journeys} journeys unavailable` : "", definition: "Sum of each journey's first non-OTP check-in to its last non-OTP checkout. Includes intervening time. A missing final checkout makes the journey unavailable." },
-        { title: "OTP usage", icon: "fa-key", tone: "purple", value: ratioPercent(m?.otp?.events, m?.total_visits),
+        { title: "OTP usage", icon: "fa-key", tone: "purple", value: ratioPercent(m?.otp?.events, m?.all_unique_visited_customers),
             comments: m?.otp_comments ?? [],
-            note: m ? `${number(m.otp?.events)} total OTP / ${number(m.total_visits)} total visits` : "",
-            definition: "Total OTP events / total visits × 100 for the selected journeys. Includes all OTP types and all visits, including repeats, incomplete visits and LPO customers. Date ranges use summed counts. Multiple OTP events per visit can produce a rate above 100%. No visits means unavailable." },
+            note: m ? `${number(m.otp?.events)} total OTP / ${number(m.all_unique_visited_customers)} unique visits` : "",
+            definition: "Total OTP events / unique customers visited per journey × 100. Repeat visits to the same customer within a journey count once; that customer counts again in another journey. Includes incomplete visits and LPO customers. Date ranges use summed journey counts. All OTP types count, so multiple OTP events can produce a rate above 100%. No unique visits means unavailable." },
         { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: percent(m?.unplanned_without_otp_percent),
             note: m ? `${number(m.unplanned_customers_without_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers: unplanned without OTP` : "",
             breakdown: [{ label: 'Unplanned customers with OTP', value: m?.unplanned_with_otp_percent, count: m ? `${number(m.unplanned_customers_with_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers` : '' }],
             definition: "Unique unplanned customers without OTP / all unique customers visited in the selected journeys. The OTP percentage below uses the same denominator. Each customer counts once per journey, including incomplete visits and LPO customers. Any matched OTP places that customer only in the OTP group. Journeys without a plan cannot contribute unplanned customers, but their visits remain in the total visited denominator. Date ranges use summed customer counts, not averaged percentages." },
-        { title: "Total Duration", icon: "fa-clock", tone: "navy", value: duration(m?.duration_minutes), unit: "h:mm",
+        { title: "Total Duration", icon: "fa-clock", tone: "navy", value: duration(timeMinutes(m?.duration_minutes)), unit: "h:mm",
             note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
             definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
-        { title: "Time Outside Visits", icon: "fa-car", tone: "slate", value: duration(m?.outside_visit_minutes), unit: "h:mm",
+        { title: "Time Outside Visits", icon: "fa-car", tone: "slate", value: duration(timeMinutes(m?.outside_visit_minutes)), unit: "h:mm",
             note: "Includes travel, idle time and breaks",
             detail: m?.duration_missing_journeys ? `${number(m.duration_missing_journeys)} journeys excluded: duration unavailable` : "",
             definition: "Journey duration minus summed completed customer visit time, for journeys with available duration" },
         { title: "Returns", icon: "fa-rotate-left", tone: "red", amounts: m?.amounts.returns?.map((amount) => ({ ...amount, amount: -Math.abs(Number(amount.amount)) })),
             note: "Invoice and order returns", definition: "Total returns value" },
-        { title: "OTP Customer Time", icon: "fa-key", tone: "purple", value: duration(m?.otp_customer_minutes), unit: "h:mm",
+        { title: "OTP Customer Time", icon: "fa-key", tone: "purple", value: duration(timeMinutes(m?.otp_customer_minutes)), unit: "h:mm",
             note: "Visits with OTP", definition: "Total visit time for customers with OTP" },
         { title: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: signedPercent(m?.face_time_variance_percent),
-            comparison: { actual: m?.actual_face_minutes, planned: m?.planned_face_minutes },
-            note: m?.face_time_variance_percent == null ? "No planned time available" : m.face_time_variance_percent > 0 ? "Above planned time" : m.face_time_variance_percent < 0 ? "Below planned time" : "On planned time",
-            definition: "Actual and planned customer face time exclude OTP visits. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
+            comparison: { actual: timeMinutes(m?.actual_face_minutes), planned: timeMinutes(m?.planned_face_minutes), variance: m?.face_time_variance_percent },
+            definition: "Actual and planned customer face time exclude OTP visits. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
             compactBreakdown: true,
+            excludedLpo: m?.lpo_customers_excluded,
             breakdown: [{ label: 'Collection', value: m?.collection_efficiency_percent }, { label: 'Orders/Invoices', value: m?.sales_order_efficiency_percent }],
             note: m ? `${number(m.unique_productive_customers)} of ${number(m.unique_visited_customers)} unique customers productive` : "",
             definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
-        { title: "Idle Time Outside Customer Visits", icon: "fa-hourglass-half", tone: "red", value: props.idle?.loading ? 'Loading...' : duration(props.idle?.minutes), unit: props.idle?.loading ? '' : "h:mm",
+        { title: "Idle Time Outside Customer Visits", icon: "fa-hourglass-half", tone: "red", value: props.idle?.loading ? 'Loading...' : duration(timeMinutes(props.idle?.minutes)), unit: props.idle?.loading ? '' : "h:mm",
             interactive: !props.idle?.loading,
             note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
-            detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; total includes measured journeys only' : '',
+            detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; figures use measured time only' : '',
             definition: "GPS-detected stationary time outside customer visit intervals, including exclusion of OTP visits. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
     ];
 });
@@ -87,9 +96,35 @@ const groups = computed(() => [
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
         <div class="dashboard-metric-groups">
             <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
-                <h3 class="dashboard-group-title">{{ group.title }}</h3>
+                <div class="dashboard-group-heading">
+                    <h3 class="dashboard-group-title">{{ group.title }}</h3>
+                    <template v-if="group.key === 'time'">
+                        <div class="time-mode-control" role="group" aria-label="Time display mode">
+                            <button type="button" class="time-mode-label" :class="{ active: timeMode === 'average' }" :aria-pressed="timeMode === 'average'" @click="setTimeMode('average')">Average</button>
+                            <button type="button" class="time-mode-switch" role="switch" :aria-checked="timeMode === 'totals'" aria-label="Show total time instead of average time" @click="setTimeMode(timeMode === 'average' ? 'totals' : 'average')"><span aria-hidden="true"></span></button>
+                            <button type="button" class="time-mode-label" :class="{ active: timeMode === 'totals' }" :aria-pressed="timeMode === 'totals'" @click="setTimeMode('totals')">Totals</button>
+                        </div>
+                        <span class="time-mode-description" role="status" title="Average = available total minutes divided by all filtered route starts. Each route counts once per start date, including starts with missing measurements.">{{ timeMode === 'average' ? `Per started route / ${loading ? '...' : number(metrics?.routes_started)} route starts` : 'Total time for selected routes and dates' }}</span>
+                        <span class="visually-hidden">Averages divide available total minutes by all filtered route starts, counted once per route per start date. Missing measurements remain excluded from totals. CFT variance and journey counts are unchanged. Details show original records.</span>
+                    </template>
+                </div>
                 <div class="dashboard-metric-grid">
-            <article v-for="card in group.cards" :key="card.title" class="dashboard-metric-card" :class="[`tone-${card.tone}`, { 'compact-breakdown': card.compactBreakdown }]" :title="card.definition"
+                    <article v-if="group.key === 'customers'" class="total-visits-card" aria-label="Customer Coverage. View all visits." title="Unique customers visited per journey. Repeat visits count once. Any matched OTP puts the customer in the with-OTP group, even if another visit had no OTP. Includes incomplete visits and LPO customers."
+                        role="button" :tabindex="metrics && !loading ? 0 : -1" :aria-disabled="!metrics || loading"
+                        @click="metrics && !loading && emit('inspect', 'Customer Coverage')"
+                        @keydown.enter="metrics && !loading && emit('inspect', 'Customer Coverage')"
+                        @keydown.space.prevent="metrics && !loading && emit('inspect', 'Customer Coverage')">
+                        <h4><span class="total-visits-icon" aria-hidden="true"><i class="fa fa-users"></i></span>Customer Coverage<i class="fa fa-chevron-right total-visits-open" aria-hidden="true"></i></h4>
+                        <p v-if="loading" class="total-visits-state">Loading...</p>
+                        <p v-else-if="!metrics" class="total-visits-state">Figures unavailable</p>
+                        <div v-else class="total-visits-values">
+                            <div class="total-visits-count"><strong>{{ number(metrics.all_unique_visited_customers) }}</strong><span>Total customers covered</span></div>
+                            <div class="total-visits-without"><strong>{{ ratioPercent(metrics.unique_visited_without_otp, metrics.all_unique_visited_customers) }}</strong><span>{{ number(metrics.unique_visited_without_otp) }} / {{ number(metrics.all_unique_visited_customers) }} customers</span><span>Visited without OTP</span></div>
+                            <div class="total-visits-with"><strong>{{ ratioPercent(metrics.unique_visited_with_otp, metrics.all_unique_visited_customers) }}</strong><span>{{ number(metrics.unique_visited_with_otp) }} / {{ number(metrics.all_unique_visited_customers) }} customers</span><span>Visited with OTP</span></div>
+                        </div>
+                    </article>
+            <article v-for="(card, index) in group.cards" :key="group.key === 'time' ? `${card.title}-${timeMode}` : card.title" class="dashboard-metric-card" :class="[`tone-${card.tone}`, { 'time-card-flip': group.key === 'time' && timeModeChanged, 'compact-breakdown': card.compactBreakdown, 'stacked-coverage': group.key === 'customers' && index < 2 }]" :title="card.definition"
+                :style="group.key === 'customers' ? { gridArea: ['jp', 'unplanned', 'efficiency', 'productivity', 'otp'][index] } : group.key === 'time' ? { '--flip-delay': `${index * 40}ms` } : undefined"
                 :role="card.interactive === false ? undefined : 'button'" :tabindex="card.interactive !== false && metrics && !loading ? 0 : -1" :aria-disabled="card.interactive === false ? undefined : !metrics || loading"
                 :aria-label="`${card.title}. ${card.definition}${card.interactive === false ? '' : ' View journey details.'}`"
                 @click="card.interactive !== false && metrics && !loading && emit('inspect', card.title)"
@@ -107,12 +142,12 @@ const groups = computed(() => [
                     <div v-if="!card.amounts.length" class="dashboard-metric-value">0</div>
                 </div>
                 <div v-else-if="!card.comparison" class="dashboard-metric-value">{{ card.value }} <span v-if="card.unit">{{ card.unit }}</span></div>
+                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance" :class="{ 'negative-variance': card.comparison.variance < 0 }"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
                 <div v-if="!loading && metrics && card.comparison" class="dashboard-time-comparison">
                     <div><span>Actual CFT</span><strong>{{ duration(card.comparison.actual) }}</strong><small>h:mm</small></div>
                     <div><span>Planned CFT</span><strong>{{ duration(card.comparison.planned) }}</strong><small>h:mm</small></div>
                 </div>
-                <div v-if="!loading && metrics && card.comparison" class="dashboard-face-variance"><strong>{{ card.value }}</strong><span>Variance (%)</span></div>
-                <p class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
+                <p v-if="loading || !metrics || card.note" class="dashboard-metric-note">{{ loading ? 'Loading...' : metrics ? card.note : 'Figures unavailable' }}</p>
                 <p v-if="!loading && metrics && card.detail" class="dashboard-metric-detail">{{ card.detail }}</p>
                 <div v-if="!loading && metrics && card.comments" class="dashboard-otp-comments">
                     <h5>OTP by comments</h5>
@@ -124,6 +159,7 @@ const groups = computed(() => [
                     <p v-if="!card.comments.length">No OTP events in this period.</p>
                 </div>
                 <div v-if="!loading && metrics && card.breakdown" class="dashboard-metric-breakdown" :class="{ 'single-breakdown': card.breakdown.length === 1 }"><div v-for="(item, index) in card.breakdown" :key="item.label" :class="item.tone === 'orange' ? 'orange-share' : index === 0 ? 'collection-share' : 'sales-share'"><strong>{{ item.format === 'number' ? number(item.value) : percent(item.value) }}</strong><span>{{ item.label }}</span><small v-if="item.count">{{ item.count }}</small></div></div>
+                <p v-if="!loading && metrics && card.excludedLpo != null" class="dashboard-lpo-excluded" title="Unique LPO customers visited per journey; repeat visits within a journey count once.">{{ number(card.excludedLpo) }} LPO {{ card.excludedLpo === 1 ? 'customer' : 'customers' }} excluded</p>
                 </div>
                 <i v-if="card.interactive !== false" class="fa fa-chevron-right dashboard-metric-open" aria-hidden="true"></i>
             </article>
@@ -141,10 +177,47 @@ const groups = computed(() => [
 .group-customers { grid-column: span 10; }
 .group-time, .group-transactions { grid-column: span 12; }
 .dashboard-group-title { margin: 0 0 9px 2px; color: #475569; font-size: 12px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.dashboard-group-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 9px; }
+.dashboard-group-heading .dashboard-group-title { margin-bottom: 0; }
+.time-mode-control { display: inline-flex; align-items: center; gap: 7px; }
+.time-mode-label { padding: 3px 0; border: 0; background: transparent; color: #64748b; font-size: 12px; font-weight: 600; }
+.time-mode-label.active { color: #1d4ed8; }
+.time-mode-switch { position: relative; width: 38px; height: 22px; padding: 3px; border: 0; border-radius: 20px; background: #2563eb; cursor: pointer; }
+.time-mode-switch span { display: block; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #172b4533; transition: transform .2s ease; }
+.time-mode-switch[aria-checked="true"] span { transform: translateX(16px); }
+.time-mode-control button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.time-mode-description { color: #64748b; font-size: 11px; }
+.group-time .dashboard-metric-grid { perspective: 1400px; }
+.time-card-flip { animation: time-card-rotate .65s cubic-bezier(.22, .65, .3, 1) both; animation-delay: var(--flip-delay, 0ms); backface-visibility: hidden; }
+@keyframes time-card-rotate {
+    0% { transform: rotateY(0deg) scale(1); }
+    45% { transform: rotateY(160deg) scale(.96); }
+    55% { transform: rotateY(200deg) scale(.96); }
+    100% { transform: rotateY(360deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .time-card-flip { animation: none; }
+    .time-mode-switch span { transition: none; }
+}
 .dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .group-time .dashboard-metric-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: auto 1fr; grid-template-areas: 'total total efficiency productivity otp' 'jp unplanned efficiency productivity otp'; }
+.total-visits-card { grid-area: total; min-width: 0; padding: 12px 14px; border: 1px solid #dce6f2; border-radius: 12px; background: #f8faff; box-shadow: 0 2px 8px #172b4505; }
+.total-visits-card h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: #475569; font-size: 12px; font-weight: 650; }
+.total-visits-card[aria-disabled="false"] { cursor: pointer; }
+.total-visits-card[aria-disabled="false"]:hover { border-color: #93b4e8; }
+.total-visits-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.total-visits-open { margin-left: auto; color: #94a3b8; font-size: 10px; }
+.total-visits-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #eaf0fc; color: #2563eb; font-size: 11px; }
+.total-visits-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; text-align: center; }
+.total-visits-values > div { display: grid; align-content: start; gap: 3px; min-width: 0; padding: 8px 4px; }
+.total-visits-values strong { font-size: clamp(22px, 1.8vw, 28px); font-weight: 750; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.total-visits-values span, .total-visits-state { font-size: 11px; line-height: 1.4; color: #64748b; }
+.total-visits-count { border-radius: 8px; background: #edf2fa; }
+.total-visits-count strong { color: #172b45; }
+.total-visits-without strong { color: #15803d; }
+.total-visits-with strong { color: #c2410c; }
 .dashboard-metric-card { --accent: #2563eb; --tint: #eff6ff; display: grid; grid-template-columns: 32px minmax(0, 1fr) 10px; align-content: start; gap: 10px 8px; min-width: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #172b4505; }
 .dashboard-metric-card[aria-disabled="false"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .dashboard-metric-card[aria-disabled="false"]:hover { border-color: var(--accent); box-shadow: 0 4px 14px #172b4510; }
@@ -165,13 +238,15 @@ const groups = computed(() => [
 .dashboard-metric-money + .dashboard-metric-money { margin-top: 7px; }
 .dashboard-metric-note, .dashboard-metric-detail { margin: 0; color: #64748b; font-size: 11.5px; line-height: 1.45; }
 .dashboard-metric-open { grid-column: 3; grid-row: 1; align-self: center; color: #94a3b8; font-size: 10px; }
-.dashboard-time-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dashboard-time-comparison { display: grid; gap: 4px; padding-top: 9px; border-top: 1px solid #edf2f7; }
+.dashboard-time-comparison > div { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 6px; min-width: 0; line-height: 1.25; }
 .dashboard-time-comparison span { display: block; color: #64748b; font-size: 11px; }
-.dashboard-time-comparison strong { color: var(--accent); font-size: clamp(21px, 1.6vw, 26px); font-weight: 650; font-variant-numeric: tabular-nums; }
-.dashboard-face-variance { display: flex; align-items: baseline; gap: 8px; padding-top: 9px; border-top: 1px solid #edf2f7; }
-.dashboard-face-variance strong { font-size: 15px; color: var(--accent); }
+.dashboard-time-comparison strong { color: var(--accent); font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+.dashboard-face-variance { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.dashboard-face-variance strong { font-size: clamp(23px, 1.8vw, 28px); font-weight: 750; line-height: 1.15; color: var(--accent); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dashboard-face-variance.negative-variance strong { color: #dc2626; }
 .dashboard-face-variance span { font-size: 11px; color: #64748b; }
-.dashboard-time-comparison small { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; }
+.dashboard-time-comparison small { color: #94a3b8; font-size: 10px; }
 .dashboard-metric-skeleton { height: 35px; border-radius: 6px; background: #edf2f7; }
 .dashboard-metric-breakdown { grid-column: 1 / -1; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 12px; }
 .dashboard-metric-breakdown.single-breakdown { grid-template-columns: minmax(0, 1fr); }
@@ -194,12 +269,21 @@ const groups = computed(() => [
 .group-customers .dashboard-metric-note { grid-row: 3; }
 .group-customers .dashboard-metric-detail { grid-row: 4; }
 .group-customers .dashboard-metric-breakdown { grid-row: 5; align-self: end; margin-top: 0; }
-.group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto; }
+.group-customers .dashboard-metric-card.compact-breakdown { grid-template-rows: 32px auto minmax(34px, auto) auto 1fr; }
+.dashboard-lpo-excluded { grid-column: 1 / -1; grid-row: 5; align-self: end; margin: 0; padding-top: 8px; color: #dc2626; font-size: 11.5px; line-height: 1.45; }
 .group-customers .compact-breakdown .dashboard-metric-breakdown { grid-row: 4; align-self: start; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.group-customers .dashboard-metric-card.stacked-coverage { min-height: 0; padding: 10px 12px; gap: 6px 8px; grid-template-columns: 24px minmax(0, 1fr) 10px; grid-template-rows: 24px auto auto 1fr; }
+.stacked-coverage .dashboard-metric-icon { width: 24px; height: 24px; border-radius: 7px; font-size: 11px; }
+.group-customers .stacked-coverage .dashboard-metric-breakdown { grid-row: 4; padding-top: 6px; }
+.stacked-coverage .dashboard-metric-breakdown > div { padding: 8px; gap: 3px; }
+.stacked-coverage .dashboard-metric-breakdown strong { font-size: 22px; }
+.stacked-coverage .dashboard-metric-note, .stacked-coverage .dashboard-metric-breakdown small { font-size: 10.5px; line-height: 1.35; }
 @media (max-width: 1500px) and (min-width: 1051px) { .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dashboard-metrics-error { padding: 12px 16px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 @media (max-width: 1200px) { .dashboard-metric-group { grid-column: span 12; } }
 @media (max-width: 1050px) { .group-customers .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid, .group-time .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-metric-card { padding: 12px; } }
 @media (max-width: 420px) { .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1050px) and (min-width: 701px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total efficiency' 'jp unplanned efficiency' 'productivity otp otp'; } }
+@media (max-width: 700px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total' 'jp unplanned' 'efficiency productivity' 'otp otp'; } .total-visits-card { padding: 12px; } .total-visits-values { gap: 8px; } }
 </style>

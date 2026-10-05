@@ -21,17 +21,17 @@ class DashboardMetrics
             ->whereIn('v.customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('v.routekey', $keys)
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
-            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime',
-                DB::raw('COALESCE(v.cft, 0) as expected_minutes')]);
+            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime']);
+        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
+        foreach ($visits as $visit) $visit->expected_minutes = $faceTime->get($visit->customercode, 0);
         $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
             ->whereIn('customercode', $visits->pluck('customercode')->unique())
             ->pluck('customercode')->flip();
         foreach ($visits as $visit) $visit->productivity_excluded = $excludedCustomers->has($visit->customercode);
         $operations = DB::table('customeroperationscontrol')
             ->whereIn('routekey', $keys)->where('log_id', '>', 0)
-            ->orderByDesc('primary_id')->get(['routekey', 'log_id', 'visitkey'])
-            ->unique(fn ($row) => $row->routekey.':'.$row->log_id)
-            ->keyBy(fn ($row) => $row->routekey.':'.$row->log_id);
+            ->where('visitkey', '>', 0)->get(['routekey', 'log_id', 'visitkey'])
+            ->groupBy(fn ($row) => $row->routekey.':'.$row->log_id);
 
         $transactions = [];
         $amounts = [];
@@ -108,10 +108,10 @@ class DashboardMetrics
                 $expectedMinutes += (int) $visit->expected_minutes;
                 if (!isset($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) $plannedFaceMinutes += (float) $visit->expected_minutes;
             }
-            $operation = $operations->get($visit->routekey.':'.$visit->logkey);
-            $transactionKey = $visit->routekey.':'.($operation?->visitkey ?? '');
-            $salesOrder = !$visit->productivity_excluded && ($transactions['sales']->has($transactionKey) || $transactions['orders']->has($transactionKey));
-            $collection = !$visit->productivity_excluded && $transactions['collections']->has($transactionKey);
+            $transactionKeys = $operations->get($visit->routekey.':'.$visit->logkey, collect())
+                ->pluck('visitkey')->unique()->map(fn ($key) => $visit->routekey.':'.$key);
+            $salesOrder = !$visit->productivity_excluded && $transactionKeys->contains(fn ($key) => $transactions['sales']->has($key) || $transactions['orders']->has($key));
+            $collection = !$visit->productivity_excluded && $transactionKeys->contains(fn ($key) => $transactions['collections']->has($key));
             if ($salesOrder) { $salesOrderVisits++; $salesOrderCustomers[$visit->routekey.':'.$visit->customercode] = true; }
             if ($collection) { $collectionVisits++; $collectionCustomers[$visit->routekey.':'.$visit->customercode] = true; }
             if ($salesOrder || $collection) {
@@ -151,6 +151,8 @@ class DashboardMetrics
             'unplanned_customers_without_otp' => $unplannedWithoutOtp,
             'unplanned_customers_with_otp' => $unplannedOtp,
             'all_unique_visited_customers' => count($visited),
+            'unique_visited_with_otp' => count($otpCustomers),
+            'unique_visited_without_otp' => count($visited) - count($otpCustomers),
             'unplanned_without_otp_percent' => $visited ? round(100 * $unplannedWithoutOtp / count($visited), 1) : null,
             'unplanned_with_otp_percent' => $visited ? round(100 * $unplannedOtp / count($visited), 1) : null,
             'duration_minutes' => $timed->isEmpty() ? null : $timed->sum('duration'),
@@ -191,6 +193,7 @@ class DashboardMetrics
             'sales_order_efficiency_percent' => $eligibleVisited ? round(100 * count($salesOrderCustomers) / count($eligibleVisited), 1) : null,
             'collection_efficiency_percent' => $eligibleVisited ? round(100 * count($collectionCustomers) / count($eligibleVisited), 1) : null,
             'unique_visited_customers' => count($eligibleVisited),
+            'lpo_customers_excluded' => count($visited) - count($eligibleVisited),
             'unique_productive_customers' => count($productiveCustomers),
             'efficiency_percent' => $eligibleVisited ? round(100 * count($productiveCustomers) / count($eligibleVisited), 1) : null,
             'nonproductive_visits' => $completed - $productive,

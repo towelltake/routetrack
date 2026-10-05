@@ -122,7 +122,7 @@ function inspectCard(title) {
         customerDetailsDialog.value.open('efficiency', { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
         return;
     }
-    const kind = { 'JP compliance': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productivity': 'productive', 'Sales': 'sales', 'Order value': 'orders', 'Collections': 'collections', 'Returns': 'returns', 'Total Duration': 'duration', 'Operational Time': 'operational', 'OTP Customer Time': 'otp_time', 'Face Time Compliance': 'actual_face', 'Time Outside Visits': 'outside' }[title];
+    const kind = { 'Customer Coverage': 'coverage', 'JP compliance': 'planned', 'Unplanned Customers': 'unplanned', 'OTP usage': 'otp', 'Productivity': 'productive', 'Sales': 'sales', 'Order value': 'orders', 'Collections': 'collections', 'Returns': 'returns', 'Total Duration': 'duration', 'Operational Time': 'operational', 'OTP Customer Time': 'otp_time', 'Face Time Compliance': 'actual_face', 'Time Outside Visits': 'outside' }[title];
     if (kind) {
         customerDetailsDialog.value.open(kind, { from_date: fromDate.value, to_date: toDate.value, ...selected.value });
         return;
@@ -362,7 +362,6 @@ function resetFilters() {
     <div class="content route-location-content" @click.capture="saveDashboard">
         <div class="route-location-page-heading">
             <h1 class="h3 fw-bold mb-1">Dashboard</h1>
-            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Field performance across every route journey</h2>
         </div>
 
         <section class="dashboard-filters" aria-labelledby="dashboard-filters-title">

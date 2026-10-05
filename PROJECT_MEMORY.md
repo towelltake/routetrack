@@ -1,5 +1,257 @@
 # TRAC / routeTrack project memory
 
+## Towell login watermark hidden: 2026-10-01
+
+Login.vue temporarily hides the Towell watermark with display: none on its
+scoped class, on all screen sizes. Asset and positioning styles remain for
+restoration. Diff check passed; production build passed. Browser visual
+verification remains outstanding.
+
+## Login visual refinement: 2026-10-01
+
+Login.vue uses a 44/56 desktop split and a centered 400px form to reduce the
+gap between the illustration and login. Reduced Enhance logo size and heading
+spacing, softened and reduced the Towell watermark, and constrained company
+footer width. Inputs have subtle borders, rounded corners and brand-red focus
+states; the login button is solid red with visible keyboard focus and a readable
+disabled state. Actions wrap on narrow screens. The password-reset divider only
+renders when reset is available. Authentication behavior is unchanged.
+Validation: production build (npm.cmd run build) and git diff --check passed.
+Live browser visual verification remains outstanding.
+
+## Dashboard Time averages and totals: 2026-10-01
+
+DashboardCards has an Average / Totals switch beside Time, defaulting to Average
+on mount. All five headline durations plus Actual/Planned CFT divide unrounded
+minutes by metrics.routes_started before h:mm formatting. This is the existing
+filtered routecode/start-date count, summed across the selected inclusive date
+range, not journeys_started or only measured journeys. Missing durations stay
+unavailable; zero/absent route starts yield unavailable averages. CFT variance,
+journey availability counts, other card groups and drilldown records are unchanged.
+Idle minutes use the same divisor when their asynchronous response arrives.
+
+The switch displays its denominator and has keyboard/ARIA support. Time cards
+perform a staggered 360-degree rotation on mode changes; reduced-motion users
+get an immediate update. No animation on initial load. Mode persists while
+filters change, without saving across page mounts. Helper: routelocation/time-display.js.
+Validation: all 25 dashboard JS tests (including five new averaging cases),
+production build and diff check passed. Browser visual verification outstanding.
+
+## Sidebar logo and header spacing: 2026-10-01
+
+Moved eg.png from Authenticated.vue's header into the shared Sidebar.vue home
+link, replacing TRAC 1.0. Logo remains 44px high and header height is unchanged.
+Authenticated header content uses full width with 8px inline-start padding,
+removing the earlier narrow-layout gap beside the hamburger. Production build
+and diff check passed; live browser verification remains outstanding.
+
+## Towell login watermark: 2026-10-01
+
+Login.vue uses public/assets/TOWELL LOGO.png as a decorative original-color watermark
+behind the right login panel, upright and fully visible at a reduced responsive
+size with an inset from the right edge. Opacity is 8% on desktop and 4% on smaller screens, with no pointer
+events or accessibility announcement. The white background and form layout
+remain. Production build and diff check passed; browser visual check outstanding.
+
+## Fixed light appearance: 2026-10-01
+
+Removed dark-mode and color/settings dropdowns from the shared sidebar.
+BaseLayout now applies light mode and the default palette on every mount,
+overriding saved preferences; it no longer listens for OS theme changes. Store
+actions enforce those defaults even for older callers. Removed alternate color
+stylesheet imports from app.js. The existing dark sidebar styling is part of the
+default light layout and remains; its appearance controls are removed.
+Production build, diff check and direct Pinia assertions for forced light mode,
+saved preference cleanup and preservation of unrelated HTML classes passed.
+Live browser verification remains outstanding.
+
+## Company logos in login left footer: 2026-10-01
+
+Login.vue now shows three public/assets/Companies logos beneath enhance.png,
+confined to the desktop left panel. Updated filename order is Enhance Group
+(1 EG .png), Fairtrade, MDC. Logos use three equal columns,
+contain sizing and company-name alt text. Illustration height reserves space for
+the footer; white background and existing mobile-hidden panel behavior remain.
+Production build and diff check passed; live browser verification outstanding.
+
+## Login illustration panel: 2026-10-01
+
+Replaced the login left panel's marketing copy, desktop footer and dark grid
+background with public/assets/enhance.png on white. The illustration is centered,
+scales within the existing desktop column and viewport without cropping, and
+retains the previous mobile-hidden behavior. Removed unused panel CSS. Login
+form and eg.png logo remain. Production build and diff check passed; live browser
+visual validation remains outstanding.
+
+## Enhance Group branding and dashboard heading: 2026-10-01
+
+Login.vue replaces the Log In heading with the supplied public/assets/eg.png
+logo, centered at 180px wide above the welcome message. Authenticated.vue shows
+the same logo immediately after the hamburger button at 44px high within the
+existing 4rem header; header height is unchanged. Both images have Enhance Group
+alt text. Dashboard Index.vue removes the Field performance subtitle. Production
+builds and diff checks passed; live browser visual validation remains outstanding.
+
+## All operation links for productivity and efficiency: 2026-09-30
+
+Dashboard and Route Tracking now inspect all distinct positive visitkeys linked
+through the same routekey and customeroperationscontrol.log_id to a visit log.
+Any qualifying invoice, order or collection makes the completed visit productive;
+a newer operation without transactions no longer hides older transactions. Each
+visit counts once and each productive customer counts once per journey. Existing
+completion, positive amount, void, active-customer, LPO and access rules remain.
+
+DashboardMetrics, DashboardAnalysis and DashboardCustomerDetails use grouped
+operation links; drilldown document counts deduplicate repeated visitkeys. Route
+Tracking retains the latest operation for coordinates and exposes all visitkeys
+for transaction loading. Its popup requests details using the document's visitkey.
+Financial totals and timing formulas are unchanged.
+
+Added PHP regressions for older productive/latest empty operations, split
+collection and sales keys, duplicate links, journey isolation, drilldown counts
+and Route Tracking key extraction. Twenty JavaScript tests, production build and
+diff check passed. PHP regression execution remains outstanding: php is not on
+PATH and vendor dependencies are absent. Live browser/database validation remains
+outstanding.
+
+## Remove CFT status caption: 2026-09-29
+
+Removed the planned-time status caption (above/below/on plan and missing-plan
+caption) from Dashboard and Route Tracking Face Time Compliance cards. Dashboard
+omits empty note elements; percentage and actual/planned values remain visible.
+Production build and diff check passed.
+
+## Compact stacked CFT rows: 2026-09-29
+
+Face Time Compliance on Dashboard and Route Tracking now places Actual CFT above
+Planned CFT in compact rows, labels left and values right. Values use 14px text
+and 4px row gaps to fit the existing card space; variance remains the main metric.
+This supersedes the side-by-side layout below. Build and diff check passed;
+live browser layout verification remains outstanding.
+
+## Face Time card metric hierarchy: 2026-09-29
+
+Dashboard and Route Tracking now show variance percentage first as the primary
+Face Time Compliance metric (23–28px), retaining negative red/positive green.
+Actual and planned CFT sit side by side below a divider with smaller 14–18px
+values, equal-width columns and wrapping protection for long durations.
+Production build and diff check passed; live browser verification outstanding.
+
+## Face Time variance color: 2026-09-29
+
+Dashboard and Route Tracking Face Time Compliance cards show negative variance
+percentages in red; positive values retain green. Styling uses the numeric
+variance, leaving calculations unchanged. Production build and diff check passed.
+
+## Planned CFT customer and cluster fallback: 2026-09-29
+
+Dashboard, Route Tracking and CFT popups now share `CustomerFaceTime::minutesFor`.
+It uses positive `customermaster.customerfacetime`, otherwise positive
+`customerclustermapping.cft`, matching BOTH master `DivisionCode` to mapping
+`divisioncode` and master `channel` to mapping `channel`. These are text fields;
+numeric `channelcode` is not the join. Missing/nonpositive targets resolve to zero
+minutes. Confirmed against user-provided `sfa_struct1.sql`; no schema was imported
+or changed. This supersedes older notes about visit-log or channelmaster targets.
+
+Current master settings apply to historical visits. Existing journey/date/access
+scope, active-customer filtering, visit counting, actual timing and OTP exclusions
+are preserved. Dashboard analysis consumes the same resolved targets. Screen and
+popup help text describes the fallback. Regression fixtures now configure master
+targets; tests cover override precedence, matching both keys, absent/nonpositive
+targets, popup/card consistency and OTP exclusion.
+
+Validation: 20 JavaScript tests, production build and diff check passed. PHP tests
+could not run because PHP and vendor dependencies are unavailable locally; PHP
+regression execution and live database/browser verification remain outstanding.
+
+## Customer Coverage clickable visit details: 2026-09-29
+
+Renamed Total Visits to Customer Coverage and wired click/Enter/Space to the
+existing customer-details popup using type coverage. It retains session access
+and selected journey-start-date filters and active-customer filtering. Shows all
+visit records including repeats, incomplete visits and LPO customers, with actual
+visit date, route, customer name/code, full check-in/checkout timestamps and
+per-visit OTP/Non-OTP status using existing OTP matching. Missing checkout is
+Not recorded. The card remains unique customers per journey.
+
+Revisit #2/#3/etc. is assigned chronologically per journey/customer before UI
+filtering/pagination. Repeat rows and badges are lavender. Existing date/journey,
+search and pagination controls apply, with OTP/Non-OTP tabs added for this type.
+PHP regression covers repeats, journey reset, mixed OTP, overnight checkout,
+incomplete and LPO visits, inactive filtering and empty journeys. All 20 JS tests,
+production build and diff checks passed; PHP tests and live browser verification
+remain unavailable locally without PHP/vendor.
+
+## Total Visits alignment and subtle tint: 2026-09-29
+
+Total Visits now uses three equal-width, centered columns with consistent padding
+and aligned value tops. Added a compact users icon beside the heading and a subtle
+blue-tinted card surface with a slightly stronger count tile. Tightened outer gaps
+and padding to retain the compact stack. Production build and diff check passed;
+live browser verification remains outstanding.
+
+## Remove JP compliance footer: 2026-09-29
+
+Removed the pending/missed footer line (including its optional no-plan text),
+unused footer markup/styles and the empty final row in the compact coverage cards.
+Underlying counts remain unchanged. Production build and diff check passed.
+
+## Compact Total Visits / JP / Unplanned stack: 2026-09-29
+
+JP compliance and Unplanned Customers now opt into stacked-coverage styling:
+removed their 360px minimum, reduced padding/icon/gaps and breakdown spacing,
+and moved breakdown/footer into consecutive rows. The Total Visits header and
+the pair share the existing customer section height instead of adding a header
+above two full-height cards. Content can grow when needed to avoid clipping.
+Other cards retain their existing minimum height. Production build and diff
+check passed; live browser layout verification remains outstanding.
+
+## Total Visits summary above planned/unplanned cards: 2026-09-29
+
+Added a horizontal Total Visits card spanning JP compliance and Unplanned Customers.
+Shows total unique customers visited per journey and blue without-OTP/orange
+with-OTP percentages with numerator/denominator counts. DashboardMetrics exposes
+unique_visited_with_otp and unique_visited_without_otp from existing visited and
+matched-OTP customer sets. Any matched OTP places that journey/customer only in
+the OTP group, including mixed repeat visits; unmatched OTP events do not create
+visits. Includes active LPO/incomplete visits and journeys without plans. Empty
+totals show zero counts with unavailable percentages. Other card formulas remain.
+CSS grid areas preserve placement above the pair at desktop/tablet/mobile widths.
+Added PHP coverage for repeated/mixed OTP customers, unmatched events, LPO and
+incomplete visits, absent plans and empty periods. All 20 JS tests, production
+build and diff check passed. PHP tests and live browser verification remain
+unavailable locally without PHP/vendor.
+
+## JP compliance pending/missed footer: 2026-09-29
+
+Moved JP compliance's pending/missed line (including journeys without a plan when
+present) below the OTP breakdown at the bottom of the card. DashboardCards uses
+a dedicated footer field and final grid row. Calculations are unchanged.
+Production build and diff check passed; browser verification remains outstanding.
+
+## LPO exclusion count on performance cards: 2026-09-29
+
+Efficiency and Productivity display "N LPO customers excluded" below their
+breakdowns, aligned to the card bottom. DashboardMetrics.lpo_customers_excluded
+is all unique visited journey/customers minus eligible unique journey/customers,
+using the existing toplpo exclusion. Repeats count once within a journey; counts
+include incomplete LPO visits and respect active-customer filtering. Zero is shown,
+and singular wording is used for one. Existing formulas are unchanged.
+Extended the existing LPO regression for zero, repeated-customer and all-excluded
+counts. All 20 JS tests, production build and diff checks passed. PHP tests remain
+unexecuted because PHP/vendor are unavailable; browser verification is outstanding.
+
+## OTP percentage uses unique visits: 2026-09-29
+
+DashboardCards OTP usage now divides total OTP events by the existing
+all_unique_visited_customers metric, not total_visits. Each customer counts once
+per journey; repeats within that journey do not increase the denominator. The
+same customer in another journey counts again, and ranges sum journey counts.
+Active-customer filtering, incomplete visits and LPO inclusion are preserved.
+The numerator still counts all OTP events; zero unique visits is unavailable.
+Updated the visible count note and tooltip. All 20 JavaScript tests, production
+build and diff checks passed; live browser verification remains outstanding.
+
 ## Active customers throughout the application: 2026-09-29
 
 Only customers whose current customermaster.activecustomer equals 1 are included,

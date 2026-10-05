@@ -15,10 +15,11 @@ beforeEach(function () {
     ]]);
     DB::purge('active_customer_test');
     foreach ([
-        'customermaster (customercode integer primary key, activecustomer integer, customername text, customeraddress1 text, customeraddress2 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
+        'customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer primary key, activecustomer integer, customername text, customeraddress1 text, customeraddress2 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
         'routemaster (routecode integer, cmpycode integer, subareacode integer)',
         'routesequence (routecode integer, customercode integer)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer, servicedflag integer, scannedflag integer)',
+        'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
         'customervisitlog (routekey integer, logkey integer, customercode integer, cft integer, logstartdate text, logstarttime text, logenddate text, logendtime text)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, comments text, otpreason text)',
@@ -75,6 +76,21 @@ test('route plans visits OTP and planned CFT exclude inactive and missing master
     DB::table('customermaster')->where('customercode', 1)->update(['fixedlatitude' => null]);
     expect((new ReflectionMethod(RouteTrackingController::class, 'fetchJourneyPlan'))
         ->invoke($controller, 10)->pluck('customercode')->all())->toBe([1]);
+});
+
+test('route visits retain all linked operation keys and keep latest coordinates', function () {
+    foreach ([[1, 10, 50], [2, 10, 50], [3, 10, 60], [4, 99, 70]] as [$id, $route, $key]) {
+        DB::table('customeroperationscontrol')->insert([
+            'primary_id' => $id, 'routekey' => $route, 'log_id' => 1, 'visitkey' => $key,
+            'latitude' => 23.6, 'longitude' => 58.6,
+        ]);
+    }
+    $visits = (new ReflectionMethod(RouteTrackingController::class, 'fetchCustomerVisits'))
+        ->invoke(app(RouteTrackingController::class), 10, 7);
+    expect($visits)->toHaveCount(1)
+        ->and($visits->first())->toMatchArray([
+            'visitkey' => 60, 'visitkeys' => [60, 50], 'lat' => 23.6, 'lng' => 58.6,
+        ]);
 });
 
 test('transaction details reject inactive customers and still enforce route access for active customers', function () {

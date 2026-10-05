@@ -96,6 +96,29 @@ test('visit transactions use dashboard amount fields and void rules', function (
         ->and($visits[0]['transactions']['orders']->sum('amount'))->toEqual(140)
         ->and($visits[0]['transactions']['sales']->sum('return_amount'))->toEqual(30)
         ->and($visits[0]['transactions']['orders']->sum('return_amount'))->toEqual(30);
+
+    DB::table('arheader')->insert([
+        'transactionkey' => 10, 'routekey' => 7, 'visitkey' => 10, 'amountpaid' => 25, 'voidflag' => 0,
+    ]);
+    DB::table('arheader')->insert([
+        'transactionkey' => 11, 'routekey' => 99, 'visitkey' => 10, 'amountpaid' => 500, 'voidflag' => 0,
+    ]);
+    // The latest key has no transaction; duplicate operation links must not duplicate documents.
+    $visits = (new ReflectionMethod(RouteTrackingController::class, 'attachVisitTransactions'))
+        ->invoke($controller, collect([[
+            'visitkey' => 99, 'visitkeys' => [8, 8, 10, 10, 99, 0, null],
+            'customercode' => 8, 'visit_duration_minutes' => 10,
+        ]]), 7);
+    expect($visits[0]['transactions']['sales'])->toHaveCount(3)
+        ->and($visits[0]['transactions']['collections'])->toHaveCount(1)
+        ->and($visits[0]['transactions']['collections']->sum('amount'))->toEqual(25)
+        ->and($visits[0]['transactions']['sales']->first()['visitkey'])->toBe(8);
+    expect((new ReflectionMethod(RouteTrackingController::class, 'summarizeEfficiency'))->invoke($controller, $visits))
+        ->toMatchArray([
+            'completed_visits' => 1, 'productive_visits' => 1, 'productivity_percent' => 100.0,
+            'unique_visited_customers' => 1, 'unique_productive_customers' => 1, 'efficiency_percent' => 100.0,
+            'sales_order_productivity_percent' => 100.0, 'collection_productivity_percent' => 100.0,
+        ]);
 });
 
 test('transaction summary for an absent journey is empty', function () {

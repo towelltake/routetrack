@@ -169,7 +169,7 @@ class DashboardController extends Controller
     public function customerDetails(Request $request): JsonResponse
     {
         $filters = $this->validateFilters($request);
-        $type = $request->validate(['type' => ['required', 'in:planned,unplanned,otp,productive,efficiency,sales,orders,collections,returns,duration,cft,outside,idle,operational,otp_time,actual_face']])['type'];
+        $type = $request->validate(['type' => ['required', 'in:coverage,planned,unplanned,otp,productive,efficiency,sales,orders,collections,returns,duration,cft,outside,idle,operational,otp_time,actual_face']])['type'];
         $routes = $this->matchingRoutes($filters, false)
             ->when($filters['companycode'] ?? null, fn ($q, $code) => $q->where('routemaster.cmpycode', $code))
             ->when($filters['routecode'] ?? null, fn ($q, $code) => $q->where('routemaster.routecode', $code))

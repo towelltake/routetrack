@@ -145,6 +145,12 @@ class DashboardMetrics
             && !$planKeys->has($visit->routekey.':'.$visit->customercode)
             && isset($otpCustomers[$visit->routekey.':'.$visit->customercode]))
             ->unique(fn ($visit) => $visit->routekey.':'.$visit->customercode)->count();
+        $unvisited = app(CustomerFaceTime::class)->unvisitedPlans($plans, $visits)
+            ->keyBy(fn ($plan) => $plan->routekey.':'.$plan->customercode);
+        foreach ($plans as $plan) $plan->unvisited_cft_minutes = $unvisited->get($plan->routekey.':'.$plan->customercode)?->expected_minutes ?? 0;
+        $unvisitedMinutes = $plans->sum('unvisited_cft_minutes');
+        $plannedFaceMinutes += $unvisitedMinutes;
+        $expectedMinutes += $unvisitedMinutes;
         $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
@@ -208,7 +214,7 @@ class DashboardMetrics
             'productivity_percent' => $completed ? round(100 * $productive / $completed, 1) : null,
             'cft_minutes' => round($actualFaceMinutes, 1),
             'recorded_visit_minutes' => $actualSeconds / 60,
-            'cft_variance_minutes' => $configuredVisits ? round($configuredSeconds / 60 - $expectedMinutes, 1) : null,
+            'cft_variance_minutes' => ($configuredVisits || $expectedMinutes > 0) ? round($configuredSeconds / 60 - $expectedMinutes, 1) : null,
             'cft_configured_visits' => $configuredVisits,
             'amounts' => $amounts,
             'otp' => ['events' => $otp['events'], 'visits' => $otp['visits']],

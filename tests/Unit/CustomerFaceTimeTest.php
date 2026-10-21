@@ -13,6 +13,7 @@ test('dashboard and tracking use recorded visit CFT without master fallback', fu
 
     foreach ([
         'customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer, activecustomer integer default 1, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
+        'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
         'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft real, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
@@ -70,7 +71,7 @@ test('planned face time keeps each repeated visit target and journey scope', fun
     DB::purge('planned_cft_test');
     DB::statement('CREATE TABLE customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer, activecustomer integer)');
     DB::statement('CREATE TABLE customerclustermapping (divisioncode text, channel text, cft integer)');
-    foreach ([1, 2, 3, 99] as $code) DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1, 'customerfacetime' => [1 => 15, 2 => 20][$code] ?? 0]);
+    foreach ([1, 2, 3, 4, 99] as $code) DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1, 'customerfacetime' => [1 => 15, 2 => 20, 4 => 26][$code] ?? 0]);
     DB::statement('CREATE TABLE customervisitlog (routekey integer, customercode integer, cft integer, autocheckout integer default 0)');
     DB::table('customervisitlog')->insert([
         ['routekey' => 100, 'customercode' => 1, 'cft' => 15],
@@ -86,7 +87,8 @@ test('planned face time keeps each repeated visit target and journey scope', fun
         (object) ['customercode' => 1],
         (object) ['customercode' => 2],
         (object) ['customercode' => 3],
+        (object) ['customercode' => 4],
     ]));
 
-    expect($seconds)->toBe(42 * 60);
+    expect($seconds)->toBe(68 * 60);
 });

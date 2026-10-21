@@ -154,7 +154,7 @@ test('CFT popups retain OTP visits as excluded zero contributions while cards an
         ->and(collect($metrics['analysis']['journeys'])->sum('actual_cft'))->toEqual(25);
     foreach (['cft', 'actual_face'] as $type) {
         $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])->flatMap(fn ($group) => $group['rows']);
-        expect($rows)->toHaveCount(6)
+        expect($rows)->toHaveCount(8)
             ->and($rows->where('otp_excluded', true))->toHaveCount(2)
             ->and($rows->sum('actual_cft'))->toEqual(25)
             ->and($rows->where('otp_excluded', true)->sum('actual_cft'))->toEqual(0)
@@ -304,7 +304,7 @@ test('face time details retain individual visits and handle missing plans incomp
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $groups = app(DashboardCustomerDetails::class)->build($journeys, 'cft')['groups'];
-    expect($groups[0]['rows'])->toHaveCount(3)
+    expect($groups[0]['rows'])->toHaveCount(4)
         ->and($groups[0]['rows'][0])->toMatchArray(['planned_cft' => 0, 'actual_cft' => 0, 'variance' => null, 'otp_excluded' => true])
         ->and($groups[0]['rows'][1]['variance'])->toEqual(-10)
         ->and($groups[0]['rows'][2])->toMatchArray(['actual_cft' => 30, 'variance' => 10])
@@ -813,5 +813,30 @@ test('face time and productivity details expose the recorded automatic checkout 
     foreach (['actual_face', 'productive'] as $type) {
         $rows = app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'][0]['rows']->keyBy('id');
         expect($rows[12]['auto_checkout'])->toBeTrue()->and($rows[11]['auto_checkout'])->toBeFalse();
+    }
+});
+
+
+test('unvisited planned targets use customer then matching division and channel and agree across cards and popups', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $before = app(DashboardMetrics::class)->summarize($journeys);
+    DB::table('customermaster')->where('customercode', 102)->update(['customerfacetime' => 12, 'DivisionCode' => 'D1', 'channel' => 'Retail']);
+    DB::table('customermaster')->where('customercode', 103)->update(['customerfacetime' => 0, 'DivisionCode' => 'D2', 'channel' => 'Wholesale']);
+    DB::table('customerclustermapping')->insert([
+        ['divisioncode' => 'D1', 'channel' => 'Retail', 'cft' => 30],
+        ['divisioncode' => 'D2', 'channel' => 'Wholesale', 'cft' => 25],
+        ['divisioncode' => 'D2', 'channel' => 'Retail', 'cft' => 90],
+        ['divisioncode' => 'D1', 'channel' => 'Wholesale', 'cft' => 80],
+    ]);
+    $after = app(DashboardMetrics::class)->summarize($journeys);
+    expect($after['planned_face_minutes'])->toEqual($before['planned_face_minutes'] + 37)
+        ->and($after['actual_face_minutes'])->toEqual($before['actual_face_minutes'])
+        ->and(collect($after['analysis']['journeys'])->sum('expected_cft'))->toEqual($after['planned_cft_minutes']);
+    foreach (['cft', 'actual_face', 'planned'] as $type) {
+        $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])->flatMap(fn ($group) => $group['rows']);
+        expect($rows->firstWhere('customercode', 102)['planned_cft'])->toEqual(12)
+            ->and($rows->firstWhere('customercode', 103)['planned_cft'])->toEqual(25)
+            ->and($rows->firstWhere('customercode', 102)['actual_cft'])->toEqual(0);
     }
 });

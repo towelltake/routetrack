@@ -1,5 +1,33 @@
 # TRAC / routeTrack project memory
 
+## Planned CFT includes unvisited journey-plan customers: 2026-10-21
+
+Implemented CustomerFaceTime::unvisitedPlans/fallbackMinutesFor. For scheduled
+active customers with no visit record in the same journey, resolve positive
+customermaster.customerfacetime first, else positive customerclustermapping.cft
+matching BOTH division and channel. Missing/nonpositive fallback yields zero.
+Deduplicates customer/journey; a visit on a different journey does not suppress
+fallback. Any recorded visit (including incomplete/OTP) prevents fallback on that
+journey; recorded visit targets, repeat handling and OTP exclusions remain intact.
+
+DashboardMetrics planned_face_minutes/planned_cft_minutes, analysis expected_cft,
+variance and Route Tracking planned summaries now include unvisited targets.
+Actual CFT is unchanged; unvisited contributes zero. Route Tracking returns all
+unvisited plan customers independent of map coordinates and adds their target
+seconds before computing variance. Dashboard/Route Tracking CFT popups append
+red Not visited rows with target/zero actual, and JP popup shows fallback targets.
+Unplanned unscheduled/not-visited rows keep unavailable targets. Help/README
+updated. This supersedes earlier visit-only planned CFT and unavailable-target
+notes for unvisited planned customers.
+
+Validation: production build, 20 dashboard JS tests, all changed PHP syntax and
+diff check passed. Updated fixtures/counts and added PHP regressions for customer
+override, matching both mapping keys, popup/card/analysis consistency, repeat
+visits, unvisited planned summaries and zero-actual/negative-variance behavior.
+Full PHP regressions and live DB/browser verification remain outstanding because
+local vendor dependencies/database configuration are absent. No database writes
+or schema changes performed.
+
 ## Explain active idle settings in popup: 2026-10-21
 
 Route Tracking stationary/idle popup now includes a compact How idle time is

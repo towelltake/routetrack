@@ -226,6 +226,7 @@ class RouteTrackingController extends Controller
         $durationRatio = $planned['duration'] > 0 && $actual['duration'] !== null
             ? $actual['duration'] / $planned['duration']
             : null;
+        $actual['unvisited_planned_cft_seconds'] = collect($planned['unvisited_cft_customers'] ?? [])->sum('default_face_time_minutes') * 60;
         $actual = $this->summarizeVisitTime($actual, collect($planned['customer_visits']));
 
         $transactionSummary = $this->summarizeTransactions($planned['routekey']);
@@ -602,6 +603,15 @@ class RouteTrackingController extends Controller
         ]);
         $operationalOtp = app(\App\Services\DashboardMetrics::class)->otp(collect([$routeDay]), $operationalLogs)['by_visit'];
         $visits = $visits->map(fn ($visit) => $visit + ['operational_otp' => !empty($operationalOtp[$routeDay->routekey.':'.$visit['logkey']])]);
+        $planRows = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routeDay->routekey, 'customercode' => $plan->customercode]);
+        $unvisitedPlans = app(CustomerFaceTime::class)->unvisitedPlans($planRows, $visits->map(fn ($visit) => (object) $visit));
+        $unvisitedCustomers = CustomerMaster::query()->whereIn('customercode', $unvisitedPlans->pluck('customercode'))
+            ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
+        $unvisitedCft = $unvisitedPlans->map(fn ($plan) => [
+            'customercode' => $plan->customercode, 'alternatecode' => $unvisitedCustomers->get($plan->customercode)?->alternatecode,
+            'customername' => $unvisitedCustomers->get($plan->customercode)?->customeraddress1 ?? 'Customer '.$plan->customercode,
+            'default_face_time_minutes' => $plan->expected_minutes, 'not_visited' => true,
+        ]);
         $plannedCodes = $journeyPlan->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
         $visitedCodes = $visits->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
         $plannedVisitedCount = $plannedCodes->intersect($visitedCodes)->count();
@@ -701,6 +711,7 @@ class RouteTrackingController extends Controller
             'distance' => $totalDistance,
             'duration' => $totalDuration,
             'face_time' => $plannedFaceTime,
+            'unvisited_cft_customers' => $unvisitedCft->values(),
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
             'customer_visits' => $visits->values(),
@@ -916,8 +927,10 @@ class RouteTrackingController extends Controller
             ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->whereIn('customercode', $customerCodes)
-            ->pluck('cft');
-        $minutes = $visitCustomers->sum(fn ($cft) => CustomerFaceTime::plannedMinutes($cft));
+            ->get(['routekey', 'customercode', 'cft']);
+        $minutes = $visitCustomers->sum(fn ($visit) => CustomerFaceTime::plannedMinutes($visit->cft));
+        $plans = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routekey, 'customercode' => $plan->customercode]);
+        $minutes += app(CustomerFaceTime::class)->unvisitedPlans($plans, $visitCustomers)->sum('expected_minutes');
 
         return (int) round((float) $minutes * 60);
     }
@@ -1006,7 +1019,8 @@ class RouteTrackingController extends Controller
             ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
         $actual['actual_cft'] = $actual['face_time'] - $actual['otp_customer_time'];
         $actual['planned_cft'] = $visits->filter(fn (array $visit) => ($visit['visit_duration_minutes'] ?? null) !== null && !($visit['operational_otp'] ?? !empty($visit['otp_logs'])))
-            ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60);
+            ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60)
+            + ($actual['unvisited_planned_cft_seconds'] ?? 0);
         $actual['face_time_variance_percent'] = $actual['planned_cft'] > 0
             ? round(100 * ($actual['actual_cft'] - $actual['planned_cft']) / $actual['planned_cft'], 1) : null;
         $actual = array_replace($actual, app(\App\Services\TravelTime::class)->summarize($actual, $visits));

@@ -1,5 +1,24 @@
 # TRAC / routeTrack project memory
 
+## Explain active idle settings in popup: 2026-10-21
+
+Route Tracking stationary/idle popup now includes a compact How idle time is
+detected panel displaying the server's actual configured minimum stationary
+minutes, radius metres and maximum reporting-gap seconds. Explains that visit
+overlap is excluded and gaps longer than the limit break the period without
+counting missing time. Controller now exposes stationary_radius_m alongside
+existing minimum/gap metadata; no hardcoded UI thresholds or calculation changes.
+Production build, PHP syntax and diff check passed; browser verification outstanding.
+
+## Consolidate unreliable trail under Raw Coordinates: 2026-10-21
+
+Removed the separate Unreliable GPS legend toggle/state/layer from Route Tracking.
+Low-confidence dotted segments and isolated dots now belong to Raw Coordinates,
+retaining accuracy popups. Raw toggle is available even when only unreliable
+geometries exist. Stationary reliability badges and idle breakdowns remain;
+visibility does not alter calculations. Production build and diff check passed;
+live browser verification outstanding.
+
 ## Accuracy now annotates rather than excludes tracking coordinates: 2026-10-21
 
 User clarified all valid coordinates must be considered. WorkTracking.points now

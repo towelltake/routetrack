@@ -352,6 +352,7 @@ class RouteTrackingController extends Controller
             'stationary_periods' => $stationary,
             'stationary_seconds' => count($allPoints) >= 2 ? array_sum(array_column($stationary, 'duration_seconds')) : null,
             'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
+            'stationary_radius_m' => config('tracking.stationary_radius_m'),
             'stationary_max_gap_seconds' => config('tracking.stationary_max_gap_seconds'),
             'gps_gaps' => $gpsGaps,
             'gps_gap_seconds' => array_sum(array_column($gpsGaps, 'duration_seconds')),

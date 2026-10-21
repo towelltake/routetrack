@@ -55,7 +55,6 @@ const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 const beforeRouteVisible = ref(true);
 const afterRouteVisible = ref(true);
-const unreliableGpsVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
@@ -295,7 +294,6 @@ let plannedLineLayer = null;
 let actualLineLayer = null;
 let beforeRouteLayer = null;
 let afterRouteLayer = null;
-let unreliableGpsLayer = null;
 let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
@@ -613,8 +611,6 @@ async function runComparison() {
     actualLineLayer = null;
     beforeRouteLayer = null;
     afterRouteLayer = null;
-    unreliableGpsLayer = null;
-    unreliableGpsVisible.value = true;
     beforeRouteVisible.value = true;
     afterRouteVisible.value = true;
     rawCoordinatesLayer = null;
@@ -786,12 +782,11 @@ async function runComparison() {
                 .bindTooltip(after ? 'GPS after Route End Time' : 'GPS before Route Start Time')
                 .addTo(after ? afterRouteLayer : beforeRouteLayer);
         });
-        unreliableGpsLayer = L.featureGroup().addTo(resultLayer);
         (data.actual.unreliable_geometries ?? []).forEach(feature => {
             L.geoJSON(feature, { style: { color: '#64748b', weight: 4, opacity: 0.75, dashArray: '2 7' },
                 pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 4, color: '#64748b', fillOpacity: 0.65 }) })
                 .bindPopup('Unreliable GPS<br>' + feature.properties.start + ' to ' + feature.properties.end + '<br>Maximum reported accuracy: ' + feature.properties.accuracy + ' m')
-                .addTo(unreliableGpsLayer);
+                .addTo(rawCoordinatesLayer);
         });
         const actual = result.value.actual;
         const addEventMarker = (point, color, letter, label, routeEventLabel = null, routeEventTime = null) => {
@@ -1047,12 +1042,6 @@ function togglePlannedRoute() {
     plannedRouteVisible.value ? resultLayer.addLayer(plannedLineLayer) : resultLayer.removeLayer(plannedLineLayer);
 }
 
-function toggleUnreliableGps() {
-    if (!unreliableGpsLayer || !resultLayer) return;
-    unreliableGpsVisible.value = !unreliableGpsVisible.value;
-    unreliableGpsVisible.value ? resultLayer.addLayer(unreliableGpsLayer) : resultLayer.removeLayer(unreliableGpsLayer);
-}
-
 function toggleOutsideRoute(period) {
     const layer = period === 'before' ? beforeRouteLayer : afterRouteLayer;
     const visible = period === 'before' ? beforeRouteVisible : afterRouteVisible;
@@ -1290,7 +1279,7 @@ function focusEnd() {
                     type="button"
                     class="route-tracking-legend-item"
                     :class="{ active: rawCoordinatesVisible }"
-                    :disabled="!result || !result.actual.raw_geometry"
+                    :disabled="!result || (!result.actual.raw_geometry && !result.actual.unreliable_geometries?.length)"
                     @click="toggleRawCoordinates"
                 >
                     <span style="color: #b45309">&#9632;</span>
@@ -1318,7 +1307,6 @@ function focusEnd() {
                 <button type="button" class="route-tracking-legend-item" :class="{ active: afterRouteVisible }" :aria-pressed="afterRouteVisible" :disabled="!hasOutsideTracking('after')" :title="!result?.planned?.route_closed ? 'Available after a Route End Time is recorded' : hasOutsideTracking('after') ? 'Show or hide GPS after Route End Time' : 'No GPS readings after route end for this selection'" @click="toggleOutsideRoute('after')">
                     <span style="color: #ea580c">&#9632;</span> After Route End
                 </button>
-                <button type="button" class="route-tracking-legend-item" :class="{ active: unreliableGpsVisible }" :aria-pressed="unreliableGpsVisible" :disabled="!result?.actual?.unreliable_geometries?.length" @click="toggleUnreliableGps"><span style="color: #64748b">&#9679;</span> Unreliable GPS</button>
                 <span class="route-tracking-legend-item"><span style="color: #16a34a">&#9632;</span> Route Start (S)</span>
                 <span class="route-tracking-legend-item"><span style="color: #b45309">&#9632;</span> Route End (E)</span>
                 <button type="button" class="route-tracking-legend-item"
@@ -1671,6 +1659,11 @@ function focusEnd() {
                             </div>
 
                             <div v-else-if="summaryModal === 'stationary'" class="stationary-breakdown">
+                                <div class="idle-detection-help" aria-label="Current idle detection settings">
+                                    <p><i class="fa fa-circle-info" aria-hidden="true"></i><strong>How idle time is detected</strong></p>
+                                    <p>Stationary for at least <strong>{{ result.actual.stationary_minimum_minutes }} minutes</strong> within a <strong>{{ result.actual.stationary_radius_m }} m radius</strong> of the first GPS point. Time overlapping customer visits is excluded from idle time.</p>
+                                    <p>A gap longer than <strong>{{ result.actual.stationary_max_gap_seconds }} seconds</strong> between valid GPS readings breaks the stationary period. Time across that gap is not counted as idle.</p>
+                                </div>
                                 <p class="small text-muted">Tracking window: {{ result.actual.tracking_start_time || 'Unavailable' }} to {{ result.actual.tracking_end_time || 'Unavailable' }}. Includes tracking before route start and after route end across all recorded GPS times. Only observed stationary periods count.</p>
                                 <p class="small text-muted">Idle outside visits includes unreliable GPS estimates. Reliable: {{ stationaryDuration(result.actual.reliable_idle_seconds) }}. Unreliable: {{ stationaryDuration(result.actual.unreliable_idle_seconds) }}. Low accuracy does not establish whether someone was working.</p>
                                 <dl class="stationary-totals">
@@ -2735,4 +2728,7 @@ function focusEnd() {
 .route-flash { display: grid; grid-template-columns: 18px minmax(0, 1fr) 18px; align-items: start; gap: 10px; margin: 0; padding: 14px; border-radius: 10px; box-shadow: 0 6px 24px #172b4520; pointer-events: auto; font-size: 12px; }
 .route-flash p { margin: 0 0 6px; overflow-wrap: anywhere; } .route-flash p:last-child { margin-bottom: 0; }
 .route-flash > i { padding-top: 2px; } .route-flash .btn-close { width: 12px; height: 12px; padding: 2px; }
+.idle-detection-help { padding: 12px 14px; margin-bottom: 14px; border: 1px solid #dbeafe; border-radius: 9px; background: #f0f7ff; color: #475569; font-size: 12px; line-height: 1.6; }
+.idle-detection-help p { margin: 0 0 6px; } .idle-detection-help p:last-child { margin-bottom: 0; }
+.idle-detection-help i { margin-right: 7px; color: #2563eb; } .idle-detection-help strong { color: #1e3a5f; }
 </style>

@@ -8,19 +8,17 @@ class StationaryDetection
     {
         return is_numeric($point->latitude ?? null) && is_numeric($point->longitude ?? null)
             && abs((float) $point->latitude) <= 90 && abs((float) $point->longitude) <= 180
-            && (float) $point->latitude != 0 && (float) $point->longitude != 0
-            && (($point->accuracy_m ?? null) === null || (is_numeric($point->accuracy_m)
-                && $point->accuracy_m >= 0));
+            && (float) $point->latitude != 0 && (float) $point->longitude != 0;
     }
 
     public function unreliable(object $point): bool
     {
-        return is_numeric($point->accuracy_m ?? null) && $point->accuracy_m >= config('tracking.max_accuracy_m');
+        return is_numeric($point->accuracy_m ?? null) && $point->accuracy_m > config('tracking.max_accuracy_m');
     }
 
     public function usable(object $point): bool
     {
-        return $this->validCoordinates($point) && !$this->unreliable($point);
+        return $this->validCoordinates($point) && (($point->accuracy_m ?? null) === null || (is_numeric($point->accuracy_m) && $point->accuracy_m >= 0)) && !$this->unreliable($point);
     }
 
     /** Points must be ordered by device timestamp, before distance downsampling. */
@@ -48,7 +46,7 @@ class StationaryDetection
                     'point_count' => count($candidate),
                     'unreliable' => $this->unreliable($first),
                     'max_accuracy_m' => max(array_map(fn ($point) => (float) ($point->accuracy_m ?? 0), $candidate)),
-                    'accuracy_unknown' => count(array_filter($candidate, fn ($p) => ($p->accuracy_m ?? null) === null)) > 0,
+                    'accuracy_unknown' => count(array_filter($candidate, fn ($p) => !is_numeric($p->accuracy_m ?? null) || $p->accuracy_m < 0)) > 0,
                 ];
             }
         };

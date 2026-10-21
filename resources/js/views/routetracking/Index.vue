@@ -798,7 +798,9 @@ async function runComparison() {
             if (!point) return null;
             return L.marker([point.lat, point.lng], { icon: flagIcon(color, letter) })
                 .bindPopup('<strong>' + label + '</strong><br>' + (point.time ?? '') + '<br>GPS recorded: ' + (point.gps_time ?? point.time ?? '')
-                    + (routeEventTime ? '<br><strong>' + routeEventLabel + ':</strong> ' + routeEventTime : ''))
+                    + (routeEventTime ? '<br><strong>' + routeEventLabel + ':</strong> ' + routeEventTime : '')
+                    + '<br>Reported accuracy: ' + (point.accuracy_m == null ? 'Unknown' : Number(point.accuracy_m).toLocaleString() + ' m')
+                    + (point.unreliable ? '<br><span class="badge bg-warning text-dark mt-1">Unreliable coordinates</span>' : ''))
                 .addTo(actualLayer);
         };
         startMarker = addEventMarker(actual.tracking_start, '#0284c7', 'T', 'Track Start Time', 'Route Start Time', result.value.planned.route_details?.start_time);

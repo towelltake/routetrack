@@ -43,11 +43,11 @@ test('legacy readings work and poor or invalid coordinates are rejected', functi
     }
     expect($detector->detect($points)[0]['accuracy_unknown'])->toBeTrue();
     $point = $points[0];
-    foreach ([null, 0, 49.9] as $accuracy) {
+    foreach ([null, 0, 49.9, 50] as $accuracy) {
         $point->accuracy_m = $accuracy;
         expect($detector->usable($point))->toBeTrue();
     }
-    foreach ([50, 80, -1, 'bad'] as $accuracy) {
+    foreach ([50.1, 80, -1, 'bad'] as $accuracy) {
         $point->accuracy_m = $accuracy;
         expect($detector->usable($point))->toBeFalse();
     }

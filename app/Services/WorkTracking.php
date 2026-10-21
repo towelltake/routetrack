@@ -19,9 +19,10 @@ class WorkTracking
         $records = array_values(array_filter($records, fn ($point) => strtotime($point->effective_timestamp ?? '') !== false));
         $detector = app(StationaryDetection::class);
         $allPoints = array_values(array_filter($records, fn ($point) => $detector->validCoordinates($point)));
-        $points = array_values(array_filter($allPoints, fn ($point) => $detector->usable($point)));
+        $points = $allPoints;
+        foreach ($points as $point) $point->unreliable = $detector->unreliable($point);
         return $this->observedBounds($records) + ['points' => $points, 'all_points' => $allPoints,
-            'reason' => $points ? null : ($allPoints ? 'Only unreliable GPS coordinates are available; stationary and idle estimates are marked unreliable.' : ($records ? 'GPS timestamps recorded, but coordinates are invalid.' : 'No GPS readings for the selected device and date.'))];
+            'reason' => $points ? null : ($records ? 'GPS timestamps recorded, but coordinates are invalid.' : 'No GPS readings for the selected device and date.')];
     }
 
     /** Caller must first authorize this route; never substitute today's device for a historical one. */
@@ -109,15 +110,16 @@ class WorkTracking
     {
         return $point ? ['lat' => (float) $point->latitude, 'lng' => (float) $point->longitude,
             'time' => $eventTime === null ? $point->effective_timestamp : date('Y-m-d H:i:s', $eventTime),
-            'gps_time' => $point->effective_timestamp] : null;
+            'gps_time' => $point->effective_timestamp,
+            'accuracy_m' => is_numeric($point->accuracy_m ?? null) ? (float) $point->accuracy_m : null,
+            'unreliable' => app(StationaryDetection::class)->unreliable($point)] : null;
     }
 
-    /** Only place route event markers when a nearby GPS observation exists. */
+    /** Use the nearest valid observation and disclose its recorded time and accuracy. */
     public function eventMarker(array $points, ?int $time): ?array
     {
         if ($time === null || !$points) return null;
         usort($points, fn ($a, $b) => abs(strtotime($a->effective_timestamp) - $time) <=> abs(strtotime($b->effective_timestamp) - $time));
-        return abs(strtotime($points[0]->effective_timestamp) - $time) <= config('tracking.stationary_max_gap_seconds', 120)
-            ? $this->marker($points[0], $time) : null;
+        return $this->marker($points[0], $time);
     }
 }

@@ -75,7 +75,7 @@ The Route Tracking page compares the planned customer sequence with the actual G
 ## Unreliable GPS stationary and idle estimates
 
 Stationary and idle detection include valid coordinates with reported accuracy
-at or above TRACKING_MAX_ACCURACY_M (50 metres by default). These periods are
+above TRACKING_MAX_ACCURACY_M (50 metres by default). These periods are
 marked Unreliable GPS and carry maximum reported accuracy. Confidence changes
 split periods, preventing reliable and unreliable time from being double-counted.
 The existing stationary radius, minimum duration and maximum reporting gap still
@@ -84,8 +84,9 @@ retains legacy acceptance and its separate accuracy-unknown indication.
 
 Idle totals include both confidence groups, exclude customer-visit overlaps and
 show separate reliable/unreliable amounts in Route Tracking's card/popup and
-Dashboard idle details. GPS outages still break detection. Ordinary route paths
-and route-event marker positions continue to use accepted-accuracy points; the
+Dashboard idle details. GPS outages still break detection. All valid coordinates remain eligible for route paths and markers; accuracy labels
+readings instead of excluding them. Route-event markers use the nearest available
+recorded GPS without a temporal cutoff, disclosing both timestamps; the
 Unreliable GPS toggle displays grey dotted low-confidence segments and isolated
 dots, with observed time range and maximum accuracy in their popups. It does not
 change totals. Low-confidence time is an estimate, not confirmation of inactivity.
@@ -107,8 +108,7 @@ geographic authorization remains required. Readings need no routecode or
 routekey. Adjacent calendar dates are excluded from a selected day's result.
 
 Tracking Start (T) and Last Known Location (L) use accepted coordinates for marker positions but show full recorded tracking boundary times; popups separately disclose the GPS timestamp at the plotted position. The GPS card shows recorded boundary times even if no coordinates pass accuracy filtering.
-Route Start (S)/Route End (E) are separate events using nearby observed GPS,
-within the configured maximum gap. Popups disclose event and observation times;
+Route Start (S)/Route End (E) are separate events using the nearest available observed GPS, regardless of accuracy or timestamp distance. Popups disclose event and observation times;
 missing nearby coordinates are reported rather than fabricated.
 
 GPS before the selected route's recorded start uses purple dashed lines; GPS

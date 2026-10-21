@@ -49,11 +49,11 @@ test('tracking bounds use observed first and last readings with no scheduled fal
         ->and($work->observedBounds([]))->toBe(['start' => null, 'end' => null]);
 });
 
-test('route event markers require nearby measured GPS rather than fabricated coordinates', function () {
+test('route event markers use nearest recorded GPS even across longer time differences', function () {
     $work = app(WorkTracking::class);
     $point = (object) ['latitude' => 23.5, 'longitude' => 58.5, 'effective_timestamp' => '2026-10-20 09:00:00'];
     expect($work->eventMarker([$point], strtotime('2026-10-20 09:01:00'))['gps_time'])->toBe('2026-10-20 09:00:00')
-        ->and($work->eventMarker([$point], strtotime('2026-10-20 10:00:00')))->toBeNull();
+        ->and($work->eventMarker([$point], strtotime('2026-10-20 10:00:00'))['gps_time'])->toBe('2026-10-20 09:00:00');
 });
 
 
@@ -83,16 +83,27 @@ test('an open route has no after route tracking and no route start keeps all rea
 });
 
 
-test('tracking timestamps retain inaccurate first and last records while plotting remains filtered', function () {
+test('tracking includes inaccurate coordinates and flags them without filtering', function () {
     foreach ([[1, '07:00:00', 500], [2, '08:00:00', 10], [3, '16:00:00', 20], [4, '19:00:00', 1000]] as [$id, $time, $accuracy]) DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
         'id' => $id, 'deviceid' => 'new', 'date' => '2026-10-21', 'time' => $time, 'latitude' => 23.5, 'longitude' => 58.5, 'accuracy_m' => $accuracy,
     ]);
     $tracking = app(WorkTracking::class)->load(10, '2026-10-21');
     expect($tracking['start'])->toBe(strtotime('2026-10-21 07:00:00'))
         ->and($tracking['end'])->toBe(strtotime('2026-10-21 19:00:00'))
-        ->and(array_column($tracking['points'], 'id'))->toBe([2, 3]);
+        ->and(array_column($tracking['points'], 'id'))->toBe([1, 2, 3, 4])
+        ->and(array_column($tracking['points'], 'unreliable'))->toBe([true, false, false, true]);
     DB::connection('tracking_pgsql')->table('trac_routetrack')->update(['accuracy_m' => 1000]);
     $tracking = app(WorkTracking::class)->load(10, '2026-10-21');
-    expect($tracking['points'])->toBe([])->and($tracking['start'])->toBe(strtotime('2026-10-21 07:00:00'))
+    expect($tracking['points'])->toHaveCount(4)->and($tracking['start'])->toBe(strtotime('2026-10-21 07:00:00'))
         ->and($tracking['end'])->toBe(strtotime('2026-10-21 19:00:00'));
+});
+
+
+test('route event markers retain high accuracy metre readings and expose reliability metadata', function () {
+    $point = (object) ['latitude' => 23.5, 'longitude' => 58.5, 'accuracy_m' => 150, 'effective_timestamp' => '2026-10-21 08:00:05'];
+    $marker = app(WorkTracking::class)->eventMarker([$point], strtotime('2026-10-21 08:00:00'));
+    expect($marker)->not->toBeNull()->and($marker['unreliable'])->toBeTrue()->and($marker['accuracy_m'])->toBe(150.0)
+        ->and($marker['gps_time'])->toBe('2026-10-21 08:00:05');
+    $point->accuracy_m = 10;
+    expect(app(WorkTracking::class)->eventMarker([$point], strtotime('2026-10-21 08:00:00'))['unreliable'])->toBeFalse();
 });

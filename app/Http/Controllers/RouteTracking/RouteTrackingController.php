@@ -332,7 +332,7 @@ class RouteTrackingController extends Controller
         $stationary = $detector->detect($allPoints, true);
         $gpsGaps = $detector->detectGaps($allPoints, true);
         $usableTimes = array_values(array_filter(array_map(
-            fn ($point) => $detector->usable($point) ? strtotime($point->effective_timestamp) : false, $rawPoints
+            fn ($point) => $detector->validCoordinates($point) ? strtotime($point->effective_timestamp) : false, $rawPoints
         ), fn ($time) => $time !== false));
         $stationaryData = [
             'tracking_available' => $tracking['available'],
@@ -343,8 +343,8 @@ class RouteTrackingController extends Controller
             'tracking_end_time' => $tracking['end'] === null ? null : date('Y-m-d H:i:s', $tracking['end']),
             'tracking_start' => $work->marker($rawPoints[0] ?? null, $tracking['start']),
             'last_known_location' => $work->marker($rawPoints ? $rawPoints[array_key_last($rawPoints)] : null, $tracking['end']),
-            'route_start_marker' => $work->eventMarker($rawPoints, $routeStart),
-            'route_end_marker' => $work->eventMarker($rawPoints, $routeEnd),
+            'route_start_marker' => $work->eventMarker($allPoints, $routeStart),
+            'route_end_marker' => $work->eventMarker($allPoints, $routeEnd),
             'outside_route_geometries' => $outsideGeometries,
             'journey_start_timestamp' => $timing['start'],
             'travel_gps_first' => $usableTimes ? min($usableTimes) : null,

@@ -1,5 +1,39 @@
 # TRAC / routeTrack project memory
 
+## Accuracy now annotates rather than excludes tracking coordinates: 2026-10-21
+
+User clarified all valid coordinates must be considered. WorkTracking.points now
+retains all valid coordinate observations and annotates unreliable rather than
+filtering by accuracy; main/before-after paths and tracking boundary markers
+therefore receive high-accuracy-metre readings too. Travel GPS first/last uses
+valid coordinates. Unreliable means strictly greater than configured threshold
+(default 50m), matching the user's more-than-50 rule; exact 50m remains accepted.
+Invalid coordinate values still cannot be plotted. Missing/invalid accuracy is
+shown as unknown instead of rejecting a valid coordinate.
+
+Route event markers now use nearest available GPS without the former 120-second
+matching cutoff. Their popups disclose event time, actual observation time,
+accuracy and an unreliable badge. Reporting gaps still break stationary periods
+and disconnected dotted trails; they are not continuous idle evidence. Existing
+reliable/unreliable idle breakdown and grey unreliable layer remain. Updated PHP
+regressions for acceptance flags, exact threshold and unrestricted nearest events.
+PHP syntax, direct acceptance/threshold/nearest-event checks and diff check passed.
+Full Pest and live browser/database verification remain outstanding. This
+supersedes earlier notes about accuracy-filtered paths/markers and 2-minute event
+marker limits. No frontend rebuild required for these PHP-only behavior changes.
+
+## Route event markers accept low-accuracy coordinates: 2026-10-21
+
+Route Start/End markers now select from all valid coordinate observations,
+including low-accuracy readings, instead of accuracy-filtered plotting points.
+Nearest-event timestamp matching retains its existing maximum-gap limit. Marker
+payloads include accuracy_m and unreliable; map popups show reported accuracy
+and an amber Unreliable coordinates badge when at/above configured threshold
+(default 50m). Unknown accuracy is explicitly shown as Unknown. Ordinary route
+path filtering and idle calculations remain unchanged. Added regression for
+high-accuracy-metre event markers. Production build, two direct marker checks,
+PHP syntax and diff check passed. Full Pest/live browser validation outstanding.
+
 ## Include unreliable GPS in stationary and idle detection: 2026-10-21
 
 User requested idle/stationary estimates for higher-accuracy-metre readings too.

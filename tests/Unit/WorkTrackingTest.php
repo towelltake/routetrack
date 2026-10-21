@@ -69,6 +69,15 @@ test('selected date excludes adjacent dates even for the same device', function 
 test('before after toggle retains isolated GPS points and does not bridge reporting gaps', function () {
     $points = array_map(fn ($time) => (object) ['effective_timestamp' => '2026-10-21 '.$time, 'latitude' => 23.5, 'longitude' => 58.5], ['07:00:00', '08:00:00', '17:00:00', '18:00:00', '18:10:00']);
     $geometries = app(WorkTracking::class)->outsideGeometries($points, strtotime('2026-10-21 08:00:00'), strtotime('2026-10-21 17:00:00'));
-    expect(array_column($geometries, 'type'))->toBe(['Point', 'Point', 'Point']);
+    expect(array_column($geometries, 'type'))->toBe(['Point', 'Point', 'Point'])
+        ->and(array_column($geometries, 'tracking_period'))->toBe(['before', 'after', 'after']);
     expect(app(WorkTracking::class)->outsideGeometries(array_slice($points, 1, 2), strtotime('2026-10-21 08:00:00'), strtotime('2026-10-21 17:00:00')))->toBe([]);
+});
+
+
+test('an open route has no after route tracking and no route start keeps all readings before', function () {
+    $work = app(WorkTracking::class);
+    $points = array_map(fn ($time) => (object) ['effective_timestamp' => '2026-10-21 '.$time, 'latitude' => 23.5, 'longitude' => 58.5], ['07:00:00', '18:00:00']);
+    expect(array_column($work->outsideGeometries($points, strtotime('2026-10-21 08:00:00'), null), 'tracking_period'))->toBe(['before'])
+        ->and(array_column($work->outsideGeometries($points, null, null), 'tracking_period'))->toBe(['before', 'before']);
 });

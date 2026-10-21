@@ -53,7 +53,8 @@ const transactionDetailsLoading = ref(false);
 const selectedCustomerKey = ref(null);
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
-const outsideRouteVisible = ref(true);
+const beforeRouteVisible = ref(true);
+const afterRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
@@ -233,9 +234,12 @@ const routeQualityWarnings = computed(() => {
     }
 
     if (!result.value.actual?.has_tracking_data) {
-        warnings.push("Route Track Data Not Available.");
+        warnings.push(result.value.actual?.tracking_message || "Route Track Data Not Available.");
     }
 
+    if (result.value.actual?.tracking_message && result.value.actual?.has_tracking_data) warnings.push(result.value.actual.tracking_message);
+    if (result.value.planned?.route_details?.start_time && !result.value.actual?.route_start_marker) warnings.push('Route start marker unavailable: no nearby GPS observation.');
+    if (result.value.planned?.route_closed && result.value.planned?.route_details?.end_time && !result.value.actual?.route_end_marker) warnings.push('Route end marker unavailable: no nearby GPS observation.');
     return warnings;
 });
 
@@ -288,7 +292,8 @@ const customerItemEls = {};
 let resultLayer = null;
 let plannedLineLayer = null;
 let actualLineLayer = null;
-let outsideRouteLayer = null;
+let beforeRouteLayer = null;
+let afterRouteLayer = null;
 let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
@@ -336,6 +341,34 @@ onMounted(async () => {
         setTimeout(() => map.invalidateSize(), 0);
     });
 });
+
+const flashMessages = ref([]);
+const flashTimers = new Map();
+let flashId = 0;
+function dismissFlash(id) {
+    clearTimeout(flashTimers.get(id));
+    flashTimers.delete(id);
+    flashMessages.value = flashMessages.value.filter(message => message.id !== id);
+}
+function pauseFlash(id) { clearTimeout(flashTimers.get(id)); flashTimers.delete(id); }
+function resumeFlash(id) {
+    if (!flashMessages.value.some(message => message.id === id)) return;
+    pauseFlash(id);
+    flashTimers.set(id, setTimeout(() => dismissFlash(id), 15000));
+}
+function clearFlashes() { for (const message of [...flashMessages.value]) dismissFlash(message.id); }
+function showFlash(type, lines) {
+    const message = { id: ++flashId, type, lines: [...new Set(lines.filter(Boolean))] };
+    if (!message.lines.length) return;
+    flashMessages.value.push(message);
+    resumeFlash(message.id);
+}
+watch(error, message => { if (message) showFlash('danger', [message]); });
+watch(result, data => {
+    clearFlashes();
+    if (data) showFlash('warning', routeQualityWarnings.value);
+});
+onBeforeUnmount(clearFlashes);
 
 onBeforeUnmount(() => store.pageLoader({ mode: "off" }));
 
@@ -576,8 +609,10 @@ async function runComparison() {
 
     plannedLineLayer = null;
     actualLineLayer = null;
-    outsideRouteLayer = null;
-    outsideRouteVisible.value = true;
+    beforeRouteLayer = null;
+    afterRouteLayer = null;
+    beforeRouteVisible.value = true;
+    afterRouteVisible.value = true;
     rawCoordinatesLayer = null;
     plannedCustomerLayer = null;
     customerVisitLayer = null;
@@ -736,11 +771,15 @@ async function runComparison() {
             L.geoJSON(result.value.actual.raw_geometry, { style: rawCoordinatesStyle() }).addTo(rawCoordinatesLayer);
         }
 
-        outsideRouteLayer = L.featureGroup().addTo(resultLayer);
+        beforeRouteLayer = L.featureGroup().addTo(resultLayer);
+        afterRouteLayer = L.featureGroup().addTo(resultLayer);
         (data.actual.outside_route_geometries ?? []).forEach(geometry => {
-            L.geoJSON(geometry, { style: { color: '#a855f7', weight: 5, opacity: 0.85, dashArray: '8 5' },
-                pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 5, color: '#9333ea', fillColor: '#a855f7', fillOpacity: 0.85, weight: 2 }) })
-                .bindTooltip('Tracking before / after route').addTo(outsideRouteLayer);
+            const after = geometry.tracking_period === 'after';
+            const color = after ? '#ea580c' : '#a855f7';
+            L.geoJSON(geometry, { style: { color, weight: 5, opacity: 0.85, dashArray: '8 5' },
+                pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 5, color, fillColor: color, fillOpacity: 0.85, weight: 2 }) })
+                .bindTooltip(after ? 'GPS after Route End Time' : 'GPS before Route Start Time')
+                .addTo(after ? afterRouteLayer : beforeRouteLayer);
         });
         const actual = result.value.actual;
         const addEventMarker = (point, color, letter, label, routeEventLabel = null, routeEventTime = null) => {
@@ -994,10 +1033,16 @@ function togglePlannedRoute() {
     plannedRouteVisible.value ? resultLayer.addLayer(plannedLineLayer) : resultLayer.removeLayer(plannedLineLayer);
 }
 
-function toggleOutsideRoute() {
-    if (!outsideRouteLayer || !resultLayer) return;
-    outsideRouteVisible.value = !outsideRouteVisible.value;
-    outsideRouteVisible.value ? resultLayer.addLayer(outsideRouteLayer) : resultLayer.removeLayer(outsideRouteLayer);
+function toggleOutsideRoute(period) {
+    const layer = period === 'before' ? beforeRouteLayer : afterRouteLayer;
+    const visible = period === 'before' ? beforeRouteVisible : afterRouteVisible;
+    if (!layer || !resultLayer) return;
+    visible.value = !visible.value;
+    visible.value ? resultLayer.addLayer(layer) : resultLayer.removeLayer(layer);
+}
+
+function hasOutsideTracking(period) {
+    return !!result.value?.actual?.outside_route_geometries?.some(geometry => geometry.tracking_period === period);
 }
 
 function toggleActualRoute() {
@@ -1041,18 +1086,21 @@ function focusEnd() {
 
 <template>
     <Head title="Route Tracking" />
+    <Teleport to="body">
+        <div class="route-flash-stack" aria-live="polite" aria-relevant="additions">
+            <div v-for="message in flashMessages" :key="message.id" class="route-flash alert" :class="'alert-' + message.type" :role="message.type === 'danger' ? 'alert' : 'status'" @mouseenter="pauseFlash(message.id)" @mouseleave="resumeFlash(message.id)" @focusin="pauseFlash(message.id)" @focusout="resumeFlash(message.id)">
+                <i class="fa" :class="message.type === 'danger' ? 'fa-circle-exclamation' : 'fa-triangle-exclamation'" aria-hidden="true"></i>
+                <div><p v-for="line in message.lines" :key="line">{{ line }}</p></div>
+                <button type="button" class="btn-close" aria-label="Dismiss message" @click="dismissFlash(message.id)"></button>
+            </div>
+        </div>
+    </Teleport>
     <CustomerDetailsDialog ref="unplannedDetailsDialog" endpoint="/route-tracking/customer-details.json" />
 
     <div class="content route-tracking-content">
         <div class="route-tracking-page-heading">
             <a v-if="fromDashboard" href="/dashboard?restore=1" class="btn btn-sm btn-light mb-2"><i class="fa fa-arrow-left me-1"></i> Back to dashboard</a>
             <h1 class="h3 fw-bold mb-1">Route Tracking</h1>
-            <p v-if="result?.actual?.tracking_start_time" class="small text-muted mb-1">Actual GPS tracking: {{ result.actual.tracking_start_time }} to {{ result.actual.tracking_end_time }}. Idle time uses all recorded tracking before and after the route.</p>
-            <p v-if="result?.actual?.tracking_message" class="small text-warning mb-1" role="status">{{ result.actual.tracking_message }}</p>
-            <p v-if="result?.actual?.has_tracking_data && !result?.planned?.route_details?.start_time" class="small text-muted mb-1">No route start is recorded. Before / after route shows the recorded GPS trail.</p>
-            <p v-if="result?.planned?.route_details?.start_time && !result?.actual?.route_start_marker" class="small text-muted mb-1">Route start marker unavailable: no nearby GPS observation within the tracking window.</p>
-            <p v-if="result?.planned?.route_closed && result?.planned?.route_details?.end_time && !result?.actual?.route_end_marker" class="small text-muted mb-1">Route end marker unavailable: no nearby GPS observation within the tracking window.</p>
-            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual GPS points</h2>
         </div>
 
         <section class="tracking-filters" aria-labelledby="tracking-filters-title">
@@ -1111,12 +1159,6 @@ function focusEnd() {
         </section>
 
         <BaseBlock :title="routeHeading" :mode-loading="loading">
-            <p v-if="error" class="text-danger">{{ error }}</p>
-
-            <div v-if="routeQualityWarnings.length" class="alert alert-warning py-2">
-                <div v-for="warning in routeQualityWarnings" :key="warning">{{ warning }}</div>
-            </div>
-
             <section v-if="result" class="tracking-performance" aria-label="Selected journey performance">
                 <div class="current-route-status">
                     <h3>Journeys</h3>
@@ -1124,9 +1166,22 @@ function focusEnd() {
                         <span><i class="fa fa-flag-checkered" aria-hidden="true"></i> Current Route Status <i class="fa fa-chevron-right" aria-hidden="true"></i></span>
                         <strong :class="result.planned.route_closed ? 'text-danger' : 'text-success'">{{ result.planned.route_closed ? 'Closed' : result.planned.route_details?.start_time ? 'Live' : 'Not started' }}</strong>
                         <small>View journey details</small>
-                        <span class="route-status-distances">
-                            <span><span>Planned Distance</span><b>{{ km(result.planned.distance) }} km</b></span>
-                            <span><span>Actual Distance</span><b>{{ result.actual.has_tracking_data ? km(result.actual.distance) + ' km' : 'Unavailable' }}</b></span>
+                        <span class="route-status-details">
+                            <span v-if="result.planned.route_details?.start_time || result.planned.route_details?.end_time" class="route-status-timeline">
+                                <span v-if="result.planned.route_details?.start_time" class="route-status-event">
+                                    <i class="fa fa-play-circle route-event-start" aria-hidden="true"></i>
+                                    <span><span>Route start</span><b>{{ result.planned.route_details.start_time.slice(11, 19) }}</b><small>{{ result.planned.route_details.start_time.slice(0, 10) }}</small></span>
+                                </span>
+                                <span v-if="result.planned.route_details?.end_time" class="route-status-event">
+                                    <i class="fa fa-stop-circle route-event-end" aria-hidden="true"></i>
+                                    <span><span>Route end</span><b>{{ result.planned.route_details.end_time.slice(11, 19) }}</b><small>{{ result.planned.route_details.end_time.slice(0, 10) }}</small></span>
+                                </span>
+                            </span>
+                            <span class="route-status-distance-heading"><i class="fa fa-road" aria-hidden="true"></i> Distance <small>km</small></span>
+                            <span class="route-status-distance-grid">
+                                <span><span>Planned</span><b>{{ km(result.planned.distance) }}</b></span>
+                                <span><span>Actual</span><b>{{ result.actual.has_tracking_data ? km(result.actual.distance) : 'N/A' }}</b></span>
+                            </span>
                         </span>
                     </button>
                 </div>
@@ -1237,8 +1292,11 @@ function focusEnd() {
                 >
                     <span style="color: #dc2626">&#9632;</span> Last Known Location (L)
                 </button>
-                <button type="button" class="route-tracking-legend-item" :class="{ active: outsideRouteVisible }" :aria-pressed="outsideRouteVisible" :disabled="!result?.actual?.outside_route_geometries?.length" :title="result?.actual?.outside_route_geometries?.length ? 'Show or hide GPS recorded before route start and after route end' : 'No GPS readings before route start or after route end for this selection'" @click="toggleOutsideRoute">
-                    <span style="color: #a855f7">&#9632;</span> Before / after route
+                <button type="button" class="route-tracking-legend-item" :class="{ active: beforeRouteVisible }" :aria-pressed="beforeRouteVisible" :disabled="!hasOutsideTracking('before')" :title="hasOutsideTracking('before') ? 'Show or hide GPS before Route Start Time' : 'No GPS readings before route start for this selection'" @click="toggleOutsideRoute('before')">
+                    <span style="color: #a855f7">&#9632;</span> Before Route Start
+                </button>
+                <button type="button" class="route-tracking-legend-item" :class="{ active: afterRouteVisible }" :aria-pressed="afterRouteVisible" :disabled="!hasOutsideTracking('after')" :title="!result?.planned?.route_closed ? 'Available after a Route End Time is recorded' : hasOutsideTracking('after') ? 'Show or hide GPS after Route End Time' : 'No GPS readings after route end for this selection'" @click="toggleOutsideRoute('after')">
+                    <span style="color: #ea580c">&#9632;</span> After Route End
                 </button>
                 <span class="route-tracking-legend-item"><span style="color: #16a34a">&#9632;</span> Route Start (S)</span>
                 <span class="route-tracking-legend-item"><span style="color: #b45309">&#9632;</span> Route End (E)</span>
@@ -1592,7 +1650,6 @@ function focusEnd() {
 
                             <div v-else-if="summaryModal === 'stationary'" class="stationary-breakdown">
                                 <p class="small text-muted">Tracking window: {{ result.actual.tracking_start_time || 'Unavailable' }} to {{ result.actual.tracking_end_time || 'Unavailable' }}. Includes tracking before route start and after route end across all recorded GPS times. Only observed stationary periods count.</p>
-                                <p v-if="result.actual.tracking_message" class="small text-warning">{{ result.actual.tracking_message }}</p>
                                 <dl class="stationary-totals">
                                     <div><dt>Total stationary time</dt><dd>{{ stationaryDuration(result.actual.stationary_seconds) }}</dd><small>{{ stationaryPeriods.length }} detected stops</small></div>
                                     <div class="with-visits"><dt>Idle time with customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_with_customer_seconds) }}</dd><small>Time overlapping customer visits</small></div>
@@ -2630,13 +2687,29 @@ function focusEnd() {
 .current-route-status { display: flex; flex-direction: column; padding: 12px; background: #f8fafc; border: 1px solid #e8edf3; border-radius: 12px; }
 .current-route-status h3 { margin: 0 0 9px 2px; color: #475569; font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .07em; }
 .current-route-status-card { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 22px; padding: 18px; border: 1px solid #dce6f2; border-radius: 12px; background: #fff; text-align: left; color: #475569; }
-.current-route-status-card > span:not(.route-status-distances) { display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 650; }
+.current-route-status-card > span:not(.route-status-details) { display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 650; }
 .current-route-status-card strong { font-size: 28px; }
 .current-route-status-card small { color: #64748b; }
 .tracking-customer-performance { width: 100%; min-width: 0; align-self: stretch; }
 .tracking-customer-performance :deep(.group-customers) { grid-column: 1 / -1; }
 @media (max-width: 1000px) { .tracking-performance { grid-template-columns: 1fr; } .current-route-status-card { gap: 12px; } }
-.current-route-status-card .route-status-distances { display: grid; width: 100%; gap: 14px; margin-top: auto; padding-top: 18px; border-top: 1px solid #e2e8f0; }
-.route-status-distances > span { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px; color: #64748b; font-size: 11px; }
-.route-status-distances b { color: #2563eb; font-size: 14px; font-variant-numeric: tabular-nums; }
+.current-route-status-card .route-status-details { display: grid; width: 100%; gap: 12px; margin-top: auto; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+.route-status-timeline { display: grid; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #edf2f7; }
+.route-status-event { display: flex; align-items: flex-start; gap: 9px; }
+.route-status-event > i { margin-top: 3px; font-size: 13px; }
+.route-event-start { color: #16a34a; } .route-event-end { color: #e11d48; }
+.route-status-event > span { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 3px 6px; flex: 1; min-width: 0; }
+.route-status-event > span > span { color: #64748b; font-size: 11px; font-weight: 500; }
+.route-status-event b { color: #334155; font-size: 13px; font-variant-numeric: tabular-nums; }
+.route-status-event small { grid-column: 1 / -1; text-align: right; font-size: 10px; }
+.route-status-distance-heading { display: flex; align-items: center; gap: 6px; color: #475569; font-size: 11px; font-weight: 650; }
+.route-status-distance-heading small { margin-left: auto; font-size: 10px; font-weight: 500; }
+.route-status-distance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.route-status-distance-grid > span { display: grid; align-content: start; gap: 5px; padding: 10px 8px; border: 1px solid #e5edfa; border-radius: 9px; background: #f8faff; min-width: 0; }
+.route-status-distance-grid > span > span { color: #64748b; font-size: 10px; font-weight: 500; }
+.route-status-distance-grid b { color: #2563eb; font-size: 17px; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.route-flash-stack { position: fixed; top: 76px; right: 20px; z-index: 2100; display: grid; gap: 10px; width: min(460px, calc(100vw - 32px)); pointer-events: none; }
+.route-flash { display: grid; grid-template-columns: 18px minmax(0, 1fr) 18px; align-items: start; gap: 10px; margin: 0; padding: 14px; border-radius: 10px; box-shadow: 0 6px 24px #172b4520; pointer-events: auto; font-size: 12px; }
+.route-flash p { margin: 0 0 6px; overflow-wrap: anywhere; } .route-flash p:last-child { margin-bottom: 0; }
+.route-flash > i { padding-top: 2px; } .route-flash .btn-close { width: 12px; height: 12px; padding: 2px; }
 </style>

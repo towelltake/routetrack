@@ -1,5 +1,37 @@
 # TRAC / routeTrack project memory
 
+## Route Tracking dismissible flash messages: 2026-10-21
+
+Removed page-heading GPS tracking summary, route-marker notices and Planned route
+vs actual GPS points subtitle. Removed permanent inline error/quality-warning
+blocks. Route Tracking now shows warning/error flashes at top right, each with a
+close button and 15-second automatic dismissal (paused on hover/focus). Notices
+include tracking availability, missing route-event GPS and geometry fallbacks.
+New comparisons/reset replace stale flashes; timers are cleared on unmount.
+Existing tracking times remain available in the GPS card and marker popups.
+Production build and diff check passed; browser visual verification outstanding.
+
+## Refined Route Status timing and distance details: 2026-10-21
+
+Current Route Status now shows available recorded route start/end times and dates
+in compact icon rows. Distance has a km heading and aligned Planned/Actual tiles,
+replacing wrapping label/value lines. Long values can wrap within tiles; unavailable
+actual distance shows N/A. Uses existing route_details timestamps; no timing or
+distance calculation changes. Production build and diff check passed; live
+browser visual verification outstanding.
+
+## Separate before/after GPS toggles: 2026-10-21
+
+WorkTracking outside geometries now carry tracking_period=before/after using
+recorded GPS timestamps versus route event times. Route Tracking has separate
+Before Route Start (purple) and After Route End (orange) layers/toggles, both
+visible by default; singleton dots match the respective color. Open routes have
+no after geometry and their disabled control explains that an end time is needed.
+No recorded start keeps available GPS in the before layer. Gap handling, full-day
+tracking bounds and idle calculations are unchanged. README and PHP regressions
+updated. Production build, PHP syntax, three direct temporal-layer checks and
+diff check passed. Full Pest/browser verification remain outstanding.
+
 ## Auto-checkout badge in map-side visits panel: 2026-10-21
 
 Route Tracking customer visit rows beside the map now display the existing amber

@@ -65,8 +65,8 @@ class WorkTracking
             }
             if ($segment !== []) $segments[] = $segment;
             foreach ($segments as $coordinates) $outsideGeometries[] = count($coordinates) === 1
-                ? ['type' => 'Point', 'coordinates' => $coordinates[0]]
-                : ['type' => 'LineString', 'coordinates' => $coordinates];
+                ? ['type' => 'Point', 'coordinates' => $coordinates[0], 'tracking_period' => $side]
+                : ['type' => 'LineString', 'coordinates' => $coordinates, 'tracking_period' => $side];
         }
         return $outsideGeometries;
     }

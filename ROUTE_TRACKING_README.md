@@ -93,8 +93,10 @@ Route Start (S)/Route End (E) are separate events using nearby observed GPS,
 within the configured maximum gap. Popups disclose event and observation times;
 missing nearby coordinates are reported rather than fabricated.
 
-GPS outside the selected route's recorded start/end interval uses purple dashed
-lines, shown by default and controlled by Before / after route. When no route
+GPS before the selected route's recorded start uses purple dashed lines; GPS
+after its recorded closed-route end uses orange dashed lines. Separate Before
+Route Start and After Route End toggles independently control these layers, both
+shown by default. After Route End is disabled for open routes. When no route
 has started this layer contains the available GPS trail. Long gaps split these
 segments. Its visibility never changes tracking bounds or idle calculations.
 

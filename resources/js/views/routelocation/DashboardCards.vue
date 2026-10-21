@@ -87,7 +87,7 @@ const groups = computed(() => [
 </script>
 
 <template>
-    <section class="dashboard-overview" aria-label="Dashboard metrics" :aria-busy="loading">
+    <section class="dashboard-overview" :class="{ 'single-group': onlyGroups?.length === 1 }" aria-label="Dashboard metrics" :aria-busy="loading">
         <span v-if="loading" class="visually-hidden" role="status">Updating figures...</span>
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
         <div class="dashboard-metric-groups">
@@ -282,4 +282,7 @@ const groups = computed(() => [
 @media (max-width: 420px) { .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1050px) and (min-width: 701px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total efficiency' 'jp unplanned efficiency' 'productivity otp otp'; } }
 @media (max-width: 700px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total' 'jp unplanned' 'efficiency productivity' 'otp otp'; } .total-visits-card { padding: 12px; } .total-visits-values { gap: 8px; } }
+.dashboard-overview.single-group { width: 100%; height: 100%; margin: 0; }
+.single-group .dashboard-metric-groups { height: 100%; grid-template-columns: minmax(0, 1fr); }
+.single-group .dashboard-metric-group { grid-column: 1 / -1; }
 </style>

@@ -326,22 +326,7 @@ class RouteTrackingController extends Controller
         $routePoints = array_values(array_filter($rawPoints, fn ($point) => $routeStart !== null
             && strtotime($point->effective_timestamp) >= $routeStart
             && ($routeEnd === null || strtotime($point->effective_timestamp) <= $routeEnd)));
-        $outsideGeometries = [];
-        foreach (['before', 'after'] as $side) {
-            $segments = []; $segment = []; $previous = null;
-            foreach ($rawPoints as $point) {
-                $time = strtotime($point->effective_timestamp);
-                $outside = $side === 'before' ? ($routeStart === null || $time < $routeStart) : ($routeEnd !== null && $time > $routeEnd && ($routeStart === null || $time >= $routeStart));
-                if (!$outside || ($previous !== null && $time - $previous > config('tracking.stationary_max_gap_seconds'))) {
-                    if (count($segment) >= 2) $segments[] = $segment;
-                    $segment = [];
-                }
-                if ($outside) $segment[] = [(float) $point->longitude, (float) $point->latitude];
-                $previous = $time;
-            }
-            if (count($segment) >= 2) $segments[] = $segment;
-            foreach ($segments as $coordinates) $outsideGeometries[] = ['type' => 'LineString', 'coordinates' => $coordinates];
-        }
+        $outsideGeometries = $work->outsideGeometries($rawPoints, $routeStart, $routeEnd);
         $detector = app(StationaryDetection::class);
         $stationary = $detector->detect($rawPoints);
         $gpsGaps = $detector->detectGaps($rawPoints);

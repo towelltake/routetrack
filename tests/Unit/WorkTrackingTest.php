@@ -64,3 +64,11 @@ test('selected date excludes adjacent dates even for the same device', function 
     $tracking = app(WorkTracking::class)->load(10, '2026-10-21');
     expect(array_column($tracking['points'], 'id'))->toBe([1])->and($tracking['start'])->toBe($tracking['end']);
 });
+
+
+test('before after toggle retains isolated GPS points and does not bridge reporting gaps', function () {
+    $points = array_map(fn ($time) => (object) ['effective_timestamp' => '2026-10-21 '.$time, 'latitude' => 23.5, 'longitude' => 58.5], ['07:00:00', '08:00:00', '17:00:00', '18:00:00', '18:10:00']);
+    $geometries = app(WorkTracking::class)->outsideGeometries($points, strtotime('2026-10-21 08:00:00'), strtotime('2026-10-21 17:00:00'));
+    expect(array_column($geometries, 'type'))->toBe(['Point', 'Point', 'Point']);
+    expect(app(WorkTracking::class)->outsideGeometries(array_slice($points, 1, 2), strtotime('2026-10-21 08:00:00'), strtotime('2026-10-21 17:00:00')))->toBe([]);
+});

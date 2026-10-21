@@ -47,6 +47,30 @@ class WorkTracking
         return $this->observedBounds($points) + ['points' => $points, 'available' => true, 'reason' => $points ? null : 'No usable GPS readings for the selected device and date.'];
     }
 
+    /** Keep isolated outside-route observations visible without bridging GPS gaps. */
+    public function outsideGeometries(array $rawPoints, ?int $routeStart, ?int $routeEnd): array
+    {
+        $outsideGeometries = [];
+        foreach (['before', 'after'] as $side) {
+            $segments = []; $segment = []; $previous = null;
+            foreach ($rawPoints as $point) {
+                $time = strtotime($point->effective_timestamp);
+                $outside = $side === 'before' ? ($routeStart === null || $time < $routeStart) : ($routeEnd !== null && $time > $routeEnd && ($routeStart === null || $time >= $routeStart));
+                if (!$outside || ($previous !== null && $time - $previous > config('tracking.stationary_max_gap_seconds'))) {
+                    if ($segment !== []) $segments[] = $segment;
+                    $segment = [];
+                }
+                if ($outside) $segment[] = [(float) $point->longitude, (float) $point->latitude];
+                $previous = $time;
+            }
+            if ($segment !== []) $segments[] = $segment;
+            foreach ($segments as $coordinates) $outsideGeometries[] = count($coordinates) === 1
+                ? ['type' => 'Point', 'coordinates' => $coordinates[0]]
+                : ['type' => 'LineString', 'coordinates' => $coordinates];
+        }
+        return $outsideGeometries;
+    }
+
     public function marker(?object $point, ?int $eventTime = null): ?array
     {
         return $point ? ['lat' => (float) $point->latitude, 'lng' => (float) $point->longitude,

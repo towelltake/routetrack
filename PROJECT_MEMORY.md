@@ -1,5 +1,54 @@
 # TRAC / routeTrack project memory
 
+## Auto-checkout badge in map-side visits panel: 2026-10-21
+
+Route Tracking customer visit rows beside the map now display the existing amber
+Auto-checkout badge beside the customer name when auto_checkout is true. Uses
+the existing customervisitlog.autocheckout flag; planned-customer rows and manual
+checkouts have no badge. Production build and diff check passed; browser visual
+verification outstanding.
+
+## Before/after toggle retains isolated readings: 2026-10-21
+
+Found toggle was enabled only for drawable multi-point segments, dropping isolated
+before/after observations or readings separated by gaps. WorkTracking now builds
+outsideGeometries with Point geometry for single readings and LineString geometry
+for connected observations. Map renders singleton points as purple dots. Temporal
+classification remains strictly before route-start/after recorded closed-route
+end; no spatial matching. Long gaps still are not connected. Disabled toggle
+now explains when no outside readings exist for the selection. Added regression
+for isolated points, gaps and exact timestamp boundaries. Production build,
+three direct PHP geometry checks, PHP syntax and diff checks passed. Full Pest
+and browser validation remain outstanding.
+
+## Route event times in GPS marker popups: 2026-10-21
+
+Track Start Time marker popup now also shows recorded Route Start Time when
+available. Last Known Location popup similarly includes recorded Route End Time.
+Values use planned.route_details start_time/end_time rather than requiring a
+nearby route-event GPS marker. Missing route timestamps omit the additional row.
+Existing GPS timestamps and separate route markers remain unchanged. Production
+build and diff check passed; live browser visual verification outstanding.
+
+## Distances moved into Current Route Status: 2026-10-21
+
+Route Tracking now shows Planned/Actual Distance at the bottom of the Current
+Route Status card, separated by a divider with blue values. Removed distance
+rows from Actual GPS Tracking, leaving its start/end timestamps and note so the
+Time row stays compact and balanced. Distance sources and calculations are
+unchanged. Production build and diff check passed; browser visual verification
+remains outstanding.
+
+## Full-width selected Customer Performance: 2026-10-21
+
+DashboardCards now has a native single-group layout when onlyGroups contains one
+entry: one full-width grid column, no outer margins and full available height.
+This prevents the selected Customer Performance section retaining the shared
+12-column dashboard allocation in Route Tracking. Route Tracking uses a bounded
+170?220px Current Route Status column and gives all remaining width to Customer
+Performance; mobile still stacks. Default Dashboard layout remains unchanged.
+Production build and diff check passed; live browser visual check outstanding.
+
 ## Remove configured work-hour restriction from tracking: 2026-10-21
 
 User explicitly removed all routemaster hour restrictions. WorkTracking now loads

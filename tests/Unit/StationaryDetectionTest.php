@@ -119,6 +119,7 @@ test('actual route detects legacy stationary pings before downsampling and filte
         $mock->shouldReceive('load')->once()->andReturn(['start' => strtotime('2026-09-08 08:00:00'), 'end' => strtotime('2026-09-08 09:00:00'), 'available' => true, 'reason' => null,
             'points' => array_values(array_filter($points, fn ($point) => app(StationaryDetection::class)->usable($point)))]);
         $mock->shouldReceive('marker', 'eventMarker')->andReturn(null);
+        $mock->shouldReceive('outsideGeometries')->andReturn([]);
     });
     $method = new ReflectionMethod(\App\Http\Controllers\RouteTracking\RouteTrackingController::class, 'computeMatchedActual');
     $actual = $method->invoke(app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class), 1, '2026-09-08');

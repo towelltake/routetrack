@@ -72,45 +72,39 @@ Options and GPS results retain the existing session route/company/subarea access
 
 The Route Tracking page compares the planned customer sequence with the actual GPS trail and displays every recorded customer visit for a route journey.
 
-## Work-hour GPS tracking and route-event markers
+## GPS observation tracking and route-event markers
 
-Route Tracking uses `WorkTracking` to read PostgreSQL `trac_routetrack` by
-`deviceid`, including points with no routecode or routekey. For today's selected
-date (Asia/Muscat by default, configurable with TRACKING_TIMEZONE), the device
-comes from `routemaster.device_assigned_id`. Historical dates use the selected
-`startendday.dataconrefnumber`; a missing historical device never falls back to
-today's assignment. Route access is authorized before this lookup.
+Route Tracking reads all usable PostgreSQL `trac_routetrack` readings for the
+selected device and calendar date, ordered by recorded `date + time` and ID.
+It does not consult or restrict by routemaster starttime/endtime or autojp fields.
+Tracking start/end are the first and last observed timestamps, including early
+morning and late evening. Absent readings produce unavailable bounds. Existing
+coordinate/accuracy checks and long-gap handling remain in place; idle time is
+never inferred continuously across GPS outages.
 
-The tracking window uses `routemaster.autojp_work_start_time` and
-`autojp_work_end_time` on the selected operation date. An end earlier than the
-start crosses midnight. Missing/invalid/equal hours make tracking unavailable.
-Historical work hours currently use the route's current configuration; no
-historical schedule snapshot has been identified. GPS timestamps use recorded
-`date + time`, not the audit creation time. Accuracy filters still apply.
+Today uses `routemaster.device_assigned_id`; historical dates use the selected
+`startendday.dataconrefnumber`, with no fallback to today's device. Today is
+determined using TRACKING_TIMEZONE (Asia/Muscat by default). Route/company/
+geographic authorization remains required. Readings need no routecode or
+routekey. Adjacent calendar dates are excluded from a selected day's result.
 
-Map markers distinguish first observed Track Start (T), Last Known Location (L),
-Route Start (S) and Route End (E). Route events use the nearest measured GPS point
-within the configured maximum gap (120 seconds by default); the popup includes
-both event and observed GPS timestamps. Missing nearby GPS is reported instead
-of inventing event coordinates. First/last tracking markers remain available
-when no route has started.
+Tracking Start (T) and Last Known Location (L) mark first/last observations.
+Route Start (S)/Route End (E) are separate events using nearby observed GPS,
+within the configured maximum gap. Popups disclose event and observation times;
+missing nearby coordinates are reported rather than fabricated.
 
-The normal actual trail is restricted to the selected route's start/end window
-inside tracking work hours. For an open route it continues through the available
-work-hour readings. Before / after route toggles a purple dashed GPS layer within
-the work window, including all available work-hour tracking when no route start
-is recorded. This layer is drawn from measured GPS and split across long gaps;
-its visibility does not change idle totals. Points outside work hours are omitted.
+GPS outside the selected route's recorded start/end interval uses purple dashed
+lines, shown by default and controlled by Before / after route. When no route
+has started this layer contains the available GPS trail. Long gaps split these
+segments. Its visibility never changes tracking bounds or idle calculations.
 
-Stationary detection, idle totals and their popups now use the full tracking
-window, including time before route start and after route end. Customer-visit
-overlap is excluded from idle outside visits. Dashboard idle detail aggregates
-each selected route/start-date workday once so repeated journeys do not multiply
-the same window. The Dashboard still selects its workdays from eligible journeys
-in the selected start-date range. No GPS/missing device means unavailable idle,
-not fabricated time. Existing CFT, operational-time and journey-duration formulas
-remain separate. This supersedes older route/date-only GPS and journey-bound idle
-notes below.
+Route Tracking and Dashboard idle detection/popups use the complete observed
+GPS span, including before route start and after route end. Customer-visit
+intervals are subtracted from stationary time. Dashboard idle counts each
+selected route/start-date observation window once across repeated journeys;
+its eligible dates still derive from the Dashboard's selected journey range.
+Journey duration, CFT, operational time and route-only travel estimates remain
+separate. This supersedes earlier configured-work-hour tracking descriptions.
 
 ## Route Tracking customer performance cards
 

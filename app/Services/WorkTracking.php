@@ -7,31 +7,22 @@ use Illuminate\Support\Facades\DB;
 
 class WorkTracking
 {
-    /** Build a wall-clock work window; timestamps in the GPS table use the same local clock. */
-    public function window(string $date, ?string $from, ?string $to): ?array
+    /** Tracking bounds are the first and last usable observations, never scheduled hours. */
+    public function observedBounds(array $points): array
     {
-        if (!preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $from ?? '') || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $to ?? '')) return null;
-        foreach ([$from, $to] as $time) {
-            $parts = explode(':', $time);
-            if ((int) $parts[0] > 23 || (int) $parts[1] > 59 || (int) ($parts[2] ?? 0) > 59) return null;
-        }
-        $start = strtotime($date.' '.$from);
-        $end = strtotime($date.' '.$to);
-        if ($start === false || $end === false || $start === $end) return null;
-        if ($end < $start) $end = strtotime('+1 day', $end);
-        return ['start' => $start, 'end' => $end];
+        return ['start' => $points ? strtotime($points[0]->effective_timestamp) : null,
+            'end' => $points ? strtotime($points[array_key_last($points)]->effective_timestamp) : null];
     }
 
     /** Caller must first authorize this route; never substitute today's device for a historical one. */
     public function load(int $routecode, string $date, ?object $journey = null): array
     {
-        $route = DB::table('routemaster')->where('routecode', $routecode)
-            ->first(['device_assigned_id', 'autojp_work_start_time', 'autojp_work_end_time']);
-        $window = $this->window($date, $route?->autojp_work_start_time, $route?->autojp_work_end_time);
-        $empty = ['start' => $window['start'] ?? null, 'end' => $window['end'] ?? null, 'points' => [], 'available' => false];
-        if (!$window) return $empty + ['reason' => 'Tracking work hours are missing or invalid.'];
+        $empty = ['start' => null, 'end' => null, 'points' => [], 'available' => false];
         $today = CarbonImmutable::now(config('tracking.timezone', 'Asia/Muscat'))->toDateString();
-        $device = $date === $today ? trim((string) ($route?->device_assigned_id ?? '')) : '';
+        $device = '';
+        if ($date === $today) {
+            $device = trim((string) DB::table('routemaster')->where('routecode', $routecode)->value('device_assigned_id'));
+        }
         if ($date !== $today) {
             if ($journey !== null && !property_exists($journey, 'dataconrefnumber')) {
                 $journey = DB::table('startendday')->where('routecode', $routecode)->where('routekey', $journey->routekey)->first();
@@ -49,13 +40,11 @@ class WorkTracking
         $connection = DB::connection('tracking_pgsql');
         $timestamp = $connection->getDriverName() === 'sqlite' ? "date || ' ' || time" : 'date + time';
         $points = $connection->table('trac_routetrack')->where('deviceid', $device)
-            ->whereBetween('date', [date('Y-m-d', $window['start']), date('Y-m-d', $window['end'])])
-            ->whereRaw("{$timestamp} >= ?", [date('Y-m-d H:i:s', $window['start'])])
-            ->whereRaw("{$timestamp} <= ?", [date('Y-m-d H:i:s', $window['end'])])
+            ->whereDate('date', $date)
             ->selectRaw("trac_routetrack.*, {$timestamp} as effective_timestamp")
             ->orderBy('effective_timestamp')->orderBy('id')->get()
-            ->filter(fn ($point) => app(StationaryDetection::class)->usable($point))->values()->all();
-        return $window + ['points' => $points, 'available' => true, 'reason' => $points ? null : 'No usable GPS readings within the tracking work window.'];
+            ->filter(fn ($point) => app(StationaryDetection::class)->usable($point) && strtotime($point->effective_timestamp ?? '') !== false)->values()->all();
+        return $this->observedBounds($points) + ['points' => $points, 'available' => true, 'reason' => $points ? null : 'No usable GPS readings for the selected device and date.'];
     }
 
     public function marker(?object $point, ?int $eventTime = null): ?array

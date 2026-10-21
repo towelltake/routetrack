@@ -1,5 +1,44 @@
 # TRAC / routeTrack project memory
 
+## Remove configured work-hour restriction from tracking: 2026-10-21
+
+User explicitly removed all routemaster hour restrictions. WorkTracking now loads
+all usable GPS for selected device/calendar date, and observedBounds returns the
+first/last timestamps. Neither starttime/endtime nor autojp hours are queried.
+Today queries only current device assignment; historical lookup uses startendday
+recorded device and never substitutes current assignment. No GPS gives null
+bounds; one GPS gives identical start/end and unavailable idle evidence.
+
+Map's purple before/after-route GPS layer is enabled by default, keeping every
+available time segment visible while retaining the toggle. GPS start/end card,
+tracking headers, Route Tracking idle/stationary popup and Dashboard idle use
+observed first/last bounds. Removed configured-hour wording from UI/README.
+Date/device, coordinate/accuracy and gap restrictions remain; adjacent dates
+are excluded. Dashboard continues one observation window per selected route/date.
+Existing journey/CFT/operational/travel formulas remain unchanged. No database
+changes. This supersedes all prior configured work-window memory entries.
+
+Updated regressions include no schedule columns at all, early/late recordings,
+wrong devices, adjacent date exclusion, empty and single-point bounds, historic
+device identity and updated observed-range idle expectations. Production build,
+20 dashboard JS tests, PHP syntax and direct observation-bound checks passed.
+Full Pest and live database/browser verification remain outstanding without local
+vendor dependencies/configuration.
+
+## Fix production tracking work-hour columns: 2026-10-21
+
+Production error confirmed WorkTracking queried nonexistent autojp_work_start_time
+and autojp_work_end_time. Corrected loader to routemaster.starttime/endtime,
+verified in the legacy schema (TIME fields, default 08:00:00/17:00:00). Previous
+implementation incorrectly inferred database columns from model fillable names.
+Updated WorkTracking and DashboardOutsideVisits regression fixtures to use the
+real legacy columns and corrected README. Device identity rules and authorized
+route access remain unchanged. No schema changes or database writes required.
+This supersedes the autojp work-hour field names in older memory entries.
+Validation: PHP syntax, direct work-window checks and diff check passed. Full
+Pest execution is unavailable without vendor dependencies. Production recheck
+remains outstanding after deploying app/Services/WorkTracking.php.
+
 ## Dashboard-style Route Tracking customer performance: 2026-10-21
 
 Route Tracking now reuses DashboardCards with onlyGroups=['customers'] to match

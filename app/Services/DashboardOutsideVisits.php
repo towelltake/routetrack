@@ -16,7 +16,7 @@ class DashboardOutsideVisits
             ->whereIn('routekey', $journeys->pluck('routekey'))->get()->groupBy('routekey');
         $work = app(WorkTracking::class);
         $detector = app(StationaryDetection::class);
-        // A work window belongs to a route/date, not to each repeated journey that day.
+        // A GPS observation window belongs to a route/date, not to each repeated journey that day.
         return $journeys->groupBy(fn ($journey) => $journey->routecode.':'.substr((string) $journey->routestartdate, 0, 10))
             ->map(function ($dayJourneys) use ($visits, $work, $detector) {
                 $journey = $dayJourneys->sortByDesc('routekey')->first();
@@ -54,7 +54,7 @@ class DashboardOutsideVisits
                     'routecode' => $journey->routecode, 'salesman' => $journey->salesman ?? '',
                     'start' => $start === null ? null : date('Y-m-d H:i:s', $start),
                     'end' => $end === null ? null : date('Y-m-d H:i:s', $end),
-                    'status' => 'Work window', 'tracking_message' => $tracking['reason'],
+                    'status' => 'GPS tracking', 'tracking_message' => $tracking['reason'],
                     'customer_cft' => $cft, 'stationary' => $stationary, 'travel' => null];
             })->values();
     }

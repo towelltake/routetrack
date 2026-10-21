@@ -102,7 +102,7 @@ defineExpose({ open, close });
                 </div>
                 <p v-if="['productive', 'efficiency'].includes(type)" class="salesman">LPO Customers are shown in yellow for reference and excluded from both metric counts.<template v-if="type === 'efficiency'"> Each customer appears once per journey.</template></p>
                 <div v-if="type === 'idle'" class="details-table">
-                    <p class="salesman">GPS-detected stationary time within configured tracking work hours, outside all customer visits including OTP visits. Includes before route start and after route end; each route workday counts once. Travel is excluded. Times in h:mm; unavailable journeys are excluded from the total.</p>
+                    <p class="salesman">GPS-detected stationary time between the first and last recorded GPS readings, outside all customer visits including OTP visits. Includes before route start and after route end; each route/date counts once. Travel is excluded. Times in h:mm; unavailable journeys are excluded from the total.</p>
                     <table><thead><tr><th>Route</th><th>Date</th><th>Salesman</th><th>Start</th><th>Tracking end</th><th>Idle outside visits</th></tr></thead>
                     <tbody><tr v-for="row in visibleRows" :key="row.routekey"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.end || 'Unavailable' }}</td><td>{{ duration(row.stationary) }}<small v-if="row.tracking_message">{{ row.tracking_message }}</small></td></tr><tr v-if="!visibleRows.length"><td colspan="6">No matching records.</td></tr></tbody></table>
                 </div>

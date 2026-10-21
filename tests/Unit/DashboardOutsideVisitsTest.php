@@ -12,8 +12,8 @@ beforeEach(function () {
     DB::purge('outside_test'); DB::purge('tracking_pgsql');
     DB::statement("CREATE TABLE startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer, dataconrefnumber text default 'old-device')");
     DB::statement('CREATE TABLE customervisitlog (customercode integer default 1, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text)');
-    DB::statement("CREATE TABLE routemaster (routecode integer, device_assigned_id text, autojp_work_start_time text, autojp_work_end_time text)");
-    DB::table('routemaster')->insert(['routecode' => 10, 'device_assigned_id' => 'new-device', 'autojp_work_start_time' => '08:00:00', 'autojp_work_end_time' => '09:00:00']);
+    DB::statement("CREATE TABLE routemaster (routecode integer, device_assigned_id text)");
+    DB::table('routemaster')->insert(['routecode' => 10, 'device_assigned_id' => 'new-device']);
     DB::statement('CREATE TABLE customermaster (customercode integer, activecustomer integer)');
     DB::table('customermaster')->insert(['customercode' => 1, 'activecustomer' => 1]);
     // Legacy devices have no accuracy/provider columns.
@@ -27,6 +27,9 @@ function outsideJourney(): \Illuminate\Support\Collection
 }
 
 test('inactive customers do not contribute visit time to the idle calculation', function () {
+    foreach (['08:00:00', '09:00:00'] as $id => $time) DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
+        'id' => $id, 'date' => '2026-09-09', 'time' => $time, 'latitude' => 23.5, 'longitude' => 58.5,
+    ]);
     DB::table('customervisitlog')->insert([
         'routekey' => 1, 'logstartdate' => '2026-09-09', 'logstarttime' => '08:10:00',
         'logenddate' => '2026-09-09', 'logendtime' => '08:30:00',
@@ -44,7 +47,7 @@ test('outside visit times merge overlap and subtract only the stationary portion
         'id' => $minute, 'routecode' => 10, 'date' => '2026-09-09', 'time' => sprintf('08:%02d:00', $minute), 'latitude' => 23.5, 'longitude' => 58.5,
     ]);
     $row = app(DashboardOutsideVisits::class)->build(outsideJourney())[0];
-    expect($row)->toMatchArray(['customer_cft' => 20, 'stationary' => 20, 'travel' => null, 'status' => 'Work window']);
+    expect($row)->toMatchArray(['customer_cft' => 20, 'stationary' => 20, 'travel' => null, 'status' => 'GPS tracking']);
 });
 
 test('open visits stop at last GPS and absent GPS does not fabricate stationary or travel time', function () {
@@ -53,12 +56,12 @@ test('open visits stop at last GPS and absent GPS does not fabricate stationary 
     $journeys[0]->last_location_time = '2026-09-09 08:40:00';
     DB::table('customervisitlog')->insert(['routekey' => 1, 'logstartdate' => '2026-09-09', 'logstarttime' => '08:10:00']);
     $row = app(DashboardOutsideVisits::class)->build($journeys)[0];
-    expect($row)->toMatchArray(['customer_cft' => 0, 'stationary' => null, 'travel' => null, 'end' => '2026-09-09 09:00:00', 'status' => 'Work window']);
+    expect($row)->toMatchArray(['customer_cft' => null, 'stationary' => null, 'travel' => null, 'end' => null, 'status' => 'Work window']);
     $journeys[0]->last_location_time = null;
     expect(app(DashboardOutsideVisits::class)->build($journeys)[0])->toMatchArray(['customer_cft' => 0, 'stationary' => null, 'travel' => null]);
 });
 
-test('reporting gaps break stops while the full work window includes later journey tracking', function () {
+test('reporting gaps break stops while the full GPS observation window includes later journey tracking', function () {
     DB::table('startendday')->insert(['routekey' => 2, 'routecode' => 10, 'routestartdate' => '2026-09-09', 'routestarttime' => '08:30:00']);
     foreach (array_merge(range(0, 5), range(20, 25), range(30, 40)) as $minute) DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
         'id' => $minute, 'routecode' => 10, 'date' => '2026-09-09', 'time' => sprintf('08:%02d:00', $minute), 'latitude' => 23.5, 'longitude' => 58.5,
@@ -80,7 +83,7 @@ test('idle details retain stationary minutes and unavailable journeys in the cus
 });
 
 
-test('idle covers tracking before and after route events and repeated journeys count one workday', function () {
+test('idle covers tracking before and after route events and repeated journeys count one route date', function () {
     DB::table('startendday')->where('routekey', 1)->update(['routestarttime' => '08:15:00', 'routeendtime' => '08:25:00']);
     DB::table('startendday')->insert(['routekey' => 2, 'routecode' => 10, 'routestartdate' => '2026-09-09', 'routestarttime' => '08:40:00', 'routeenddate' => '2026-09-09', 'routeendtime' => '08:45:00', 'routeclosed' => 1]);
     for ($minute = 0; $minute <= 50; $minute++) DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
@@ -88,5 +91,5 @@ test('idle covers tracking before and after route events and repeated journeys c
     ]);
     $rows = app(DashboardOutsideVisits::class)->build(DB::table('startendday')->get());
     expect($rows)->toHaveCount(1)->and($rows[0]['stationary'])->toEqual(50)
-        ->and($rows[0]['start'])->toBe('2026-09-09 08:00:00')->and($rows[0]['end'])->toBe('2026-09-09 09:00:00');
+        ->and($rows[0]['start'])->toBe('2026-09-09 08:00:00')->and($rows[0]['end'])->toBe('2026-09-09 08:50:00');
 });

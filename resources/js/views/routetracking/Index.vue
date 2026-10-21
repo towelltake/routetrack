@@ -53,7 +53,7 @@ const transactionDetailsLoading = ref(false);
 const selectedCustomerKey = ref(null);
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
-const outsideRouteVisible = ref(false);
+const outsideRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
@@ -161,7 +161,7 @@ const routeSummaryGroups = computed(() => {
             ], distances: [
                 { label: 'Planned Distance', value: km(planned.distance) + ' km' },
                 { label: 'Actual Distance', value: actual.has_tracking_data ? km(actual.distance) + ' km' : 'Unavailable' },
-            ], meta: "First and last recorded GPS within work hours" },
+            ], meta: "First and last recorded GPS for the selected date" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
@@ -580,7 +580,7 @@ async function runComparison() {
     plannedLineLayer = null;
     actualLineLayer = null;
     outsideRouteLayer = null;
-    outsideRouteVisible.value = false;
+    outsideRouteVisible.value = true;
     rawCoordinatesLayer = null;
     plannedCustomerLayer = null;
     customerVisitLayer = null;
@@ -739,10 +739,10 @@ async function runComparison() {
             L.geoJSON(result.value.actual.raw_geometry, { style: rawCoordinatesStyle() }).addTo(rawCoordinatesLayer);
         }
 
-        outsideRouteLayer = L.featureGroup();
+        outsideRouteLayer = L.featureGroup().addTo(resultLayer);
         (data.actual.outside_route_geometries ?? []).forEach(geometry => {
             L.geoJSON(geometry, { style: { color: '#a855f7', weight: 5, opacity: 0.85, dashArray: '8 5' } })
-                .bindTooltip('Tracking before / after route (within work hours)').addTo(outsideRouteLayer);
+                .bindTooltip('Tracking before / after route').addTo(outsideRouteLayer);
         });
         const actual = result.value.actual;
         const addEventMarker = (point, color, letter, label) => {
@@ -1048,9 +1048,9 @@ function focusEnd() {
         <div class="route-tracking-page-heading">
             <a v-if="fromDashboard" href="/dashboard?restore=1" class="btn btn-sm btn-light mb-2"><i class="fa fa-arrow-left me-1"></i> Back to dashboard</a>
             <h1 class="h3 fw-bold mb-1">Route Tracking</h1>
-            <p v-if="result?.actual?.tracking_start_time" class="small text-muted mb-1">Tracking work hours: {{ result.actual.tracking_start_time }} to {{ result.actual.tracking_end_time }}. Idle time includes tracking before and after the route within these hours.</p>
+            <p v-if="result?.actual?.tracking_start_time" class="small text-muted mb-1">Actual GPS tracking: {{ result.actual.tracking_start_time }} to {{ result.actual.tracking_end_time }}. Idle time uses all recorded tracking before and after the route.</p>
             <p v-if="result?.actual?.tracking_message" class="small text-warning mb-1" role="status">{{ result.actual.tracking_message }}</p>
-            <p v-if="result?.actual?.has_tracking_data && !result?.planned?.route_details?.start_time" class="small text-muted mb-1">No route start is recorded. Turn on Before / after route to view the work-hour GPS trail.</p>
+            <p v-if="result?.actual?.has_tracking_data && !result?.planned?.route_details?.start_time" class="small text-muted mb-1">No route start is recorded. Before / after route shows the recorded GPS trail.</p>
             <p v-if="result?.planned?.route_details?.start_time && !result?.actual?.route_start_marker" class="small text-muted mb-1">Route start marker unavailable: no nearby GPS observation within the tracking window.</p>
             <p v-if="result?.planned?.route_closed && result?.planned?.route_details?.end_time && !result?.actual?.route_end_marker" class="small text-muted mb-1">Route end marker unavailable: no nearby GPS observation within the tracking window.</p>
             <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual GPS points</h2>
@@ -1588,7 +1588,7 @@ function focusEnd() {
                             </div>
 
                             <div v-else-if="summaryModal === 'stationary'" class="stationary-breakdown">
-                                <p class="small text-muted">Tracking window: {{ result.actual.tracking_start_time || 'Unavailable' }} to {{ result.actual.tracking_end_time || 'Unavailable' }}. Includes tracking before route start and after route end within work hours. Only observed stationary periods count.</p>
+                                <p class="small text-muted">Tracking window: {{ result.actual.tracking_start_time || 'Unavailable' }} to {{ result.actual.tracking_end_time || 'Unavailable' }}. Includes tracking before route start and after route end across all recorded GPS times. Only observed stationary periods count.</p>
                                 <p v-if="result.actual.tracking_message" class="small text-warning">{{ result.actual.tracking_message }}</p>
                                 <dl class="stationary-totals">
                                     <div><dt>Total stationary time</dt><dd>{{ stationaryDuration(result.actual.stationary_seconds) }}</dd><small>{{ stationaryPeriods.length }} detected stops</small></div>

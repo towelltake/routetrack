@@ -1,5 +1,77 @@
 # TRAC / routeTrack project memory
 
+## JP route-status base clarified: 2026-10-21
+
+Verified JP uses distinct scheduled (schelduledflag = 1) active customers from
+routesequencecustomerstatus per journey as the denominator for both percentages.
+Main numerator requires one completed non-OTP visit meeting a positive recorded
+CFT; lower numerator counts base customers with matched OTP, without requiring
+CFT. Existing formulas already matched the request. Clarified DashboardCards
+labels/help and added a JP popup summary of base, qualified and unique OTP
+customer counts. A customer with separate qualifying and OTP visits can appear
+in both counts. Production build and diff check passed; browser verification is
+outstanding. Backend formulas and existing access restrictions are unchanged.
+
+## Shared Unplanned Customers popup in Route Tracking: 2026-10-21
+
+Route Tracking's Unplanned Visits card now opens the same CustomerDetailsDialog
+used for Dashboard JP/Unplanned compliance. computePlannedRoute includes scoped
+unplanned_compliance data from DashboardCustomerDetails for its selected journey;
+the dialog consumes cached data, preserving Route Tracking operation-date journey
+selection without requesting Dashboard's separate start-date range endpoint.
+Shows route-status sequence, individual visits/revisits, actual/planned CFT,
+qualification, OTP markers, qualification filters and unvisited unscheduled
+route-status customers. Dashboard already used this shared compliance layout.
+Production build, 20 dashboard JavaScript tests, controller PHP syntax and diff
+checks passed. Full PHP tests remain unavailable without vendor dependencies;
+live browser/database verification remains outstanding.
+
+## CFT qualification for dashboard compliance: 2026-10-21
+
+Implemented positive-target CFT qualification for Dashboard JP compliance and
+Unplanned Customers. CustomerFaceTime::qualifies is shared by metric aggregation
+and popup rows: one complete non-OTP visit must meet its own recorded positive
+CFT target. User confirmed missing/zero targets do not qualify. Distinct customers
+count once per journey; short visits cannot combine. A qualifying non-OTP revisit
+can qualify a customer with another OTP visit. Existing OTP breakdowns remain
+informational and may overlap qualified counts. JP and unplanned denominators,
+raw coverage, productivity, operation dates and access restrictions are preserved.
+
+DashboardCustomerDetails::complianceRows orders customers by route-status sequence
+and each customer's visits chronologically. Includes revisit numbers, check-in/out,
+actual/planned CFT in minutes, OTP markers, per-visit reasons and per-customer
+qualification. Unvisited scheduled customers appear in JP, unvisited unscheduled
+route-status customers in Unplanned; their CFT is unavailable without a visit.
+Unsequenced visited customers appear last. Dialog has qualification filters and
+unique customer qualification counts. DashboardCards help and README updated.
+
+Validation: final production build, 20 dashboard JS tests, 10 directly executed
+PHP qualification cases, changed PHP syntax checks and diff check passed.
+Updated PHP regressions cover target boundaries, missing/negative/zero targets,
+OTP/non-OTP revisits, sequence order and unvisited customers. Full Pest regression
+execution is outstanding because vendor dependencies are absent. Live browser
+and business database verification remain outstanding. This supersedes earlier
+notes that any OTP visit places a customer only in the OTP group for compliance.
+
+## Planned CFT from recorded visits: 2026-10-21
+
+Implemented planned CFT sourcing exclusively from customervisitlog.cft (minutes)
+for Dashboard metrics/analysis, customer detail dialogs, Route Tracking visits,
+CFT summaries and planned face-time totals. CustomerFaceTime::plannedMinutes
+normalizes each visit independently: null/non-numeric/nonpositive values become
+zero, positive fractional minutes are retained. No customer master or cluster
+mapping fallback remains. Repeated visits can have distinct targets; historical
+visits use recorded values. Completion rules, OTP exclusions, actual durations,
+variance formula, average/totals display and access restrictions are unchanged.
+Updated screen help, ROUTE_TRACKING_README.md and PHP regression fixtures for
+recorded targets, missing values, decimals, repeated visits and journey scope.
+This supersedes the September 29 customer-master/cluster fallback decision.
+Validation: PHP syntax checks on all six changed PHP files, all 20 dashboard JS
+tests, production build and diff check passed. PHP unit execution is blocked by
+missing vendor dependencies (vendor/bin/pest absent); local PHP 8.4.15 was found
+under WAMP and emits OCI/Xdebug configuration warnings. Live browser/database
+verification and execution of the updated PHP regressions remain outstanding.
+
 ## Remove dashboard and tracking metrics: 2026-10-21
 
 Removed Route Close Compliance from the Dashboard Route Start Compliance card

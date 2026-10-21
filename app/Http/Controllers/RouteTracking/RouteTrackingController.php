@@ -671,6 +671,9 @@ class RouteTrackingController extends Controller
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
             'customer_visits' => $visits->values(),
+            'unplanned_compliance' => app(\App\Services\DashboardCustomerDetails::class)->build(collect([
+                (object) array_merge((array) $routeDay, ['routename' => $routeDay->routename ?? '', 'salesman' => $routeDay->salesman ?? '']),
+            ]), 'unplanned'),
             'otp_logs' => $otpLogs->values(),
             'chunks_failed' => $chunksFailed,
             'osrm_legs' => $osrmLegs,
@@ -880,9 +883,8 @@ class RouteTrackingController extends Controller
             ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->whereIn('customercode', $customerCodes)
-            ->pluck('customercode');
-        $faceTime = app(CustomerFaceTime::class)->minutesFor($visitCustomers);
-        $minutes = $visitCustomers->sum(fn ($code) => $faceTime->get($code, 0));
+            ->pluck('cft');
+        $minutes = $visitCustomers->sum(fn ($cft) => CustomerFaceTime::plannedMinutes($cft));
 
         return (int) round((float) $minutes * 60);
     }
@@ -1168,6 +1170,7 @@ class RouteTrackingController extends Controller
             ->orderBy('cvl.logkey')
             ->get([
                 'cvl.logkey',
+                'cvl.cft',
                 'cvl.customercode',
                 'cvl.logstartdate',
                 'cvl.logstarttime',
@@ -1179,8 +1182,7 @@ class RouteTrackingController extends Controller
                 'cm.fixedlongitude',
                 'cm.toplpo',
             ]);
-        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
-        $visits = $visits->map(function (object $visit) use ($operations, $routekey, $faceTime) {
+        $visits = $visits->map(function (object $visit) use ($operations, $routekey) {
                 $visitOperations = $operations->get($visit->logkey, collect());
                 // Keep the latest operation for coordinates, but use every linked key for transactions.
                 $operation = $visitOperations->first();
@@ -1207,7 +1209,7 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
-                    'default_face_time_minutes' => $faceTime->get($visit->customercode, 0),
+                    'default_face_time_minutes' => CustomerFaceTime::plannedMinutes($visit->cft),
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? ($endTimestamp - $startTimestamp) / 60
                         : null,

@@ -12,6 +12,8 @@ const faceVariancePercent = (row) => {
     return `${value > 0 ? '+' : ''}${value.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
 };
 const signedDuration = (value) => value == null ? 'Unavailable' : `${value > 0 ? '+' : value < 0 ? '-' : ''}${duration(Math.abs(value))}`;
+const isCompliance = computed(() => ['planned', 'unplanned'].includes(type.value));
+const complianceStatuses = ['All', 'Qualified', 'CFT not met', 'Missing CFT target', 'Incomplete visit', 'OTP visit', 'Not visited'];
 const isTransaction = computed(() => ['sales', 'orders', 'collections', 'returns'].includes(type.value));
 const duration = (value) => value == null ? 'Unavailable' : `${Math.floor(Math.round(value) / 60)}:${String(Math.round(value) % 60).padStart(2, '0')}`;
 const money = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
@@ -33,9 +35,13 @@ const scopedRows = computed(() => routes.value
     .filter(item => isRouteTime.value || route.value === '' || String(item.routekey) === route.value)
     .flatMap(item => item.rows.map(row => ({ ...row, route_date: item.date, routekey: item.routekey, routecode: item.routecode, salesman: item.salesman }))));
 const statusLabel = value => value === 'Ignored' ? 'LPO Customers' : value;
-const statuses = computed(() => type.value === 'coverage' ? ['All', 'OTP', 'Non-OTP'] : type.value === 'planned' ? ['All', 'Visited without OTP', 'Visited with OTP', 'Not visited'] : type.value === 'unplanned' ? ['All', 'Visited without OTP', 'Visited with OTP'] : ['productive', 'efficiency'].includes(type.value) ? ['All', 'Productive', 'Nonproductive', 'Ignored'] : ['All']);
+const statuses = computed(() => type.value === 'coverage' ? ['All', 'OTP', 'Non-OTP'] : isCompliance.value ? complianceStatuses : ['productive', 'efficiency'].includes(type.value) ? ['All', 'Productive', 'Nonproductive', 'Ignored'] : ['All']);
 const rows = computed(() => scopedRows.value.filter((row) => (status.value === 'All' || row.status === status.value)
     && `${row.customer_code} ${row.customercode} ${row.customer_name} ${row.otp_type ?? ''} ${row.recorded_by ?? ''} ${row.comments ?? ''} ${row.document ?? ''} ${row.routecode ?? ''} ${row.salesman ?? ''}`.toLowerCase().includes(search.value.trim().toLowerCase())));
+const complianceCustomerCounts = computed(() => {
+    const customers = new Map(scopedRows.value.map(row => [row.routekey + ':' + row.customercode, row]));
+    return { total: customers.size, qualified: [...customers.values()].filter(row => row.customer_qualified).length, withOtp: [...customers.values()].filter(row => row.otp_visit_count > 0).length };
+});
 const pages = computed(() => Math.max(1, Math.ceil(rows.value.length / 50)));
 const otpComments = computed(() => {
     if (type.value !== 'otp') return [];
@@ -110,7 +116,7 @@ defineExpose({ open, close });
                     <tbody><tr v-for="row in visibleRows" :key="row.routekey"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.first_customer ?? 'Unavailable' }}</td><td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.last_customer ?? 'Unavailable' }}</td><td>{{ row.check_out || 'Unavailable' }}</td><td>{{ duration(row.actual_cft) }}</td></tr></tbody></table>
                 </div>
                 <div v-else-if="['otp_time', 'actual_face'].includes(type)" class="details-table">
-                    <p class="salesman">Duration in h:mm.<template v-if="type === 'actual_face'"> Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Variance (%) = (actual CFT - planned CFT) / planned CFT &times; 100. N/A means no planned time, incomplete visit timing, or an excluded OTP visit.</template> Each completed visit counts once. OTP visits shown in red are excluded from Face Time Compliance.<template v-if="type === 'otp_time'"> OTP requests are matched to the nearest visit start for that customer within the same journey; all matched OTP times are listed.</template></p>
+                    <p class="salesman">Duration in h:mm.<template v-if="type === 'actual_face'"> Planned CFT uses the CFT recorded on each visit (customervisitlog.cft), in minutes. Variance (%) = (actual CFT - planned CFT) / planned CFT &times; 100. N/A means no planned time, incomplete visit timing, or an excluded OTP visit.</template> Each completed visit counts once. OTP visits shown in red are excluded from Face Time Compliance.<template v-if="type === 'otp_time'"> OTP requests are matched to the nearest visit start for that customer within the same journey; all matched OTP times are listed.</template></p>
                     <table><thead><tr><th>Route code</th><th>Date</th><th>Customer code</th><th>Customer name</th><th>Check-in time</th><th>Check-out time</th><th>{{ type === 'actual_face' ? 'Actual CFT (h:mm)' : 'Duration (h:mm)' }}</th><template v-if="type === 'actual_face'"><th>Planned CFT (h:mm)</th><th>Variance (%)</th></template><th v-if="type === 'otp_time'">OTP time</th></tr></thead>
                     <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'planned-otp-row': ['planned', 'unplanned'].includes(type) && row.otp_visit_count > 0, 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.routecode }}</td><td>{{ row.date || row.route_date }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}<small v-if="row.otp_excluded">OTP - excluded</small></td><td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.check_out || 'Unavailable' }}</td><td>{{ duration(row.actual_cft) }}</td><template v-if="type === 'actual_face'"><td>{{ duration(row.planned_cft) }}</td><td>{{ faceVariancePercent(row) }}</td></template><td v-if="type === 'otp_time'"><div v-for="(time, index) in row.otp_times" :key="index">{{ time }}</div></td></tr><tr v-if="!visibleRows.length"><td :colspan="type === 'otp_time' ? 8 : 9">No matching records.</td></tr></tbody></table>
                 </div>
@@ -119,7 +125,7 @@ defineExpose({ open, close });
                     <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'planned-otp-row': ['planned', 'unplanned'].includes(type) && row.otp_visit_count > 0, 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.route_date }}</td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.status === 'Open' ? 'Not ended' : row.end || 'Unavailable' }}<small v-if="row.status === 'Open'">Last location: {{ row.end || 'Unavailable' }}</small></td><td>{{ duration(row.duration) }}</td><td>{{ statusLabel(row.status) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody>
                 </table></div>
                 <div v-else-if="type === 'cft'" class="details-table">
-                    <p class="salesman">OTP visits are shown in red, excluded from actual and planned CFT, and count as zero. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Times in h:mm. Variance = actual minus planned. Variance is unavailable when planned CFT is missing or zero, or visit timing is incomplete.</p>
+                    <p class="salesman">OTP visits are shown in red, excluded from actual and planned CFT, and count as zero. Planned CFT uses the CFT recorded on each visit (customervisitlog.cft), in minutes. Times in h:mm. Variance = actual minus planned. Variance is unavailable when planned CFT is missing or zero, or visit timing is incomplete.</p>
                     <table><thead><tr><th>Date</th><th>Route code</th><th>Salesman</th><th>Customer code</th><th>Planned CFT</th><th>Actual CFT</th><th>Variance</th></tr></thead>
                     <tbody><tr v-for="row in visibleRows" :key="`${row.routekey}:${row.id}`" :class="{ 'planned-otp-row': ['planned', 'unplanned'].includes(type) && row.otp_visit_count > 0, 'cft-otp-excluded': row.otp_excluded, 'lpo-customer-row': ['productive', 'efficiency'].includes(type) && row.ignored }"><td>{{ row.date || row.route_date }}<small>{{ row.time }}</small></td><td>{{ row.routecode }}</td><td>{{ row.salesman || 'Not available' }}</td><td :title="row.customer_name">{{ row.customer_code }}<small v-if="row.otp_excluded">OTP - excluded</small></td><td>{{ duration(row.planned_cft) }}</td><td>{{ duration(row.actual_cft) }}</td><td>{{ signedDuration(row.variance) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="7">No matching records.</td></tr></tbody></table>
                 </div>
@@ -135,6 +141,25 @@ defineExpose({ open, close });
                                 <td><span v-if="row.is_revisit" class="coverage-revisit-badge">Revisit #{{ row.visit_number }}</span><span v-else>First visit</span></td>
                             </tr>
                             <tr v-if="!visibleRows.length"><td colspan="8">No matching visits.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-else-if="isCompliance" class="details-table">
+                    <p v-if="type === 'planned'" class="salesman">Route-status planned customer base: {{ complianceCustomerCounts.total }}. Non-OTP visit meeting CFT: {{ complianceCustomerCounts.qualified }} / {{ complianceCustomerCounts.total }}. Visited with OTP: {{ complianceCustomerCounts.withOtp }} / {{ complianceCustomerCounts.total }} (CFT not required for this count). Each customer counts once per journey; a customer with separate qualifying and OTP visits appears in both counts.</p>
+                    <p class="salesman">{{ complianceCustomerCounts.qualified }} qualified / {{ complianceCustomerCounts.total }} unique customers in the selected journeys. Customers follow route-status sequence; each customer's visits are listed chronologically. A customer qualifies once per journey when any completed non-OTP visit meets its positive planned CFT. Short visits are not added together. Times below are in minutes; unavailable targets for customers not visited are shown as unavailable.</p>
+                    <table>
+                        <thead><tr><th>Route start date</th><th>Route</th><th>Sequence</th><th>Customer code</th><th>Customer name</th><th>Visit</th><th>Check-in</th><th>Checkout</th><th>Actual CFT (min)</th><th>Planned CFT (min)</th><th>OTP</th><th>Visit qualification</th><th>Customer qualified</th></tr></thead>
+                        <tbody>
+                            <tr v-for="row in visibleRows" :key="row.routekey + ':' + row.id" :class="{ 'coverage-revisit': row.is_revisit, 'planned-otp-row': row.has_otp, 'compliance-qualified': row.qualified }">
+                                <td>{{ row.route_date }}</td><td>{{ row.routecode }}</td><td>{{ row.sequence ?? 'Unsequenced' }}</td><td>{{ row.customer_code }}</td><td>{{ row.customer_name }}</td>
+                                <td><span v-if="row.is_revisit" class="coverage-revisit-badge">Revisit #{{ row.visit_number }}</span><span v-else>{{ row.visit_number ? 'First visit' : 'Not visited' }}</span></td>
+                                <td>{{ row.check_in || 'Unavailable' }}</td><td>{{ row.check_out || 'Not recorded' }}</td>
+                                <td>{{ row.actual_cft == null ? 'Unavailable' : Number(row.actual_cft).toLocaleString(undefined, { maximumFractionDigits: 2 }) }}</td>
+                                <td>{{ row.planned_cft == null ? 'Unavailable' : Number(row.planned_cft).toLocaleString(undefined, { maximumFractionDigits: 2 }) }}</td>
+                                <td><span v-if="row.visit_number" class="otp-status-badge" :class="row.has_otp ? 'with-otp' : 'without-otp'">{{ row.has_otp ? 'OTP' : 'Non-OTP' }}</span><span v-else>?</span></td>
+                                <td>{{ row.status }}</td><td>{{ row.customer_qualified ? 'Qualified' : 'Not qualified' }}</td>
+                            </tr>
+                            <tr v-if="!visibleRows.length"><td colspan="13">No matching customers or visits.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -186,4 +211,5 @@ h3 { margin: 18px 0 4px; font-size: 15px; } .status-tabs { display: flex; gap: 6
 .details-table { overflow-x: auto; margin-top: 12px; } table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { padding: 9px; text-align: left; border-bottom: 1px solid #e2e8f0; } th { white-space: nowrap; background: #f8fafc; } td { overflow-wrap: anywhere; } small { display: block; color: #64748b; } .missed { color: #b91c1c; } footer { margin-top: 14px; font-size: 12px; }
 .lpo-customer-row > td, .lpo-customer-row small { background: #fef9c3; color: #854d0e; }
 .details-table td.overnight-checkout, .details-table td.overnight-checkout small { color: #b91c1c; font-weight: 650; }
+.compliance-qualified td { background: #ecfdf5; }
 </style>

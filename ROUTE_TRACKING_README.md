@@ -12,6 +12,27 @@ excluded. Route, company and geographic access restrictions still apply.
 joins must explicitly filter the master alias or restrict customer codes using
 `CustomerMaster::query()->select('customercode')` before aggregating.
 
+## JP compliance and Unplanned Customers qualification
+
+Dashboard JP compliance counts a scheduled customer only if at least one completed
+visit without matched OTP has actual duration >= that visit's positive recorded
+`customervisitlog.cft` target (minutes). Missing, zero and negative targets do not
+qualify. Visits are checked separately; short revisits are never added together.
+A separate OTP visit does not invalidate a qualifying non-OTP visit. Customers
+count once per journey. JP denominator remains all scheduled active customers;
+Unplanned Customers uses the same qualification for customers outside the scheduled
+plan, divided by all unique visited active customers. Unplanned classification
+still requires a journey with a scheduled plan. OTP breakdowns are informational,
+can overlap qualified customers, and do not represent qualification.
+
+The two popups list customers by route-status sequence, keeping chronological
+visits/revisits together, with check-in/out, planned and actual CFT in minutes,
+OTP status, visit qualification and customer qualification. Scheduled customers
+not visited appear in JP; unscheduled route-status customers not visited appear
+in Unplanned. Visits absent from route status appear last, marked Unsequenced.
+Unvisited customers have no recorded visit CFT, so their target is unavailable.
+Route Tracking's Unplanned Visits popup uses the same dialog and qualification rows for its selected journey. Raw Customer Coverage, operational timing and productivity rules are unchanged.
+
 ## SFA Dashboard filters
 
 ### Headline cards
@@ -93,7 +114,7 @@ Visit start, end, and duration use:
 
 If the end date or time is unavailable, Visit End and Visit Duration are omitted.
 
-Planned customer face time uses a positive `customermaster.customerfacetime`, otherwise a positive `customerclustermapping.cft`, matching both `customermaster.DivisionCode = customerclustermapping.divisioncode` and `customermaster.channel = customerclustermapping.channel`. Missing or nonpositive targets resolve to zero. Values are minutes. Dashboard, Route Tracking and their popups share `CustomerFaceTime`; historical visits use current customer settings. Existing per-visit counting and OTP exclusions remain in place. Actual face time still uses recorded visit timestamps.
+Planned customer face time uses `customervisitlog.cft` from each individual visit, in minutes. Missing, zero or negative values resolve to zero, without fallback to customer master or cluster mapping. Repeat visits retain their own recorded targets, including historical visits. Dashboard, analysis, Route Tracking and their popups share `CustomerFaceTime::plannedMinutes`. Existing completed-visit counting and OTP exclusions remain in place. Actual face time still uses recorded visit timestamps.
 
 ## Planned Not Visited
 

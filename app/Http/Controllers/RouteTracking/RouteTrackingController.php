@@ -328,19 +328,21 @@ class RouteTrackingController extends Controller
             && ($routeEnd === null || strtotime($point->effective_timestamp) <= $routeEnd)));
         $outsideGeometries = $work->outsideGeometries($rawPoints, $routeStart, $routeEnd);
         $detector = app(StationaryDetection::class);
-        $stationary = $detector->detect($rawPoints);
-        $gpsGaps = $detector->detectGaps($rawPoints);
+        $allPoints = $tracking['all_points'] ?? $rawPoints;
+        $stationary = $detector->detect($allPoints, true);
+        $gpsGaps = $detector->detectGaps($allPoints, true);
         $usableTimes = array_values(array_filter(array_map(
             fn ($point) => $detector->usable($point) ? strtotime($point->effective_timestamp) : false, $rawPoints
         ), fn ($time) => $time !== false));
         $stationaryData = [
             'tracking_available' => $tracking['available'],
-            'tracking_point_count' => count($rawPoints),
+            'tracking_point_count' => count($allPoints),
             'tracking_message' => $tracking['reason'],
+            'unreliable_geometries' => $work->unreliableGeometries($allPoints),
             'tracking_start_time' => $tracking['start'] === null ? null : date('Y-m-d H:i:s', $tracking['start']),
             'tracking_end_time' => $tracking['end'] === null ? null : date('Y-m-d H:i:s', $tracking['end']),
-            'tracking_start' => $work->marker($rawPoints[0] ?? null),
-            'last_known_location' => $work->marker($rawPoints ? $rawPoints[array_key_last($rawPoints)] : null),
+            'tracking_start' => $work->marker($rawPoints[0] ?? null, $tracking['start']),
+            'last_known_location' => $work->marker($rawPoints ? $rawPoints[array_key_last($rawPoints)] : null, $tracking['end']),
             'route_start_marker' => $work->eventMarker($rawPoints, $routeStart),
             'route_end_marker' => $work->eventMarker($rawPoints, $routeEnd),
             'outside_route_geometries' => $outsideGeometries,
@@ -348,7 +350,7 @@ class RouteTrackingController extends Controller
             'travel_gps_first' => $usableTimes ? min($usableTimes) : null,
             'travel_gps_last' => $usableTimes ? max($usableTimes) : null,
             'stationary_periods' => $stationary,
-            'stationary_seconds' => count($rawPoints) >= 2 ? array_sum(array_column($stationary, 'duration_seconds')) : null,
+            'stationary_seconds' => count($allPoints) >= 2 ? array_sum(array_column($stationary, 'duration_seconds')) : null,
             'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
             'stationary_max_gap_seconds' => config('tracking.stationary_max_gap_seconds'),
             'gps_gaps' => $gpsGaps,
@@ -359,7 +361,7 @@ class RouteTrackingController extends Controller
         if (count($points) < 2) {
             return [
                 ...$stationaryData,
-                'has_tracking_data' => count($rawPoints) > 0,
+                'has_tracking_data' => count($allPoints) > 0,
                 'distance' => 0,
                 'duration' => $totalDuration,
                 'geometries' => [],
@@ -1036,10 +1038,12 @@ class RouteTrackingController extends Controller
         unset($period);
         $actual['stationary_with_customer_seconds'] = array_sum(array_column($actual['stationary_periods'], 'with_customer_seconds'));
         $actual['stationary_without_customer_seconds'] = array_sum(array_column($actual['stationary_periods'], 'without_customer_seconds'));
+        $actual['unreliable_idle_seconds'] = array_sum(array_map(fn ($period) => !empty($period['unreliable']) ? $period['without_customer_seconds'] : 0, $actual['stationary_periods']));
+        $actual['reliable_idle_seconds'] = $actual['stationary_without_customer_seconds'] - $actual['unreliable_idle_seconds'];
         $actual['idle_periods'] = array_values(array_filter($actual['stationary_periods'], fn (array $period) => empty($period['customer_visits'])));
         $actual['idle_seconds'] = array_sum(array_column($actual['idle_periods'], 'duration_seconds'));
         if (array_key_exists('tracking_available', $actual) && (!$actual['tracking_available'] || ($actual['tracking_point_count'] ?? 0) < 2)) {
-            foreach (['stationary_seconds', 'stationary_with_customer_seconds', 'stationary_without_customer_seconds', 'idle_seconds'] as $field) $actual[$field] = null;
+            foreach (['stationary_seconds', 'stationary_with_customer_seconds', 'stationary_without_customer_seconds', 'idle_seconds', 'unreliable_idle_seconds', 'reliable_idle_seconds'] as $field) $actual[$field] = null;
         }
 
         return $actual;

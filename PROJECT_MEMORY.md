@@ -1,5 +1,46 @@
 # TRAC / routeTrack project memory
 
+## Include unreliable GPS in stationary and idle detection: 2026-10-21
+
+User requested idle/stationary estimates for higher-accuracy-metre readings too.
+StationaryDetection now separates validCoordinates from usable accuracy filtering.
+detect/detectGaps support opt-in inclusion of low-confidence points; default callers
+retain prior strict behavior. Stationary candidates split at confidence changes,
+carry unreliable/max_accuracy_m metadata and preserve radius/minimum/gap rules.
+Accuracy >= configured threshold (default 50m) is unreliable; missing accuracy
+retains legacy acceptance and unknown-accuracy labels. Invalid coordinates and
+negative/nonnumeric accuracy remain excluded. Accuracy alone never implies idle.
+
+WorkTracking retains all valid points separately from ordinary plotting points.
+Route Tracking/Dashboard idle use inclusive detection and subtract visit overlap;
+idle totals include low-confidence estimates with separate reliable/unreliable
+amounts. Route Tracking has a grey dotted Unreliable GPS layer and matching
+isolated points, enabled by default with its own toggle. Popups disclose time
+range/max accuracy, stationary circles are grey and stop lists/popup show
+Unreliable GPS badges. Ordinary main paths/route-event markers remain filtered.
+GPS bounds remain independent of accuracy. Visibility changes never affect totals.
+Dashboard card/detail popup identifies included unreliable idle estimates.
+
+Validation: production build, 20 dashboard JS tests, five direct PHP detector/trail
+checks, all changed PHP syntax and diff check passed. Added regressions for
+low-confidence stops, confidence transitions and customer overlap subtraction.
+Full Pest and live map/business-database validation remain outstanding without
+vendor dependencies. README documents estimated nature and unchanged thresholds.
+
+## GPS timestamps independent of accuracy: 2026-10-21
+
+WorkTracking now computes tracking start/end from all timestamped device/date
+records before coordinate/accuracy filtering. observations() returns full recorded
+bounds plus the separately filtered plotting/idle points. GPS card uses explicit
+tracking_start_time/end_time so it shows true first/last timestamps even when all
+coordinates are rejected. Boundary marker positions remain accepted coordinates;
+popups distinguish tracking time from GPS observation time at that position.
+Today/historical device and selected-date scope remain unchanged. Idle detection
+still uses quality-filtered readings and never fills accuracy-related gaps.
+Added regression for rejected early/late readings and all-poor accuracy.
+Production build, two directly executed accuracy-separation cases, PHP syntax and
+diff check passed. Full Pest/browser/database verification outstanding.
+
 ## Route Tracking dismissible flash messages: 2026-10-21
 
 Removed page-heading GPS tracking summary, route-marker notices and Planned route

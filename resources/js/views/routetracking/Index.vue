@@ -55,6 +55,7 @@ const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
 const beforeRouteVisible = ref(true);
 const afterRouteVisible = ref(true);
+const unreliableGpsVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
@@ -155,10 +156,10 @@ const routeSummaryGroups = computed(() => {
                 comparison: { actual: actual.actual_cft, planned: actual.planned_cft, variance: actual.face_time_variance_percent } },
             { label: "OTP Customer Time", action: "otp_time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
             { label: "Travel Time", action: "travel", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
-            { label: "Idle Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_without_customer_seconds), meta: "Idle time without customer visits" },
+            { label: "Idle Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_without_customer_seconds), meta: `Reliable: ${stationaryDuration(actual.reliable_idle_seconds)} ? Unreliable: ${stationaryDuration(actual.unreliable_idle_seconds)}` },
             { label: "Actual GPS Tracking", icon: "fa-satellite-dish", tone: "blue", gpsTimes: [
-                { label: "GPS Track Start Time", value: actual.tracking_start?.gps_time ?? actual.tracking_start?.time },
-                { label: "GPS Track End Time", value: actual.last_known_location?.gps_time ?? actual.last_known_location?.time },
+                { label: "GPS Track Start Time", value: actual.tracking_start_time },
+                { label: "GPS Track End Time", value: actual.tracking_end_time },
             ], meta: "First and last recorded GPS for the selected date" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
@@ -294,6 +295,7 @@ let plannedLineLayer = null;
 let actualLineLayer = null;
 let beforeRouteLayer = null;
 let afterRouteLayer = null;
+let unreliableGpsLayer = null;
 let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
@@ -611,6 +613,8 @@ async function runComparison() {
     actualLineLayer = null;
     beforeRouteLayer = null;
     afterRouteLayer = null;
+    unreliableGpsLayer = null;
+    unreliableGpsVisible.value = true;
     beforeRouteVisible.value = true;
     afterRouteVisible.value = true;
     rawCoordinatesLayer = null;
@@ -665,6 +669,7 @@ async function runComparison() {
             popup.append(heading);
             const visits = period.customer_visits ?? [];
             const lines = [
+                ...(period.unreliable ? [`Unreliable GPS ? maximum reported accuracy ${period.max_accuracy_m} m`] : []),
                 `From: ${period.start_time}`,
                 `To: ${period.end_time} (last observed stationary)`,
                 visits.length ? `Overlaps recorded customer visit: ${visits.map((visit) => visit.customername).join(', ')}` : 'No completed customer visit overlap recorded',
@@ -678,7 +683,7 @@ async function runComparison() {
             const outsideCustomerVisit = !visits.length;
             const circle = L.circle([period.lat, period.lng], {
                 radius: period.radius_m, stroke: false,
-                fillColor: outsideCustomerVisit ? '#ef4444' : '#fbbf24', fillOpacity: 0.2,
+                fillColor: period.unreliable ? '#64748b' : outsideCustomerVisit ? '#ef4444' : '#fbbf24', fillOpacity: 0.2,
             }).bindPopup(popup).addTo(stationaryLayer);
             circle.bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`);
             circle.on("click", () => revealStationaryInList(index));
@@ -780,6 +785,13 @@ async function runComparison() {
                 pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 5, color, fillColor: color, fillOpacity: 0.85, weight: 2 }) })
                 .bindTooltip(after ? 'GPS after Route End Time' : 'GPS before Route Start Time')
                 .addTo(after ? afterRouteLayer : beforeRouteLayer);
+        });
+        unreliableGpsLayer = L.featureGroup().addTo(resultLayer);
+        (data.actual.unreliable_geometries ?? []).forEach(feature => {
+            L.geoJSON(feature, { style: { color: '#64748b', weight: 4, opacity: 0.75, dashArray: '2 7' },
+                pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 4, color: '#64748b', fillOpacity: 0.65 }) })
+                .bindPopup('Unreliable GPS<br>' + feature.properties.start + ' to ' + feature.properties.end + '<br>Maximum reported accuracy: ' + feature.properties.accuracy + ' m')
+                .addTo(unreliableGpsLayer);
         });
         const actual = result.value.actual;
         const addEventMarker = (point, color, letter, label, routeEventLabel = null, routeEventTime = null) => {
@@ -1031,6 +1043,12 @@ function togglePlannedRoute() {
 
     plannedRouteVisible.value = !plannedRouteVisible.value;
     plannedRouteVisible.value ? resultLayer.addLayer(plannedLineLayer) : resultLayer.removeLayer(plannedLineLayer);
+}
+
+function toggleUnreliableGps() {
+    if (!unreliableGpsLayer || !resultLayer) return;
+    unreliableGpsVisible.value = !unreliableGpsVisible.value;
+    unreliableGpsVisible.value ? resultLayer.addLayer(unreliableGpsLayer) : resultLayer.removeLayer(unreliableGpsLayer);
 }
 
 function toggleOutsideRoute(period) {
@@ -1298,6 +1316,7 @@ function focusEnd() {
                 <button type="button" class="route-tracking-legend-item" :class="{ active: afterRouteVisible }" :aria-pressed="afterRouteVisible" :disabled="!hasOutsideTracking('after')" :title="!result?.planned?.route_closed ? 'Available after a Route End Time is recorded' : hasOutsideTracking('after') ? 'Show or hide GPS after Route End Time' : 'No GPS readings after route end for this selection'" @click="toggleOutsideRoute('after')">
                     <span style="color: #ea580c">&#9632;</span> After Route End
                 </button>
+                <button type="button" class="route-tracking-legend-item" :class="{ active: unreliableGpsVisible }" :aria-pressed="unreliableGpsVisible" :disabled="!result?.actual?.unreliable_geometries?.length" @click="toggleUnreliableGps"><span style="color: #64748b">&#9679;</span> Unreliable GPS</button>
                 <span class="route-tracking-legend-item"><span style="color: #16a34a">&#9632;</span> Route Start (S)</span>
                 <span class="route-tracking-legend-item"><span style="color: #b45309">&#9632;</span> Route End (E)</span>
                 <button type="button" class="route-tracking-legend-item"
@@ -1461,6 +1480,7 @@ function focusEnd() {
                                                     ? `At customer: ${period.customer_visits.map((visit) => visit.customername).join(', ')}`
                                                     : 'Outside completed customer visits' }}
                                             </span>
+                                            <span v-if="period.unreliable" class="badge bg-secondary align-self-start">Unreliable GPS (up to {{ period.max_accuracy_m }} m)</span>
                                             <span v-if="period.accuracy_unknown" class="d-block small text-warning">GPS accuracy unknown</span>
                                         </span>
                                         <i
@@ -1650,6 +1670,7 @@ function focusEnd() {
 
                             <div v-else-if="summaryModal === 'stationary'" class="stationary-breakdown">
                                 <p class="small text-muted">Tracking window: {{ result.actual.tracking_start_time || 'Unavailable' }} to {{ result.actual.tracking_end_time || 'Unavailable' }}. Includes tracking before route start and after route end across all recorded GPS times. Only observed stationary periods count.</p>
+                                <p class="small text-muted">Idle outside visits includes unreliable GPS estimates. Reliable: {{ stationaryDuration(result.actual.reliable_idle_seconds) }}. Unreliable: {{ stationaryDuration(result.actual.unreliable_idle_seconds) }}. Low accuracy does not establish whether someone was working.</p>
                                 <dl class="stationary-totals">
                                     <div><dt>Total stationary time</dt><dd>{{ stationaryDuration(result.actual.stationary_seconds) }}</dd><small>{{ stationaryPeriods.length }} detected stops</small></div>
                                     <div class="with-visits"><dt>Idle time with customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_with_customer_seconds) }}</dd><small>Time overlapping customer visits</small></div>
@@ -1659,7 +1680,7 @@ function focusEnd() {
                                 <details v-for="period in stationaryPeriods" :key="period.listKey" class="stationary-stop" open>
                                     <summary>
                                         <span class="stationary-stop-number">{{ period.displayNumber }}</span>
-                                        <span class="stationary-stop-heading"><strong>{{ stationaryTime(period.start_time) }} &ndash; {{ stationaryTime(period.end_time) }}</strong><small>{{ period.start_time.slice(0, 10) }}<template v-if="period.end_time.slice(0, 10) !== period.start_time.slice(0, 10)"> &ndash; {{ period.end_time.slice(0, 10) }}</template> &middot; {{ period.customer_visits.length }} customer visits</small></span>
+                                        <span class="stationary-stop-heading"><strong><span v-if="period.unreliable" class="badge bg-secondary me-1">Unreliable GPS</span>{{ stationaryTime(period.start_time) }} &ndash; {{ stationaryTime(period.end_time) }}</strong><small>{{ period.start_time.slice(0, 10) }}<template v-if="period.end_time.slice(0, 10) !== period.start_time.slice(0, 10)"> &ndash; {{ period.end_time.slice(0, 10) }}</template> &middot; {{ period.customer_visits.length }} customer visits</small></span>
                                         <strong class="stationary-stop-duration">{{ stationaryDuration(period.duration_seconds) }}</strong>
                                     </summary>
                                     <div class="stationary-stop-body">

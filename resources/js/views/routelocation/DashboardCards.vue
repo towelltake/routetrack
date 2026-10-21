@@ -73,7 +73,7 @@ const cards = computed(() => {
             definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
         { title: "Idle Time Outside Customer Visits", icon: "fa-hourglass-half", tone: "red", value: props.idle?.loading ? 'Loading...' : duration(timeMinutes(props.idle?.minutes)), unit: props.idle?.loading ? '' : "h:mm",
             interactive: !props.idle?.loading,
-            note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
+            note: props.idle?.error || (props.idle?.unreliableMinutes > 0 ? `Includes ${duration(timeMinutes(props.idle.unreliableMinutes))} unreliable GPS idle estimate` : "Stationary time only; excludes travel and all customer visits"),
             detail: props.idle?.missing ? props.idle.missing + ' GPS tracking windows unavailable; figures use measured time only' : '',
             definition: "GPS-detected stationary time between the first and last recorded GPS readings, outside customer visit intervals including OTP visits. Includes time before route start and after route end; each route/date counts once. Missing GPS or device identity is unavailable, not zero. Click for route details." },
     ];

@@ -7,17 +7,27 @@ use Illuminate\Support\Facades\DB;
 
 class WorkTracking
 {
-    /** Tracking bounds are the first and last usable observations, never scheduled hours. */
+    /** Tracking bounds are the first and last timestamped records, regardless of coordinate accuracy, never scheduled hours. */
     public function observedBounds(array $points): array
     {
         return ['start' => $points ? strtotime($points[0]->effective_timestamp) : null,
             'end' => $points ? strtotime($points[array_key_last($points)]->effective_timestamp) : null];
     }
 
+    public function observations(array $records): array
+    {
+        $records = array_values(array_filter($records, fn ($point) => strtotime($point->effective_timestamp ?? '') !== false));
+        $detector = app(StationaryDetection::class);
+        $allPoints = array_values(array_filter($records, fn ($point) => $detector->validCoordinates($point)));
+        $points = array_values(array_filter($allPoints, fn ($point) => $detector->usable($point)));
+        return $this->observedBounds($records) + ['points' => $points, 'all_points' => $allPoints,
+            'reason' => $points ? null : ($allPoints ? 'Only unreliable GPS coordinates are available; stationary and idle estimates are marked unreliable.' : ($records ? 'GPS timestamps recorded, but coordinates are invalid.' : 'No GPS readings for the selected device and date.'))];
+    }
+
     /** Caller must first authorize this route; never substitute today's device for a historical one. */
     public function load(int $routecode, string $date, ?object $journey = null): array
     {
-        $empty = ['start' => null, 'end' => null, 'points' => [], 'available' => false];
+        $empty = ['start' => null, 'end' => null, 'points' => [], 'all_points' => [], 'available' => false];
         $today = CarbonImmutable::now(config('tracking.timezone', 'Asia/Muscat'))->toDateString();
         $device = '';
         if ($date === $today) {
@@ -42,9 +52,8 @@ class WorkTracking
         $points = $connection->table('trac_routetrack')->where('deviceid', $device)
             ->whereDate('date', $date)
             ->selectRaw("trac_routetrack.*, {$timestamp} as effective_timestamp")
-            ->orderBy('effective_timestamp')->orderBy('id')->get()
-            ->filter(fn ($point) => app(StationaryDetection::class)->usable($point) && strtotime($point->effective_timestamp ?? '') !== false)->values()->all();
-        return $this->observedBounds($points) + ['points' => $points, 'available' => true, 'reason' => $points ? null : 'No usable GPS readings for the selected device and date.'];
+            ->orderBy('effective_timestamp')->orderBy('id')->get()->all();
+        return $this->observations($points) + ['available' => true];
     }
 
     /** Keep isolated outside-route observations visible without bridging GPS gaps. */
@@ -69,6 +78,31 @@ class WorkTracking
                 : ['type' => 'LineString', 'coordinates' => $coordinates, 'tracking_period' => $side];
         }
         return $outsideGeometries;
+    }
+
+    /** Build low-confidence trail segments without joining across gaps or reliable readings. */
+    public function unreliableGeometries(array $points): array
+    {
+        $segments = []; $segment = []; $previous = null;
+        foreach ($points as $point) {
+            $time = strtotime($point->effective_timestamp);
+            $low = app(StationaryDetection::class)->unreliable($point);
+            if (!$low || ($previous !== null && $time - $previous > config('tracking.stationary_max_gap_seconds'))) {
+                if ($segment) $segments[] = $segment;
+                $segment = [];
+            }
+            if ($low) $segment[] = $point;
+            $previous = $time;
+        }
+        if ($segment) $segments[] = $segment;
+        return array_map(function ($segment) {
+            $coordinates = array_map(fn ($point) => [(float) $point->longitude, (float) $point->latitude], $segment);
+            return ['type' => 'Feature', 'properties' => ['start' => $segment[0]->effective_timestamp,
+                'end' => $segment[array_key_last($segment)]->effective_timestamp,
+                'accuracy' => max(array_map(fn ($point) => (float) $point->accuracy_m, $segment))],
+                'geometry' => ['type' => count($coordinates) === 1 ? 'Point' : 'LineString',
+                    'coordinates' => count($coordinates) === 1 ? $coordinates[0] : $coordinates]];
+        }, $segments);
     }
 
     public function marker(?object $point, ?int $eventTime = null): ?array

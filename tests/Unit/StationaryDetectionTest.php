@@ -119,7 +119,7 @@ test('actual route detects legacy stationary pings before downsampling and filte
         $mock->shouldReceive('load')->once()->andReturn(['start' => strtotime('2026-09-08 08:00:00'), 'end' => strtotime('2026-09-08 09:00:00'), 'available' => true, 'reason' => null,
             'points' => array_values(array_filter($points, fn ($point) => app(StationaryDetection::class)->usable($point)))]);
         $mock->shouldReceive('marker', 'eventMarker')->andReturn(null);
-        $mock->shouldReceive('outsideGeometries')->andReturn([]);
+        $mock->shouldReceive('outsideGeometries', 'unreliableGeometries')->andReturn([]);
     });
     $method = new ReflectionMethod(\App\Http\Controllers\RouteTracking\RouteTrackingController::class, 'computeMatchedActual');
     $actual = $method->invoke(app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class), 1, '2026-09-08');
@@ -130,4 +130,22 @@ test('actual route detects legacy stationary pings before downsampling and filte
         ->and($actual['point_count'])->toBe(2)
         ->and($actual['end']['time'])->toBe('2026-09-08 08:05:00')
         ->and($actual['distance'])->toEqual(0);
+});
+
+
+test('low accuracy stationary readings are detected as unreliable only when explicitly included', function () {
+    $points = stationaryPoints(600);
+    foreach ($points as $point) $point->accuracy_m = 150;
+    $detector = new StationaryDetection;
+    expect($detector->detect($points))->toBe([]);
+    $stops = $detector->detect($points, true);
+    expect($stops)->toHaveCount(1)->and($stops[0])->toMatchArray(['duration_seconds' => 600, 'unreliable' => true, 'max_accuracy_m' => 150.0]);
+});
+
+test('confidence transitions split stops instead of counting the same time as reliable and unreliable', function () {
+    $points = stationaryPoints(1230);
+    foreach ($points as $index => $point) $point->accuracy_m = $index < 21 ? 10 : 150;
+    $stops = (new StationaryDetection)->detect($points, true);
+    expect($stops)->toHaveCount(2)->and($stops[0]['unreliable'])->toBeFalse()->and($stops[1]['unreliable'])->toBeTrue();
+    expect(strtotime($stops[0]['end_time']))->toBeLessThan(strtotime($stops[1]['start_time']));
 });

@@ -72,12 +72,30 @@ Options and GPS results retain the existing session route/company/subarea access
 
 The Route Tracking page compares the planned customer sequence with the actual GPS trail and displays every recorded customer visit for a route journey.
 
+## Unreliable GPS stationary and idle estimates
+
+Stationary and idle detection include valid coordinates with reported accuracy
+at or above TRACKING_MAX_ACCURACY_M (50 metres by default). These periods are
+marked Unreliable GPS and carry maximum reported accuracy. Confidence changes
+split periods, preventing reliable and unreliable time from being double-counted.
+The existing stationary radius, minimum duration and maximum reporting gap still
+apply: low accuracy by itself never makes a reading stationary. Unknown accuracy
+retains legacy acceptance and its separate accuracy-unknown indication.
+
+Idle totals include both confidence groups, exclude customer-visit overlaps and
+show separate reliable/unreliable amounts in Route Tracking's card/popup and
+Dashboard idle details. GPS outages still break detection. Ordinary route paths
+and route-event marker positions continue to use accepted-accuracy points; the
+Unreliable GPS toggle displays grey dotted low-confidence segments and isolated
+dots, with observed time range and maximum accuracy in their popups. It does not
+change totals. Low-confidence time is an estimate, not confirmation of inactivity.
+
 ## GPS observation tracking and route-event markers
 
 Route Tracking reads all usable PostgreSQL `trac_routetrack` readings for the
 selected device and calendar date, ordered by recorded `date + time` and ID.
 It does not consult or restrict by routemaster starttime/endtime or autojp fields.
-Tracking start/end are the first and last observed timestamps, including early
+Tracking start/end are the first and last recorded timestamps before accuracy or coordinate filtering, including early
 morning and late evening. Absent readings produce unavailable bounds. Existing
 coordinate/accuracy checks and long-gap handling remain in place; idle time is
 never inferred continuously across GPS outages.
@@ -88,7 +106,7 @@ determined using TRACKING_TIMEZONE (Asia/Muscat by default). Route/company/
 geographic authorization remains required. Readings need no routecode or
 routekey. Adjacent calendar dates are excluded from a selected day's result.
 
-Tracking Start (T) and Last Known Location (L) mark first/last observations.
+Tracking Start (T) and Last Known Location (L) use accepted coordinates for marker positions but show full recorded tracking boundary times; popups separately disclose the GPS timestamp at the plotted position. The GPS card shows recorded boundary times even if no coordinates pass accuracy filtering.
 Route Start (S)/Route End (E) are separate events using nearby observed GPS,
 within the configured maximum gap. Popups disclose event and observation times;
 missing nearby coordinates are reported rather than fabricated.

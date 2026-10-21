@@ -81,3 +81,18 @@ test('an open route has no after route tracking and no route start keeps all rea
     expect(array_column($work->outsideGeometries($points, strtotime('2026-10-21 08:00:00'), null), 'tracking_period'))->toBe(['before'])
         ->and(array_column($work->outsideGeometries($points, null, null), 'tracking_period'))->toBe(['before', 'before']);
 });
+
+
+test('tracking timestamps retain inaccurate first and last records while plotting remains filtered', function () {
+    foreach ([[1, '07:00:00', 500], [2, '08:00:00', 10], [3, '16:00:00', 20], [4, '19:00:00', 1000]] as [$id, $time, $accuracy]) DB::connection('tracking_pgsql')->table('trac_routetrack')->insert([
+        'id' => $id, 'deviceid' => 'new', 'date' => '2026-10-21', 'time' => $time, 'latitude' => 23.5, 'longitude' => 58.5, 'accuracy_m' => $accuracy,
+    ]);
+    $tracking = app(WorkTracking::class)->load(10, '2026-10-21');
+    expect($tracking['start'])->toBe(strtotime('2026-10-21 07:00:00'))
+        ->and($tracking['end'])->toBe(strtotime('2026-10-21 19:00:00'))
+        ->and(array_column($tracking['points'], 'id'))->toBe([2, 3]);
+    DB::connection('tracking_pgsql')->table('trac_routetrack')->update(['accuracy_m' => 1000]);
+    $tracking = app(WorkTracking::class)->load(10, '2026-10-21');
+    expect($tracking['points'])->toBe([])->and($tracking['start'])->toBe(strtotime('2026-10-21 07:00:00'))
+        ->and($tracking['end'])->toBe(strtotime('2026-10-21 19:00:00'));
+});

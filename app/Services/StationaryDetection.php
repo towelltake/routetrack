@@ -4,17 +4,27 @@ namespace App\Services;
 
 class StationaryDetection
 {
-    public function usable(object $point): bool
+    public function validCoordinates(object $point): bool
     {
         return is_numeric($point->latitude ?? null) && is_numeric($point->longitude ?? null)
             && abs((float) $point->latitude) <= 90 && abs((float) $point->longitude) <= 180
             && (float) $point->latitude != 0 && (float) $point->longitude != 0
             && (($point->accuracy_m ?? null) === null || (is_numeric($point->accuracy_m)
-                && $point->accuracy_m >= 0 && $point->accuracy_m < config('tracking.max_accuracy_m')));
+                && $point->accuracy_m >= 0));
+    }
+
+    public function unreliable(object $point): bool
+    {
+        return is_numeric($point->accuracy_m ?? null) && $point->accuracy_m >= config('tracking.max_accuracy_m');
+    }
+
+    public function usable(object $point): bool
+    {
+        return $this->validCoordinates($point) && !$this->unreliable($point);
     }
 
     /** Points must be ordered by device timestamp, before distance downsampling. */
-    public function detect(array $points): array
+    public function detect(array $points, bool $includeUnreliable = false): array
     {
         $stops = [];
         $candidate = [];
@@ -36,13 +46,15 @@ class StationaryDetection
                     'duration_seconds' => $seconds,
                     'radius_m' => config('tracking.stationary_radius_m'),
                     'point_count' => count($candidate),
+                    'unreliable' => $this->unreliable($first),
+                    'max_accuracy_m' => max(array_map(fn ($point) => (float) ($point->accuracy_m ?? 0), $candidate)),
                     'accuracy_unknown' => count(array_filter($candidate, fn ($p) => ($p->accuracy_m ?? null) === null)) > 0,
                 ];
             }
         };
 
         foreach ($points as $point) {
-            if (! $this->usable($point) || ($time = strtotime($point->effective_timestamp ?? '')) === false) {
+            if (! ($includeUnreliable ? $this->validCoordinates($point) : $this->usable($point)) || ($time = strtotime($point->effective_timestamp ?? '')) === false) {
                 continue;
             }
             if ($previousTime !== null && $time <= $previousTime) {
@@ -52,6 +64,9 @@ class StationaryDetection
                 $finish();
                 $candidate = [];
                 $outside = null;
+            }
+            if ($candidate && $this->unreliable($candidate[0]) !== $this->unreliable($point)) {
+                $finish(); $candidate = []; $outside = null;
             }
             $previousTime = $time;
             if ($candidate === []) {
@@ -83,13 +98,13 @@ class StationaryDetection
     }
 
     /** Returns only gaps bounded by a usable point before and after the outage. */
-    public function detectGaps(array $points): array
+    public function detectGaps(array $points, bool $includeUnreliable = false): array
     {
         $gaps = [];
         $previous = null;
 
         foreach ($points as $point) {
-            if (! $this->usable($point) || strtotime($point->effective_timestamp ?? '') === false) {
+            if (! ($includeUnreliable ? $this->validCoordinates($point) : $this->usable($point)) || strtotime($point->effective_timestamp ?? '') === false) {
                 continue;
             }
             if ($previous !== null) {

@@ -23,7 +23,7 @@ class DashboardOutsideVisits
                 $date = substr((string) $journey->routestartdate, 0, 10);
                 $tracking = $work->load((int) $journey->routecode, $date, $journey);
                 $start = $tracking['start']; $end = $tracking['end'];
-                $points = $tracking['points'];
+                $points = $tracking['all_points'] ?? $tracking['points'];
                 $intervals = [];
                 foreach ($dayJourneys as $dayJourney) foreach ($visits->get($dayJourney->routekey, collect()) as $visit) {
                     $timing = app(DashboardAnalysis::class)->journeyTiming((object) [
@@ -41,13 +41,14 @@ class DashboardOutsideVisits
                     else $merged[] = [$a, $b];
                 }
                 $cft = $start === null ? null : array_sum(array_map(fn ($interval) => ($interval[1] - $interval[0]) / 60, $merged));
-                $stationary = null;
+                $stationary = null; $unreliable = null;
                 if ($tracking['available'] && count($points) >= 2) {
-                    $stationary = 0;
-                    foreach ($detector->detect($points) as $stop) {
+                    $stationary = 0; $unreliable = 0;
+                    foreach ($detector->detect($points, true) as $stop) {
                         $a = strtotime($stop['start_time']); $b = strtotime($stop['end_time']); $seconds = $b - $a;
                         foreach ($merged as [$visitStart, $visitEnd]) $seconds -= max(0, min($b, $visitEnd) - max($a, $visitStart));
                         $stationary += max(0, $seconds) / 60;
+                        if ($stop['unreliable'] ?? false) $unreliable += max(0, $seconds) / 60;
                     }
                 }
                 return ['id' => $journey->routekey, 'routekey' => $journey->routekey, 'customercode' => null,
@@ -55,6 +56,7 @@ class DashboardOutsideVisits
                     'start' => $start === null ? null : date('Y-m-d H:i:s', $start),
                     'end' => $end === null ? null : date('Y-m-d H:i:s', $end),
                     'status' => 'GPS tracking', 'tracking_message' => $tracking['reason'],
+                    'unreliable_idle' => $unreliable, 'reliable_idle' => $stationary === null ? null : $stationary - $unreliable,
                     'customer_cft' => $cft, 'stationary' => $stationary, 'travel' => null];
             })->values();
     }

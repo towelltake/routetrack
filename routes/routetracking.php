@@ -19,6 +19,7 @@ Route::middleware('auth')->prefix('route-tracking')->name('route-tracking.')->gr
     Route::get('/filters.json', [DashboardController::class, 'filters'])->name('filters');
     Route::get('/actual-route.json', [RouteTrackingController::class, 'actualRoute'])->name('actual-route');
     Route::get('/planned-route.json', [RouteTrackingController::class, 'plannedRoute'])->name('planned-route');
+    Route::get('/customer-details.json', [RouteTrackingController::class, 'customerDetails'])->name('customer-details');
     Route::get('/compare.json', [RouteTrackingController::class, 'compare'])->name('compare');
     Route::get('/transaction-details.json', [RouteTrackingController::class, 'transactionDetails'])->name('transaction-details');
 });

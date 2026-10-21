@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { displayedTimeMinutes } from "./time-display";
 
-const props = defineProps({ metrics: Object, loading: Boolean, error: String, idle: Object });
+const props = defineProps({ metrics: Object, loading: Boolean, error: String, idle: Object, onlyGroups: { type: Array, default: null } });
 const emit = defineEmits(["inspect"]);
 const timeMode = ref("average");
 const timeModeChanged = ref(false);
@@ -29,8 +29,8 @@ const cards = computed(() => {
             detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
             definition: "Started routes / filtered total routes × 100. Routes count once per route start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
-            note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} route-status planned customers: non-OTP visit met CFT` : "",
-            breakdown: [{ label: 'Route-status planned customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} route-status planned customers` : '' }],
+            note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} planned customers: non-OTP visit met CFT` : "",
+            breakdown: [{ label: 'Planned Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} route-status planned customers` : '' }],
             definition: "Base: distinct scheduled customers in the route-status customer sequence for each selected journey. Main percentage: customers from that base with at least one completed non-OTP visit whose actual CFT meets its positive planned CFT / all customers in the base. Lower percentage: customers from the same base with any matched OTP visit / all customers in the base; no CFT requirement applies to the OTP count. Each visit uses its recorded target; short visits are not combined. OTP customer counts below are informational and may overlap qualified customers who have a separate non-OTP visit. Unplanned customers are excluded." },
         { title: "Productivity", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             compactBreakdown: true,
@@ -74,8 +74,8 @@ const cards = computed(() => {
         { title: "Idle Time Outside Customer Visits", icon: "fa-hourglass-half", tone: "red", value: props.idle?.loading ? 'Loading...' : duration(timeMinutes(props.idle?.minutes)), unit: props.idle?.loading ? '' : "h:mm",
             interactive: !props.idle?.loading,
             note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
-            detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; figures use measured time only' : '',
-            definition: "GPS-detected stationary time outside customer visit intervals, including exclusion of OTP visits. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
+            detail: props.idle?.missing ? props.idle.missing + ' work windows unavailable; figures use measured time only' : '',
+            definition: "GPS-detected stationary time within configured tracking work hours, outside customer visit intervals including OTP visits. Includes time before route start and after route end; each route workday counts once. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
     ];
 });
 const groups = computed(() => [
@@ -91,7 +91,7 @@ const groups = computed(() => [
         <span v-if="loading" class="visually-hidden" role="status">Updating figures...</span>
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
         <div class="dashboard-metric-groups">
-            <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
+            <section v-for="group in groups.filter(item => !onlyGroups || onlyGroups.includes(item.key))" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
                 <div class="dashboard-group-heading">
                     <h3 class="dashboard-group-title">{{ group.title }}</h3>
                     <template v-if="group.key === 'time'">

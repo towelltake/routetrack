@@ -107,12 +107,6 @@ test('actual route detects legacy stationary pings before downsampling and filte
     foreach ($points as $point) unset($point->accuracy_m, $point->provider);
     $points[] = (object) ['latitude' => 23.8, 'longitude' => 58.5,
         'accuracy_m' => 70, 'effective_timestamp' => '2026-09-08 08:05:30'];
-    $query = Mockery::mock();
-    $query->shouldReceive('where', 'whereIn', 'whereNotNull', 'selectRaw', 'orderBy')->andReturnSelf();
-    $query->shouldReceive('get')->once()->andReturn(collect($points));
-    $connection = Mockery::mock();
-    $connection->shouldReceive('table')->with('trac_routetrack')->andReturn($query);
-    \Illuminate\Support\Facades\DB::shouldReceive('connection')->with('tracking_pgsql')->andReturn($connection);
     $journey = Mockery::mock();
     $journey->shouldReceive('where', 'orderByDesc')->andReturnSelf();
     $journey->shouldReceive('first')->andReturn((object) [
@@ -121,6 +115,11 @@ test('actual route detects legacy stationary pings before downsampling and filte
     ]);
     \Illuminate\Support\Facades\DB::shouldReceive('table')->with('startendday')->andReturn($journey);
     \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['code' => 'NoMatch'])]);
+    $this->mock(\App\Services\WorkTracking::class, function ($mock) use ($points) {
+        $mock->shouldReceive('load')->once()->andReturn(['start' => strtotime('2026-09-08 08:00:00'), 'end' => strtotime('2026-09-08 09:00:00'), 'available' => true, 'reason' => null,
+            'points' => array_values(array_filter($points, fn ($point) => app(StationaryDetection::class)->usable($point)))]);
+        $mock->shouldReceive('marker', 'eventMarker')->andReturn(null);
+    });
     $method = new ReflectionMethod(\App\Http\Controllers\RouteTracking\RouteTrackingController::class, 'computeMatchedActual');
     $actual = $method->invoke(app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class), 1, '2026-09-08');
     expect($actual['has_tracking_data'])->toBeTrue()

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import axios from 'axios';
 
+const props = defineProps({ endpoint: { type: String, default: '/dashboard/customer-details.json' } });
 const titles = { coverage: 'Customer Coverage', planned: 'JP compliance', unplanned: 'Unplanned Customers Visited', otp: 'OTP Requests', productive: 'Productivity', sales: 'Sales', orders: 'Orders', collections: 'Collections', returns: 'Returns', duration: 'Total Duration', cft: 'Customer Face Time', operational: 'Operational Time', otp_time: 'OTP Customer Time', actual_face: 'Face Time Compliance', outside: 'Time Outside Visits' };
 titles.idle = 'Idle Time Outside Customer Visits';
 const isRouteTime = computed(() => ['duration', 'outside', 'idle'].includes(type.value));
@@ -64,7 +65,7 @@ async function open(kind, filters, cachedData = null) {
     await nextTick();
     if (!dialog.value.open) dialog.value.showModal();
     try {
-        const { data } = cachedData ? { data: cachedData } : await axios.get('/dashboard/customer-details.json', { params: { ...filters, type: kind }, signal: current.signal, timeout: 60000 });
+        const { data } = cachedData ? { data: cachedData } : await axios.get(props.endpoint, { params: { ...filters, type: kind }, signal: current.signal, timeout: 60000 });
         if (request !== current || current.signal.aborted) return;
         groups.value = data.groups; day.value = ''; chooseDate();
     } catch (e) {
@@ -101,9 +102,9 @@ defineExpose({ open, close });
                 </div>
                 <p v-if="['productive', 'efficiency'].includes(type)" class="salesman">LPO Customers are shown in yellow for reference and excluded from both metric counts.<template v-if="type === 'efficiency'"> Each customer appears once per journey.</template></p>
                 <div v-if="type === 'idle'" class="details-table">
-                    <p class="salesman">GPS-detected stationary time outside all customer visits, including OTP visits. Travel is excluded. Times in h:mm; unavailable journeys are excluded from the total.</p>
-                    <table><thead><tr><th>Route</th><th>Date</th><th>Salesman</th><th>Start</th><th>End / Last location</th><th>Idle outside visits</th></tr></thead>
-                    <tbody><tr v-for="row in visibleRows" :key="row.routekey"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.end || 'Unavailable' }}</td><td>{{ duration(row.stationary) }}</td></tr><tr v-if="!visibleRows.length"><td colspan="6">No matching records.</td></tr></tbody></table>
+                    <p class="salesman">GPS-detected stationary time within configured tracking work hours, outside all customer visits including OTP visits. Includes before route start and after route end; each route workday counts once. Travel is excluded. Times in h:mm; unavailable journeys are excluded from the total.</p>
+                    <table><thead><tr><th>Route</th><th>Date</th><th>Salesman</th><th>Start</th><th>Tracking end</th><th>Idle outside visits</th></tr></thead>
+                    <tbody><tr v-for="row in visibleRows" :key="row.routekey"><td>{{ row.routecode }}</td><td>{{ row.route_date }}</td><td>{{ row.salesman || 'Not available' }}</td><td>{{ row.start || 'Unavailable' }}</td><td>{{ row.end || 'Unavailable' }}</td><td>{{ duration(row.stationary) }}<small v-if="row.tracking_message">{{ row.tracking_message }}</small></td></tr><tr v-if="!visibleRows.length"><td colspan="6">No matching records.</td></tr></tbody></table>
                 </div>
                 <div v-else-if="type === 'outside'" class="details-table">
                     <p class="salesman">Times in h:mm. Time outside visits = total duration minus summed customer visit time.</p>

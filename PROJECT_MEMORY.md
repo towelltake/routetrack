@@ -1,5 +1,74 @@
 # TRAC / routeTrack project memory
 
+## Dashboard-style Route Tracking customer performance: 2026-10-21
+
+Route Tracking now reuses DashboardCards with onlyGroups=['customers'] to match
+Dashboard Customer Coverage above JP/Unplanned, plus Efficiency, Productivity
+and OTP usage/comment breakdowns. Current Route Status replaces the Dashboard's
+Route Start Compliance at left and retains the journey-details action. Removed
+the prior Customers and standalone Distance groups from the tracking summary.
+Planned/Actual Distance appear beneath GPS start/end in the final Time card,
+separated by a divider; responsive layouts and existing Time/Transactions remain.
+
+compare.json returns DashboardMetrics for precisely the selected recorded journey
+and selected_scope (routecode, operation date, routekey). A new authenticated
+Route Tracking customer-details endpoint validates that scope, authorizes route,
+company and subarea access, and constrains the requested routekey to that route.
+DashboardCustomerDetails supplies identical popup rules. Pinning the displayed
+routekey prevents a later same-day journey replacing the popup's selected journey.
+CustomerDetailsDialog has a configurable endpoint with unchanged Dashboard default.
+Unplanned cached popup remains supported. No recorded journey yields unavailable
+customer metrics. Previous timing/CFT/GPS and qualification rules remain.
+
+Production build, 20 dashboard JS tests, PHP syntax and diff check passed. Added
+PHP regression cases for displayed journey pinning and route/company/geographic
+access checks; execution is outstanding without vendor dependencies. Live browser
+and business database verification remain outstanding.
+
+## Actual GPS times card: 2026-10-21
+
+Added Actual GPS Tracking as the last Route Tracking Time card. Shows GPS Track
+Start Time and GPS Track End Time from the first/last measured work-window GPS
+observations, including dates for overnight clarity. Uses tracking_start and
+last_known_location timestamps; no scheduled or route-event timestamp fallback.
+Absent readings show Unavailable. Existing responsive six-column desktop Time
+layout now fills all six positions. Production build and diff check passed;
+live browser visual verification remains outstanding.
+
+## Work-hour tracking and historical devices: 2026-10-21
+
+Implemented WorkTracking service for device-based work-hour GPS. Today uses
+routemaster.device_assigned_id; historical selected journeys use startendday.
+dataconrefnumber, verified as device ID in legacy schema/procedures. Historical
+missing device does not fall back to current assignment. GPS query filters by
+deviceid and configured autojp_work_start_time/end_time, with overnight support,
+strict time validation and existing accuracy rules. TRACKING_TIMEZONE defaults
+to Asia/Muscat for determining today. All callers retain route authorization.
+Historical work hours use current route settings; no schedule snapshots found.
+
+RouteTrackingController uses all work-window points for stops/gaps, and selected
+route start/closed end to split the displayed actual trail from before/after
+tracking. Work data is available before a route starts. Map shows Track Start,
+Last Known Location and separate Route Start/End markers; route event markers
+require a GPS observation within max configured gap and disclose GPS timestamp.
+Purple dashed Before / after route toggle shows only work-hour observations,
+not GPS outside configured hours. Toggle never changes idle calculations.
+DashboardOutsideVisits uses the same loader, clips visits to work hours and
+counts one route/start-date work window across repeated selected journeys.
+Dashboard workday scope still derives from eligible selected journeys, so it
+does not introduce unstarted-route workdays. Existing journey/CFT/operational/
+travel formulas are preserved. Missing tracking/insufficient GPS yields unknown
+idle. UI exposes work-window and unavailable-marker information. README updated.
+
+Validation: production build, 20 dashboard JS tests, ten direct PHP work-window/
+event-marker cases, all changed/new PHP syntax and diff checks passed. Added
+WorkTrackingTest for device reassignment, no route start, wrong devices, missing
+historical identity, exact work boundaries, overnight windows and marker gaps;
+adapted stationary/idle PHP regressions. Full PHP regression execution remains
+outstanding without vendor dependencies; live DB/browser validation required.
+This supersedes earlier Route Tracking routecode/calendar-date GPS and
+journey-window idle descriptions. No schema/database mutations performed.
+
 ## Automatic checkout popup badges: 2026-10-21
 
 Dashboard Face Time Compliance and Productivity detail rows, plus Route Tracking

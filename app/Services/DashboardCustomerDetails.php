@@ -85,7 +85,7 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'cft']);
+                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'cft', 'autocheckout']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
             $rows = $visits->map(function ($visit) use ($otp, $type) {
                     $validStart = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-');
@@ -97,7 +97,7 @@ class DashboardCustomerDetails
                     $excluded = $type !== 'otp_time' && !empty($otp[$visit->routekey.':'.$visit->logkey]);
                     return ['id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
                         'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $excluded ? 0 : $planned,
-                        'otp_excluded' => $excluded, 'recorded_actual_cft' => $actual,
+                        'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1, 'otp_excluded' => $excluded, 'recorded_actual_cft' => $actual,
                         'check_in' => $start === false ? null : date('Y-m-d H:i:s', $start),
                         'check_out' => $end === false ? null : date('Y-m-d H:i:s', $end),
                         'otp_times' => array_map(fn ($event) => substr((string) $event['otpdate'], 0, 10).' '.$event['otptime'], $otp[$visit->routekey.':'.$visit->logkey] ?? []),
@@ -119,7 +119,7 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'autocheckout']);
             $documents = [];
             $operations = collect();
             if (in_array($type, ['productive', 'efficiency'])) {
@@ -161,6 +161,7 @@ class DashboardCustomerDetails
                         'time' => $visit->logstarttime,
                         'start_date' => $start !== false ? substr((string) $visit->logstartdate, 0, 10) : null,
                         'end_time' => $end !== false ? $visit->logendtime : null,
+                        'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
                         'end_date' => $end !== false ? substr((string) $visit->logenddate, 0, 10) : null,
                         'ends_later_date' => $start !== false && $end !== false && date('Y-m-d', $end) > date('Y-m-d', $start),
                         'status' => $ignored ? 'Ignored' : ($completed && $productive ? 'Productive' : 'Nonproductive'),

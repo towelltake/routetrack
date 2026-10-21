@@ -379,7 +379,7 @@ beforeEach(function () {
         'startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
-        'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
+        'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
         'invoiceheader (customercode integer default 101, routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'salesorderheader (customercode integer default 101, routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
@@ -803,4 +803,15 @@ test('short revisits cannot combine duration to qualify and unvisited route stat
     $rows = app(DashboardCustomerDetails::class)->build($journeys, 'unplanned')['groups'][0]['rows'];
     expect($rows)->toHaveCount(1)
         ->and($rows[0])->toMatchArray(['customercode' => 105, 'sequence' => 3, 'status' => 'Not visited', 'qualified' => false, 'planned_cft' => null]);
+});
+
+
+test('face time and productivity details expose the recorded automatic checkout flag', function () {
+    DB::table('customervisitlog')->where('logkey', 12)->update(['autocheckout' => 1]);
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    foreach (['actual_face', 'productive'] as $type) {
+        $rows = app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'][0]['rows']->keyBy('id');
+        expect($rows[12]['auto_checkout'])->toBeTrue()->and($rows[11]['auto_checkout'])->toBeFalse();
+    }
 });

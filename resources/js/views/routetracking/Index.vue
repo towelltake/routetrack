@@ -1503,7 +1503,7 @@ function focusEnd() {
                                     <tbody>
                                         <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded }">
                                             <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}</td>
-                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td>
+                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td>
                                             <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
                                             <td>{{ visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
                                         </tr>
@@ -1514,7 +1514,7 @@ function focusEnd() {
                             <div v-else-if="summaryModal === 'productivity'">
                                 <p class="small text-muted">Each eligible completed visit counts once. LPO Customers are excluded and shown in yellow. Incomplete visits do not count.</p>
                                 <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Customer</th><th>Check-in</th><th>Checkout</th><th>Status</th><th>Collection</th><th>Orders/Invoices</th></tr></thead>
-                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
+                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
                             </div>
                             <div v-else-if="summaryModal === 'efficiency'">
                                 <p class="small text-muted">Each customer counts once. LPO Customers are shown in yellow for reference and excluded from both metric counts.</p>
@@ -2577,4 +2577,5 @@ function focusEnd() {
  .route-tracking-otp-modal .modal-header, .route-tracking-otp-modal .modal-body { padding: 14px; }
  .route-tracking-otp-modal .route-detail-grid { grid-template-columns: 1fr; }
 }
+.auto-checkout-badge { display: block; width: fit-content; margin-top: 4px; padding: 2px 6px; border-radius: 5px; background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 650; white-space: nowrap; }
 </style>

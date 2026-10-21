@@ -1171,6 +1171,7 @@ class RouteTrackingController extends Controller
             ->get([
                 'cvl.logkey',
                 'cvl.cft',
+                'cvl.autocheckout',
                 'cvl.customercode',
                 'cvl.logstartdate',
                 'cvl.logstarttime',
@@ -1209,6 +1210,7 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
+                    'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
                     'default_face_time_minutes' => CustomerFaceTime::plannedMinutes($visit->cft),
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? ($endTimestamp - $startTimestamp) / 60

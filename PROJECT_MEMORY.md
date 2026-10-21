@@ -1,5 +1,27 @@
 # TRAC / routeTrack project memory
 
+## Automatic checkout popup badges: 2026-10-21
+
+Dashboard Face Time Compliance and Productivity detail rows, plus Route Tracking
+Face Time Compliance/OTP time and Productivity popups, display a small amber
+Auto-checkout badge beneath a recorded checkout when customervisitlog.autocheckout
+is 1. The schema confirms autocheckout (not the request's autockeout spelling).
+DashboardCustomerDetails and RouteTrackingController expose boolean auto_checkout;
+manual/null flags do not display a badge. Duration, CFT, qualification, productivity
+and access logic are unchanged. Updated PHP fixtures and regressions for automatic
+and manual checkout flags. PHP syntax, 20 dashboard JS tests and diff check passed;
+production build passed. Full PHP tests remain unavailable without vendor
+ dependencies; live browser/database verification remains outstanding.
+
+## Compliance popup status styling: 2026-10-21
+
+Shared JP/Unplanned CustomerDetailsDialog now gives unvisited customer rows a
+light red background and leaves their OTP cells empty. Qualified visits show a
+green circle-check; customer qualification uses green check/red cross icons
+with accessible labels and hover titles. Nonqualifying visit reasons remain
+visible. Applies to Dashboard and Route Tracking's shared Unplanned popup.
+Production build and diff check passed; live browser visual check outstanding.
+
 ## JP route-status base clarified: 2026-10-21
 
 Verified JP uses distinct scheduled (schelduledflag = 1) active customers from

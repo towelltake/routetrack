@@ -14,7 +14,7 @@ test('dashboard and tracking use recorded visit CFT without master fallback', fu
     foreach ([
         'customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer, activecustomer integer default 1, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
-        'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft real)',
+        'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft real, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
     ] as $table) {
         DB::statement('CREATE TABLE '.$table);
@@ -34,13 +34,14 @@ test('dashboard and tracking use recorded visit CFT without master fallback', fu
         'logkey' => 1, 'customercode' => 1, 'routekey' => 100,
         'logstartdate' => '2026-09-07 00:00:00', 'logstarttime' => '10:00:00',
         'logenddate' => '2026-09-07 00:00:00', 'logendtime' => '10:18:45',
-        'cft' => $visitCft,
+        'cft' => $visitCft, 'autocheckout' => 1,
     ]);
 
     $method = new ReflectionMethod(RouteTrackingController::class, 'fetchCustomerVisits');
     $visits = $method->invoke(app(RouteTrackingController::class), 100, 1);
     expect($visits)->toHaveCount(1)
         ->and($visits->first()['toplpo'])->toBe(1)
+        ->and($visits->first()['auto_checkout'])->toBeTrue()
         ->and($visits->first()['default_face_time_minutes'])->toEqual($expected)
         ->and($visits->first()['visit_duration_minutes'])->toBe(18.75);
     $time = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(
@@ -70,7 +71,7 @@ test('planned face time keeps each repeated visit target and journey scope', fun
     DB::statement('CREATE TABLE customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer, activecustomer integer)');
     DB::statement('CREATE TABLE customerclustermapping (divisioncode text, channel text, cft integer)');
     foreach ([1, 2, 3, 99] as $code) DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1, 'customerfacetime' => [1 => 15, 2 => 20][$code] ?? 0]);
-    DB::statement('CREATE TABLE customervisitlog (routekey integer, customercode integer, cft integer)');
+    DB::statement('CREATE TABLE customervisitlog (routekey integer, customercode integer, cft integer, autocheckout integer default 0)');
     DB::table('customervisitlog')->insert([
         ['routekey' => 100, 'customercode' => 1, 'cft' => 15],
         ['routekey' => 100, 'customercode' => 2, 'cft' => 20],

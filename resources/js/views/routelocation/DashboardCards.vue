@@ -25,10 +25,9 @@ const cards = computed(() => {
     const m = props.metrics;
     return [
         { title: "Route Start Compliance", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
-            breakdown: [{ label: 'Route Close Compliance', tone: 'orange', value: m?.routes_started > 0 && m?.routes_closed != null ? 100 * m.routes_closed / m.routes_started : null, count: m ? `${number(m.routes_closed)} closed / ${number(m.routes_started)} started` : '' }],
             note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total` : "",
             detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
-            definition: "Started routes / filtered total routes × 100. Route Close Compliance below is routes closed on their start date / started routes × 100, unavailable when no routes have started. Routes count once per route start date; every journey for that route and start date must be closed with an end date equal to its start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
+            definition: "Started routes / filtered total routes × 100. Routes count once per route start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
             note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
             breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
@@ -55,9 +54,6 @@ const cards = computed(() => {
             note: m ? `${number(m.unplanned_customers_without_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers: unplanned without OTP` : "",
             breakdown: [{ label: 'Unplanned customers with OTP', value: m?.unplanned_with_otp_percent, count: m ? `${number(m.unplanned_customers_with_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers` : '' }],
             definition: "Unique unplanned customers without OTP / all unique customers visited in the selected journeys. The OTP percentage below uses the same denominator. Each customer counts once per journey, including incomplete visits and LPO customers. Any matched OTP places that customer only in the OTP group. Journeys without a plan cannot contribute unplanned customers, but their visits remain in the total visited denominator. Date ranges use summed customer counts, not averaged percentages." },
-        { title: "Total Duration", icon: "fa-clock", tone: "navy", value: duration(timeMinutes(m?.duration_minutes)), unit: "h:mm",
-            note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
-            definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
         { title: "Time Outside Visits", icon: "fa-car", tone: "slate", value: duration(timeMinutes(m?.outside_visit_minutes)), unit: "h:mm",
             note: "Includes travel, idle time and breaks",
             detail: m?.duration_missing_journeys ? `${number(m.duration_missing_journeys)} journeys excluded: duration unavailable` : "",
@@ -84,9 +80,9 @@ const cards = computed(() => {
 });
 const groups = computed(() => [
     { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
-    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[14], cards.value[2], cards.value[7]] },
-    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10], cards.value[15]] },
-    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
+    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[13], cards.value[2], cards.value[7]] },
+    { key: "time", title: "Time", cards: [cards.value[6], cards.value[11], cards.value[12], cards.value[9], cards.value[14]] },
+    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[10]] },
 ]);
 </script>
 
@@ -201,7 +197,7 @@ const groups = computed(() => [
 }
 .dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.group-time .dashboard-metric-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.group-time .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: auto 1fr; grid-template-areas: 'total total efficiency productivity otp' 'jp unplanned efficiency productivity otp'; }
 .total-visits-card { grid-area: total; min-width: 0; padding: 12px 14px; border: 1px solid #dce6f2; border-radius: 12px; background: #f8faff; box-shadow: 0 2px 8px #172b4505; }
 .total-visits-card h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: #475569; font-size: 12px; font-weight: 650; }

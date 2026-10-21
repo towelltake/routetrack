@@ -159,7 +159,6 @@ const routeSummaryGroups = computed(() => {
             { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
         ] },
         { key: "time", title: "Time", cards: [
-            { label: "Journey Duration", action: "duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
             { label: "Operational Time", action: "operational", icon: "fa-user-clock", tone: "green", value: actual.operational_time == null ? "N/A" : stationaryDuration(actual.operational_time), meta: actual.operational_time == null ? "No complete non-OTP visit window" : `${actual.operational_start} to ${actual.operational_end}`, definition: "First non-OTP customer check-in to the last non-OTP customer checkout, including time between visits." },
             { label: "Face Time Compliance", action: "cft", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "N/A" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
                 comparison: { actual: actual.actual_cft, planned: actual.planned_cft, variance: actual.face_time_variance_percent } },

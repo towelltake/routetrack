@@ -1,5 +1,16 @@
 # TRAC / routeTrack project memory
 
+## Remove dashboard and tracking metrics: 2026-10-21
+
+Removed Route Close Compliance from the Dashboard Route Start Compliance card
+and its help text. Removed Dashboard Total Duration and Route Tracking Journey
+Duration cards. Dashboard groups retain the remaining cards in their existing
+order, with five desktop Time columns. Backend calculations and access rules are
+unchanged. Relevant files: routelocation/DashboardCards.vue and
+routetracking/Index.vue under resources/js/views.
+Validation: all 20 dashboard JavaScript tests, npm.cmd run build and git diff
+--check passed. Live browser visual verification remains outstanding.
+
 ## Towell login watermark hidden: 2026-10-01
 
 Login.vue temporarily hides the Towell watermark with display: none on its

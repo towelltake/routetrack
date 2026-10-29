@@ -12,6 +12,27 @@ excluded. Route, company and geographic access restrictions still apply.
 joins must explicitly filter the master alias or restrict customer codes using
 `CustomerMaster::query()->select('customercode')` before aggregating.
 
+## JP compliance and Unplanned Customers qualification
+
+Dashboard JP compliance counts a scheduled customer only if at least one completed
+visit without matched OTP has actual duration >= that visit's positive recorded
+`customervisitlog.cft` target (minutes). Missing, zero and negative targets do not
+qualify. Visits are checked separately; short revisits are never added together.
+A separate OTP visit does not invalidate a qualifying non-OTP visit. Customers
+count once per journey. JP denominator remains all scheduled active customers;
+Unplanned Customers uses the same qualification for customers outside the scheduled
+plan, divided by all unique visited active customers. Unplanned classification
+still requires a journey with a scheduled plan. OTP breakdowns are informational,
+can overlap qualified customers, and do not represent qualification.
+
+The two popups list customers by route-status sequence, keeping chronological
+visits/revisits together, with check-in/out, planned and actual CFT in minutes,
+OTP status, visit qualification and customer qualification. Scheduled customers
+not visited appear in JP; unscheduled route-status customers not visited appear
+in Unplanned. Visits absent from route status appear last, marked Unsequenced.
+Unvisited planned customers use their customer target or matching division/channel target, with zero actual CFT.
+Route Tracking's Unplanned Visits popup uses the same dialog and qualification rows for its selected journey. Raw Customer Coverage, operational timing and productivity rules are unchanged.
+
 ## SFA Dashboard filters
 
 ### Headline cards
@@ -50,6 +71,77 @@ The Dashboard (`/dashboard`, routes in `routes/dashboard.php`, controller `Dashb
 Options and GPS results retain the existing session route/company/subarea access restrictions and the requirement for a route to appear in `routesequence`. Required company and cluster columns/tables must already exist in the legacy database; this change does not import SQL dumps or alter that schema.
 
 The Route Tracking page compares the planned customer sequence with the actual GPS trail and displays every recorded customer visit for a route journey.
+
+## Unreliable GPS stationary and idle estimates
+
+Stationary and idle detection include valid coordinates with reported accuracy
+above TRACKING_MAX_ACCURACY_M (50 metres by default). These periods are
+marked Unreliable GPS and carry maximum reported accuracy. Confidence changes
+split periods, preventing reliable and unreliable time from being double-counted.
+The existing stationary radius, minimum duration and maximum reporting gap still
+apply: low accuracy by itself never makes a reading stationary. Unknown accuracy
+retains legacy acceptance and its separate accuracy-unknown indication.
+
+Idle totals include both confidence groups, exclude customer-visit overlaps and
+show separate reliable/unreliable amounts in Route Tracking's card/popup and
+Dashboard idle details. GPS outages still break detection. All valid coordinates remain eligible for route paths and markers; accuracy labels
+readings instead of excluding them. Route-event markers use the nearest available
+recorded GPS without a temporal cutoff, disclosing both timestamps; the
+Unreliable GPS toggle displays grey dotted low-confidence segments and isolated
+dots, with observed time range and maximum accuracy in their popups. It does not
+change totals. Low-confidence time is an estimate, not confirmation of inactivity.
+
+## GPS observation tracking and route-event markers
+
+Route Tracking reads all usable PostgreSQL `trac_routetrack` readings for the
+selected device and calendar date, ordered by recorded `date + time` and ID.
+It does not consult or restrict by routemaster starttime/endtime or autojp fields.
+Tracking start/end are the first and last recorded timestamps before accuracy or coordinate filtering, including early
+morning and late evening. Absent readings produce unavailable bounds. Existing
+coordinate/accuracy checks and long-gap handling remain in place; idle time is
+never inferred continuously across GPS outages.
+
+Today uses `routemaster.device_assigned_id`; historical dates use the selected
+`startendday.dataconrefnumber`, with no fallback to today's device. Today is
+determined using TRACKING_TIMEZONE (Asia/Muscat by default). Route/company/
+geographic authorization remains required. Readings need no routecode or
+routekey. Adjacent calendar dates are excluded from a selected day's result.
+
+Tracking Start (T) and Last Known Location (L) use accepted coordinates for marker positions but show full recorded tracking boundary times; popups separately disclose the GPS timestamp at the plotted position. The GPS card shows recorded boundary times even if no coordinates pass accuracy filtering.
+Route Start (S)/Route End (E) are separate events using the nearest available observed GPS, regardless of accuracy or timestamp distance. Popups disclose event and observation times;
+missing nearby coordinates are reported rather than fabricated.
+
+GPS before the selected route's recorded start uses purple dashed lines; GPS
+after its recorded closed-route end uses orange dashed lines. Separate Before
+Route Start and After Route End toggles independently control these layers, both
+shown by default. After Route End is disabled for open routes. When no route
+has started this layer contains the available GPS trail. Long gaps split these
+segments. Its visibility never changes tracking bounds or idle calculations.
+
+Route Tracking and Dashboard idle detection/popups use the complete observed
+GPS span, including before route start and after route end. Customer-visit
+intervals are subtracted from stationary time. Dashboard idle counts each
+selected route/start-date observation window once across repeated journeys;
+its eligible dates still derive from the Dashboard's selected journey range.
+Journey duration, CFT, operational time and route-only travel estimates remain
+separate. This supersedes earlier configured-work-hour tracking descriptions.
+
+## Route Tracking customer performance cards
+
+Route Tracking reuses Dashboard's customer performance cards for its selected
+recorded journey: Coverage, JP compliance, Unplanned Customers, Efficiency,
+Productivity and OTP usage with comment counts. Current Route Status remains
+at the left in place of Dashboard Route Start Compliance. Planned/Actual Distance
+are displayed beneath GPS timestamps in the Time section's Actual GPS Tracking
+card. No separate Distance block is shown.
+
+Customer popups use /route-tracking/customer-details.json with the displayed
+routecode, operation date and routekey. Route/company/subarea access is checked
+server-side and the routekey must belong to the authorized route. Results stay
+on that journey, including when a newer journey appears on the same date; they
+do not aggregate Dashboard's route-start-date range. Shared Dashboard formulas
+and popup qualification rules apply. Missing recorded journeys show unavailable
+customer metrics.
 
 ## Data flow
 
@@ -93,7 +185,7 @@ Visit start, end, and duration use:
 
 If the end date or time is unavailable, Visit End and Visit Duration are omitted.
 
-Planned customer face time uses a positive `customermaster.customerfacetime`, otherwise a positive `customerclustermapping.cft`, matching both `customermaster.DivisionCode = customerclustermapping.divisioncode` and `customermaster.channel = customerclustermapping.channel`. Missing or nonpositive targets resolve to zero. Values are minutes. Dashboard, Route Tracking and their popups share `CustomerFaceTime`; historical visits use current customer settings. Existing per-visit counting and OTP exclusions remain in place. Actual face time still uses recorded visit timestamps.
+Planned customer face time uses `customervisitlog.cft` for recorded visits. For each scheduled active customer with no visit record in that journey, add positive `customermaster.customerfacetime`, otherwise positive `customerclustermapping.cft` matching both `DivisionCode`/`divisioncode` and `channel`. Missing/nonpositive settings add zero. Unvisited targets count once per customer/journey, with zero actual time, and appear in CFT and JP popups. Recorded visits retain their own targets, completed-timing rules and OTP exclusions; no master fallback is applied to visited customers, including incomplete visits. Dashboard metrics/analysis and Route Tracking share this resolution. Planned totals and variance include unvisited allowances.
 
 ## Planned Not Visited
 

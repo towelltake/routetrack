@@ -8,8 +8,11 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import VueSelect from "vue-select";
 import { filterFields, filterOptions } from "@/views/routelocation/filters";
+import DashboardCards from "@/views/routelocation/DashboardCards.vue";
+import CustomerDetailsDialog from "@/views/routelocation/CustomerDetailsDialog.vue";
 import { efficiencyCustomers } from "@/views/routelocation/analytics";
 
+const unplannedDetailsDialog = ref(null);
 const fromDashboard = new URLSearchParams(window.location.search).get('from') === 'dashboard';
 const OMAN_BOUNDS = L.latLngBounds([16.0, 51.5], [27.0, 60.5]);
 const store = useTemplateStore();
@@ -50,6 +53,8 @@ const transactionDetailsLoading = ref(false);
 const selectedCustomerKey = ref(null);
 const plannedRouteVisible = ref(true);
 const actualRouteVisible = ref(true);
+const beforeRouteVisible = ref(true);
+const afterRouteVisible = ref(true);
 const rawCoordinatesVisible = ref(false);
 const plannedCustomersVisible = ref(true);
 const customerVisitsVisible = ref(false);
@@ -75,7 +80,9 @@ const customerVisits = computed(() => {
     }));
 });
 
-const cftVisitRows = computed(() => customerVisits.value.map(visit => {
+const cftVisitRows = computed(() => [...customerVisits.value, ...(result.value?.planned?.unvisited_cft_customers ?? []).map(customer => ({
+    ...customer, logkey: 'not-visited:' + customer.customercode, displayNumber: 'Not visited', visit_duration_minutes: 0,
+}))].map(visit => {
     const excluded = visit.operational_otp ?? !!visit.otp_logs?.length;
     const planned = excluded ? 0 : Math.max(0, Number(visit.default_face_time_minutes) || 0);
     const actual = excluded ? 0 : visit.visit_duration_minutes;
@@ -144,28 +151,17 @@ const routeSummaryGroups = computed(() => {
     const actualSeconds = Number(actual.duration) || 0;
 
     return [
-        { key: "route", title: "Route", cards: [
-            { label: "Route Status", icon: "fa-flag-checkered", tone: planned.route_closed ? "red" : "green", action: "route", value: planned.route_closed ? "Closed" : "Live", meta: "View journey details" },
-        ] },
-        { key: "customers", title: "Customers", cards: [
-            { label: "Productivity", action: "productivity", icon: "fa-check-double", tone: "green", value: efficiency?.productivity_percent == null ? 'N/A' : efficiency.productivity_percent + '%', meta: `${efficiency?.productive_visits ?? 0} of ${efficiency?.completed_visits ?? 0} completed visits productive`, breakdown: [{ label: "Collection", value: efficiency?.collection_productivity_percent }, { label: "Orders/Invoices", value: efficiency?.sales_order_productivity_percent }], definition: "Eligible completed visits with collections, orders or invoices. LPO Customers are excluded. Each productive visit counts once; source breakdowns can overlap." },
-            { label: "Efficiency", action: "efficiency", breakdown: [{ label: "Collection", value: efficiency?.collection_efficiency_percent }, { label: "Orders/Invoices", value: efficiency?.sales_order_efficiency_percent }], icon: "fa-gauge-high", tone: "green", value: efficiency?.efficiency_percent == null ? "—" : `${Number(efficiency.efficiency_percent).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`, meta: `${efficiency?.unique_productive_customers ?? 0} of ${efficiency?.unique_visited_customers ?? 0} unique customers productive`, definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited in this journey. Customers marked for productivity exclusion are omitted from both counts. Repeated visits count once. Collection and sales/order breakdowns can overlap." },
-            { label: "Customer Coverage", icon: "fa-store", tone: "blue", action: "customers", value: pct(customerVisitSummary.value.planned ? customerVisitSummary.value.plannedVisited / customerVisitSummary.value.planned : null), meta: `${customerVisitSummary.value.plannedVisited} of ${customerVisitSummary.value.planned} visited · ${customerVisitSummary.value.plannedNotVisited} pending` },
-            { label: "Unplanned Visits", icon: "fa-location-dot", tone: "orange", action: "unplanned", value: customerVisitSummary.value.unplannedVisited, meta: "View customer list" },
-            { label: "OTP Requests", icon: "fa-key", tone: "purple", action: "otp", value: planned.otp_logs?.length ?? 0, meta: "View all requests" },
-        ] },
-        { key: "distance", title: "Distance", cards: [
-            { label: "Planned Distance", icon: "fa-road", tone: "blue", value: `${km(planned.distance)} km`, meta: "" },
-            { label: "Actual Distance", icon: "fa-location-arrow", tone: "green", value: `${km(actual.distance)} km`, meta: `${pct(result.value.distance_ratio)} of plan · ${actual.point_count} points` },
-        ] },
         { key: "time", title: "Time", cards: [
-            { label: "Journey Duration", action: "duration", icon: "fa-clock", tone: "navy", value: actual.duration === null ? "N/A" : stationaryDuration(actual.duration), meta: "Journey duration" },
             { label: "Operational Time", action: "operational", icon: "fa-user-clock", tone: "green", value: actual.operational_time == null ? "N/A" : stationaryDuration(actual.operational_time), meta: actual.operational_time == null ? "No complete non-OTP visit window" : `${actual.operational_start} to ${actual.operational_end}`, definition: "First non-OTP customer check-in to the last non-OTP customer checkout, including time between visits." },
             { label: "Face Time Compliance", action: "cft", icon: "fa-user-clock", tone: "green", value: actual.face_time_variance_percent == null ? "N/A" : `${actual.face_time_variance_percent > 0 ? '+' : ''}${actual.face_time_variance_percent}%`,
                 comparison: { actual: actual.actual_cft, planned: actual.planned_cft, variance: actual.face_time_variance_percent } },
             { label: "OTP Customer Time", action: "otp_time", icon: "fa-key", tone: "purple", value: stationaryDuration(actual.otp_customer_time), meta: "Visits with OTP" },
             { label: "Travel Time", action: "travel", icon: "fa-car", tone: "slate", value: actual.travel_time === null ? "N/A" : stationaryDuration(actual.travel_time), meta: `${pct(actualSeconds ? actual.travel_time / actualSeconds : null)} of actual time` },
-            { label: "Idle Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_without_customer_seconds), meta: "Idle time without customer visits" },
+            { label: "Idle Time", icon: "fa-pause", tone: "orange", action: "stationary", value: stationaryDuration(actual.stationary_without_customer_seconds), meta: `Reliable: ${stationaryDuration(actual.reliable_idle_seconds)} ? Unreliable: ${stationaryDuration(actual.unreliable_idle_seconds)}` },
+            { label: "Actual GPS Tracking", icon: "fa-satellite-dish", tone: "blue", gpsTimes: [
+                { label: "GPS Track Start Time", value: actual.tracking_start_time },
+                { label: "GPS Track End Time", value: actual.tracking_end_time },
+            ], meta: "First and last recorded GPS for the selected date" },
         ] },
         { key: "transactions", title: "Transactions", cards: [
             transactionCard("Sales", "sales", "fa-file-invoice-dollar", "green"),
@@ -240,9 +236,12 @@ const routeQualityWarnings = computed(() => {
     }
 
     if (!result.value.actual?.has_tracking_data) {
-        warnings.push("Route Track Data Not Available.");
+        warnings.push(result.value.actual?.tracking_message || "Route Track Data Not Available.");
     }
 
+    if (result.value.actual?.tracking_message && result.value.actual?.has_tracking_data) warnings.push(result.value.actual.tracking_message);
+    if (result.value.planned?.route_details?.start_time && !result.value.actual?.route_start_marker) warnings.push('Route start marker unavailable: no nearby GPS observation.');
+    if (result.value.planned?.route_closed && result.value.planned?.route_details?.end_time && !result.value.actual?.route_end_marker) warnings.push('Route end marker unavailable: no nearby GPS observation.');
     return warnings;
 });
 
@@ -295,6 +294,8 @@ const customerItemEls = {};
 let resultLayer = null;
 let plannedLineLayer = null;
 let actualLineLayer = null;
+let beforeRouteLayer = null;
+let afterRouteLayer = null;
 let rawCoordinatesLayer = null;
 let plannedCustomerLayer = null;
 let customerVisitLayer = null;
@@ -342,6 +343,34 @@ onMounted(async () => {
         setTimeout(() => map.invalidateSize(), 0);
     });
 });
+
+const flashMessages = ref([]);
+const flashTimers = new Map();
+let flashId = 0;
+function dismissFlash(id) {
+    clearTimeout(flashTimers.get(id));
+    flashTimers.delete(id);
+    flashMessages.value = flashMessages.value.filter(message => message.id !== id);
+}
+function pauseFlash(id) { clearTimeout(flashTimers.get(id)); flashTimers.delete(id); }
+function resumeFlash(id) {
+    if (!flashMessages.value.some(message => message.id === id)) return;
+    pauseFlash(id);
+    flashTimers.set(id, setTimeout(() => dismissFlash(id), 15000));
+}
+function clearFlashes() { for (const message of [...flashMessages.value]) dismissFlash(message.id); }
+function showFlash(type, lines) {
+    const message = { id: ++flashId, type, lines: [...new Set(lines.filter(Boolean))] };
+    if (!message.lines.length) return;
+    flashMessages.value.push(message);
+    resumeFlash(message.id);
+}
+watch(error, message => { if (message) showFlash('danger', [message]); });
+watch(result, data => {
+    clearFlashes();
+    if (data) showFlash('warning', routeQualityWarnings.value);
+});
+onBeforeUnmount(clearFlashes);
 
 onBeforeUnmount(() => store.pageLoader({ mode: "off" }));
 
@@ -486,7 +515,16 @@ function closeOtpDetails() {
     selectedOtpVisit.value = null;
 }
 
+function inspectCustomerMetric(title) {
+    const kind = { 'Customer Coverage': 'coverage', 'JP compliance': 'planned', 'Unplanned Customers': 'unplanned', 'Efficiency': 'efficiency', 'Productivity': 'productive', 'OTP usage': 'otp' }[title];
+    if (kind && result.value?.selected_scope) unplannedDetailsDialog.value?.open(kind, result.value.selected_scope);
+}
+
 function openSummary(action) {
+    if (action === 'unplanned') {
+        unplannedDetailsDialog.value?.open('unplanned', {}, result.value?.planned?.unplanned_compliance ?? { groups: [] });
+        return;
+    }
     if (action) summaryModal.value = action;
 }
 
@@ -573,6 +611,10 @@ async function runComparison() {
 
     plannedLineLayer = null;
     actualLineLayer = null;
+    beforeRouteLayer = null;
+    afterRouteLayer = null;
+    beforeRouteVisible.value = true;
+    afterRouteVisible.value = true;
     rawCoordinatesLayer = null;
     plannedCustomerLayer = null;
     customerVisitLayer = null;
@@ -625,6 +667,7 @@ async function runComparison() {
             popup.append(heading);
             const visits = period.customer_visits ?? [];
             const lines = [
+                ...(period.unreliable ? [`Unreliable GPS ? maximum reported accuracy ${period.max_accuracy_m} m`] : []),
                 `From: ${period.start_time}`,
                 `To: ${period.end_time} (last observed stationary)`,
                 visits.length ? `Overlaps recorded customer visit: ${visits.map((visit) => visit.customername).join(', ')}` : 'No completed customer visit overlap recorded',
@@ -638,7 +681,7 @@ async function runComparison() {
             const outsideCustomerVisit = !visits.length;
             const circle = L.circle([period.lat, period.lng], {
                 radius: period.radius_m, stroke: false,
-                fillColor: outsideCustomerVisit ? '#ef4444' : '#fbbf24', fillOpacity: 0.2,
+                fillColor: period.unreliable ? '#64748b' : outsideCustomerVisit ? '#ef4444' : '#fbbf24', fillOpacity: 0.2,
             }).bindPopup(popup).addTo(stationaryLayer);
             circle.bindTooltip(`Stationary ${minutes(period.duration_seconds)} min`);
             circle.on("click", () => revealStationaryInList(index));
@@ -731,15 +774,36 @@ async function runComparison() {
             L.geoJSON(result.value.actual.raw_geometry, { style: rawCoordinatesStyle() }).addTo(rawCoordinatesLayer);
         }
 
-        const { start, end } = result.value.actual;
-        if (start && end) {
-            startMarker = L.marker([start.lat, start.lng], { icon: flagIcon("#16a34a", "S") })
-                .bindPopup(`<strong>Route Start</strong><br>${start.time ?? "Not Available"}`)
+        beforeRouteLayer = L.featureGroup().addTo(resultLayer);
+        afterRouteLayer = L.featureGroup().addTo(resultLayer);
+        (data.actual.outside_route_geometries ?? []).forEach(geometry => {
+            const after = geometry.tracking_period === 'after';
+            const color = after ? '#ea580c' : '#a855f7';
+            L.geoJSON(geometry, { style: { color, weight: 5, opacity: 0.85, dashArray: '8 5' },
+                pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 5, color, fillColor: color, fillOpacity: 0.85, weight: 2 }) })
+                .bindTooltip(after ? 'GPS after Route End Time' : 'GPS before Route Start Time')
+                .addTo(after ? afterRouteLayer : beforeRouteLayer);
+        });
+        (data.actual.unreliable_geometries ?? []).forEach(feature => {
+            L.geoJSON(feature, { style: { color: '#64748b', weight: 4, opacity: 0.75, dashArray: '2 7' },
+                pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 4, color: '#64748b', fillOpacity: 0.65 }) })
+                .bindPopup('Unreliable GPS<br>' + feature.properties.start + ' to ' + feature.properties.end + '<br>Maximum reported accuracy: ' + feature.properties.accuracy + ' m')
+                .addTo(rawCoordinatesLayer);
+        });
+        const actual = result.value.actual;
+        const addEventMarker = (point, color, letter, label, routeEventLabel = null, routeEventTime = null) => {
+            if (!point) return null;
+            return L.marker([point.lat, point.lng], { icon: flagIcon(color, letter) })
+                .bindPopup('<strong>' + label + '</strong><br>' + (point.time ?? '') + '<br>GPS recorded: ' + (point.gps_time ?? point.time ?? '')
+                    + (routeEventTime ? '<br><strong>' + routeEventLabel + ':</strong> ' + routeEventTime : '')
+                    + '<br>Reported accuracy: ' + (point.accuracy_m == null ? 'Unknown' : Number(point.accuracy_m).toLocaleString() + ' m')
+                    + (point.unreliable ? '<br><span class="badge bg-warning text-dark mt-1">Unreliable coordinates</span>' : ''))
                 .addTo(actualLayer);
-            endMarker = L.marker([end.lat, end.lng], { icon: flagIcon("#dc2626", "L") })
-                .bindPopup(`<strong>Last Known Location</strong><br>${end.time ?? ""}`)
-                .addTo(actualLayer);
-        }
+        };
+        startMarker = addEventMarker(actual.tracking_start, '#0284c7', 'T', 'Track Start Time', 'Route Start Time', result.value.planned.route_details?.start_time);
+        endMarker = addEventMarker(actual.last_known_location, '#dc2626', 'L', 'Last Known Location', 'Route End Time', result.value.planned.route_details?.end_time);
+        addEventMarker(actual.route_start_marker, '#16a34a', 'S', 'Route Start Time');
+        addEventMarker(actual.route_end_marker, '#b45309', 'E', 'Route End Time');
 
         // Zoom to the actual start/end points (smaller, more relevant area) rather than
         // fitting both planned + actual — the planned route stays drawn but out of frame.
@@ -980,6 +1044,18 @@ function togglePlannedRoute() {
     plannedRouteVisible.value ? resultLayer.addLayer(plannedLineLayer) : resultLayer.removeLayer(plannedLineLayer);
 }
 
+function toggleOutsideRoute(period) {
+    const layer = period === 'before' ? beforeRouteLayer : afterRouteLayer;
+    const visible = period === 'before' ? beforeRouteVisible : afterRouteVisible;
+    if (!layer || !resultLayer) return;
+    visible.value = !visible.value;
+    visible.value ? resultLayer.addLayer(layer) : resultLayer.removeLayer(layer);
+}
+
+function hasOutsideTracking(period) {
+    return !!result.value?.actual?.outside_route_geometries?.some(geometry => geometry.tracking_period === period);
+}
+
 function toggleActualRoute() {
     if (!actualLineLayer || !resultLayer || !map) {
         return;
@@ -1021,12 +1097,21 @@ function focusEnd() {
 
 <template>
     <Head title="Route Tracking" />
+    <Teleport to="body">
+        <div class="route-flash-stack" aria-live="polite" aria-relevant="additions">
+            <div v-for="message in flashMessages" :key="message.id" class="route-flash alert" :class="'alert-' + message.type" :role="message.type === 'danger' ? 'alert' : 'status'" @mouseenter="pauseFlash(message.id)" @mouseleave="resumeFlash(message.id)" @focusin="pauseFlash(message.id)" @focusout="resumeFlash(message.id)">
+                <i class="fa" :class="message.type === 'danger' ? 'fa-circle-exclamation' : 'fa-triangle-exclamation'" aria-hidden="true"></i>
+                <div><p v-for="line in message.lines" :key="line">{{ line }}</p></div>
+                <button type="button" class="btn-close" aria-label="Dismiss message" @click="dismissFlash(message.id)"></button>
+            </div>
+        </div>
+    </Teleport>
+    <CustomerDetailsDialog ref="unplannedDetailsDialog" endpoint="/route-tracking/customer-details.json" />
 
     <div class="content route-tracking-content">
         <div class="route-tracking-page-heading">
             <a v-if="fromDashboard" href="/dashboard?restore=1" class="btn btn-sm btn-light mb-2"><i class="fa fa-arrow-left me-1"></i> Back to dashboard</a>
             <h1 class="h3 fw-bold mb-1">Route Tracking</h1>
-            <h2 class="fs-base lh-base fw-medium text-muted mb-0">Planned route vs actual GPS points</h2>
         </div>
 
         <section class="tracking-filters" aria-labelledby="tracking-filters-title">
@@ -1085,12 +1170,34 @@ function focusEnd() {
         </section>
 
         <BaseBlock :title="routeHeading" :mode-loading="loading">
-            <p v-if="error" class="text-danger">{{ error }}</p>
-
-            <div v-if="routeQualityWarnings.length" class="alert alert-warning py-2">
-                <div v-for="warning in routeQualityWarnings" :key="warning">{{ warning }}</div>
-            </div>
-
+            <section v-if="result" class="tracking-performance" aria-label="Selected journey performance">
+                <div class="current-route-status">
+                    <h3>Journeys</h3>
+                    <button type="button" class="current-route-status-card" @click="openSummary('route')">
+                        <span><i class="fa fa-flag-checkered" aria-hidden="true"></i> Current Route Status <i class="fa fa-chevron-right" aria-hidden="true"></i></span>
+                        <strong :class="result.planned.route_closed ? 'text-danger' : 'text-success'">{{ result.planned.route_closed ? 'Closed' : result.planned.route_details?.start_time ? 'Live' : 'Not started' }}</strong>
+                        <small>View journey details</small>
+                        <span class="route-status-details">
+                            <span v-if="result.planned.route_details?.start_time || result.planned.route_details?.end_time" class="route-status-timeline">
+                                <span v-if="result.planned.route_details?.start_time" class="route-status-event">
+                                    <i class="fa fa-play-circle route-event-start" aria-hidden="true"></i>
+                                    <span><span>Route start</span><b>{{ result.planned.route_details.start_time.slice(11, 19) }}</b><small>{{ result.planned.route_details.start_time.slice(0, 10) }}</small></span>
+                                </span>
+                                <span v-if="result.planned.route_details?.end_time" class="route-status-event">
+                                    <i class="fa fa-stop-circle route-event-end" aria-hidden="true"></i>
+                                    <span><span>Route end</span><b>{{ result.planned.route_details.end_time.slice(11, 19) }}</b><small>{{ result.planned.route_details.end_time.slice(0, 10) }}</small></span>
+                                </span>
+                            </span>
+                            <span class="route-status-distance-heading"><i class="fa fa-road" aria-hidden="true"></i> Distance <small>km</small></span>
+                            <span class="route-status-distance-grid">
+                                <span><span>Planned</span><b>{{ km(result.planned.distance) }}</b></span>
+                                <span><span>Actual</span><b>{{ result.actual.has_tracking_data ? km(result.actual.distance) : 'N/A' }}</b></span>
+                            </span>
+                        </span>
+                    </button>
+                </div>
+                <DashboardCards class="tracking-customer-performance" :metrics="result.customer_metrics" :only-groups="['customers']" :loading="loading" @inspect="inspectCustomerMetric" />
+            </section>
             <section v-if="result" class="route-summary-groups" aria-label="Route journey summary">
                 <div v-for="group in routeSummaryGroups" :key="group.key" class="route-summary-group" :class="`route-summary-group-${group.key}`">
                     <h3>{{ group.title }}</h3>
@@ -1108,9 +1215,10 @@ function focusEnd() {
                             <span class="route-summary-icon"><i class="fa" :class="card.icon" aria-hidden="true"></i></span>
                             <span class="route-summary-copy">
                                 <span class="route-summary-label">{{ card.label }}</span>
-                                <strong v-if="!card.comparison">{{ card.value }}</strong>
+                                <strong v-if="!card.comparison && !card.gpsTimes">{{ card.value }}</strong>
                                 <span v-if="card.comparison" class="route-face-variance" :class="{ 'negative-variance': card.comparison.variance < 0 }"><b>{{ card.value }}</b><span>Variance</span></span>
                                 <span v-if="card.comparison" class="route-face-comparison"><span><span>Actual CFT</span><b>{{ stationaryDuration(card.comparison.actual) }}</b></span><span><span>Planned CFT</span><b>{{ stationaryDuration(card.comparison.planned) }}</b></span></span>
+                                <span v-if="card.gpsTimes" class="gps-track-times"><span v-for="item in card.gpsTimes" :key="item.label"><span>{{ item.label }}</span><b>{{ item.value ? item.value.slice(11, 19) : 'Unavailable' }}</b><small v-if="item.value">{{ item.value.slice(0, 10) }}</small></span></span>
                                 <span v-if="card.meta" class="route-summary-meta">{{ card.meta }}</span>
                                 <span v-if="card.breakdown" class="route-metric-breakdown"><span v-for="(item, index) in card.breakdown" :key="item.label" :class="index === 0 ? 'collection-share' : 'sales-share'"><b>{{ item.value == null ? '—' : `${Number(item.value).toLocaleString(undefined, { maximumFractionDigits: 1 })}%` }}</b><span>{{ item.label }}</span></span></span>
                             </span>
@@ -1173,7 +1281,7 @@ function focusEnd() {
                     type="button"
                     class="route-tracking-legend-item"
                     :class="{ active: rawCoordinatesVisible }"
-                    :disabled="!result || !result.actual.raw_geometry"
+                    :disabled="!result || (!result.actual.raw_geometry && !result.actual.unreliable_geometries?.length)"
                     @click="toggleRawCoordinates"
                 >
                     <span style="color: #b45309">&#9632;</span>
@@ -1185,7 +1293,7 @@ function focusEnd() {
                     :disabled="!result || !result.actual.has_tracking_data"
                     @click="focusStart"
                 >
-                    <span style="color: #16a34a">&#9632;</span> Route Start (S)
+                    <span style="color: #0284c7">&#9632;</span> Track Start (T)
                 </button>
                 <button
                     type="button"
@@ -1195,6 +1303,14 @@ function focusEnd() {
                 >
                     <span style="color: #dc2626">&#9632;</span> Last Known Location (L)
                 </button>
+                <button type="button" class="route-tracking-legend-item" :class="{ active: beforeRouteVisible }" :aria-pressed="beforeRouteVisible" :disabled="!hasOutsideTracking('before')" :title="hasOutsideTracking('before') ? 'Show or hide GPS before Route Start Time' : 'No GPS readings before route start for this selection'" @click="toggleOutsideRoute('before')">
+                    <span style="color: #a855f7">&#9632;</span> Before Route Start
+                </button>
+                <button type="button" class="route-tracking-legend-item" :class="{ active: afterRouteVisible }" :aria-pressed="afterRouteVisible" :disabled="!hasOutsideTracking('after')" :title="!result?.planned?.route_closed ? 'Available after a Route End Time is recorded' : hasOutsideTracking('after') ? 'Show or hide GPS after Route End Time' : 'No GPS readings after route end for this selection'" @click="toggleOutsideRoute('after')">
+                    <span style="color: #ea580c">&#9632;</span> After Route End
+                </button>
+                <span class="route-tracking-legend-item"><span style="color: #16a34a">&#9632;</span> Route Start (S)</span>
+                <span class="route-tracking-legend-item"><span style="color: #b45309">&#9632;</span> Route End (E)</span>
                 <button type="button" class="route-tracking-legend-item"
                     :class="{ active: stationaryVisible }"
                     :aria-pressed="stationaryVisible"
@@ -1356,6 +1472,7 @@ function focusEnd() {
                                                     ? `At customer: ${period.customer_visits.map((visit) => visit.customername).join(', ')}`
                                                     : 'Outside completed customer visits' }}
                                             </span>
+                                            <span v-if="period.unreliable" class="badge bg-secondary align-self-start">Unreliable GPS (up to {{ period.max_accuracy_m }} m)</span>
                                             <span v-if="period.accuracy_unknown" class="d-block small text-warning">GPS accuracy unknown</span>
                                         </span>
                                         <i
@@ -1394,6 +1511,7 @@ function focusEnd() {
                                     <span class="route-tracking-customer-info">
                                         <span class="route-tracking-customer-name-row">
                                             <span class="fw-semibold small">{{ customer.customername }}</span>
+                                            <span v-if="customer.type === 'visit' && customer.auto_checkout" class="auto-checkout-badge">Auto-checkout</span>
                                             <span v-if="customer.type === 'visit'" class="route-tracking-face-time small">
                                                 <i class="fa fa-clock" title="Customer face time"></i>
                                                 {{ faceTimeLabel(customer) }}
@@ -1491,15 +1609,15 @@ function focusEnd() {
                             </div>
                             <div v-else-if="['cft', 'otp_time'].includes(summaryModal)">
                                 <p>{{ summaryModal === 'otp_time' ? 'OTP Customer Time' : 'Customer Face Time' }}: <strong>{{ stationaryDuration(summaryModal === 'otp_time' ? result.actual.otp_customer_time : result.actual.actual_cft) }}</strong></p>
-                                <p class="small text-muted">All {{ cftVisitRows.length }} customer visits, including repeats. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
+                                <p class="small text-muted">Visits and unvisited planned customers are listed, including repeat visits. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Visited customers use their recorded visit CFT. Unvisited planned customers use their customer target, falling back to the matching division and channel target. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
                                 <div class="table-responsive"><table class="table table-sm">
                                     <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
                                     <tbody>
-                                        <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded }">
+                                        <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded, 'cft-not-visited': visit.not_visited }">
                                             <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}</td>
-                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td>
+                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td>
                                             <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
-                                            <td>{{ visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
+                                            <td>{{ visit.not_visited ? 'Not visited' : visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
                                         </tr>
                                         <tr v-if="!popupCftRows.length"><td colspan="10">No customer visits for this journey.</td></tr>
                                     </tbody>
@@ -1508,7 +1626,7 @@ function focusEnd() {
                             <div v-else-if="summaryModal === 'productivity'">
                                 <p class="small text-muted">Each eligible completed visit counts once. LPO Customers are excluded and shown in yellow. Incomplete visits do not count.</p>
                                 <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Customer</th><th>Check-in</th><th>Checkout</th><th>Status</th><th>Collection</th><th>Orders/Invoices</th></tr></thead>
-                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}</td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
+                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
                             </div>
                             <div v-else-if="summaryModal === 'efficiency'">
                                 <p class="small text-muted">Each customer counts once. LPO Customers are shown in yellow for reference and excluded from both metric counts.</p>
@@ -1543,6 +1661,13 @@ function focusEnd() {
                             </div>
 
                             <div v-else-if="summaryModal === 'stationary'" class="stationary-breakdown">
+                                <div class="idle-detection-help" aria-label="Current idle detection settings">
+                                    <p><i class="fa fa-circle-info" aria-hidden="true"></i><strong>How idle time is detected</strong></p>
+                                    <p>Stationary for at least <strong>{{ result.actual.stationary_minimum_minutes }} minutes</strong> within a <strong>{{ result.actual.stationary_radius_m }} m radius</strong> of the first GPS point. Time overlapping customer visits is excluded from idle time.</p>
+                                    <p>A gap longer than <strong>{{ result.actual.stationary_max_gap_seconds }} seconds</strong> between valid GPS readings breaks the stationary period. Time across that gap is not counted as idle.</p>
+                                </div>
+                                <p class="small text-muted">Tracking window: {{ result.actual.tracking_start_time || 'Unavailable' }} to {{ result.actual.tracking_end_time || 'Unavailable' }}. Includes tracking before route start and after route end across all recorded GPS times. Only observed stationary periods count.</p>
+                                <p class="small text-muted">Idle outside visits includes unreliable GPS estimates. Reliable: {{ stationaryDuration(result.actual.reliable_idle_seconds) }}. Unreliable: {{ stationaryDuration(result.actual.unreliable_idle_seconds) }}. Low accuracy does not establish whether someone was working.</p>
                                 <dl class="stationary-totals">
                                     <div><dt>Total stationary time</dt><dd>{{ stationaryDuration(result.actual.stationary_seconds) }}</dd><small>{{ stationaryPeriods.length }} detected stops</small></div>
                                     <div class="with-visits"><dt>Idle time with customer visits</dt><dd>{{ stationaryDuration(result.actual.stationary_with_customer_seconds) }}</dd><small>Time overlapping customer visits</small></div>
@@ -1552,7 +1677,7 @@ function focusEnd() {
                                 <details v-for="period in stationaryPeriods" :key="period.listKey" class="stationary-stop" open>
                                     <summary>
                                         <span class="stationary-stop-number">{{ period.displayNumber }}</span>
-                                        <span class="stationary-stop-heading"><strong>{{ stationaryTime(period.start_time) }} &ndash; {{ stationaryTime(period.end_time) }}</strong><small>{{ period.start_time.slice(0, 10) }}<template v-if="period.end_time.slice(0, 10) !== period.start_time.slice(0, 10)"> &ndash; {{ period.end_time.slice(0, 10) }}</template> &middot; {{ period.customer_visits.length }} customer visits</small></span>
+                                        <span class="stationary-stop-heading"><strong><span v-if="period.unreliable" class="badge bg-secondary me-1">Unreliable GPS</span>{{ stationaryTime(period.start_time) }} &ndash; {{ stationaryTime(period.end_time) }}</strong><small>{{ period.start_time.slice(0, 10) }}<template v-if="period.end_time.slice(0, 10) !== period.start_time.slice(0, 10)"> &ndash; {{ period.end_time.slice(0, 10) }}</template> &middot; {{ period.customer_visits.length }} customer visits</small></span>
                                         <strong class="stationary-stop-duration">{{ stationaryDuration(period.duration_seconds) }}</strong>
                                     </summary>
                                     <div class="stationary-stop-body">
@@ -2571,4 +2696,42 @@ function focusEnd() {
  .route-tracking-otp-modal .modal-header, .route-tracking-otp-modal .modal-body { padding: 14px; }
  .route-tracking-otp-modal .route-detail-grid { grid-template-columns: 1fr; }
 }
+.auto-checkout-badge { display: block; width: fit-content; margin-top: 4px; padding: 2px 6px; border-radius: 5px; background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 650; white-space: nowrap; }
+.gps-track-times { display: grid; grid-column: 1 / -1; gap: 12px; margin: 8px 0; }
+.gps-track-times > span { display: grid; gap: 3px; }
+.gps-track-times > span > span, .gps-track-times small { color: #64748b; font-size: 11px; }
+.gps-track-times b { color: var(--tone); font-size: 20px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.tracking-performance { display: grid; width: 100%; grid-template-columns: minmax(170px, 220px) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+.current-route-status { display: flex; flex-direction: column; padding: 12px; background: #f8fafc; border: 1px solid #e8edf3; border-radius: 12px; }
+.current-route-status h3 { margin: 0 0 9px 2px; color: #475569; font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .07em; }
+.current-route-status-card { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 22px; padding: 18px; border: 1px solid #dce6f2; border-radius: 12px; background: #fff; text-align: left; color: #475569; }
+.current-route-status-card > span:not(.route-status-details) { display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 650; }
+.current-route-status-card strong { font-size: 28px; }
+.current-route-status-card small { color: #64748b; }
+.tracking-customer-performance { width: 100%; min-width: 0; align-self: stretch; }
+.tracking-customer-performance :deep(.group-customers) { grid-column: 1 / -1; }
+@media (max-width: 1000px) { .tracking-performance { grid-template-columns: 1fr; } .current-route-status-card { gap: 12px; } }
+.current-route-status-card .route-status-details { display: grid; width: 100%; gap: 12px; margin-top: auto; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+.route-status-timeline { display: grid; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #edf2f7; }
+.route-status-event { display: flex; align-items: flex-start; gap: 9px; }
+.route-status-event > i { margin-top: 3px; font-size: 13px; }
+.route-event-start { color: #16a34a; } .route-event-end { color: #e11d48; }
+.route-status-event > span { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 3px 6px; flex: 1; min-width: 0; }
+.route-status-event > span > span { color: #64748b; font-size: 11px; font-weight: 500; }
+.route-status-event b { color: #334155; font-size: 13px; font-variant-numeric: tabular-nums; }
+.route-status-event small { grid-column: 1 / -1; text-align: right; font-size: 10px; }
+.route-status-distance-heading { display: flex; align-items: center; gap: 6px; color: #475569; font-size: 11px; font-weight: 650; }
+.route-status-distance-heading small { margin-left: auto; font-size: 10px; font-weight: 500; }
+.route-status-distance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.route-status-distance-grid > span { display: grid; align-content: start; gap: 5px; padding: 10px 8px; border: 1px solid #e5edfa; border-radius: 9px; background: #f8faff; min-width: 0; }
+.route-status-distance-grid > span > span { color: #64748b; font-size: 10px; font-weight: 500; }
+.route-status-distance-grid b { color: #2563eb; font-size: 17px; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.route-flash-stack { position: fixed; top: 76px; right: 20px; z-index: 2100; display: grid; gap: 10px; width: min(460px, calc(100vw - 32px)); pointer-events: none; }
+.route-flash { display: grid; grid-template-columns: 18px minmax(0, 1fr) 18px; align-items: start; gap: 10px; margin: 0; padding: 14px; border-radius: 10px; box-shadow: 0 6px 24px #172b4520; pointer-events: auto; font-size: 12px; }
+.route-flash p { margin: 0 0 6px; overflow-wrap: anywhere; } .route-flash p:last-child { margin-bottom: 0; }
+.route-flash > i { padding-top: 2px; } .route-flash .btn-close { width: 12px; height: 12px; padding: 2px; }
+.idle-detection-help { padding: 12px 14px; margin-bottom: 14px; border: 1px solid #dbeafe; border-radius: 9px; background: #f0f7ff; color: #475569; font-size: 12px; line-height: 1.6; }
+.idle-detection-help p { margin: 0 0 6px; } .idle-detection-help p:last-child { margin-bottom: 0; }
+.idle-detection-help i { margin-right: 7px; color: #2563eb; } .idle-detection-help strong { color: #1e3a5f; }
+.cft-not-visited > td { background: #fee2e2; color: #991b1b; }
 </style>

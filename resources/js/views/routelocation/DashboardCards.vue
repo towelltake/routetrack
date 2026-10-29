@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { displayedTimeMinutes } from "./time-display";
 
-const props = defineProps({ metrics: Object, loading: Boolean, error: String, idle: Object });
+const props = defineProps({ metrics: Object, loading: Boolean, error: String, idle: Object, onlyGroups: { type: Array, default: null } });
 const emit = defineEmits(["inspect"]);
 const timeMode = ref("average");
 const timeModeChanged = ref(false);
@@ -25,14 +25,13 @@ const cards = computed(() => {
     const m = props.metrics;
     return [
         { title: "Route Start Compliance", icon: "fa-route", tone: "green", value: ratioPercent(m?.routes_started, m?.total_routes),
-            breakdown: [{ label: 'Route Close Compliance', tone: 'orange', value: m?.routes_started > 0 && m?.routes_closed != null ? 100 * m.routes_closed / m.routes_started : null, count: m ? `${number(m.routes_closed)} closed / ${number(m.routes_started)} started` : '' }],
             note: m ? `${number(m.routes_started)} started / ${number(m.total_routes)} total` : "",
             detail: m ? `${number(m.route_count)} routes × ${number(m.period_days)} days · ${number(m.routes_not_started)} not started` : "",
-            definition: "Started routes / filtered total routes × 100. Route Close Compliance below is routes closed on their start date / started routes × 100, unavailable when no routes have started. Routes count once per route start date; every journey for that route and start date must be closed with an end date equal to its start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
+            definition: "Started routes / filtered total routes × 100. Routes count once per route start date. Total equals accessible routes matching the filters multiplied by inclusive calendar days, including weekends and routes without a journey plan." },
         { title: "JP compliance", icon: "fa-location-dot", tone: "blue", value: percent(m?.planned_without_otp_percent),
-            note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} unique customers visited without OTP` : "",
-            breakdown: [{ label: 'Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} unique planned customers` : '' }],
-            definition: "Unique planned customers visited without any matched OTP / unique scheduled route sequence customers, counted per journey. Customers with any OTP visit appear separately below, even if they also have a non-OTP visit. All OTP types count; unplanned customers are excluded." },
+            note: m ? `${number(m.planned_visited_without_otp)} / ${number(m.planned_customers)} planned customers: non-OTP visit met CFT` : "",
+            breakdown: [{ label: 'Planned Customers visited with OTP', value: m?.planned_with_otp_percent, count: m ? `${number(m.planned_visited_with_otp)} / ${number(m.planned_customers)} route-status planned customers` : '' }],
+            definition: "Base: distinct scheduled customers in the route-status customer sequence for each selected journey. Main percentage: customers from that base with at least one completed non-OTP visit whose actual CFT meets its positive planned CFT / all customers in the base. Lower percentage: customers from the same base with any matched OTP visit / all customers in the base; no CFT requirement applies to the OTP count. Each visit uses its recorded target; short visits are not combined. OTP customer counts below are informational and may overlap qualified customers who have a separate non-OTP visit. Unplanned customers are excluded." },
         { title: "Productivity", icon: "fa-check-double", tone: "green", value: percent(m?.productivity_percent),
             compactBreakdown: true,
             excludedLpo: m?.lpo_customers_excluded,
@@ -52,12 +51,9 @@ const cards = computed(() => {
             note: m ? `${number(m.otp?.events)} total OTP / ${number(m.all_unique_visited_customers)} unique visits` : "",
             definition: "Total OTP events / unique customers visited per journey × 100. Repeat visits to the same customer within a journey count once; that customer counts again in another journey. Includes incomplete visits and LPO customers. Date ranges use summed journey counts. All OTP types count, so multiple OTP events can produce a rate above 100%. No unique visits means unavailable." },
         { title: "Unplanned Customers", icon: "fa-location-dot", tone: "orange", value: percent(m?.unplanned_without_otp_percent),
-            note: m ? `${number(m.unplanned_customers_without_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers: unplanned without OTP` : "",
+            note: m ? `${number(m.unplanned_customers_without_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers: unplanned and CFT qualified without OTP` : "",
             breakdown: [{ label: 'Unplanned customers with OTP', value: m?.unplanned_with_otp_percent, count: m ? `${number(m.unplanned_customers_with_otp)} / ${number(m.all_unique_visited_customers)} unique visited customers` : '' }],
-            definition: "Unique unplanned customers without OTP / all unique customers visited in the selected journeys. The OTP percentage below uses the same denominator. Each customer counts once per journey, including incomplete visits and LPO customers. Any matched OTP places that customer only in the OTP group. Journeys without a plan cannot contribute unplanned customers, but their visits remain in the total visited denominator. Date ranges use summed customer counts, not averaged percentages." },
-        { title: "Total Duration", icon: "fa-clock", tone: "navy", value: duration(timeMinutes(m?.duration_minutes)), unit: "h:mm",
-            note: m ? `${number(m.duration_available_journeys)} journeys measured · ${number(m.duration_missing_journeys)} unavailable` : "",
-            definition: "Route start to end for closed journeys; route start to last reported location for open journeys. GPS readings from subsequent journeys are excluded." },
+            definition: "Unique unplanned customers with at least one completed non-OTP visit meeting its positive planned CFT / all unique customers visited in the selected journeys. Each customer counts once per journey. The OTP percentage is informational and may overlap a separate qualifying non-OTP revisit. Customers with short, incomplete or missing-target visits do not qualify. Journeys without a plan cannot establish unplanned status. Date ranges use summed counts." },
         { title: "Time Outside Visits", icon: "fa-car", tone: "slate", value: duration(timeMinutes(m?.outside_visit_minutes)), unit: "h:mm",
             note: "Includes travel, idle time and breaks",
             detail: m?.duration_missing_journeys ? `${number(m.duration_missing_journeys)} journeys excluded: duration unavailable` : "",
@@ -68,7 +64,7 @@ const cards = computed(() => {
             note: "Visits with OTP", definition: "Total visit time for customers with OTP" },
         { title: "Face Time Compliance", icon: "fa-user-clock", tone: "green", value: signedPercent(m?.face_time_variance_percent),
             comparison: { actual: timeMinutes(m?.actual_face_minutes), planned: timeMinutes(m?.planned_face_minutes), variance: m?.face_time_variance_percent },
-            definition: "Actual and planned customer face time exclude OTP visits. Planned CFT uses the customer face time setting, falling back to the matching division and channel setting. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
+            definition: "Actual and planned customer face time exclude OTP visits. Planned CFT uses recorded visit targets plus customer targets for unvisited planned customers, falling back to matching division/channel targets. Variance (%) = (actual CFT - planned CFT) / planned CFT x 100. Positive is above plan; negative is below plan. Unavailable without planned time." },
         { title: "Efficiency", icon: "fa-gauge-high", tone: "green", value: percent(m?.efficiency_percent),
             compactBreakdown: true,
             excludedLpo: m?.lpo_customers_excluded,
@@ -77,25 +73,25 @@ const cards = computed(() => {
             definition: "Unique eligible customers with a completed visit linked to a positive, non-voided collection, invoice or sales order / unique eligible customers visited. Each customer counts once per journey. Collection and sales/order breakdowns can overlap. LPO Customers are excluded." },
         { title: "Idle Time Outside Customer Visits", icon: "fa-hourglass-half", tone: "red", value: props.idle?.loading ? 'Loading...' : duration(timeMinutes(props.idle?.minutes)), unit: props.idle?.loading ? '' : "h:mm",
             interactive: !props.idle?.loading,
-            note: props.idle?.error || "Stationary time only; excludes travel and all customer visits",
-            detail: props.idle?.missing ? props.idle.missing + ' journeys unavailable; figures use measured time only' : '',
-            definition: "GPS-detected stationary time outside customer visit intervals, including exclusion of OTP visits. Missing GPS or journey boundaries are unavailable, not zero. Click for route details." },
+            note: props.idle?.error || (props.idle?.unreliableMinutes > 0 ? `Includes ${duration(timeMinutes(props.idle.unreliableMinutes))} unreliable GPS idle estimate` : "Stationary time only; excludes travel and all customer visits"),
+            detail: props.idle?.missing ? props.idle.missing + ' GPS tracking windows unavailable; figures use measured time only' : '',
+            definition: "GPS-detected stationary time between the first and last recorded GPS readings, outside customer visit intervals including OTP visits. Includes time before route start and after route end; each route/date counts once. Missing GPS or device identity is unavailable, not zero. Click for route details." },
     ];
 });
 const groups = computed(() => [
     { key: "journeys", title: "Journeys", cards: [cards.value[0]] },
-    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[14], cards.value[2], cards.value[7]] },
-    { key: "time", title: "Time", cards: [cards.value[9], cards.value[6], cards.value[12], cards.value[13], cards.value[10], cards.value[15]] },
-    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[11]] },
+    { key: "customers", title: "Customer performance", cards: [cards.value[1], cards.value[8], cards.value[13], cards.value[2], cards.value[7]] },
+    { key: "time", title: "Time", cards: [cards.value[6], cards.value[11], cards.value[12], cards.value[9], cards.value[14]] },
+    { key: "transactions", title: "Transactions", cards: [cards.value[3], cards.value[4], cards.value[5], cards.value[10]] },
 ]);
 </script>
 
 <template>
-    <section class="dashboard-overview" aria-label="Dashboard metrics" :aria-busy="loading">
+    <section class="dashboard-overview" :class="{ 'single-group': onlyGroups?.length === 1 }" aria-label="Dashboard metrics" :aria-busy="loading">
         <span v-if="loading" class="visually-hidden" role="status">Updating figures...</span>
         <p v-if="error" class="dashboard-metrics-error" role="alert">{{ error }} Use Refresh to try again.</p>
         <div class="dashboard-metric-groups">
-            <section v-for="group in groups" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
+            <section v-for="group in groups.filter(item => !onlyGroups || onlyGroups.includes(item.key))" :key="group.key" class="dashboard-metric-group" :class="`group-${group.key}`" :aria-label="group.title">
                 <div class="dashboard-group-heading">
                     <h3 class="dashboard-group-title">{{ group.title }}</h3>
                     <template v-if="group.key === 'time'">
@@ -201,7 +197,7 @@ const groups = computed(() => [
 }
 .dashboard-metric-grid { display: grid; flex: 1; grid-auto-rows: 1fr; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .group-customers .dashboard-metric-grid, .group-transactions .dashboard-metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.group-time .dashboard-metric-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.group-time .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .group-customers .dashboard-metric-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: auto 1fr; grid-template-areas: 'total total efficiency productivity otp' 'jp unplanned efficiency productivity otp'; }
 .total-visits-card { grid-area: total; min-width: 0; padding: 12px 14px; border: 1px solid #dce6f2; border-radius: 12px; background: #f8faff; box-shadow: 0 2px 8px #172b4505; }
 .total-visits-card h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: #475569; font-size: 12px; font-weight: 650; }
@@ -286,4 +282,7 @@ const groups = computed(() => [
 @media (max-width: 420px) { .group-time .dashboard-metric-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1050px) and (min-width: 701px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total efficiency' 'jp unplanned efficiency' 'productivity otp otp'; } }
 @media (max-width: 700px) { .group-customers .dashboard-metric-grid { grid-template-areas: 'total total' 'jp unplanned' 'efficiency productivity' 'otp otp'; } .total-visits-card { padding: 12px; } .total-visits-values { gap: 8px; } }
+.dashboard-overview.single-group { width: 100%; height: 100%; margin: 0; }
+.single-group .dashboard-metric-groups { height: 100%; grid-template-columns: minmax(0, 1fr); }
+.single-group .dashboard-metric-group { grid-column: 1 / -1; }
 </style>

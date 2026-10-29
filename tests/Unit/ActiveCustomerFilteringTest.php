@@ -20,7 +20,7 @@ beforeEach(function () {
         'routesequence (routecode integer, customercode integer)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer, servicedflag integer, scannedflag integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
-        'customervisitlog (routekey integer, logkey integer, customercode integer, cft integer, logstartdate text, logstarttime text, logenddate text, logendtime text)',
+        'customervisitlog (routekey integer, logkey integer, customercode integer, cft integer, logstartdate text, logstarttime text, logenddate text, logendtime text, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
         'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text, otptype text, username text, comments text, otpreason text)',
         'arheader (transactionkey integer, routecode integer, routekey integer, visitkey integer, customercode integer)',

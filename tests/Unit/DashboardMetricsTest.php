@@ -39,7 +39,7 @@ test('all operation keys contribute to one visit without duplicating productivit
     expect($customers->where('status', 'Productive'))->toHaveCount(2);
 });
 
-test('dashboard cards and details share division and channel CFT fallback', function () {
+test('dashboard cards and details use visit CFT despite different master settings', function () {
     DB::table('customermaster')->where('customercode', 101)->update([
         'customerfacetime' => 0, 'DivisionCode' => 'D1', 'channel' => 'Retail',
     ]);
@@ -48,6 +48,7 @@ test('dashboard cards and details share division and channel CFT fallback', func
         ['divisioncode' => 'D2', 'channel' => 'Retail', 'cft' => 80],
         ['divisioncode' => 'D1', 'channel' => 'Wholesale', 'cft' => 90],
     ]);
+    DB::table('customervisitlog')->where('logkey', 12)->update(['cft' => 20]);
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $metrics = app(DashboardMetrics::class)->summarize($journeys);
@@ -153,7 +154,7 @@ test('CFT popups retain OTP visits as excluded zero contributions while cards an
         ->and(collect($metrics['analysis']['journeys'])->sum('actual_cft'))->toEqual(25);
     foreach (['cft', 'actual_face'] as $type) {
         $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])->flatMap(fn ($group) => $group['rows']);
-        expect($rows)->toHaveCount(6)
+        expect($rows)->toHaveCount(8)
             ->and($rows->where('otp_excluded', true))->toHaveCount(2)
             ->and($rows->sum('actual_cft'))->toEqual(25)
             ->and($rows->where('otp_excluded', true)->sum('actual_cft'))->toEqual(0)
@@ -286,8 +287,8 @@ test('efficiency counts unique visited and productive customers per journey', fu
 });
 
 test('actual face time remains available when every planned CFT is zero or null', function () {
-    DB::table('customermaster')->update(['customerfacetime' => 0]);
-    DB::table('customermaster')->where('customercode', 101)->update(['customerfacetime' => null]);
+    DB::table('customervisitlog')->update(['cft' => 0]);
+    DB::table('customervisitlog')->where('customercode', 101)->update(['cft' => null]);
     $result = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
     expect($result['planned_cft_minutes'])->toEqual(0)
         ->and($result['cft_minutes'])->toEqual(25)
@@ -296,14 +297,14 @@ test('actual face time remains available when every planned CFT is zero or null'
 });
 
 test('face time details retain individual visits and handle missing plans incomplete timing and overnight visits', function () {
-    DB::table('customermaster')->where('customercode', 101)->update(['customerfacetime' => 20]);
-    DB::table('customermaster')->where('customercode', 105)->update(['customerfacetime' => null]);
+    DB::table('customervisitlog')->where('customercode', 101)->update(['cft' => 20]);
+    DB::table('customervisitlog')->where('customercode', 105)->update(['cft' => null]);
     DB::table('customervisitlog')->insert(['logkey' => 99, 'routekey' => 1, 'customercode' => 101, 'cft' => 20,
         'logstartdate' => '2026-09-01', 'logstarttime' => '23:50:00', 'logenddate' => '2026-09-02', 'logendtime' => '00:20:00']);
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $groups = app(DashboardCustomerDetails::class)->build($journeys, 'cft')['groups'];
-    expect($groups[0]['rows'])->toHaveCount(3)
+    expect($groups[0]['rows'])->toHaveCount(4)
         ->and($groups[0]['rows'][0])->toMatchArray(['planned_cft' => 0, 'actual_cft' => 0, 'variance' => null, 'otp_excluded' => true])
         ->and($groups[0]['rows'][1]['variance'])->toEqual(-10)
         ->and($groups[0]['rows'][2])->toMatchArray(['actual_cft' => 30, 'variance' => 10])
@@ -378,7 +379,7 @@ beforeEach(function () {
         'startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
-        'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
+        'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
         'invoiceheader (customercode integer default 101, routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'salesorderheader (customercode integer default 101, routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
@@ -427,16 +428,16 @@ beforeEach(function () {
     }
 });
 
-test('customer drilldowns separate planned visited and not visited and deduplicate unplanned customers', function () {
+test('compliance drilldowns keep customer visits together and include not visited customers', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     DB::table('customermaster')->where('customercode', 101)->update(['alternatecode' => 'C101', 'customeraddress1' => 'Customer One']);
     $service = app(DashboardCustomerDetails::class);
     $planned = $service->build($journeys, 'planned')['groups'];
     expect($planned)->toHaveCount(2)
-        ->and($planned[0]['rows'])->toHaveCount(2)
-        ->and($planned[0]['rows'][0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'Visited with OTP', 'visit_count' => 2, 'otp_visit_count' => 1])
-        ->and($planned[0]['rows'][1]['status'])->toBe('Not visited');
+        ->and($planned[0]['rows'])->toHaveCount(3)
+        ->and($planned[0]['rows'][0])->toMatchArray(['customer_code' => 'C101', 'customer_name' => 'Customer One', 'status' => 'OTP visit', 'visit_count' => 2, 'otp_visit_count' => 1])
+        ->and($planned[0]['rows'][2]['status'])->toBe('Not visited');
     $unplanned = $service->build($journeys, 'unplanned')['groups'];
     expect($unplanned)->toHaveCount(1)->and($unplanned[0]['rows'])->toHaveCount(3);
     DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
@@ -659,7 +660,7 @@ test('route transaction cards and documents match dashboard totals without requi
 
 test('face time variance excludes OTP planned allowances and incomplete visits', function ($target, $expectedPlan, $expectedVariance) {
     DB::table('customervisitlog')->whereIn('logkey', [11, 21, 22])->update(['cft' => 999]);
-    DB::table('customermaster')->whereIn('customercode', [101, 105])->update(['customerfacetime' => $target]);
+    DB::table('customervisitlog')->whereIn('customercode', [101, 105])->update(['cft' => $target]);
     $metrics = app(DashboardMetrics::class)->summarize(DB::table('startendday')->whereIn('routekey', [1, 2])->get());
     expect($metrics['actual_face_minutes'])->toEqual(25)
         ->and($metrics['planned_face_minutes'])->toEqual($expectedPlan)
@@ -693,30 +694,30 @@ test('all-route outside time totals available journeys without subtracting visit
 });
 
 
-test('planned customer OTP percentages deduplicate customers within each journey and keep groups disjoint', function () {
+test('planned qualification permits a qualifying non OTP revisit despite other OTP visits', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $service = app(DashboardMetrics::class);
     // Customer 101 has repeat visits and multiple OTP requests in journey 1,
-    // including a non-OTP repeat. It belongs only to the OTP customer group.
+    // including a qualifying non-OTP repeat. OTP counts are informational.
     $metrics = $service->summarize($journeys);
     expect($metrics)->toMatchArray([
-        'planned_customers' => 4, 'planned_visited_without_otp' => 0,
-        'planned_visited_with_otp' => 2, 'planned_without_otp_percent' => 0.0,
+        'planned_customers' => 4, 'planned_visited_without_otp' => 1,
+        'planned_visited_with_otp' => 2, 'planned_without_otp_percent' => 25.0,
         'planned_with_otp_percent' => 50.0,
     ]);
     // The same customer in a second journey counts separately, without OTP.
     DB::table('otplogdetail')->where('otplogid', 5)->delete();
     $metrics = $service->summarize($journeys);
     expect($metrics)->toMatchArray([
-        'planned_visited_without_otp' => 1, 'planned_visited_with_otp' => 1,
-        'planned_without_otp_percent' => 25.0, 'planned_with_otp_percent' => 25.0,
+        'planned_visited_without_otp' => 2, 'planned_visited_with_otp' => 1,
+        'planned_without_otp_percent' => 50.0, 'planned_with_otp_percent' => 25.0,
     ]);
     // OTP on an unplanned customer cannot inflate either planned numerator.
     DB::table('otplogdetail')->insert(['otplogid' => 90, 'routecode' => 1, 'customercode' => 104,
         'otpdate' => '2026-09-03', 'otptime' => '11:00:00', 'otptype' => 'OTHER']);
     expect($service->summarize($journeys)['planned_visited_with_otp'])->toBe(1);
     $details = app(DashboardCustomerDetails::class)->build($journeys, 'planned')['groups'];
-    expect($details[1]['rows'][0]['status'])->toBe('Visited without OTP');
+    expect($details[1]['rows'][0]['status'])->toBe('Qualified');
     expect($service->summarize(collect()))->toMatchArray([
         'planned_visited_without_otp' => 0, 'planned_visited_with_otp' => 0,
         'planned_without_otp_percent' => null, 'planned_with_otp_percent' => null,
@@ -733,16 +734,16 @@ test('unplanned OTP customers are separate, deduplicated and require a journey p
         'logenddate' => '2026-09-03', 'logendtime' => '14:10:00', 'cft' => 10]);
     $service = app(DashboardMetrics::class);
     expect($service->summarize($journeys))->toMatchArray([
-        'unplanned_customers' => 3, 'unplanned_customers_without_otp' => 2,
+        'unplanned_customers' => 3, 'unplanned_customers_without_otp' => 1,
         'unplanned_customers_with_otp' => 1,
         'all_unique_visited_customers' => 5,
-        'unplanned_without_otp_percent' => 40.0, 'unplanned_with_otp_percent' => 20.0,
+        'unplanned_without_otp_percent' => 20.0, 'unplanned_with_otp_percent' => 20.0,
     ]);
     $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, 'unplanned')['groups'][0]['rows']);
     expect($rows->firstWhere('customercode', 104))->toMatchArray([
-        'status' => 'Visited with OTP', 'visit_count' => 2, 'otp_visit_count' => 1,
+        'status' => 'OTP visit', 'visit_count' => 2, 'otp_visit_count' => 1,
     ]);
-    expect($rows->firstWhere('customercode', 105)['status'])->toBe('Visited without OTP');
+    expect($rows->firstWhere('customercode', 105)['status'])->toBe('CFT not met');
     DB::table('routesequencecustomerstatus')->where('routekey', 2)->delete();
     expect($service->summarize($journeys))->toMatchArray([
         'unplanned_customers_without_otp' => 0, 'unplanned_customers_with_otp' => 0,
@@ -752,4 +753,90 @@ test('unplanned OTP customers are separate, deduplicated and require a journey p
         'all_unique_visited_customers' => 0,
         'unplanned_without_otp_percent' => null, 'unplanned_with_otp_percent' => null,
     ]);
+});
+
+
+test('compliance requires one complete non OTP visit meeting a positive per visit CFT', function ($target, $minutes, $expected) {
+    DB::table('customervisitlog')->where('logkey', 12)->update([
+        'cft' => $target, 'logendtime' => $minutes === null ? null : ($minutes === 10 ? '10:40:00' : '10:39:59'),
+    ]);
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $metrics = app(DashboardMetrics::class)->summarize($journeys);
+    expect($metrics['planned_visited_without_otp'])->toBe($expected ? 1 : 0);
+    $rows = app(DashboardCustomerDetails::class)->build($journeys, 'planned')['groups'][0]['rows'];
+    expect($rows[0]['has_otp'])->toBeTrue()
+        ->and($rows[0]['qualified'])->toBeFalse()
+        ->and($rows[1]['is_revisit'])->toBeTrue()
+        ->and($rows[1]['qualified'])->toBe($expected)
+        ->and($rows[1]['customer_qualified'])->toBe($expected)
+        ->and($rows[2]['status'])->toBe('Not visited');
+})->with([
+    'exact target' => [10, 10, true],
+    'above target' => [9.5, 10, true],
+    'one second below target' => [10, 9, false],
+    'missing target' => [null, 10, false],
+    'zero target' => [0, 10, false],
+    'negative target' => [-5, 10, false],
+    'incomplete visit' => [10, null, false],
+]);
+
+test('compliance popup follows route status sequence and keeps revisits together', function () {
+    DB::table('routesequencecustomerstatus')->where('routekey', 1)->where('customercode', 102)->update(['sequencenumber' => 1]);
+    DB::table('routesequencecustomerstatus')->where('routekey', 1)->where('customercode', 101)->update(['sequencenumber' => 2]);
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $rows = app(DashboardCustomerDetails::class)->build($journeys, 'planned')['groups'][0]['rows'];
+    expect($rows->pluck('customercode')->all())->toEqual([102, 101, 101])
+        ->and($rows[0]['status'])->toBe('Not visited')
+        ->and($rows[2]['visit_number'])->toBe(2);
+});
+
+
+test('short revisits cannot combine duration to qualify and unvisited route status customers remain visible', function () {
+    DB::table('otplogdetail')->delete();
+    DB::table('customervisitlog')->where('customercode', 101)->update(['cft' => 25]);
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    expect(app(DashboardMetrics::class)->summarize($journeys)['planned_visited_without_otp'])->toBe(0);
+    DB::table('routesequencecustomerstatus')->insert(['routekey' => 1, 'customercode' => 105, 'schelduledflag' => 0, 'sequencenumber' => 3]);
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $rows = app(DashboardCustomerDetails::class)->build($journeys, 'unplanned')['groups'][0]['rows'];
+    expect($rows)->toHaveCount(1)
+        ->and($rows[0])->toMatchArray(['customercode' => 105, 'sequence' => 3, 'status' => 'Not visited', 'qualified' => false, 'planned_cft' => null]);
+});
+
+
+test('face time and productivity details expose the recorded automatic checkout flag', function () {
+    DB::table('customervisitlog')->where('logkey', 12)->update(['autocheckout' => 1]);
+    $journeys = DB::table('startendday')->where('routekey', 1)->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    foreach (['actual_face', 'productive'] as $type) {
+        $rows = app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'][0]['rows']->keyBy('id');
+        expect($rows[12]['auto_checkout'])->toBeTrue()->and($rows[11]['auto_checkout'])->toBeFalse();
+    }
+});
+
+
+test('unvisited planned targets use customer then matching division and channel and agree across cards and popups', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $before = app(DashboardMetrics::class)->summarize($journeys);
+    DB::table('customermaster')->where('customercode', 102)->update(['customerfacetime' => 12, 'DivisionCode' => 'D1', 'channel' => 'Retail']);
+    DB::table('customermaster')->where('customercode', 103)->update(['customerfacetime' => 0, 'DivisionCode' => 'D2', 'channel' => 'Wholesale']);
+    DB::table('customerclustermapping')->insert([
+        ['divisioncode' => 'D1', 'channel' => 'Retail', 'cft' => 30],
+        ['divisioncode' => 'D2', 'channel' => 'Wholesale', 'cft' => 25],
+        ['divisioncode' => 'D2', 'channel' => 'Retail', 'cft' => 90],
+        ['divisioncode' => 'D1', 'channel' => 'Wholesale', 'cft' => 80],
+    ]);
+    $after = app(DashboardMetrics::class)->summarize($journeys);
+    expect($after['planned_face_minutes'])->toEqual($before['planned_face_minutes'] + 37)
+        ->and($after['actual_face_minutes'])->toEqual($before['actual_face_minutes'])
+        ->and(collect($after['analysis']['journeys'])->sum('expected_cft'))->toEqual($after['planned_cft_minutes']);
+    foreach (['cft', 'actual_face', 'planned'] as $type) {
+        $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])->flatMap(fn ($group) => $group['rows']);
+        expect($rows->firstWhere('customercode', 102)['planned_cft'])->toEqual(12)
+            ->and($rows->firstWhere('customercode', 103)['planned_cft'])->toEqual(25)
+            ->and($rows->firstWhere('customercode', 102)['actual_cft'])->toEqual(0);
+    }
 });

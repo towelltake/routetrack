@@ -74,3 +74,26 @@ test('route face time variance compares planned and actual durations without OTP
     $result = $method->invoke(app(RouteTrackingController::class), ['duration' => null, 'stationary_seconds' => 0, 'stationary_periods' => []], collect());
     expect($result['face_time_variance_percent'])->toBeNull();
 });
+
+
+test('unreliable idle excludes customer overlap and stays separate from reliable idle', function () {
+    $actual = ['duration' => 1200, 'stationary_seconds' => 1200, 'stationary_periods' => [
+        ['start_time' => '2026-10-21 08:00:00', 'end_time' => '2026-10-21 08:10:00', 'duration_seconds' => 600, 'unreliable' => false],
+        ['start_time' => '2026-10-21 08:10:00', 'end_time' => '2026-10-21 08:20:00', 'duration_seconds' => 600, 'unreliable' => true],
+    ]];
+    $visits = collect([['visit_start_date' => '2026-10-21', 'visit_start_time' => '08:10:00', 'visit_end_date' => '2026-10-21', 'visit_end_time' => '08:15:00', 'visit_duration_minutes' => 5]]);
+    $summary = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(app(RouteTrackingController::class), $actual, $visits);
+    expect($summary['stationary_without_customer_seconds'])->toBe(900)
+        ->and($summary['reliable_idle_seconds'])->toBe(600)->and($summary['unreliable_idle_seconds'])->toBe(300);
+});
+
+
+test('route CFT includes unvisited planned target seconds without adding actual time', function () {
+    $actual = ['duration' => 3600, 'stationary_seconds' => 0, 'stationary_periods' => [], 'unvisited_planned_cft_seconds' => 1800];
+    $visits = collect([['visit_duration_minutes' => 10, 'default_face_time_minutes' => 20, 'otp_logs' => []]]);
+    $method = new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime');
+    $summary = $method->invoke(app(RouteTrackingController::class), $actual, $visits);
+    expect($summary['planned_cft'])->toEqual(3000)->and($summary['actual_cft'])->toEqual(600)->and($summary['face_time_variance_percent'])->toEqual(-80);
+    $summary = $method->invoke(app(RouteTrackingController::class), $actual, collect());
+    expect($summary['planned_cft'])->toEqual(1800)->and($summary['actual_cft'])->toEqual(0)->and($summary['face_time_variance_percent'])->toEqual(-100);
+});

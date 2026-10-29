@@ -21,9 +21,8 @@ class DashboardMetrics
             ->whereIn('v.customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('v.routekey', $keys)
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
-            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime']);
-        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
-        foreach ($visits as $visit) $visit->expected_minutes = $faceTime->get($visit->customercode, 0);
+            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime', 'v.cft']);
+        foreach ($visits as $visit) $visit->expected_minutes = CustomerFaceTime::plannedMinutes($visit->cft);
         $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
             ->whereIn('customercode', $visits->pluck('customercode')->unique())
             ->pluck('customercode')->flip();
@@ -73,6 +72,7 @@ class DashboardMetrics
             ])->values()->all();
         }
 
+        $qualified = [];
         $visited = [];
         $otpCustomers = [];
         $eligibleVisited = [];
@@ -100,12 +100,15 @@ class DashboardMetrics
             if ($start === null || $end === null || $end < $start) {
                 continue;
             }
+            if (CustomerFaceTime::qualifies(($end - $start) / 60, $visit->cft, !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]))) {
+                $qualified[$visit->routekey.':'.$visit->customercode] = true;
+            }
             if (!$visit->productivity_excluded) $completed++;
             $actualSeconds += $end - $start;
             if ($visit->expected_minutes > 0 && empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) {
                 $configuredVisits++;
                 $configuredSeconds += $end - $start;
-                $expectedMinutes += (int) $visit->expected_minutes;
+                $expectedMinutes += $visit->expected_minutes;
                 if (!isset($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) $plannedFaceMinutes += (float) $visit->expected_minutes;
             }
             $transactionKeys = $operations->get($visit->routekey.':'.$visit->logkey, collect())
@@ -121,9 +124,11 @@ class DashboardMetrics
         }
         $covered = 0;
         $plannedOtp = 0;
+        $plannedQualified = 0;
         $pending = 0;
         $missed = 0;
         foreach ($plans as $plan) {
+            if (isset($qualified[$plan->routekey.':'.$plan->customercode])) $plannedQualified++;
             if (isset($visited[$plan->routekey.':'.$plan->customercode])) {
                 $covered++;
                 if (isset($otpCustomers[$plan->routekey.':'.$plan->customercode])) $plannedOtp++;
@@ -140,11 +145,20 @@ class DashboardMetrics
             && !$planKeys->has($visit->routekey.':'.$visit->customercode)
             && isset($otpCustomers[$visit->routekey.':'.$visit->customercode]))
             ->unique(fn ($visit) => $visit->routekey.':'.$visit->customercode)->count();
+        $unvisited = app(CustomerFaceTime::class)->unvisitedPlans($plans, $visits)
+            ->keyBy(fn ($plan) => $plan->routekey.':'.$plan->customercode);
+        foreach ($plans as $plan) $plan->unvisited_cft_minutes = $unvisited->get($plan->routekey.':'.$plan->customercode)?->expected_minutes ?? 0;
+        $unvisitedMinutes = $plans->sum('unvisited_cft_minutes');
+        $plannedFaceMinutes += $unvisitedMinutes;
+        $expectedMinutes += $unvisitedMinutes;
         $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
         $operational = collect($analysis['journeys'])->whereNotNull('operational_minutes');
-        $unplannedWithoutOtp = collect($analysis['journeys'])->sum('unplanned_customers') - $unplannedOtp;
+        $unplannedWithoutOtp = $visits->filter(fn ($visit) => $journeysWithPlans->has($visit->routekey)
+            && !$planKeys->has($visit->routekey.':'.$visit->customercode)
+            && isset($qualified[$visit->routekey.':'.$visit->customercode]))
+            ->unique(fn ($visit) => $visit->routekey.':'.$visit->customercode)->count();
 
         return [
             'unplanned_customers' => collect($analysis['journeys'])->sum('unplanned_customers'),
@@ -173,9 +187,9 @@ class DashboardMetrics
             'routes_not_started' => null,
             'planned_customers' => $plans->count(),
             'planned_visited' => $covered,
-            'planned_visited_without_otp' => $covered - $plannedOtp,
+            'planned_visited_without_otp' => $plannedQualified,
             'planned_visited_with_otp' => $plannedOtp,
-            'planned_without_otp_percent' => $plans->isEmpty() ? null : round(100 * ($covered - $plannedOtp) / $plans->count(), 1),
+            'planned_without_otp_percent' => $plans->isEmpty() ? null : round(100 * $plannedQualified / $plans->count(), 1),
             'planned_with_otp_percent' => $plans->isEmpty() ? null : round(100 * $plannedOtp / $plans->count(), 1),
             'coverage_percent' => $plans->isEmpty() ? null : round(100 * $covered / $plans->count(), 1),
             'pending_customers' => $pending,
@@ -200,7 +214,7 @@ class DashboardMetrics
             'productivity_percent' => $completed ? round(100 * $productive / $completed, 1) : null,
             'cft_minutes' => round($actualFaceMinutes, 1),
             'recorded_visit_minutes' => $actualSeconds / 60,
-            'cft_variance_minutes' => $configuredVisits ? round($configuredSeconds / 60 - $expectedMinutes, 1) : null,
+            'cft_variance_minutes' => ($configuredVisits || $expectedMinutes > 0) ? round($configuredSeconds / 60 - $expectedMinutes, 1) : null,
             'cft_configured_visits' => $configuredVisits,
             'amounts' => $amounts,
             'otp' => ['events' => $otp['events'], 'visits' => $otp['visits']],

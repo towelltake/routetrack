@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 uses(Tests\TestCase::class);
 
-test('dashboard and tracking resolve customer CFT before division and channel fallback', function ($masterCft, $mappingCft, int $expected, bool $missingMapping = false) {
+test('dashboard and tracking use recorded visit CFT without master fallback', function ($visitCft, $expected) {
     config(['database.default' => 'cft_test', 'database.connections.cft_test' => [
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
@@ -13,37 +13,37 @@ test('dashboard and tracking resolve customer CFT before division and channel fa
 
     foreach ([
         'customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer, activecustomer integer default 1, customeraddress1 text, alternatecode text, fixedlatitude real, fixedlongitude real, toplpo integer)',
+        'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
-        'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer)',
+        'customervisitlog (logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft real, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
     ] as $table) {
         DB::statement('CREATE TABLE '.$table);
     }
     DB::table('customermaster')->insert([
         'customercode' => 1,
-        'toplpo' => 1, 'customerfacetime' => $masterCft, 'DivisionCode' => 'D1', 'channel' => 'Retail',
+        'toplpo' => 1, 'customerfacetime' => 88, 'DivisionCode' => 'D1', 'channel' => 'Retail',
         'fixedlatitude' => 23.5, 'fixedlongitude' => 58.5,
     ]);
     DB::table('customerclustermapping')->insert([
-        ['divisioncode' => 'D1', 'channel' => 'Retail', 'cft' => $mappingCft],
+        ['divisioncode' => 'D1', 'channel' => 'Retail', 'cft' => 99],
         ['divisioncode' => 'D2', 'channel' => 'Retail', 'cft' => 88],
         ['divisioncode' => 'D1', 'channel' => 'Wholesale', 'cft' => 99],
     ]);
-    if ($missingMapping) {
-        DB::table('customerclustermapping')->where('divisioncode', 'D1')->where('channel', 'Retail')->delete();
-    }
+
     DB::table('customervisitlog')->insert([
         'logkey' => 1, 'customercode' => 1, 'routekey' => 100,
         'logstartdate' => '2026-09-07 00:00:00', 'logstarttime' => '10:00:00',
         'logenddate' => '2026-09-07 00:00:00', 'logendtime' => '10:18:45',
-        'cft' => 999,
+        'cft' => $visitCft, 'autocheckout' => 1,
     ]);
 
     $method = new ReflectionMethod(RouteTrackingController::class, 'fetchCustomerVisits');
     $visits = $method->invoke(app(RouteTrackingController::class), 100, 1);
     expect($visits)->toHaveCount(1)
         ->and($visits->first()['toplpo'])->toBe(1)
-        ->and($visits->first()['default_face_time_minutes'])->toBe($expected)
+        ->and($visits->first()['auto_checkout'])->toBeTrue()
+        ->and($visits->first()['default_face_time_minutes'])->toEqual($expected)
         ->and($visits->first()['visit_duration_minutes'])->toBe(18.75);
     $time = (new ReflectionMethod(RouteTrackingController::class, 'summarizeVisitTime'))->invoke(
         app(RouteTrackingController::class), ['duration' => 3600, 'stationary_seconds' => 0, 'stationary_periods' => []], $visits,
@@ -57,28 +57,26 @@ test('dashboard and tracking resolve customer CFT before division and channel fa
         ->and($time['planned_cft'])->toEqual($expected * 60);
 
 })->with([
-    'customer override wins' => [12, 20, 12],
-    'null override uses matching mapping' => [null, 20, 20],
-    'zero override uses matching mapping' => [0, 15, 15],
-    'negative override uses matching mapping' => [-1, 15, 15],
-    'no positive target' => [0, null, 0],
-    'negative mapping is unavailable' => [0, -5, 0],
-    'neither partial mapping matches both keys' => [0, 20, 0, true],
-    'customer override does not require mapping' => [12, 20, 12, true],
+    'recorded visit target' => [12, 12],
+    'fractional minutes' => [12.5, 12.5],
+    'null has no fallback' => [null, 0],
+    'zero has no fallback' => [0, 0],
+    'negative has no fallback' => [-5, 0],
 ]);
 
-test('planned face time totals targets for every planned customer', function () {
+test('planned face time keeps each repeated visit target and journey scope', function () {
     config(['database.default' => 'planned_cft_test', 'database.connections.planned_cft_test' => [
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
     DB::purge('planned_cft_test');
     DB::statement('CREATE TABLE customermaster (customerfacetime integer default 0, DivisionCode text, channel text, customercode integer, activecustomer integer)');
     DB::statement('CREATE TABLE customerclustermapping (divisioncode text, channel text, cft integer)');
-    foreach ([1, 2, 3, 99] as $code) DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1, 'customerfacetime' => [1 => 15, 2 => 20][$code] ?? 0]);
-    DB::statement('CREATE TABLE customervisitlog (routekey integer, customercode integer, cft integer)');
+    foreach ([1, 2, 3, 4, 99] as $code) DB::table('customermaster')->insert(['customercode' => $code, 'activecustomer' => 1, 'customerfacetime' => [1 => 15, 2 => 20, 4 => 26][$code] ?? 0]);
+    DB::statement('CREATE TABLE customervisitlog (routekey integer, customercode integer, cft integer, autocheckout integer default 0)');
     DB::table('customervisitlog')->insert([
         ['routekey' => 100, 'customercode' => 1, 'cft' => 15],
         ['routekey' => 100, 'customercode' => 2, 'cft' => 20],
+        ['routekey' => 100, 'customercode' => 1, 'cft' => 7],
         ['routekey' => 100, 'customercode' => 3, 'cft' => null],
         ['routekey' => 200, 'customercode' => 1, 'cft' => 99],
         ['routekey' => 100, 'customercode' => 99, 'cft' => 99],
@@ -89,7 +87,8 @@ test('planned face time totals targets for every planned customer', function () 
         (object) ['customercode' => 1],
         (object) ['customercode' => 2],
         (object) ['customercode' => 3],
+        (object) ['customercode' => 4],
     ]));
 
-    expect($seconds)->toBe(35 * 60);
+    expect($seconds)->toBe(68 * 60);
 });

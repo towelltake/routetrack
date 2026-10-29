@@ -226,18 +226,45 @@ class RouteTrackingController extends Controller
         $durationRatio = $planned['duration'] > 0 && $actual['duration'] !== null
             ? $actual['duration'] / $planned['duration']
             : null;
+        $actual['unvisited_planned_cft_seconds'] = collect($planned['unvisited_cft_customers'] ?? [])->sum('default_face_time_minutes') * 60;
         $actual = $this->summarizeVisitTime($actual, collect($planned['customer_visits']));
 
         $transactionSummary = $this->summarizeTransactions($planned['routekey']);
+        $journey = $this->selectedSummaryJourney($validated['routecode'], $validated['date']);
+        $customerMetrics = $journey ? app(\App\Services\DashboardMetrics::class)->summarize(collect([$journey])) : null;
 
         return response()->json([
             'planned' => $planned,
             'actual' => $actual,
             'transactions' => $transactionSummary,
+            'customer_metrics' => $customerMetrics,
+            'selected_scope' => ['routecode' => $validated['routecode'], 'date' => $validated['date'], 'routekey' => $journey?->routekey],
             'efficiency' => $this->summarizeEfficiency(collect($planned['customer_visits'])),
             'distance_ratio' => $distanceRatio,
             'duration_ratio' => $durationRatio,
         ]);
+    }
+
+    private function selectedSummaryJourney(int $routecode, string $date, ?int $routekey = null): ?object
+    {
+        $selected = $routekey === null ? $this->findRouteDay($routecode, $date) : (object) ['routekey' => $routekey];
+        if (!$selected) return null;
+        $journey = DB::table('startendday')->where('routecode', $routecode)->where('routekey', $selected->routekey)->first();
+        if ($journey) {
+            $details = $this->routeDetails($journey, $routecode);
+            $journey->routename = $details['routename'] ?? '';
+            $journey->salesman = $details['salesmanname'] ?? '';
+        }
+        return $journey;
+    }
+
+    public function customerDetails(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['routecode' => ['required', 'integer'], 'date' => ['required', 'date_format:Y-m-d'],
+            'routekey' => ['present', 'nullable', 'integer'], 'type' => ['required', 'in:coverage,planned,unplanned,otp,productive,efficiency']]);
+        $this->ensureRouteAllowed($validated['routecode']);
+        $journey = $validated['routekey'] === null ? null : $this->selectedSummaryJourney($validated['routecode'], $validated['date'], $validated['routekey']);
+        return response()->json(app(\App\Services\DashboardCustomerDetails::class)->build($journey ? collect([$journey]) : collect(), $validated['type']));
     }
 
     public function transactionDetails(Request $request): JsonResponse
@@ -291,30 +318,52 @@ class RouteTrackingController extends Controller
     {
         $timing = $this->routeTiming($routecode, $date);
         $totalDuration = $timing['duration'] === null ? null : $timing['duration'] * 60;
-        $rawPoints = $this->fetchTrackingPoints($routecode, [$date]);
+        $work = app(\App\Services\WorkTracking::class);
+        $tracking = $work->load($routecode, $date);
+        $rawPoints = $tracking['points'];
+        $routeStart = $timing['start'];
+        $routeDay = $this->findRouteDay($routecode, $date);
+        $routeEnd = (int) ($routeDay->routeclosed ?? 0) === 1 ? $timing['end'] : null;
+        $routePoints = array_values(array_filter($rawPoints, fn ($point) => $routeStart !== null
+            && strtotime($point->effective_timestamp) >= $routeStart
+            && ($routeEnd === null || strtotime($point->effective_timestamp) <= $routeEnd)));
+        $outsideGeometries = $work->outsideGeometries($rawPoints, $routeStart, $routeEnd);
         $detector = app(StationaryDetection::class);
-        $stationary = $detector->detect($rawPoints);
-        $gpsGaps = $detector->detectGaps($rawPoints);
+        $allPoints = $tracking['all_points'] ?? $rawPoints;
+        $stationary = $detector->detect($allPoints, true);
+        $gpsGaps = $detector->detectGaps($allPoints, true);
         $usableTimes = array_values(array_filter(array_map(
-            fn ($point) => $detector->usable($point) ? strtotime($point->effective_timestamp) : false, $rawPoints
+            fn ($point) => $detector->validCoordinates($point) ? strtotime($point->effective_timestamp) : false, $rawPoints
         ), fn ($time) => $time !== false));
         $stationaryData = [
+            'tracking_available' => $tracking['available'],
+            'tracking_point_count' => count($allPoints),
+            'tracking_message' => $tracking['reason'],
+            'unreliable_geometries' => $work->unreliableGeometries($allPoints),
+            'tracking_start_time' => $tracking['start'] === null ? null : date('Y-m-d H:i:s', $tracking['start']),
+            'tracking_end_time' => $tracking['end'] === null ? null : date('Y-m-d H:i:s', $tracking['end']),
+            'tracking_start' => $work->marker($rawPoints[0] ?? null, $tracking['start']),
+            'last_known_location' => $work->marker($rawPoints ? $rawPoints[array_key_last($rawPoints)] : null, $tracking['end']),
+            'route_start_marker' => $work->eventMarker($allPoints, $routeStart),
+            'route_end_marker' => $work->eventMarker($allPoints, $routeEnd),
+            'outside_route_geometries' => $outsideGeometries,
             'journey_start_timestamp' => $timing['start'],
             'travel_gps_first' => $usableTimes ? min($usableTimes) : null,
             'travel_gps_last' => $usableTimes ? max($usableTimes) : null,
             'stationary_periods' => $stationary,
-            'stationary_seconds' => array_sum(array_column($stationary, 'duration_seconds')),
+            'stationary_seconds' => count($allPoints) >= 2 ? array_sum(array_column($stationary, 'duration_seconds')) : null,
             'stationary_minimum_minutes' => config('tracking.stationary_minutes'),
+            'stationary_radius_m' => config('tracking.stationary_radius_m'),
             'stationary_max_gap_seconds' => config('tracking.stationary_max_gap_seconds'),
             'gps_gaps' => $gpsGaps,
             'gps_gap_seconds' => array_sum(array_column($gpsGaps, 'duration_seconds')),
         ];
-        $points = $this->removeSpeedAnomalies($this->downsampleByDistance($rawPoints));
+        $points = $this->removeSpeedAnomalies($this->downsampleByDistance($routePoints));
 
         if (count($points) < 2) {
             return [
                 ...$stationaryData,
-                'has_tracking_data' => false,
+                'has_tracking_data' => count($allPoints) > 0,
                 'distance' => 0,
                 'duration' => $totalDuration,
                 'geometries' => [],
@@ -414,24 +463,9 @@ class RouteTrackingController extends Controller
 
     private function fetchTrackingPoints(int $routecode, array $dates): array
     {
-        // date + time is the actual tracking timestamp; cdate is only the
-        // database audit/creation time and must not be sent to OSRM.
-        $points = DB::connection('tracking_pgsql')->table('trac_routetrack')
-            ->where('routecode', $routecode)
-            ->whereIn('date', $dates)
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->where('latitude', '!=', 0)
-            ->where('longitude', '!=', 0)
-            // Selecting the row also supports databases/devices without the optional columns.
-            ->selectRaw('trac_routetrack.*, date + time as effective_timestamp')
-            ->orderBy('effective_timestamp')
-            ->orderBy('id')
-            ->get()
-            ->filter(fn ($point) => app(StationaryDetection::class)->usable($point))
-            ->values()
-            ->all();
-
+        $points = [];
+        foreach ($dates as $date) $points = array_merge($points, app(\App\Services\WorkTracking::class)->load($routecode, $date)['points']);
+        usort($points, fn ($a, $b) => strcmp($a->effective_timestamp, $b->effective_timestamp) ?: ($a->id <=> $b->id));
         return $points;
     }
 
@@ -569,6 +603,15 @@ class RouteTrackingController extends Controller
         ]);
         $operationalOtp = app(\App\Services\DashboardMetrics::class)->otp(collect([$routeDay]), $operationalLogs)['by_visit'];
         $visits = $visits->map(fn ($visit) => $visit + ['operational_otp' => !empty($operationalOtp[$routeDay->routekey.':'.$visit['logkey']])]);
+        $planRows = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routeDay->routekey, 'customercode' => $plan->customercode]);
+        $unvisitedPlans = app(CustomerFaceTime::class)->unvisitedPlans($planRows, $visits->map(fn ($visit) => (object) $visit));
+        $unvisitedCustomers = CustomerMaster::query()->whereIn('customercode', $unvisitedPlans->pluck('customercode'))
+            ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
+        $unvisitedCft = $unvisitedPlans->map(fn ($plan) => [
+            'customercode' => $plan->customercode, 'alternatecode' => $unvisitedCustomers->get($plan->customercode)?->alternatecode,
+            'customername' => $unvisitedCustomers->get($plan->customercode)?->customeraddress1 ?? 'Customer '.$plan->customercode,
+            'default_face_time_minutes' => $plan->expected_minutes, 'not_visited' => true,
+        ]);
         $plannedCodes = $journeyPlan->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
         $visitedCodes = $visits->pluck('customercode')->map(fn ($code) => (string) $code)->unique();
         $plannedVisitedCount = $plannedCodes->intersect($visitedCodes)->count();
@@ -668,9 +711,13 @@ class RouteTrackingController extends Controller
             'distance' => $totalDistance,
             'duration' => $totalDuration,
             'face_time' => $plannedFaceTime,
+            'unvisited_cft_customers' => $unvisitedCft->values(),
             'geometries' => $geometries,
             'customers' => $orderedCustomers,
             'customer_visits' => $visits->values(),
+            'unplanned_compliance' => app(\App\Services\DashboardCustomerDetails::class)->build(collect([
+                (object) array_merge((array) $routeDay, ['routename' => $routeDay->routename ?? '', 'salesman' => $routeDay->salesman ?? '']),
+            ]), 'unplanned'),
             'otp_logs' => $otpLogs->values(),
             'chunks_failed' => $chunksFailed,
             'osrm_legs' => $osrmLegs,
@@ -880,9 +927,10 @@ class RouteTrackingController extends Controller
             ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->where('routekey', $routekey)
             ->whereIn('customercode', $customerCodes)
-            ->pluck('customercode');
-        $faceTime = app(CustomerFaceTime::class)->minutesFor($visitCustomers);
-        $minutes = $visitCustomers->sum(fn ($code) => $faceTime->get($code, 0));
+            ->get(['routekey', 'customercode', 'cft']);
+        $minutes = $visitCustomers->sum(fn ($visit) => CustomerFaceTime::plannedMinutes($visit->cft));
+        $plans = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routekey, 'customercode' => $plan->customercode]);
+        $minutes += app(CustomerFaceTime::class)->unvisitedPlans($plans, $visitCustomers)->sum('expected_minutes');
 
         return (int) round((float) $minutes * 60);
     }
@@ -971,7 +1019,8 @@ class RouteTrackingController extends Controller
             ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
         $actual['actual_cft'] = $actual['face_time'] - $actual['otp_customer_time'];
         $actual['planned_cft'] = $visits->filter(fn (array $visit) => ($visit['visit_duration_minutes'] ?? null) !== null && !($visit['operational_otp'] ?? !empty($visit['otp_logs'])))
-            ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60);
+            ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60)
+            + ($actual['unvisited_planned_cft_seconds'] ?? 0);
         $actual['face_time_variance_percent'] = $actual['planned_cft'] > 0
             ? round(100 * ($actual['actual_cft'] - $actual['planned_cft']) / $actual['planned_cft'], 1) : null;
         $actual = array_replace($actual, app(\App\Services\TravelTime::class)->summarize($actual, $visits));
@@ -1004,8 +1053,13 @@ class RouteTrackingController extends Controller
         unset($period);
         $actual['stationary_with_customer_seconds'] = array_sum(array_column($actual['stationary_periods'], 'with_customer_seconds'));
         $actual['stationary_without_customer_seconds'] = array_sum(array_column($actual['stationary_periods'], 'without_customer_seconds'));
+        $actual['unreliable_idle_seconds'] = array_sum(array_map(fn ($period) => !empty($period['unreliable']) ? $period['without_customer_seconds'] : 0, $actual['stationary_periods']));
+        $actual['reliable_idle_seconds'] = $actual['stationary_without_customer_seconds'] - $actual['unreliable_idle_seconds'];
         $actual['idle_periods'] = array_values(array_filter($actual['stationary_periods'], fn (array $period) => empty($period['customer_visits'])));
         $actual['idle_seconds'] = array_sum(array_column($actual['idle_periods'], 'duration_seconds'));
+        if (array_key_exists('tracking_available', $actual) && (!$actual['tracking_available'] || ($actual['tracking_point_count'] ?? 0) < 2)) {
+            foreach (['stationary_seconds', 'stationary_with_customer_seconds', 'stationary_without_customer_seconds', 'idle_seconds', 'unreliable_idle_seconds', 'reliable_idle_seconds'] as $field) $actual[$field] = null;
+        }
 
         return $actual;
     }
@@ -1168,6 +1222,8 @@ class RouteTrackingController extends Controller
             ->orderBy('cvl.logkey')
             ->get([
                 'cvl.logkey',
+                'cvl.cft',
+                'cvl.autocheckout',
                 'cvl.customercode',
                 'cvl.logstartdate',
                 'cvl.logstarttime',
@@ -1179,8 +1235,7 @@ class RouteTrackingController extends Controller
                 'cm.fixedlongitude',
                 'cm.toplpo',
             ]);
-        $faceTime = app(CustomerFaceTime::class)->minutesFor($visits->pluck('customercode'));
-        $visits = $visits->map(function (object $visit) use ($operations, $routekey, $faceTime) {
+        $visits = $visits->map(function (object $visit) use ($operations, $routekey) {
                 $visitOperations = $operations->get($visit->logkey, collect());
                 // Keep the latest operation for coordinates, but use every linked key for transactions.
                 $operation = $visitOperations->first();
@@ -1207,7 +1262,8 @@ class RouteTrackingController extends Controller
                     'visit_start_time' => $startTime,
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
-                    'default_face_time_minutes' => $faceTime->get($visit->customercode, 0),
+                    'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
+                    'default_face_time_minutes' => CustomerFaceTime::plannedMinutes($visit->cft),
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? ($endTimestamp - $startTimestamp) / 60
                         : null,

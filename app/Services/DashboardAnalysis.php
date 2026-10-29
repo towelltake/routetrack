@@ -33,7 +33,7 @@ class DashboardAnalysis
                 'visits' => $journeyVisits->count(), 'customer_codes' => $journeyVisits->pluck('customercode')->map(fn ($code) => (string) $code)->unique()->values()->all(),
                 'completed' => 0, 'productive' => 0, 'nonproductive' => 0,
                 'unplanned' => 0, 'unplanned_customers' => 0, 'out_of_sequence' => 0, 'repeat' => 0,
-                'actual_cft' => 0, 'expected_cft' => 0, 'configured_actual_cft' => 0, 'configured_visits' => 0,
+                'actual_cft' => 0, 'expected_cft' => $plan->sum(fn ($customer) => $customer->unvisited_cft_minutes ?? 0), 'configured_actual_cft' => 0, 'configured_visits' => 0,
                 'missing_cft' => 0, 'incomplete_visits' => 0,
                 'duration' => $duration, 'visit_time' => null, 'remaining_time' => null, 'stationary_time' => null,
                 'operational_minutes' => $operational['minutes'], 'operational_start' => $operational['start'], 'operational_end' => $operational['end'],

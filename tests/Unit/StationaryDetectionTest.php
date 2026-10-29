@@ -43,11 +43,11 @@ test('legacy readings work and poor or invalid coordinates are rejected', functi
     }
     expect($detector->detect($points)[0]['accuracy_unknown'])->toBeTrue();
     $point = $points[0];
-    foreach ([null, 0, 49.9] as $accuracy) {
+    foreach ([null, 0, 49.9, 50] as $accuracy) {
         $point->accuracy_m = $accuracy;
         expect($detector->usable($point))->toBeTrue();
     }
-    foreach ([50, 80, -1, 'bad'] as $accuracy) {
+    foreach ([50.1, 80, -1, 'bad'] as $accuracy) {
         $point->accuracy_m = $accuracy;
         expect($detector->usable($point))->toBeFalse();
     }
@@ -107,12 +107,6 @@ test('actual route detects legacy stationary pings before downsampling and filte
     foreach ($points as $point) unset($point->accuracy_m, $point->provider);
     $points[] = (object) ['latitude' => 23.8, 'longitude' => 58.5,
         'accuracy_m' => 70, 'effective_timestamp' => '2026-09-08 08:05:30'];
-    $query = Mockery::mock();
-    $query->shouldReceive('where', 'whereIn', 'whereNotNull', 'selectRaw', 'orderBy')->andReturnSelf();
-    $query->shouldReceive('get')->once()->andReturn(collect($points));
-    $connection = Mockery::mock();
-    $connection->shouldReceive('table')->with('trac_routetrack')->andReturn($query);
-    \Illuminate\Support\Facades\DB::shouldReceive('connection')->with('tracking_pgsql')->andReturn($connection);
     $journey = Mockery::mock();
     $journey->shouldReceive('where', 'orderByDesc')->andReturnSelf();
     $journey->shouldReceive('first')->andReturn((object) [
@@ -121,6 +115,12 @@ test('actual route detects legacy stationary pings before downsampling and filte
     ]);
     \Illuminate\Support\Facades\DB::shouldReceive('table')->with('startendday')->andReturn($journey);
     \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response(['code' => 'NoMatch'])]);
+    $this->mock(\App\Services\WorkTracking::class, function ($mock) use ($points) {
+        $mock->shouldReceive('load')->once()->andReturn(['start' => strtotime('2026-09-08 08:00:00'), 'end' => strtotime('2026-09-08 09:00:00'), 'available' => true, 'reason' => null,
+            'points' => array_values(array_filter($points, fn ($point) => app(StationaryDetection::class)->usable($point)))]);
+        $mock->shouldReceive('marker', 'eventMarker')->andReturn(null);
+        $mock->shouldReceive('outsideGeometries', 'unreliableGeometries')->andReturn([]);
+    });
     $method = new ReflectionMethod(\App\Http\Controllers\RouteTracking\RouteTrackingController::class, 'computeMatchedActual');
     $actual = $method->invoke(app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class), 1, '2026-09-08');
     expect($actual['has_tracking_data'])->toBeTrue()
@@ -130,4 +130,22 @@ test('actual route detects legacy stationary pings before downsampling and filte
         ->and($actual['point_count'])->toBe(2)
         ->and($actual['end']['time'])->toBe('2026-09-08 08:05:00')
         ->and($actual['distance'])->toEqual(0);
+});
+
+
+test('low accuracy stationary readings are detected as unreliable only when explicitly included', function () {
+    $points = stationaryPoints(600);
+    foreach ($points as $point) $point->accuracy_m = 150;
+    $detector = new StationaryDetection;
+    expect($detector->detect($points))->toBe([]);
+    $stops = $detector->detect($points, true);
+    expect($stops)->toHaveCount(1)->and($stops[0])->toMatchArray(['duration_seconds' => 600, 'unreliable' => true, 'max_accuracy_m' => 150.0]);
+});
+
+test('confidence transitions split stops instead of counting the same time as reliable and unreliable', function () {
+    $points = stationaryPoints(1230);
+    foreach ($points as $index => $point) $point->accuracy_m = $index < 21 ? 10 : 150;
+    $stops = (new StationaryDetection)->detect($points, true);
+    expect($stops)->toHaveCount(2)->and($stops[0]['unreliable'])->toBeFalse()->and($stops[1]['unreliable'])->toBeTrue();
+    expect(strtotime($stops[0]['end_time']))->toBeLessThan(strtotime($stops[1]['start_time']));
 });

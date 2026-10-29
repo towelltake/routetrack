@@ -1,5 +1,421 @@
 # TRAC / routeTrack project memory
 
+## Planned CFT includes unvisited journey-plan customers: 2026-10-21
+
+Implemented CustomerFaceTime::unvisitedPlans/fallbackMinutesFor. For scheduled
+active customers with no visit record in the same journey, resolve positive
+customermaster.customerfacetime first, else positive customerclustermapping.cft
+matching BOTH division and channel. Missing/nonpositive fallback yields zero.
+Deduplicates customer/journey; a visit on a different journey does not suppress
+fallback. Any recorded visit (including incomplete/OTP) prevents fallback on that
+journey; recorded visit targets, repeat handling and OTP exclusions remain intact.
+
+DashboardMetrics planned_face_minutes/planned_cft_minutes, analysis expected_cft,
+variance and Route Tracking planned summaries now include unvisited targets.
+Actual CFT is unchanged; unvisited contributes zero. Route Tracking returns all
+unvisited plan customers independent of map coordinates and adds their target
+seconds before computing variance. Dashboard/Route Tracking CFT popups append
+red Not visited rows with target/zero actual, and JP popup shows fallback targets.
+Unplanned unscheduled/not-visited rows keep unavailable targets. Help/README
+updated. This supersedes earlier visit-only planned CFT and unavailable-target
+notes for unvisited planned customers.
+
+Validation: production build, 20 dashboard JS tests, all changed PHP syntax and
+diff check passed. Updated fixtures/counts and added PHP regressions for customer
+override, matching both mapping keys, popup/card/analysis consistency, repeat
+visits, unvisited planned summaries and zero-actual/negative-variance behavior.
+Full PHP regressions and live DB/browser verification remain outstanding because
+local vendor dependencies/database configuration are absent. No database writes
+or schema changes performed.
+
+## Explain active idle settings in popup: 2026-10-21
+
+Route Tracking stationary/idle popup now includes a compact How idle time is
+detected panel displaying the server's actual configured minimum stationary
+minutes, radius metres and maximum reporting-gap seconds. Explains that visit
+overlap is excluded and gaps longer than the limit break the period without
+counting missing time. Controller now exposes stationary_radius_m alongside
+existing minimum/gap metadata; no hardcoded UI thresholds or calculation changes.
+Production build, PHP syntax and diff check passed; browser verification outstanding.
+
+## Consolidate unreliable trail under Raw Coordinates: 2026-10-21
+
+Removed the separate Unreliable GPS legend toggle/state/layer from Route Tracking.
+Low-confidence dotted segments and isolated dots now belong to Raw Coordinates,
+retaining accuracy popups. Raw toggle is available even when only unreliable
+geometries exist. Stationary reliability badges and idle breakdowns remain;
+visibility does not alter calculations. Production build and diff check passed;
+live browser verification outstanding.
+
+## Accuracy now annotates rather than excludes tracking coordinates: 2026-10-21
+
+User clarified all valid coordinates must be considered. WorkTracking.points now
+retains all valid coordinate observations and annotates unreliable rather than
+filtering by accuracy; main/before-after paths and tracking boundary markers
+therefore receive high-accuracy-metre readings too. Travel GPS first/last uses
+valid coordinates. Unreliable means strictly greater than configured threshold
+(default 50m), matching the user's more-than-50 rule; exact 50m remains accepted.
+Invalid coordinate values still cannot be plotted. Missing/invalid accuracy is
+shown as unknown instead of rejecting a valid coordinate.
+
+Route event markers now use nearest available GPS without the former 120-second
+matching cutoff. Their popups disclose event time, actual observation time,
+accuracy and an unreliable badge. Reporting gaps still break stationary periods
+and disconnected dotted trails; they are not continuous idle evidence. Existing
+reliable/unreliable idle breakdown and grey unreliable layer remain. Updated PHP
+regressions for acceptance flags, exact threshold and unrestricted nearest events.
+PHP syntax, direct acceptance/threshold/nearest-event checks and diff check passed.
+Full Pest and live browser/database verification remain outstanding. This
+supersedes earlier notes about accuracy-filtered paths/markers and 2-minute event
+marker limits. No frontend rebuild required for these PHP-only behavior changes.
+
+## Route event markers accept low-accuracy coordinates: 2026-10-21
+
+Route Start/End markers now select from all valid coordinate observations,
+including low-accuracy readings, instead of accuracy-filtered plotting points.
+Nearest-event timestamp matching retains its existing maximum-gap limit. Marker
+payloads include accuracy_m and unreliable; map popups show reported accuracy
+and an amber Unreliable coordinates badge when at/above configured threshold
+(default 50m). Unknown accuracy is explicitly shown as Unknown. Ordinary route
+path filtering and idle calculations remain unchanged. Added regression for
+high-accuracy-metre event markers. Production build, two direct marker checks,
+PHP syntax and diff check passed. Full Pest/live browser validation outstanding.
+
+## Include unreliable GPS in stationary and idle detection: 2026-10-21
+
+User requested idle/stationary estimates for higher-accuracy-metre readings too.
+StationaryDetection now separates validCoordinates from usable accuracy filtering.
+detect/detectGaps support opt-in inclusion of low-confidence points; default callers
+retain prior strict behavior. Stationary candidates split at confidence changes,
+carry unreliable/max_accuracy_m metadata and preserve radius/minimum/gap rules.
+Accuracy >= configured threshold (default 50m) is unreliable; missing accuracy
+retains legacy acceptance and unknown-accuracy labels. Invalid coordinates and
+negative/nonnumeric accuracy remain excluded. Accuracy alone never implies idle.
+
+WorkTracking retains all valid points separately from ordinary plotting points.
+Route Tracking/Dashboard idle use inclusive detection and subtract visit overlap;
+idle totals include low-confidence estimates with separate reliable/unreliable
+amounts. Route Tracking has a grey dotted Unreliable GPS layer and matching
+isolated points, enabled by default with its own toggle. Popups disclose time
+range/max accuracy, stationary circles are grey and stop lists/popup show
+Unreliable GPS badges. Ordinary main paths/route-event markers remain filtered.
+GPS bounds remain independent of accuracy. Visibility changes never affect totals.
+Dashboard card/detail popup identifies included unreliable idle estimates.
+
+Validation: production build, 20 dashboard JS tests, five direct PHP detector/trail
+checks, all changed PHP syntax and diff check passed. Added regressions for
+low-confidence stops, confidence transitions and customer overlap subtraction.
+Full Pest and live map/business-database validation remain outstanding without
+vendor dependencies. README documents estimated nature and unchanged thresholds.
+
+## GPS timestamps independent of accuracy: 2026-10-21
+
+WorkTracking now computes tracking start/end from all timestamped device/date
+records before coordinate/accuracy filtering. observations() returns full recorded
+bounds plus the separately filtered plotting/idle points. GPS card uses explicit
+tracking_start_time/end_time so it shows true first/last timestamps even when all
+coordinates are rejected. Boundary marker positions remain accepted coordinates;
+popups distinguish tracking time from GPS observation time at that position.
+Today/historical device and selected-date scope remain unchanged. Idle detection
+still uses quality-filtered readings and never fills accuracy-related gaps.
+Added regression for rejected early/late readings and all-poor accuracy.
+Production build, two directly executed accuracy-separation cases, PHP syntax and
+diff check passed. Full Pest/browser/database verification outstanding.
+
+## Route Tracking dismissible flash messages: 2026-10-21
+
+Removed page-heading GPS tracking summary, route-marker notices and Planned route
+vs actual GPS points subtitle. Removed permanent inline error/quality-warning
+blocks. Route Tracking now shows warning/error flashes at top right, each with a
+close button and 15-second automatic dismissal (paused on hover/focus). Notices
+include tracking availability, missing route-event GPS and geometry fallbacks.
+New comparisons/reset replace stale flashes; timers are cleared on unmount.
+Existing tracking times remain available in the GPS card and marker popups.
+Production build and diff check passed; browser visual verification outstanding.
+
+## Refined Route Status timing and distance details: 2026-10-21
+
+Current Route Status now shows available recorded route start/end times and dates
+in compact icon rows. Distance has a km heading and aligned Planned/Actual tiles,
+replacing wrapping label/value lines. Long values can wrap within tiles; unavailable
+actual distance shows N/A. Uses existing route_details timestamps; no timing or
+distance calculation changes. Production build and diff check passed; live
+browser visual verification outstanding.
+
+## Separate before/after GPS toggles: 2026-10-21
+
+WorkTracking outside geometries now carry tracking_period=before/after using
+recorded GPS timestamps versus route event times. Route Tracking has separate
+Before Route Start (purple) and After Route End (orange) layers/toggles, both
+visible by default; singleton dots match the respective color. Open routes have
+no after geometry and their disabled control explains that an end time is needed.
+No recorded start keeps available GPS in the before layer. Gap handling, full-day
+tracking bounds and idle calculations are unchanged. README and PHP regressions
+updated. Production build, PHP syntax, three direct temporal-layer checks and
+diff check passed. Full Pest/browser verification remain outstanding.
+
+## Auto-checkout badge in map-side visits panel: 2026-10-21
+
+Route Tracking customer visit rows beside the map now display the existing amber
+Auto-checkout badge beside the customer name when auto_checkout is true. Uses
+the existing customervisitlog.autocheckout flag; planned-customer rows and manual
+checkouts have no badge. Production build and diff check passed; browser visual
+verification outstanding.
+
+## Before/after toggle retains isolated readings: 2026-10-21
+
+Found toggle was enabled only for drawable multi-point segments, dropping isolated
+before/after observations or readings separated by gaps. WorkTracking now builds
+outsideGeometries with Point geometry for single readings and LineString geometry
+for connected observations. Map renders singleton points as purple dots. Temporal
+classification remains strictly before route-start/after recorded closed-route
+end; no spatial matching. Long gaps still are not connected. Disabled toggle
+now explains when no outside readings exist for the selection. Added regression
+for isolated points, gaps and exact timestamp boundaries. Production build,
+three direct PHP geometry checks, PHP syntax and diff checks passed. Full Pest
+and browser validation remain outstanding.
+
+## Route event times in GPS marker popups: 2026-10-21
+
+Track Start Time marker popup now also shows recorded Route Start Time when
+available. Last Known Location popup similarly includes recorded Route End Time.
+Values use planned.route_details start_time/end_time rather than requiring a
+nearby route-event GPS marker. Missing route timestamps omit the additional row.
+Existing GPS timestamps and separate route markers remain unchanged. Production
+build and diff check passed; live browser visual verification outstanding.
+
+## Distances moved into Current Route Status: 2026-10-21
+
+Route Tracking now shows Planned/Actual Distance at the bottom of the Current
+Route Status card, separated by a divider with blue values. Removed distance
+rows from Actual GPS Tracking, leaving its start/end timestamps and note so the
+Time row stays compact and balanced. Distance sources and calculations are
+unchanged. Production build and diff check passed; browser visual verification
+remains outstanding.
+
+## Full-width selected Customer Performance: 2026-10-21
+
+DashboardCards now has a native single-group layout when onlyGroups contains one
+entry: one full-width grid column, no outer margins and full available height.
+This prevents the selected Customer Performance section retaining the shared
+12-column dashboard allocation in Route Tracking. Route Tracking uses a bounded
+170?220px Current Route Status column and gives all remaining width to Customer
+Performance; mobile still stacks. Default Dashboard layout remains unchanged.
+Production build and diff check passed; live browser visual check outstanding.
+
+## Remove configured work-hour restriction from tracking: 2026-10-21
+
+User explicitly removed all routemaster hour restrictions. WorkTracking now loads
+all usable GPS for selected device/calendar date, and observedBounds returns the
+first/last timestamps. Neither starttime/endtime nor autojp hours are queried.
+Today queries only current device assignment; historical lookup uses startendday
+recorded device and never substitutes current assignment. No GPS gives null
+bounds; one GPS gives identical start/end and unavailable idle evidence.
+
+Map's purple before/after-route GPS layer is enabled by default, keeping every
+available time segment visible while retaining the toggle. GPS start/end card,
+tracking headers, Route Tracking idle/stationary popup and Dashboard idle use
+observed first/last bounds. Removed configured-hour wording from UI/README.
+Date/device, coordinate/accuracy and gap restrictions remain; adjacent dates
+are excluded. Dashboard continues one observation window per selected route/date.
+Existing journey/CFT/operational/travel formulas remain unchanged. No database
+changes. This supersedes all prior configured work-window memory entries.
+
+Updated regressions include no schedule columns at all, early/late recordings,
+wrong devices, adjacent date exclusion, empty and single-point bounds, historic
+device identity and updated observed-range idle expectations. Production build,
+20 dashboard JS tests, PHP syntax and direct observation-bound checks passed.
+Full Pest and live database/browser verification remain outstanding without local
+vendor dependencies/configuration.
+
+## Fix production tracking work-hour columns: 2026-10-21
+
+Production error confirmed WorkTracking queried nonexistent autojp_work_start_time
+and autojp_work_end_time. Corrected loader to routemaster.starttime/endtime,
+verified in the legacy schema (TIME fields, default 08:00:00/17:00:00). Previous
+implementation incorrectly inferred database columns from model fillable names.
+Updated WorkTracking and DashboardOutsideVisits regression fixtures to use the
+real legacy columns and corrected README. Device identity rules and authorized
+route access remain unchanged. No schema changes or database writes required.
+This supersedes the autojp work-hour field names in older memory entries.
+Validation: PHP syntax, direct work-window checks and diff check passed. Full
+Pest execution is unavailable without vendor dependencies. Production recheck
+remains outstanding after deploying app/Services/WorkTracking.php.
+
+## Dashboard-style Route Tracking customer performance: 2026-10-21
+
+Route Tracking now reuses DashboardCards with onlyGroups=['customers'] to match
+Dashboard Customer Coverage above JP/Unplanned, plus Efficiency, Productivity
+and OTP usage/comment breakdowns. Current Route Status replaces the Dashboard's
+Route Start Compliance at left and retains the journey-details action. Removed
+the prior Customers and standalone Distance groups from the tracking summary.
+Planned/Actual Distance appear beneath GPS start/end in the final Time card,
+separated by a divider; responsive layouts and existing Time/Transactions remain.
+
+compare.json returns DashboardMetrics for precisely the selected recorded journey
+and selected_scope (routecode, operation date, routekey). A new authenticated
+Route Tracking customer-details endpoint validates that scope, authorizes route,
+company and subarea access, and constrains the requested routekey to that route.
+DashboardCustomerDetails supplies identical popup rules. Pinning the displayed
+routekey prevents a later same-day journey replacing the popup's selected journey.
+CustomerDetailsDialog has a configurable endpoint with unchanged Dashboard default.
+Unplanned cached popup remains supported. No recorded journey yields unavailable
+customer metrics. Previous timing/CFT/GPS and qualification rules remain.
+
+Production build, 20 dashboard JS tests, PHP syntax and diff check passed. Added
+PHP regression cases for displayed journey pinning and route/company/geographic
+access checks; execution is outstanding without vendor dependencies. Live browser
+and business database verification remain outstanding.
+
+## Actual GPS times card: 2026-10-21
+
+Added Actual GPS Tracking as the last Route Tracking Time card. Shows GPS Track
+Start Time and GPS Track End Time from the first/last measured work-window GPS
+observations, including dates for overnight clarity. Uses tracking_start and
+last_known_location timestamps; no scheduled or route-event timestamp fallback.
+Absent readings show Unavailable. Existing responsive six-column desktop Time
+layout now fills all six positions. Production build and diff check passed;
+live browser visual verification remains outstanding.
+
+## Work-hour tracking and historical devices: 2026-10-21
+
+Implemented WorkTracking service for device-based work-hour GPS. Today uses
+routemaster.device_assigned_id; historical selected journeys use startendday.
+dataconrefnumber, verified as device ID in legacy schema/procedures. Historical
+missing device does not fall back to current assignment. GPS query filters by
+deviceid and configured autojp_work_start_time/end_time, with overnight support,
+strict time validation and existing accuracy rules. TRACKING_TIMEZONE defaults
+to Asia/Muscat for determining today. All callers retain route authorization.
+Historical work hours use current route settings; no schedule snapshots found.
+
+RouteTrackingController uses all work-window points for stops/gaps, and selected
+route start/closed end to split the displayed actual trail from before/after
+tracking. Work data is available before a route starts. Map shows Track Start,
+Last Known Location and separate Route Start/End markers; route event markers
+require a GPS observation within max configured gap and disclose GPS timestamp.
+Purple dashed Before / after route toggle shows only work-hour observations,
+not GPS outside configured hours. Toggle never changes idle calculations.
+DashboardOutsideVisits uses the same loader, clips visits to work hours and
+counts one route/start-date work window across repeated selected journeys.
+Dashboard workday scope still derives from eligible selected journeys, so it
+does not introduce unstarted-route workdays. Existing journey/CFT/operational/
+travel formulas are preserved. Missing tracking/insufficient GPS yields unknown
+idle. UI exposes work-window and unavailable-marker information. README updated.
+
+Validation: production build, 20 dashboard JS tests, ten direct PHP work-window/
+event-marker cases, all changed/new PHP syntax and diff checks passed. Added
+WorkTrackingTest for device reassignment, no route start, wrong devices, missing
+historical identity, exact work boundaries, overnight windows and marker gaps;
+adapted stationary/idle PHP regressions. Full PHP regression execution remains
+outstanding without vendor dependencies; live DB/browser validation required.
+This supersedes earlier Route Tracking routecode/calendar-date GPS and
+journey-window idle descriptions. No schema/database mutations performed.
+
+## Automatic checkout popup badges: 2026-10-21
+
+Dashboard Face Time Compliance and Productivity detail rows, plus Route Tracking
+Face Time Compliance/OTP time and Productivity popups, display a small amber
+Auto-checkout badge beneath a recorded checkout when customervisitlog.autocheckout
+is 1. The schema confirms autocheckout (not the request's autockeout spelling).
+DashboardCustomerDetails and RouteTrackingController expose boolean auto_checkout;
+manual/null flags do not display a badge. Duration, CFT, qualification, productivity
+and access logic are unchanged. Updated PHP fixtures and regressions for automatic
+and manual checkout flags. PHP syntax, 20 dashboard JS tests and diff check passed;
+production build passed. Full PHP tests remain unavailable without vendor
+ dependencies; live browser/database verification remains outstanding.
+
+## Compliance popup status styling: 2026-10-21
+
+Shared JP/Unplanned CustomerDetailsDialog now gives unvisited customer rows a
+light red background and leaves their OTP cells empty. Qualified visits show a
+green circle-check; customer qualification uses green check/red cross icons
+with accessible labels and hover titles. Nonqualifying visit reasons remain
+visible. Applies to Dashboard and Route Tracking's shared Unplanned popup.
+Production build and diff check passed; live browser visual check outstanding.
+
+## JP route-status base clarified: 2026-10-21
+
+Verified JP uses distinct scheduled (schelduledflag = 1) active customers from
+routesequencecustomerstatus per journey as the denominator for both percentages.
+Main numerator requires one completed non-OTP visit meeting a positive recorded
+CFT; lower numerator counts base customers with matched OTP, without requiring
+CFT. Existing formulas already matched the request. Clarified DashboardCards
+labels/help and added a JP popup summary of base, qualified and unique OTP
+customer counts. A customer with separate qualifying and OTP visits can appear
+in both counts. Production build and diff check passed; browser verification is
+outstanding. Backend formulas and existing access restrictions are unchanged.
+
+## Shared Unplanned Customers popup in Route Tracking: 2026-10-21
+
+Route Tracking's Unplanned Visits card now opens the same CustomerDetailsDialog
+used for Dashboard JP/Unplanned compliance. computePlannedRoute includes scoped
+unplanned_compliance data from DashboardCustomerDetails for its selected journey;
+the dialog consumes cached data, preserving Route Tracking operation-date journey
+selection without requesting Dashboard's separate start-date range endpoint.
+Shows route-status sequence, individual visits/revisits, actual/planned CFT,
+qualification, OTP markers, qualification filters and unvisited unscheduled
+route-status customers. Dashboard already used this shared compliance layout.
+Production build, 20 dashboard JavaScript tests, controller PHP syntax and diff
+checks passed. Full PHP tests remain unavailable without vendor dependencies;
+live browser/database verification remains outstanding.
+
+## CFT qualification for dashboard compliance: 2026-10-21
+
+Implemented positive-target CFT qualification for Dashboard JP compliance and
+Unplanned Customers. CustomerFaceTime::qualifies is shared by metric aggregation
+and popup rows: one complete non-OTP visit must meet its own recorded positive
+CFT target. User confirmed missing/zero targets do not qualify. Distinct customers
+count once per journey; short visits cannot combine. A qualifying non-OTP revisit
+can qualify a customer with another OTP visit. Existing OTP breakdowns remain
+informational and may overlap qualified counts. JP and unplanned denominators,
+raw coverage, productivity, operation dates and access restrictions are preserved.
+
+DashboardCustomerDetails::complianceRows orders customers by route-status sequence
+and each customer's visits chronologically. Includes revisit numbers, check-in/out,
+actual/planned CFT in minutes, OTP markers, per-visit reasons and per-customer
+qualification. Unvisited scheduled customers appear in JP, unvisited unscheduled
+route-status customers in Unplanned; their CFT is unavailable without a visit.
+Unsequenced visited customers appear last. Dialog has qualification filters and
+unique customer qualification counts. DashboardCards help and README updated.
+
+Validation: final production build, 20 dashboard JS tests, 10 directly executed
+PHP qualification cases, changed PHP syntax checks and diff check passed.
+Updated PHP regressions cover target boundaries, missing/negative/zero targets,
+OTP/non-OTP revisits, sequence order and unvisited customers. Full Pest regression
+execution is outstanding because vendor dependencies are absent. Live browser
+and business database verification remain outstanding. This supersedes earlier
+notes that any OTP visit places a customer only in the OTP group for compliance.
+
+## Planned CFT from recorded visits: 2026-10-21
+
+Implemented planned CFT sourcing exclusively from customervisitlog.cft (minutes)
+for Dashboard metrics/analysis, customer detail dialogs, Route Tracking visits,
+CFT summaries and planned face-time totals. CustomerFaceTime::plannedMinutes
+normalizes each visit independently: null/non-numeric/nonpositive values become
+zero, positive fractional minutes are retained. No customer master or cluster
+mapping fallback remains. Repeated visits can have distinct targets; historical
+visits use recorded values. Completion rules, OTP exclusions, actual durations,
+variance formula, average/totals display and access restrictions are unchanged.
+Updated screen help, ROUTE_TRACKING_README.md and PHP regression fixtures for
+recorded targets, missing values, decimals, repeated visits and journey scope.
+This supersedes the September 29 customer-master/cluster fallback decision.
+Validation: PHP syntax checks on all six changed PHP files, all 20 dashboard JS
+tests, production build and diff check passed. PHP unit execution is blocked by
+missing vendor dependencies (vendor/bin/pest absent); local PHP 8.4.15 was found
+under WAMP and emits OCI/Xdebug configuration warnings. Live browser/database
+verification and execution of the updated PHP regressions remain outstanding.
+
+## Remove dashboard and tracking metrics: 2026-10-21
+
+Removed Route Close Compliance from the Dashboard Route Start Compliance card
+and its help text. Removed Dashboard Total Duration and Route Tracking Journey
+Duration cards. Dashboard groups retain the remaining cards in their existing
+order, with five desktop Time columns. Backend calculations and access rules are
+unchanged. Relevant files: routelocation/DashboardCards.vue and
+routetracking/Index.vue under resources/js/views.
+Validation: all 20 dashboard JavaScript tests, npm.cmd run build and git diff
+--check passed. Live browser visual verification remains outstanding.
+
 ## Towell login watermark hidden: 2026-10-01
 
 Login.vue temporarily hides the Towell watermark with display: none on its

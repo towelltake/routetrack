@@ -99,6 +99,7 @@ async function loadIdle(request, signal, params) {
         const rows = data.groups.flatMap(group => group.rows);
         const measured = rows.filter(row => row.stationary != null);
         idle.value = { minutes: measured.length || !rows.length ? measured.reduce((sum, row) => sum + Number(row.stationary), 0) : null,
+            unreliableMinutes: measured.reduce((sum, row) => sum + Number(row.unreliable_idle ?? 0), 0),
             missing: rows.length - measured.length, loading: false, error: '' };
     } catch (e) {
         if (request === locationRequest && !signal.aborted) idle.value = { minutes: null, loading: false, missing: 0, error: 'Idle time unavailable. Refresh to retry.' };

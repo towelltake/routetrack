@@ -603,7 +603,7 @@ class RouteTrackingController extends Controller
         ]);
         $operationalOtp = app(\App\Services\DashboardMetrics::class)->otp(collect([$routeDay]), $operationalLogs)['by_visit'];
         $visits = $visits->map(fn ($visit) => $visit + ['operational_otp' => !empty($operationalOtp[$routeDay->routekey.':'.$visit['logkey']])]);
-        $planRows = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routeDay->routekey, 'customercode' => $plan->customercode]);
+        $planRows = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routeDay->routekey, 'customercode' => $plan->customercode, 'cft' => $plan->cft ?? null]);
         $unvisitedPlans = app(CustomerFaceTime::class)->unvisitedPlans($planRows, $visits->map(fn ($visit) => (object) $visit));
         $unvisitedCustomers = CustomerMaster::query()->whereIn('customercode', $unvisitedPlans->pluck('customercode'))
             ->get(['customercode', 'alternatecode', 'customeraddress1'])->keyBy('customercode');
@@ -929,7 +929,7 @@ class RouteTrackingController extends Controller
             ->whereIn('customercode', $customerCodes)
             ->get(['routekey', 'customercode', 'cft']);
         $minutes = $visitCustomers->sum(fn ($visit) => CustomerFaceTime::plannedMinutes($visit->cft));
-        $plans = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routekey, 'customercode' => $plan->customercode]);
+        $plans = $journeyPlan->map(fn ($plan) => (object) ['routekey' => $routekey, 'customercode' => $plan->customercode, 'cft' => $plan->cft ?? null]);
         $minutes += app(CustomerFaceTime::class)->unvisitedPlans($plans, $visitCustomers)->sum('expected_minutes');
 
         return (int) round((float) $minutes * 60);
@@ -944,8 +944,13 @@ class RouteTrackingController extends Controller
             ->orderByRaw('CASE WHEN COALESCE(sequencenumber, 0) > 0 THEN 0 ELSE 1 END')
             ->orderBy('sequencenumber')
             ->orderBy('customercode')
-            ->get(['customercode', 'sequencenumber'])
-            ->unique('customercode')
+            ->get(['customercode', 'sequencenumber', 'cft'])
+            ->groupBy('customercode')
+            ->map(function ($rows) {
+                $plan = clone $rows->first();
+                $plan->cft = $rows->max('cft');
+                return $plan;
+            })
             ->values();
     }
 
@@ -1017,7 +1022,8 @@ class RouteTrackingController extends Controller
         $actual['face_time'] = $visits->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
         $actual['otp_customer_time'] = $visits->filter(fn (array $visit) => $visit['operational_otp'] ?? !empty($visit['otp_logs']))
             ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
-        $actual['actual_cft'] = $actual['face_time'] - $actual['otp_customer_time'];
+        $actual['actual_cft'] = $visits->filter(fn (array $visit) => ($visit['on_premise'] ?? false) && !($visit['operational_otp'] ?? !empty($visit['otp_logs'])))
+            ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
         $actual['planned_cft'] = $visits->filter(fn (array $visit) => ($visit['visit_duration_minutes'] ?? null) !== null && !($visit['operational_otp'] ?? !empty($visit['otp_logs'])))
             ->sum(fn (array $visit) => max(0, (float) ($visit['default_face_time_minutes'] ?? 0)) * 60)
             + ($actual['unvisited_planned_cft_seconds'] ?? 0);
@@ -1224,6 +1230,7 @@ class RouteTrackingController extends Controller
                 'cvl.logkey',
                 'cvl.cft',
                 'cvl.autocheckout',
+                'cvl.onpremisevisit', 'cvl.holdorder',
                 'cvl.customercode',
                 'cvl.logstartdate',
                 'cvl.logstarttime',
@@ -1263,6 +1270,7 @@ class RouteTrackingController extends Controller
                     'visit_end_date' => $endDate,
                     'visit_end_time' => $endTime,
                     'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
+                    'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
                     'default_face_time_minutes' => CustomerFaceTime::plannedMinutes($visit->cft),
                     'visit_duration_minutes' => $startTimestamp !== false && $endTimestamp !== false && $endTimestamp >= $startTimestamp
                         ? ($endTimestamp - $startTimestamp) / 60

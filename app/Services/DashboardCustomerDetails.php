@@ -35,7 +35,7 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'onpremisevisit', 'holdorder']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
             $ordinals = [];
             $rows = $visits->map(function ($visit) use ($otp, &$ordinals) {
@@ -50,6 +50,7 @@ class DashboardCustomerDetails
                 $checkOut = $timestamp($visit->logenddate, $visit->logendtime);
                 return [
                     'id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
+                    'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
                     'date' => $visit->logstartdate && !str_starts_with((string) $visit->logstartdate, '0000-') ? substr((string) $visit->logstartdate, 0, 10) : null,
                     'check_in' => $checkIn, 'check_out' => $checkOut,
                     'status' => empty($otp[$visit->routekey.':'.$visit->logkey]) ? 'Non-OTP' : 'OTP',
@@ -85,7 +86,7 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'cft', 'autocheckout']);
+                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'cft', 'autocheckout', 'onpremisevisit', 'holdorder']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
             $rows = $visits->map(function ($visit) use ($otp, $type) {
                     $validStart = $visit->logstartdate && $visit->logstarttime && !str_starts_with($visit->logstartdate, '0000-');
@@ -96,17 +97,19 @@ class DashboardCustomerDetails
                     $planned = CustomerFaceTime::plannedMinutes($visit->cft);
                     $excluded = $type !== 'otp_time' && !empty($otp[$visit->routekey.':'.$visit->logkey]);
                     return ['id' => $visit->logkey, 'routekey' => $visit->routekey, 'customercode' => $visit->customercode,
+                    'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
                         'date' => substr((string) $visit->logstartdate, 0, 10), 'time' => $visit->logstarttime, 'planned_cft' => $excluded ? 0 : $planned,
                         'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1, 'otp_excluded' => $excluded, 'recorded_actual_cft' => $actual,
                         'check_in' => $start === false ? null : date('Y-m-d H:i:s', $start),
                         'check_out' => $end === false ? null : date('Y-m-d H:i:s', $end),
                         'otp_times' => array_map(fn ($event) => substr((string) $event['otpdate'], 0, 10).' '.$event['otptime'], $otp[$visit->routekey.':'.$visit->logkey] ?? []),
-                        'actual_cft' => $excluded ? 0 : $actual, 'variance' => !$excluded && $planned > 0 && $actual !== null ? $actual - $planned : null];
+                        'actual_cft' => $excluded || ($type !== 'otp_time' && (int) ($visit->onpremisevisit ?? 0) !== 1) ? 0 : $actual, 'variance' => !$excluded && $planned > 0 && $actual !== null ? ((int) ($visit->onpremisevisit ?? 0) === 1 ? $actual : 0) - $planned : null];
                 });
             if ($type !== 'otp_time') {
                 $plans = DB::table('routesequencecustomerstatus')->whereIn('routekey', $keys)->where('schelduledflag', 1)
                     ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
-                    ->select('routekey', 'customercode')->distinct()->get();
+                    ->select('routekey', 'customercode')->selectRaw('MAX(COALESCE(cft, 0)) as cft')
+                    ->groupBy('routekey', 'customercode')->get();
                 $dates = $journeys->keyBy('routekey');
                 foreach (app(CustomerFaceTime::class)->unvisitedPlans($plans, $visits) as $plan) $rows->push([
                     'id' => 'not-visited:'.$plan->customercode, 'routekey' => $plan->routekey, 'customercode' => $plan->customercode,
@@ -172,6 +175,7 @@ class DashboardCustomerDetails
                     $productive = $salesOrder || $collection;
                     $rows->push([
                         'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
+                    'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
                         'time' => $visit->logstarttime,
                         'start_date' => $start !== false ? substr((string) $visit->logstartdate, 0, 10) : null,
                         'end_time' => $end !== false ? $visit->logendtime : null,
@@ -223,6 +227,7 @@ class DashboardCustomerDetails
             ->whereIn('routekey', $keys)
             ->select('routekey', 'customercode')
             ->selectRaw('MAX(CASE WHEN schelduledflag = 1 THEN 1 ELSE 0 END) as scheduled')
+            ->selectRaw('MAX(CASE WHEN schelduledflag = 1 THEN COALESCE(cft, 0) ELSE 0 END) as cft')
             ->selectRaw('MIN(CASE WHEN sequencenumber > 0 THEN sequencenumber END) as sequencenumber')
             ->groupBy('routekey', 'customercode')->get()->groupBy('routekey');
         $visits = DB::table('customervisitlog')
@@ -259,12 +264,13 @@ class DashboardCustomerDetails
                     $actual = $start !== null && $end !== null && $end >= $start ? ($end - $start) / 60 : null;
                     $planned = CustomerFaceTime::plannedMinutes($visit->cft);
                     $hasOtp = !empty($otp[$visit->routekey.':'.$visit->logkey]);
-                    $qualified = CustomerFaceTime::qualifies($actual, $planned, $hasOtp);
+                    $qualified = CustomerFaceTime::qualifies($actual, $planned, $hasOtp, (int) ($visit->onpremisevisit ?? 0) === 1);
                     return ['id' => 'visit:'.$visit->logkey, 'visit_number' => $index + 1, 'is_revisit' => $index > 0,
                         'check_in' => $start === null ? null : date('Y-m-d H:i:s', $start),
                         'check_out' => $end === null ? null : date('Y-m-d H:i:s', $end),
-                        'actual_cft' => $actual, 'planned_cft' => $planned, 'has_otp' => $hasOtp, 'qualified' => $qualified,
-                        'status' => $qualified ? 'Qualified' : ($hasOtp ? 'OTP visit' : ($actual === null ? 'Incomplete visit' : ($planned <= 0 ? 'Missing CFT target' : 'CFT not met')))];
+                        'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
+                        'actual_cft' => $hasOtp || (int) ($visit->onpremisevisit ?? 0) !== 1 ? 0 : $actual, 'planned_cft' => $planned, 'has_otp' => $hasOtp, 'qualified' => $qualified,
+                        'status' => $qualified ? 'Qualified' : ((int) ($visit->onpremisevisit ?? 0) !== 1 ? 'Off premises' : ($hasOtp ? 'OTP visit' : ($actual === null ? 'Incomplete visit' : ($planned <= 0 ? 'Missing CFT target' : 'CFT not met'))))];
                 });
                 $customerQualified = $visitRows->contains('qualified', true);
                 if ($visitRows->isEmpty()) $visitRows->push(['id' => 'not-visited:'.$code, 'visit_number' => null,

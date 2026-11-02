@@ -1,5 +1,117 @@
 # TRAC / routeTrack project memory
 
+## On-premises CFT and compliance with visit badges: 2026-11-02
+
+Dashboard and Route Tracking actual CFT now require customervisitlog.onpremisevisit
+= 1 in addition to completed timing and no matched OTP. JP/unplanned customer
+qualification requires that same flag and the existing positive visit target met.
+NULL/missing/non-1 flags do not qualify. Planned targets remain unchanged (visit
+snapshots plus unvisited journey-plan snapshots); off-premises actual is zero.
+Analysis/comparable actual totals and detail rows follow the same actual CFT rule.
+Raw recorded duration, OTP time, coverage counts, productivity, operational,
+travel and idle rules remain unchanged. holdorder is informational only.
+
+Customer Coverage, Face Time Compliance, JP and Unplanned Visits detail payloads
+carry on_premise/hold_order booleans. Shared VisitBadges.vue shows On premises /
+Off premises and Hold order beside existing customer details; no new columns.
+Unvisited rows have no premises badge. Shared dialog covers Dashboard and Route
+Tracking; tracking's own CFT popup also shows badges and zero off-premises actual.
+Updated help/README. Main files: CustomerFaceTime, DashboardMetrics,
+DashboardAnalysis, DashboardCustomerDetails, RouteTrackingController and the
+DashboardCards/CustomerDetailsDialog/Route Tracking Vue views.
+
+Validation: production build, 20 dashboard JS tests, PHP syntax and diff checks
+passed. Six direct PHP qualification checks passed. Added PHP regressions for
+off-premises totals/qualification, unchanged targets, hold-order independence,
+coverage/JP/CFT/unplanned payload badges and tracking recorded-vs-CFT totals;
+existing SQLite fixtures explicitly default to on-premises for historical cases.
+Full PHP suite remains unrun because vendor/bin/pest is absent. Live database and
+browser verification remain outstanding. Requires new visit columns on deployment;
+no database writes, migrations or procedure execution performed.
+
+## Route status procedure parameters revised: 2026-11-02
+
+Per user request, salesman_route_status.sql now accepts exactly
+in_divisioncode VARCHAR(50), in_startdate DATE, in_enddate DATE (in that order).
+Removed authorized-routekey JSON parameter; division matches routemaster.divisioncode
+via startendday.routecode. Both date bounds apply to journey routestartdate,
+inclusive using >= start and < end + 1 day; no route-end-date restriction.
+NULL/blank division and invalid date ranges are rejected. This standalone SQL
+file is not exposed by an application endpoint; any future integration still
+requires existing session authorization. Supersedes the parameter/scope notes below.
+Updated example call in the SQL header. Static signature checks, diff check and
+SQLite-adapted synthetic filter checks passed for division isolation, date/midnight
+boundaries, overnight closure and open journeys. Native MySQL remains unverified;
+no installation or database execution performed.
+
+## Salesman Route Status procedure file: 2026-11-02
+
+Created root `salesman_route_status.sql`, defining MySQL 8+
+sp_salesman_route_status(from_date, to_date, authorized_routekeys_json).
+One row per journey selected by inclusive start-date range and explicit journey
+keys. SQL SECURITY INVOKER; no integration endpoint, import or DB execution.
+Future application callers must derive authorized keys using existing session
+route/company/geographic restrictions. File has no DROP PROCEDURE.
+
+Requester confirmed FSM is salesman name (salesman.salesmanname1); holdorder is
+internal reference only and must not affect calculations. Procedure interprets
+onpremisevisit=1 as required for actual CFT and qualified calls. Calls count visit
+rows including repeats; JP and LPO counts are distinct customers. JP numerator
+uses qualified planned customers; CFT compliance uses qualified calls/all visits.
+Productivity retains completed non-LPO visit denominator and positive/nonvoid
+sales/order/collection linking through customeroperationscontrol.log_id/visitkey.
+Planned CFT retains visit snapshots plus unvisited journey-plan snapshots.
+File documents formats, percentages, OTP matching, document identity, boundary
+rules and assumptions; Actual CFT is H:MM and CFT IN MM is numeric minutes.
+
+Validation: compiled the SELECT against in-memory SQLite tables derived from
+the supplied schema, adapting MySQL JSON/date/string syntax/functions. Synthetic
+checks passed for authorized scope, empty journeys, duplicate plans/operations,
+OTP, premises/hold exclusion, LPO, planned/actual CFT, productivity and boundaries.
+This is a query-logic check, not native MySQL procedure validation. Native MySQL
+installation/execution and real-data reconciliation remain outstanding.
+
+## Unvisited planned CFT uses journey-plan snapshot: 2026-11-02
+
+Dashboard totals/analysis, CFT and JP detail rows, and Route Tracking planned
+summaries/popups now resolve unvisited scheduled active customers from
+`routesequencecustomerstatus.cft` for the same routekey/customer. NULL, missing
+or nonpositive targets contribute zero; removed customer-master/cluster fallback.
+Visited customers still use customervisitlog.cft, including existing repeat,
+incomplete-visit and OTP rules. Duplicate scheduled plan rows use the maximum
+CFT once per customer/journey; existing sequence ordering remains intact.
+Authorization and active-customer filters remain in place. Requires the new cft
+column in the deployed business database; no migration/import was performed.
+This supersedes the October 21 unvisited master/channel fallback behavior below.
+
+Relevant files: CustomerFaceTime, DashboardMetrics, DashboardCustomerDetails,
+RouteTrackingController; DashboardCards/CustomerDetailsDialog/Route Tracking
+help text and ROUTE_TRACKING_README updated. Updated SQLite fixtures and added
+regressions for snapshot precedence, zero/NULL/negative values, journey scope,
+deduplication and consistency between totals/popups and tracking plan totals.
+Validation: PHP syntax checks, 20 dashboard JS tests, production build and diff
+check passed. Full PHP suite could not run because vendor/bin/pest is absent;
+live business database/browser verification remains outstanding.
+
+## Latest SFA export inspected: 2026-11-02
+
+Read-only inspection of `sfa_ENHANCE_LATEST_20261102.sql` (SQLyog export,
+MySQL 8.0.21) found 419 CREATE TABLE definitions, matching the table set in
+`sfa_struct1.sql`. Column comparison found additions only: customermaster
+nonjpsales/nonjporder/nonjpreturns/nonjpcollections; customervisitlog
+onpremisevisit/holdorder; routemaster shownojpcustomer; and
+routesequencecustomerstatus cft. No removed or changed column definitions found.
+This is a schema/routines/views export: no data section headings or INSERT
+statements outside routine delimiter blocks were found. INSERTs inside stored
+routines are code, not backed-up rows. It is not a verified business-data backup
+and does not include the separate PostgreSQL GPS database.
+
+Restore considerations: contains DROP TABLE statements, MySQL 8-specific
+collation/options and explicit DEFINER clauses; creates sfa_enhance but has no
+top-level USE statement. No import, database queries or application changes were
+performed. Static comparison only; SQL execution/restorability remains unverified.
+The IDE-mentioned `sfa_ENHANCE_LATEST_test.sql` was absent from the workspace.
+
 ## Planned CFT includes unvisited journey-plan customers: 2026-10-21
 
 Implemented CustomerFaceTime::unvisitedPlans/fallbackMinutesFor. For scheduled

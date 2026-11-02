@@ -35,7 +35,7 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'onpremisevisit', 'holdorder']);
+                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'autocheckout', 'onpremisevisit', 'holdorder']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
             $ordinals = [];
             $rows = $visits->map(function ($visit) use ($otp, &$ordinals) {
@@ -53,6 +53,7 @@ class DashboardCustomerDetails
                     'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
                     'date' => $visit->logstartdate && !str_starts_with((string) $visit->logstartdate, '0000-') ? substr((string) $visit->logstartdate, 0, 10) : null,
                     'check_in' => $checkIn, 'check_out' => $checkOut,
+                    'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
                     'status' => empty($otp[$visit->routekey.':'.$visit->logkey]) ? 'Non-OTP' : 'OTP',
                     'visit_number' => $ordinal, 'is_revisit' => $ordinal > 1,
                 ];
@@ -62,12 +63,13 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime']);
+                ->get(['routekey', 'logkey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'autocheckout']);
             $otp = app(DashboardMetrics::class)->otp($journeys, $visits)['by_visit'];
             $byJourney = $visits->groupBy('routekey');
             $rows = $journeys->map(function ($journey) use ($byJourney, $otp) {
                 $window = app(OperationalTime::class)->fromLogs($byJourney->get($journey->routekey, collect()), $otp);
                 return ['id' => $journey->routekey, 'routekey' => $journey->routekey, 'customercode' => null,
+                    'auto_checkout' => $window['auto_checkout'],
                     'check_in' => $window['start'], 'check_out' => $window['end'], 'actual_cft' => $window['minutes'],
                     'first_customer' => $window['first_customer'], 'last_customer' => $window['last_customer']];
             });
@@ -268,6 +270,7 @@ class DashboardCustomerDetails
                     return ['id' => 'visit:'.$visit->logkey, 'visit_number' => $index + 1, 'is_revisit' => $index > 0,
                         'check_in' => $start === null ? null : date('Y-m-d H:i:s', $start),
                         'check_out' => $end === null ? null : date('Y-m-d H:i:s', $end),
+                        'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
                         'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
                         'actual_cft' => $hasOtp || (int) ($visit->onpremisevisit ?? 0) !== 1 ? 0 : $actual, 'planned_cft' => $planned, 'has_otp' => $hasOtp, 'qualified' => $qualified,
                         'status' => $qualified ? 'Qualified' : ((int) ($visit->onpremisevisit ?? 0) !== 1 ? 'Off premises' : ($hasOtp ? 'OTP visit' : ($actual === null ? 'Incomplete visit' : ($planned <= 0 ? 'Missing CFT target' : 'CFT not met'))))];

@@ -589,7 +589,7 @@ function customerVisitDetails(customer) {
     const end = [customer.visit_end_date, customer.visit_end_time].filter(Boolean).join(", ");
     const duration = customer.visit_duration_minutes != null ? formatVisitMinutes(customer.visit_duration_minutes) : null;
 
-    return [start && `Visit Start: ${start}`, end && `Visit End: ${end}`, duration && `Visit Duration: ${duration.replace("<", "&lt;")}`]
+    return [start && `Visit Start: ${start}`, end && `Visit End: ${end}${customer.auto_checkout ? ' <span class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span>' : ''}`, duration && `Visit Duration: ${duration.replace("<", "&lt;")}`]
         .filter(Boolean)
         .map((line) => `<br>${line}`)
         .join("");
@@ -1512,7 +1512,7 @@ function focusEnd() {
                                     <span class="route-tracking-customer-info">
                                         <span class="route-tracking-customer-name-row">
                                             <span class="fw-semibold small">{{ customer.customername }}</span>
-                                            <span v-if="customer.type === 'visit' && customer.auto_checkout" class="auto-checkout-badge">Auto-checkout</span>
+                                            <span v-if="customer.type === 'visit' && customer.auto_checkout" class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span>
                                             <span v-if="customer.type === 'visit'" class="route-tracking-face-time small">
                                                 <i class="fa fa-clock" title="Customer face time"></i>
                                                 {{ faceTimeLabel(customer) }}
@@ -1604,7 +1604,7 @@ function focusEnd() {
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead><tr><th v-for="[label] in timeTableColumns" :key="label" scope="col">{{ label }}</th></tr></thead>
-                                        <tbody><tr><td v-for="[label, value] in timeTableColumns" :key="label">{{ value ?? 'Unavailable' }}</td></tr></tbody>
+                                        <tbody><tr><td v-for="[label, value] in timeTableColumns" :key="label">{{ value ?? 'Unavailable' }}<span v-if="label === 'Last non-OTP checkout' && value && result.actual.operational_auto_checkout" class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span></td></tr></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -1616,7 +1616,7 @@ function focusEnd() {
                                     <tbody>
                                         <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded, 'cft-not-visited': visit.not_visited }">
                                             <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}<VisitBadges :on-premise="visit.on_premise ?? null" :hold-order="visit.hold_order" /></td>
-                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td>
+                                            <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span></td>
                                             <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
                                             <td>{{ visit.not_visited ? 'Not visited' : visit.excluded ? 'OTP - excluded' : !visit.on_premise ? 'Off premises - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
                                         </tr>
@@ -1627,7 +1627,7 @@ function focusEnd() {
                             <div v-else-if="summaryModal === 'productivity'">
                                 <p class="small text-muted">Each eligible completed visit counts once. LPO Customers are excluded and shown in yellow. Incomplete visits do not count.</p>
                                 <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Customer</th><th>Check-in</th><th>Checkout</th><th>Status</th><th>Collection</th><th>Orders/Invoices</th></tr></thead>
-                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
+                                <tbody><tr v-for="visit in productivityRows" :key="visit.logkey" :class="{ 'lpo-customer-row': visit.ignored }"><td>{{ visit.alternatecode || visit.customercode }} - {{ visit.customername }}</td><td>{{ visit.visit_start_date }} {{ visit.visit_start_time }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span></td><td>{{ visit.ignored ? 'LPO Customers' : visit.incomplete ? 'Incomplete' : visit.status }}</td><td>{{ visit.collection_productive ? 'Yes' : 'No' }}</td><td>{{ visit.sales_order_productive ? 'Yes' : 'No' }}</td></tr><tr v-if="!productivityRows.length"><td colspan="6">No customer visits.</td></tr></tbody></table></div>
                             </div>
                             <div v-else-if="summaryModal === 'efficiency'">
                                 <p class="small text-muted">Each customer counts once. LPO Customers are shown in yellow for reference and excluded from both metric counts.</p>
@@ -1694,7 +1694,7 @@ function focusEnd() {
                                                     <tr v-for="visit in period.customer_visits" :key="visit.logkey" :style="{ '--visit-color': customerStatusColor({ ...visit, type: 'visit' }) }">
                                                         <td><strong>{{ visit.customername }}</strong><small>{{ visit.alternatecode || visit.customercode }}</small><span class="stationary-visit-status">{{ customerVisitStatus({ ...visit, type: 'visit' }) }}</span></td>
                                                         <td><strong>{{ visit.visit_start_time || 'Unavailable' }}</strong><small>{{ visit.visit_start_date }}</small></td>
-                                                        <td><strong>{{ visit.visit_end_time || 'Unavailable' }}</strong><small>{{ visit.visit_end_date }}</small></td>
+                                                        <td><strong>{{ visit.visit_end_time || 'Unavailable' }}</strong><span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span><small>{{ visit.visit_end_date }}</small></td>
                                                         <td>{{ visit.visit_duration_minutes == null ? 'Unavailable' : stationaryDuration(visit.visit_duration_minutes * 60) }}</td>
                                                         <td><strong>{{ stationaryDuration(visit.stationary_overlap_seconds) }}</strong></td>
                                                         <td>
@@ -1807,7 +1807,7 @@ function focusEnd() {
                                 <h5 id="transaction-details-title" class="modal-title">Customer Transactions</h5>
                                 <div class="small text-muted">
                                     {{ selectedTransactionVisit.customername }} &middot;
-                                    Visit {{ selectedTransactionVisit.visit_start_time }}–{{ selectedTransactionVisit.visit_end_time || "Open" }}
+                                    Visit {{ selectedTransactionVisit.visit_start_time }}–{{ selectedTransactionVisit.visit_end_time || "Open" }}<span v-if="selectedTransactionVisit.visit_end_time && selectedTransactionVisit.auto_checkout" class="auto-checkout-badge"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span>
                                 </div>
                             </div>
                             <button type="button" class="btn-close" aria-label="Close" @click="closeTransactions"></button>

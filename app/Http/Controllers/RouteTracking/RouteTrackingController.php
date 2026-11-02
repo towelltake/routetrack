@@ -1019,6 +1019,7 @@ class RouteTrackingController extends Controller
         $actual['operational_time'] = $operational['minutes'] === null ? null : $operational['minutes'] * 60;
         $actual['operational_start'] = $operational['start'];
         $actual['operational_end'] = $operational['end'];
+        $actual['operational_auto_checkout'] = $operational['auto_checkout'];
         $actual['face_time'] = $visits->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);
         $actual['otp_customer_time'] = $visits->filter(fn (array $visit) => $visit['operational_otp'] ?? !empty($visit['otp_logs']))
             ->sum(fn (array $visit) => ($visit['visit_duration_minutes'] ?? 0) * 60);

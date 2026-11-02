@@ -12,6 +12,7 @@ class OperationalTime
             'end' => $this->timestamp($visit->logenddate, $visit->logendtime),
             'otp' => !empty($otpByVisit[$visit->routekey.':'.$visit->logkey]),
             'customer' => $visit->customercode,
+            'auto_checkout' => (int) ($visit->autocheckout ?? 0) === 1,
         ];
         return $this->summarize($rows);
     }
@@ -24,6 +25,7 @@ class OperationalTime
             'end' => $this->timestamp($visit['visit_end_date'] ?? null, $visit['visit_end_time'] ?? null),
             'otp' => $visit['operational_otp'] ?? !empty($visit['otp_logs']),
             'customer' => $visit['customercode'] ?? null,
+            'auto_checkout' => (bool) ($visit['auto_checkout'] ?? false),
         ];
         return $this->summarize($rows);
     }
@@ -44,6 +46,7 @@ class OperationalTime
             'minutes' => $valid ? ($end - $start) / 60 : null,
             'first_customer' => $first['customer'] ?? null,
             'last_customer' => $last['customer'] ?? null,
+            'auto_checkout' => $valid && ($last['auto_checkout'] ?? false),
         ];
     }
 

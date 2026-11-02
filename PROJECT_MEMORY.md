@@ -1,5 +1,22 @@
 # TRAC / routeTrack project memory
 
+## Auto-checkout flags beside popup checkout times: 2026-11-02
+
+Dashboard/shared coverage, JP/unplanned and operational detail rows now carry
+auto_checkout from customervisitlog.autocheckout. OperationalTime returns the flag
+of the actual last eligible visit only when its checkout is valid; no timing change.
+CustomerDetailsDialog shows an amber flag icon with Auto-checkout text beside
+checkout values across operational, coverage, compliance, CFT/OTP and productivity
+tables. Existing badges now include the icon. Route Tracking also covers its
+operational last checkout, idle customer-visit rows, transaction popup visit header
+and Leaflet visit-end popup, alongside existing CFT/productivity/list badges.
+No new columns or database changes. Missing checkout times do not show flags.
+
+Validation: production build, changed PHP syntax and diff checks passed; direct
+PHP automatic/manual/missing-checkout operational metadata checks passed. Updated
+the existing OperationalTime expected payload. Full PHP suite unavailable without
+vendor dependencies; browser verification remains outstanding.
+
 ## Procedure export format and NULL display: 2026-11-02
 
 salesman_route_status.sql now follows the backup's SQLyog procedure layout:

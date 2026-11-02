@@ -19,7 +19,7 @@ test('operational time spans first to last non OTP visits including gaps and int
     ], $visits);
     expect($dashboard)->toEqual([
         'start' => '2026-09-20 09:00:00', 'end' => '2026-09-20 11:20:00',
-        'minutes' => 140, 'first_customer' => 2, 'last_customer' => 4,
+        'minutes' => 140, 'first_customer' => 2, 'last_customer' => 4, 'auto_checkout' => false,
     ])->and($service->fromTracking(array_reverse($tracking)))->toBe($dashboard);
 });
 

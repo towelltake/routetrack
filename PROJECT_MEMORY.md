@@ -1,5 +1,36 @@
 # TRAC / routeTrack project memory
 
+## Auto-checkout flags beside popup checkout times: 2026-11-02
+
+Dashboard/shared coverage, JP/unplanned and operational detail rows now carry
+auto_checkout from customervisitlog.autocheckout. OperationalTime returns the flag
+of the actual last eligible visit only when its checkout is valid; no timing change.
+CustomerDetailsDialog shows an amber flag icon with Auto-checkout text beside
+checkout values across operational, coverage, compliance, CFT/OTP and productivity
+tables. Existing badges now include the icon. Route Tracking also covers its
+operational last checkout, idle customer-visit rows, transaction popup visit header
+and Leaflet visit-end popup, alongside existing CFT/productivity/list badges.
+No new columns or database changes. Missing checkout times do not show flags.
+
+Validation: production build, changed PHP syntax and diff checks passed; direct
+PHP automatic/manual/missing-checkout operational metadata checks passed. Updated
+the existing OperationalTime expected payload. Full PHP suite unavailable without
+vendor dependencies; browser verification remains outstanding.
+
+## Procedure export format and NULL display: 2026-11-02
+
+salesman_route_status.sql now follows the backup's SQLyog procedure layout:
+structure heading, version-commented DROP PROCEDURE IF EXISTS, DELIMITER $$,
+version-commented CREATE and END */$$. Uses DEFINER=CURRENT_USER for portable
+installation and retains SQL SECURITY INVOKER. Script replaces only this procedure
+when explicitly installed; no execution performed. Supersedes earlier no-DROP note.
+All 22 final output columns use IFNULL(expression, 0), including undefined
+percentages, distance, names and formatted dates/times. Internal NULL timing and
+denominator semantics are preserved; existing zero durations remain H:MM.
+No matching journeys still yields an empty result set. Static delimiter checks,
+SQLite-adapted all-NULL final projection (22 zero outputs) and diff check passed.
+Native MySQL installation/execution remains unverified.
+
 ## On-premises CFT and compliance with visit badges: 2026-11-02
 
 Dashboard and Route Tracking actual CFT now require customervisitlog.onpremisevisit

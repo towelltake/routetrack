@@ -1,5 +1,34 @@
 # TRAC / routeTrack project memory
 
+## Wider responsive popup tables: 2026-11-02
+
+Increased shared CustomerDetailsDialog and Route Tracking detail modal desktop
+width cap from 1250px to 1720px, bounded to available viewport/container space.
+Table headings now wrap and cell horizontal padding is reduced; visit badges
+can wrap long exclusion reasons instead of forcing table width. Horizontal
+overflow remains available for narrow screens rather than clipping data.
+No data/calculation changes. Production build and diff check passed; visual
+verification on actual browser/screen sizes remains outstanding.
+
+## Consistent red CFT exclusion rows: 2026-11-02
+
+Shared Dashboard/Route Tracking CFT and qualification popup row highlighting now
+uses the explicit exclusion reason, covering off-premises and incomplete/invalid
+timing alongside OTP. Reuses the existing pale-red OTP exclusion style; badges
+and calculations unchanged. Route Tracking OTP-time view retains its existing
+semantics. Production build and diff check passed; browser verification outstanding.
+
+## Explicit CFT exclusion badges: 2026-11-02
+
+CFT/Face Time Compliance and JP/unplanned qualification popups now label excluded
+visit rows with Excluded plus Off premises, OTP and/or Incomplete/invalid timing
+reasons. Shared VisitBadges supports this optional label; Route Tracking's CFT
+popup uses the same badge. Unvisited plans are not labelled excluded; hold order
+alone is not a reason. OTP-time and coverage views retain their own semantics.
+Added explanatory CFT text that exclusion applies to actual CFT and off-premises
+planned targets remain included. No formulas, columns or data filtering changed.
+Production build and diff check passed; live browser verification outstanding.
+
 ## Auto-checkout flags beside popup checkout times: 2026-11-02
 
 Dashboard/shared coverage, JP/unplanned and operational detail rows now carry

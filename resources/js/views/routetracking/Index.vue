@@ -10,6 +10,7 @@ import VueSelect from "vue-select";
 import { filterFields, filterOptions } from "@/views/routelocation/filters";
 import DashboardCards from "@/views/routelocation/DashboardCards.vue";
 import CustomerDetailsDialog from "@/views/routelocation/CustomerDetailsDialog.vue";
+import VisitBadges from "@/views/routelocation/VisitBadges.vue";
 import { efficiencyCustomers } from "@/views/routelocation/analytics";
 
 const unplannedDetailsDialog = ref(null);
@@ -85,7 +86,7 @@ const cftVisitRows = computed(() => [...customerVisits.value, ...(result.value?.
 }))].map(visit => {
     const excluded = visit.operational_otp ?? !!visit.otp_logs?.length;
     const planned = excluded ? 0 : Math.max(0, Number(visit.default_face_time_minutes) || 0);
-    const actual = excluded ? 0 : visit.visit_duration_minutes;
+    const actual = excluded || (!visit.not_visited && !visit.on_premise) ? 0 : visit.visit_duration_minutes;
     return { ...visit, excluded, plannedCft: planned, actualCft: actual,
         variancePercent: !excluded && actual != null && planned > 0 ? Math.round(1000 * (actual - planned) / planned) / 10 : null,
         varianceCft: !excluded && actual != null && planned > 0 ? actual - planned : null };
@@ -1609,15 +1610,15 @@ function focusEnd() {
                             </div>
                             <div v-else-if="['cft', 'otp_time'].includes(summaryModal)">
                                 <p>{{ summaryModal === 'otp_time' ? 'OTP Customer Time' : 'Customer Face Time' }}: <strong>{{ stationaryDuration(summaryModal === 'otp_time' ? result.actual.otp_customer_time : result.actual.actual_cft) }}</strong></p>
-                                <p class="small text-muted">Visits and unvisited planned customers are listed, including repeat visits. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Visited customers use their recorded visit CFT. Unvisited planned customers use their customer target, falling back to the matching division and channel target. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
+                                <p class="small text-muted">Visits and unvisited planned customers are listed, including repeat visits. {{ cftOtpCount }} OTP visits are shown in red and excluded from CFT totals. Actual CFT includes completed on-premises visits only. Hold orders are informational. Visited customers use their recorded visit CFT. Unvisited planned customers use the CFT recorded in their journey plan. Times are in h:mm; variance (%) is (actual minus planned) / planned times 100.</p>
                                 <div class="table-responsive"><table class="table table-sm">
                                     <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
                                     <tbody>
                                         <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded, 'cft-not-visited': visit.not_visited }">
-                                            <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}</td>
+                                            <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}<VisitBadges :on-premise="visit.on_premise ?? null" :hold-order="visit.hold_order" /></td>
                                             <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge">Auto-checkout</span></td>
                                             <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
-                                            <td>{{ visit.not_visited ? 'Not visited' : visit.excluded ? 'OTP - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
+                                            <td>{{ visit.not_visited ? 'Not visited' : visit.excluded ? 'OTP - excluded' : !visit.on_premise ? 'Off premises - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
                                         </tr>
                                         <tr v-if="!popupCftRows.length"><td colspan="10">No customer visits for this journey.</td></tr>
                                     </tbody>

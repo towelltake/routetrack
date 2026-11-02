@@ -15,13 +15,13 @@ class DashboardMetrics
         $plans = DB::table('routesequencecustomerstatus')
             ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('routekey', $keys)->where('schelduledflag', 1)
-            ->select('routekey', 'customercode')->selectRaw('COALESCE(MIN(CASE WHEN sequencenumber > 0 THEN sequencenumber END), 0) as sequencenumber')
+            ->select('routekey', 'customercode')->selectRaw('MAX(COALESCE(cft, 0)) as cft')->selectRaw('COALESCE(MIN(CASE WHEN sequencenumber > 0 THEN sequencenumber END), 0) as sequencenumber')
             ->groupBy('routekey', 'customercode')->get();
         $visits = DB::table('customervisitlog as v')
             ->whereIn('v.customercode', CustomerMaster::query()->select('customercode'))
             ->whereIn('v.routekey', $keys)
             ->orderBy('v.routekey')->orderBy('v.logstartdate')->orderBy('v.logstarttime')->orderBy('v.logkey')
-            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime', 'v.cft']);
+            ->get(['v.logkey', 'v.routekey', 'v.customercode', 'v.logstartdate', 'v.logstarttime', 'v.logenddate', 'v.logendtime', 'v.cft', 'v.onpremisevisit', 'v.holdorder']);
         foreach ($visits as $visit) $visit->expected_minutes = CustomerFaceTime::plannedMinutes($visit->cft);
         $excludedCustomers = CustomerMaster::query()->where('toplpo', 1)
             ->whereIn('customercode', $visits->pluck('customercode')->unique())
@@ -100,14 +100,14 @@ class DashboardMetrics
             if ($start === null || $end === null || $end < $start) {
                 continue;
             }
-            if (CustomerFaceTime::qualifies(($end - $start) / 60, $visit->cft, !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]))) {
+            if (CustomerFaceTime::qualifies(($end - $start) / 60, $visit->cft, !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]), (int) ($visit->onpremisevisit ?? 0) === 1)) {
                 $qualified[$visit->routekey.':'.$visit->customercode] = true;
             }
             if (!$visit->productivity_excluded) $completed++;
             $actualSeconds += $end - $start;
             if ($visit->expected_minutes > 0 && empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) {
                 $configuredVisits++;
-                $configuredSeconds += $end - $start;
+                $configuredSeconds += (int) ($visit->onpremisevisit ?? 0) === 1 ? $end - $start : 0;
                 $expectedMinutes += $visit->expected_minutes;
                 if (!isset($otp['by_visit'][$visit->routekey.':'.$visit->logkey])) $plannedFaceMinutes += (float) $visit->expected_minutes;
             }
@@ -151,7 +151,12 @@ class DashboardMetrics
         $unvisitedMinutes = $plans->sum('unvisited_cft_minutes');
         $plannedFaceMinutes += $unvisitedMinutes;
         $expectedMinutes += $unvisitedMinutes;
-        $actualFaceMinutes = $actualSeconds / 60 - $otp['customer_minutes'];
+        $actualFaceMinutes = $visits->filter(fn ($visit) => (int) ($visit->onpremisevisit ?? 0) === 1 && empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]))
+            ->sum(function ($visit) {
+                $start = $this->timestamp($visit->logstartdate, $visit->logstarttime);
+                $end = $this->timestamp($visit->logenddate, $visit->logendtime);
+                return $start !== null && $end !== null && $end >= $start ? ($end - $start) / 60 : 0;
+            });
         $analysis = app(DashboardAnalysis::class)->build($journeys, $plans, $visits, $operations, $transactions, $journeyAmounts, $currencies, $otp);
         $timed = collect($analysis['journeys'])->filter(fn ($row) => $row['duration'] !== null);
         $operational = collect($analysis['journeys'])->whereNotNull('operational_minutes');

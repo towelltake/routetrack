@@ -76,11 +76,11 @@ class DashboardAnalysis
                 $recordedVisitMinutes += $minutes;
                 $hasOtp = !empty($otp['by_visit'][$visit->routekey.':'.$visit->logkey]);
                 if ($hasOtp) $row['timeline']['otp_visits'][] = [date('Y-m-d H:i:s', $visitStart), date('Y-m-d H:i:s', $visitEnd)];
-                if (!$hasOtp) $row['actual_cft'] += $minutes;
+                if (!$hasOtp && (int) ($visit->onpremisevisit ?? 0) === 1) $row['actual_cft'] += $minutes;
                 if ($visit->expected_minutes > 0 && !$hasOtp) {
                     $row['configured_visits']++;
                     $row['expected_cft'] += $visit->expected_minutes;
-                    $row['configured_actual_cft'] += $minutes;
+                    $row['configured_actual_cft'] += (int) ($visit->onpremisevisit ?? 0) === 1 ? $minutes : 0;
                 }
                 $transactionKeys = $operations->get($visit->routekey.':'.$visit->logkey, collect())
                     ->pluck('visitkey')->unique()->map(fn ($key) => $visit->routekey.':'.$key);

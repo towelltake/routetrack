@@ -14,6 +14,16 @@ joins must explicitly filter the master alias or restrict customer codes using
 
 ## JP compliance and Unplanned Customers qualification
 
+Actual CFT and JP/unplanned qualification require `customervisitlog.onpremisevisit = 1`.
+Completed off-premises visits contribute zero actual CFT and cannot qualify, even
+when their duration meets the target. OTP exclusions still apply. NULL/missing flags
+are not on premises. Planned CFT targets remain recorded targets; holdorder is
+informational only. Customer Coverage, Face Time Compliance, Journey Plan and
+Unplanned Visits popups show On premises/Off premises and Hold order badges beside
+customer details, with no added columns. Unvisited rows have no premises badge.
+Raw visit durations, coverage counts, operational/travel/idle and productivity rules
+remain unchanged.
+
 Dashboard JP compliance counts a scheduled customer only if at least one completed
 visit without matched OTP has actual duration >= that visit's positive recorded
 `customervisitlog.cft` target (minutes). Missing, zero and negative targets do not
@@ -30,7 +40,7 @@ visits/revisits together, with check-in/out, planned and actual CFT in minutes,
 OTP status, visit qualification and customer qualification. Scheduled customers
 not visited appear in JP; unscheduled route-status customers not visited appear
 in Unplanned. Visits absent from route status appear last, marked Unsequenced.
-Unvisited planned customers use their customer target or matching division/channel target, with zero actual CFT.
+Unvisited planned customers use their recorded journey-plan CFT, with zero actual CFT.
 Route Tracking's Unplanned Visits popup uses the same dialog and qualification rows for its selected journey. Raw Customer Coverage, operational timing and productivity rules are unchanged.
 
 ## SFA Dashboard filters
@@ -185,7 +195,7 @@ Visit start, end, and duration use:
 
 If the end date or time is unavailable, Visit End and Visit Duration are omitted.
 
-Planned customer face time uses `customervisitlog.cft` for recorded visits. For each scheduled active customer with no visit record in that journey, add positive `customermaster.customerfacetime`, otherwise positive `customerclustermapping.cft` matching both `DivisionCode`/`divisioncode` and `channel`. Missing/nonpositive settings add zero. Unvisited targets count once per customer/journey, with zero actual time, and appear in CFT and JP popups. Recorded visits retain their own targets, completed-timing rules and OTP exclusions; no master fallback is applied to visited customers, including incomplete visits. Dashboard metrics/analysis and Route Tracking share this resolution. Planned totals and variance include unvisited allowances.
+Planned customer face time uses `customervisitlog.cft` for recorded visits. For each scheduled active customer with no visit record in that journey, use `routesequencecustomerstatus.cft` for that customer and `routekey`. Missing/nonpositive values add zero, without master/channel fallback. Duplicate scheduled rows use the highest CFT once per customer/journey. Unvisited targets count once per customer/journey, with zero actual time, and appear in CFT and JP popups. Recorded visits retain their own targets, completed-timing rules and OTP exclusions; no master fallback is applied to visited customers, including incomplete visits. Dashboard metrics/analysis and Route Tracking share this resolution. Planned totals and variance include unvisited allowances.
 
 ## Planned Not Visited
 

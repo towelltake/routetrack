@@ -377,9 +377,9 @@ beforeEach(function () {
     DB::purge('metrics_test');
     foreach ([
         'startendday (routekey integer, routecode integer, routestartdate text, routestarttime text, routeenddate text, routeendtime text, routeclosed integer)',
-        'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
+        'routesequencecustomerstatus (cft integer default 0, routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
-        'customervisitlog (logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer, autocheckout integer default 0)',
+        'customervisitlog (onpremisevisit integer default 1, holdorder integer default 0, logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer, autocheckout integer default 0)',
         'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
         'invoiceheader (customercode integer default 101, routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'salesorderheader (customercode integer default 101, routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
@@ -817,7 +817,7 @@ test('face time and productivity details expose the recorded automatic checkout 
 });
 
 
-test('unvisited planned targets use customer then matching division and channel and agree across cards and popups', function () {
+test('unvisited planned targets use journey plan CFT despite master settings and agree across cards and popups', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     $before = app(DashboardMetrics::class)->summarize($journeys);
@@ -829,7 +829,15 @@ test('unvisited planned targets use customer then matching division and channel 
         ['divisioncode' => 'D2', 'channel' => 'Retail', 'cft' => 90],
         ['divisioncode' => 'D1', 'channel' => 'Wholesale', 'cft' => 80],
     ]);
+    expect(app(DashboardMetrics::class)->summarize($journeys)['planned_face_minutes'])->toEqual($before['planned_face_minutes']);
+    DB::table('routesequencecustomerstatus')->where('routekey', 1)->where('customercode', 102)->update(['cft' => 12]);
+    DB::table('routesequencecustomerstatus')->where('routekey', 2)->where('customercode', 103)->update(['cft' => 25]);
     $after = app(DashboardMetrics::class)->summarize($journeys);
+    $controller = app(\App\Http\Controllers\RouteTracking\RouteTrackingController::class);
+    $plan = (new ReflectionMethod($controller, 'fetchJourneyPlan'))->invoke($controller, 1);
+    expect($plan->firstWhere('customercode', 102)->cft)->toEqual(12);
+    $seconds = (new ReflectionMethod($controller, 'plannedFaceTimeSeconds'))->invoke($controller, 1, $plan);
+    expect($seconds)->toEqual(32 * 60);
     expect($after['planned_face_minutes'])->toEqual($before['planned_face_minutes'] + 37)
         ->and($after['actual_face_minutes'])->toEqual($before['actual_face_minutes'])
         ->and(collect($after['analysis']['journeys'])->sum('expected_cft'))->toEqual($after['planned_cft_minutes']);
@@ -839,4 +847,29 @@ test('unvisited planned targets use customer then matching division and channel 
             ->and($rows->firstWhere('customercode', 103)['planned_cft'])->toEqual(25)
             ->and($rows->firstWhere('customercode', 102)['actual_cft'])->toEqual(0);
     }
+});
+
+
+test('off-premises visits retain targets and badges but do not qualify or add actual CFT', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    $before = app(DashboardMetrics::class)->summarize($journeys);
+    DB::table('customervisitlog')->where('logkey', 12)->update(['onpremisevisit' => 0, 'holdorder' => 1]);
+    $after = app(DashboardMetrics::class)->summarize($journeys);
+    expect($after['actual_face_minutes'])->toEqual($before['actual_face_minutes'] - 10)
+        ->and($after['planned_cft_minutes'])->toEqual($before['planned_cft_minutes'])
+        ->and($after['planned_visited_without_otp'])->toEqual($before['planned_visited_without_otp'] - 1)
+        ->and(collect($after['analysis']['journeys'])->sum('actual_cft'))->toEqual($after['actual_face_minutes']);
+    foreach (['coverage', 'actual_face', 'cft', 'planned'] as $type) {
+        $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])->flatMap(fn ($g) => $g['rows']);
+        $row = $rows->firstWhere('id', $type === 'planned' ? 'visit:12' : 12);
+        expect($row['on_premise'])->toBeFalse()->and($row['hold_order'])->toBeTrue();
+        if ($type !== 'coverage') expect($row['actual_cft'])->toEqual(0);
+        if ($type === 'planned') expect($row['qualified'])->toBeFalse();
+    }
+    DB::table('customervisitlog')->where('logkey', 22)->update(['onpremisevisit' => 0, 'holdorder' => 1]);
+    $unplanned = collect(app(DashboardCustomerDetails::class)->build($journeys, 'unplanned')['groups'])->flatMap(fn ($g) => $g['rows'])->firstWhere('id', 'visit:22');
+    expect($unplanned['on_premise'])->toBeFalse()->and($unplanned['hold_order'])->toBeTrue();
+    DB::table('customervisitlog')->where('logkey', 12)->update(['onpremisevisit' => 1]);
+    expect(app(DashboardMetrics::class)->summarize($journeys)['actual_face_minutes'])->toEqual($before['actual_face_minutes']);
 });

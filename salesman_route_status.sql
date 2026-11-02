@@ -3,7 +3,8 @@ Salesman Route Status -- MySQL 8.0+ (CTEs and window functions required).
 Schema reference: sfa_ENHANCE_LATEST_20261102.sql.
 Select the intended SFA database before installing this file. Installation creates
 one procedure; calling it only SELECTs data. No business tables are modified.
-No DROP PROCEDURE is included: an existing definition must be reviewed explicitly.
+The installation script replaces only sp_salesman_route_status if it exists.
+DEFINER=CURRENT_USER uses the installing account; SQL SECURITY INVOKER is retained.
 
 Example (replace DIVISION_CODE with a routemaster.divisioncode value):
   CALL sp_salesman_route_status('DIVISION_CODE', '2026-10-26', '2026-10-26');
@@ -46,13 +47,19 @@ Report definitions / assumptions:
   visit by check-in order. An unfinished last visit yields NULL, not an earlier end.
   The repeated '1st customer' wording for last checkout is treated as a typo.
 * End date and odometer distance require routeclosed=1 and valid recorded values.
-* Percentages are numeric 0..100, NULL for a zero denominator; append % in UI.
+* Missing/NULL output values return 0, including percentages with no denominator
+  and missing formatted dates/times. Existing zero durations remain H:MM.
+  No matching journeys returns an empty result set, not an invented journey.
 * FSM Name = salesman.salesmanname1 (confirmed by requester).
 */
 
+/* Procedure structure for procedure `sp_salesman_route_status` */
+
+/*!50003 DROP PROCEDURE IF EXISTS `sp_salesman_route_status` */;
+
 DELIMITER $$
 
-CREATE PROCEDURE sp_salesman_route_status(
+/*!50003 CREATE DEFINER=CURRENT_USER PROCEDURE `sp_salesman_route_status`(
     IN in_divisioncode VARCHAR(50),
     IN in_startdate DATE,
     IN in_enddate DATE
@@ -241,23 +248,32 @@ BEGIN
         LEFT JOIN document_totals dt ON dt.routekey = j.routekey
         LEFT JOIN boundaries b ON b.routekey = j.routekey
     )
-    SELECT routekey AS `Route Key`, routecode AS `Route Code`,
-        fsm_name AS `FSM Name`, salesman_code_name AS `Salesman Code - Name`,
-        DATE_FORMAT(start_at, '%d/%m/%Y %H:%i:%s') AS `Route Start Date`,
-        DATE_FORMAT(close_at, '%d/%m/%Y %H:%i:%s') AS `Route End Date`,
-        CASE WHEN total_seconds >= 0 THEN CONCAT(FLOOR(total_seconds / 3600), ':',
-             LPAD(FLOOR(MOD(total_seconds, 3600) / 60), 2, '0')) END AS `Total Time Spent`,
-        km AS `Total KM Covered`, jp_count AS `Actual JP count`, calls_made AS `Calls Made`,
-        unplanned_calls AS `UN-Planned Call`, jp_compliance AS `JP COMPLIANCE`,
-        ROUND(actual_cft_seconds / 60.0, 2) AS `CFT IN MM`, cft_compliance AS `CFT COMPLIANCE`,
-        document_count AS `Distinct Order & Invoice Count`, productivity AS `Productivity`,
-        qualified_calls AS `Qualified calls`, lpo_customers AS `LPO Customer calls`,
-        CONCAT(FLOOR(actual_cft_seconds / 3600), ':',
-               LPAD(FLOOR(MOD(actual_cft_seconds, 3600) / 60), 2, '0')) AS `Actual CFT`,
-        CONCAT(FLOOR(planned_minutes / 60), ':', LPAD(MOD(planned_minutes, 60), 2, '0')) AS `Planned CFT`,
-        DATE_FORMAT(first_check_in, '%d/%m/%Y %H:%i:%s') AS `First customer checking time`,
-        DATE_FORMAT(last_check_out, '%d/%m/%Y %H:%i:%s') AS `Last customer checkout time`
+    SELECT
+        IFNULL(routekey, 0) AS `Route Key`,
+        IFNULL(routecode, 0) AS `Route Code`,
+        IFNULL(fsm_name, 0) AS `FSM Name`,
+        IFNULL(salesman_code_name, 0) AS `Salesman Code - Name`,
+        IFNULL(DATE_FORMAT(start_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route Start Date`,
+        IFNULL(DATE_FORMAT(close_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route End Date`,
+        IFNULL(CASE WHEN total_seconds >= 0 THEN CONCAT(FLOOR(total_seconds / 3600), ':',
+             LPAD(FLOOR(MOD(total_seconds, 3600) / 60), 2, '0')) END, 0) AS `Total Time Spent`,
+        IFNULL(km, 0) AS `Total KM Covered`,
+        IFNULL(jp_count, 0) AS `Actual JP count`,
+        IFNULL(calls_made, 0) AS `Calls Made`,
+        IFNULL(unplanned_calls, 0) AS `UN-Planned Call`,
+        IFNULL(jp_compliance, 0) AS `JP COMPLIANCE`,
+        IFNULL(ROUND(actual_cft_seconds / 60.0, 2), 0) AS `CFT IN MM`,
+        IFNULL(cft_compliance, 0) AS `CFT COMPLIANCE`,
+        IFNULL(document_count, 0) AS `Distinct Order & Invoice Count`,
+        IFNULL(productivity, 0) AS `Productivity`,
+        IFNULL(qualified_calls, 0) AS `Qualified calls`,
+        IFNULL(lpo_customers, 0) AS `LPO Customer calls`,
+        IFNULL(CONCAT(FLOOR(actual_cft_seconds / 3600), ':',
+               LPAD(FLOOR(MOD(actual_cft_seconds, 3600) / 60), 2, '0')), 0) AS `Actual CFT`,
+        IFNULL(CONCAT(FLOOR(planned_minutes / 60), ':', LPAD(MOD(planned_minutes, 60), 2, '0')), 0) AS `Planned CFT`,
+        IFNULL(DATE_FORMAT(first_check_in, '%d/%m/%Y %H:%i:%s'), 0) AS `First customer checking time`,
+        IFNULL(DATE_FORMAT(last_check_out, '%d/%m/%Y %H:%i:%s'), 0) AS `Last customer checkout time`
     FROM report ORDER BY start_at, routecode, routekey;
-END$$
+END */$$
 
 DELIMITER ;

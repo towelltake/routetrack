@@ -1,5 +1,19 @@
 # TRAC / routeTrack project memory
 
+## Procedure export format and NULL display: 2026-11-02
+
+salesman_route_status.sql now follows the backup's SQLyog procedure layout:
+structure heading, version-commented DROP PROCEDURE IF EXISTS, DELIMITER $$,
+version-commented CREATE and END */$$. Uses DEFINER=CURRENT_USER for portable
+installation and retains SQL SECURITY INVOKER. Script replaces only this procedure
+when explicitly installed; no execution performed. Supersedes earlier no-DROP note.
+All 22 final output columns use IFNULL(expression, 0), including undefined
+percentages, distance, names and formatted dates/times. Internal NULL timing and
+denominator semantics are preserved; existing zero durations remain H:MM.
+No matching journeys still yields an empty result set. Static delimiter checks,
+SQLite-adapted all-NULL final projection (22 zero outputs) and diff check passed.
+Native MySQL installation/execution remains unverified.
+
 ## On-premises CFT and compliance with visit badges: 2026-11-02
 
 Dashboard and Route Tracking actual CFT now require customervisitlog.onpremisevisit

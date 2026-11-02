@@ -1,5 +1,17 @@
 # TRAC / routeTrack project memory
 
+## Short exclusion badge: 2026-11-02
+
+Per user preference, shared visit exclusion badge now displays only Excluded;
+the reason remains available on hover. Existing premises/hold badges, red row
+highlighting and calculations are unchanged. Production build and diff check passed.
+
+## Exclusion badge separator corrected: 2026-11-02
+
+VisitBadges contained a literal question mark between Excluded and its reason.
+Replaced it with an ASCII hyphen: Excluded - Off premises. Production build and
+diff check passed; no calculation changes.
+
 ## Wider responsive popup tables: 2026-11-02
 
 Increased shared CustomerDetailsDialog and Route Tracking detail modal desktop

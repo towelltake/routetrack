@@ -87,7 +87,13 @@ const cftVisitRows = computed(() => [...customerVisits.value, ...(result.value?.
     const excluded = visit.operational_otp ?? !!visit.otp_logs?.length;
     const planned = excluded ? 0 : Math.max(0, Number(visit.default_face_time_minutes) || 0);
     const actual = excluded || (!visit.not_visited && !visit.on_premise) ? 0 : visit.visit_duration_minutes;
-    return { ...visit, excluded, plannedCft: planned, actualCft: actual,
+    const reasons = [];
+    if (!visit.not_visited) {
+        if (!visit.on_premise) reasons.push('Off premises');
+        if (excluded) reasons.push('OTP');
+        if (visit.visit_duration_minutes == null) reasons.push('Incomplete/invalid timing');
+    }
+    return { ...visit, exclusionReason: reasons.join(' / '), excluded, plannedCft: planned, actualCft: actual,
         variancePercent: !excluded && actual != null && planned > 0 ? Math.round(1000 * (actual - planned) / planned) / 10 : null,
         varianceCft: !excluded && actual != null && planned > 0 ? actual - planned : null };
 }));
@@ -1614,8 +1620,8 @@ function focusEnd() {
                                 <div class="table-responsive"><table class="table table-sm">
                                     <thead><tr><th scope="col">Visit</th><th scope="col">Customer code</th><th scope="col">Customer name</th><th scope="col">Check-in</th><th scope="col">Checkout</th><th scope="col">Recorded duration</th><th scope="col">Planned CFT</th><th scope="col">Actual CFT</th><th scope="col">Variance (%)</th><th scope="col">Status</th></tr></thead>
                                     <tbody>
-                                        <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded, 'cft-not-visited': visit.not_visited }">
-                                            <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}<VisitBadges :on-premise="visit.on_premise ?? null" :hold-order="visit.hold_order" /></td>
+                                        <tr v-for="visit in popupCftRows" :key="visit.logkey" :class="{ 'cft-otp-excluded': visit.excluded || (summaryModal !== 'otp_time' && !!visit.exclusionReason), 'cft-not-visited': visit.not_visited }">
+                                            <td>{{ visit.displayNumber }}</td><td>{{ visit.alternatecode || visit.customercode }}</td><td>{{ visit.customername }}<VisitBadges :on-premise="visit.on_premise ?? null" :hold-order="visit.hold_order" :exclusion-reason="summaryModal === 'otp_time' ? '' : visit.exclusionReason" /></td>
                                             <td>{{ visit.visit_start_date }} {{ visit.visit_start_time || 'Unavailable' }}</td><td>{{ visit.visit_end_date }} {{ visit.visit_end_time || 'Unavailable' }}<span v-if="visit.visit_end_time && visit.auto_checkout" class="auto-checkout-badge" title="Automatically checked out"><i class="fa fa-flag" aria-hidden="true"></i> Auto-checkout</span></td>
                                             <td>{{ cftDuration(visit.visit_duration_minutes) }}</td><td>{{ cftDuration(visit.plannedCft) }}</td><td>{{ cftDuration(visit.actualCft) }}</td><td>{{ visit.variancePercent == null ? 'N/A' : (visit.variancePercent > 0 ? '+' : '') + visit.variancePercent + '%' }}</td>
                                             <td>{{ visit.not_visited ? 'Not visited' : visit.excluded ? 'OTP - excluded' : !visit.on_premise ? 'Off premises - excluded' : visit.visit_duration_minutes == null ? 'Incomplete' : 'Included' }}</td>
@@ -2674,7 +2680,7 @@ function focusEnd() {
 
 /* Match the dashboard detail dialogs while preserving OTP/LPO row colors. */
 .route-tracking-otp-modal { background: #0f172a88; padding: 16px; }
-.route-tracking-otp-modal .modal-dialog { width: min(1250px, 96vw); max-width: 1250px; margin: 16px auto; min-height: calc(100% - 32px); }
+.route-tracking-otp-modal .modal-dialog { width: min(1720px, 100%); max-width: 100%; margin: 16px auto; min-height: calc(100% - 32px); }
 .route-tracking-otp-modal .modal-content { max-height: 88vh; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #172b45; box-shadow: 0 24px 64px #0f172a33; overflow: hidden; }
 .route-tracking-otp-modal .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; background: #fff; gap: 16px; }
 .route-tracking-otp-modal .modal-title { font-size: 18px; font-weight: 700; color: #172b45; }
@@ -2683,8 +2689,8 @@ function focusEnd() {
 .route-tracking-otp-modal .modal-footer { padding: 12px 20px; border-top: 1px solid #e2e8f0; }
 .route-tracking-otp-modal .modal-footer .btn { padding: 7px 16px; border: 1px solid #e2e8f0; background: #f8fafc; color: #334155; border-radius: 6px; }
 .route-tracking-otp-modal .table { width: 100%; font-size: 12px; border-collapse: collapse; --bs-table-color: #172b45; }
-.route-tracking-otp-modal .table th, .route-tracking-otp-modal .table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
-.route-tracking-otp-modal .table th { background: #f8fafc; color: #475569; font-weight: 650; white-space: nowrap; }
+.route-tracking-otp-modal .table th, .route-tracking-otp-modal .table td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+.route-tracking-otp-modal .table th { background: #f8fafc; color: #475569; font-weight: 650; white-space: normal; overflow-wrap: anywhere; }
 .route-tracking-otp-modal .table td { overflow-wrap: anywhere; }
 .route-tracking-otp-modal .table small { display: block; margin-top: 4px; font-size: 11px; }
 .route-tracking-otp-modal .route-detail-grid { gap: 14px; }

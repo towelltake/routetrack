@@ -5,7 +5,7 @@ defineProps({ onPremise: { default: null }, holdOrder: { default: false }, exclu
 <template>
     <span class="visit-badges">
         <span v-if="onPremise !== null" class="visit-badge" :class="onPremise ? 'on-premise' : 'off-premise'">{{ onPremise ? 'On premises' : 'Off premises' }}</span>
-        <span v-if="exclusionReason" class="visit-badge off-premise" :title="exclusionReason">Excluded ? {{ exclusionReason }}</span>
+        <span v-if="exclusionReason" class="visit-badge off-premise" :title="exclusionReason">Excluded</span>
         <span v-if="holdOrder" class="visit-badge hold-order">Hold order</span>
     </span>
 </template>

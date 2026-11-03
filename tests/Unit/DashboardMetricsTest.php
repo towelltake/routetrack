@@ -454,6 +454,28 @@ test('productive drilldown counts documents per completed visit without mixing j
         ->and($groups[1]['rows'][0])->toMatchArray(['is_revisit' => false, 'visit_number' => 1, 'status' => 'Productive', 'invoices' => 0, 'orders' => 0, 'collections' => 1]);
 });
 
+test('productivity and efficiency details retain premises and journey plan membership', function () {
+    $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
+    $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
+    DB::table('customervisitlog')->where('logkey', 11)->update(['onpremisevisit' => 1]);
+    DB::table('customervisitlog')->where('logkey', 12)->update(['onpremisevisit' => 0]);
+    DB::table('routesequencecustomerstatus')->where('routekey', 1)->where('customercode', 101)->delete();
+    foreach (['productive', 'efficiency'] as $type) {
+        $rows = collect(app(DashboardCustomerDetails::class)->build($journeys, $type)['groups'])
+            ->firstWhere('routekey', 1)['rows'];
+        $customerRows = collect($rows)->where('customercode', 101)->values();
+        expect($customerRows->first()['planned'])->toBeFalse();
+        if ($type === 'productive') {
+            expect($customerRows)->toHaveCount(2)
+                ->and($customerRows[0]['on_premise'])->toBeTrue()
+                ->and($customerRows[1]['on_premise'])->toBeFalse()
+                ->and($customerRows[1]['is_revisit'])->toBeTrue();
+        } else {
+            expect($customerRows)->toHaveCount(1)->and($customerRows[0]['visit_count'])->toBe(2);
+        }
+    }
+});
+
 test('OTP drilldown preserves all types and records overnight events under their route start date', function () {
     $journeys = DB::table('startendday')->whereIn('routekey', [1, 2])->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });

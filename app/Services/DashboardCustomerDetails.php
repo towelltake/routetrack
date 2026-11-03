@@ -138,7 +138,11 @@ class DashboardCustomerDetails
                 ->whereIn('customercode', CustomerMaster::query()->select('customercode'))
                 ->whereIn('routekey', $keys)
                 ->orderBy('logstartdate')->orderBy('logstarttime')->orderBy('logkey')
-                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'autocheckout']);
+                ->get(['logkey', 'routekey', 'customercode', 'logstartdate', 'logstarttime', 'logenddate', 'logendtime', 'autocheckout', 'onpremisevisit', 'holdorder']);
+            $plannedCustomers = DB::table('routesequencecustomerstatus')
+                ->whereIn('routekey', $keys)->where('schelduledflag', 1)
+                ->get(['routekey', 'customercode'])
+                ->keyBy(fn ($plan) => $plan->routekey.':'.$plan->customercode);
             $documents = [];
             $operations = collect();
             if (in_array($type, ['productive', 'efficiency'])) {
@@ -178,6 +182,7 @@ class DashboardCustomerDetails
                     $rows->push([
                         'routekey' => $journey->routekey, 'id' => $visit->logkey, 'customercode' => $visit->customercode,
                     'on_premise' => (int) ($visit->onpremisevisit ?? 0) === 1, 'hold_order' => (int) ($visit->holdorder ?? 0) === 1,
+                        'planned' => $plannedCustomers->has($journey->routekey.':'.$visit->customercode),
                         'time' => $visit->logstarttime,
                         'start_date' => $start !== false ? substr((string) $visit->logstartdate, 0, 10) : null,
                         'end_time' => $end !== false ? $visit->logendtime : null,

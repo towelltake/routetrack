@@ -1,3 +1,12 @@
+## Daily summary linked-server decimal metadata: 2026-11-03
+
+SQL Server OPENQUERY via MSDASQL rejected CFT IN MM with error 7354 (precision
+exceeded maximum). Added final-output DECIMAL(18,2) casts for CFT minutes and KM,
+and DECIMAL(7,2)/(7,1) for compliance/productivity/efficiency. This bounds MySQL
+expression metadata below SQL Server precision 38 while retaining rounding.
+MTD converted counts unchanged. Static cast checks and diff check passed; native
+MySQL installation and SQL Server linked-server retry require the user's database.
+
 ## Productivity/Efficiency popup presentation: 2026-11-03
 
 Both shared Dashboard and Route Tracking popups now have a separate Plan status

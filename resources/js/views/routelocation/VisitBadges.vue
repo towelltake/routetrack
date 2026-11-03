@@ -4,7 +4,7 @@ defineProps({ onPremise: { default: null }, planned: { default: null }, holdOrde
 
 <template>
     <span class="visit-badges">
-        <span v-if="planned !== null" class="visit-badge plan-status">{{ planned ? 'JP' : 'Unplanned' }}</span>
+        <span v-if="planned !== null" class="visit-badge plan-status" :class="{ unplanned: !planned }">{{ planned ? 'Planned' : 'Unplanned' }}</span>
         <span v-if="onPremise !== null" class="visit-badge" :class="onPremise ? 'on-premise' : 'off-premise'">{{ onPremise ? 'On premises' : 'Off premises' }}</span>
         <span v-if="exclusionReason" class="visit-badge off-premise" :title="exclusionReason">Excluded</span>
         <span v-if="holdOrder" class="visit-badge hold-order">Hold order</span>
@@ -16,6 +16,7 @@ defineProps({ onPremise: { default: null }, planned: { default: null }, holdOrde
 .visit-badge { display: inline-block; padding: 2px 6px; border-radius: 5px; font-size: 11px; font-weight: 600; white-space: normal; overflow-wrap: anywhere; }
 .on-premise { background: #dcfce7; color: #166534; }
 .plan-status { background: #dbeafe; color: #1e40af; }
+.unplanned { background: #ffedd5; color: #c2410c; }
 .off-premise { background: #fee2e2; color: #991b1b; }
 .hold-order { background: #fef3c7; color: #92400e; }
 </style>

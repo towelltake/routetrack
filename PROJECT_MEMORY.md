@@ -1,3 +1,13 @@
+## Productivity/Efficiency popup presentation: 2026-11-03
+
+Both shared Dashboard and Route Tracking popups now have a separate Plan status
+column. Labels use Planned (blue) and Unplanned (orange), removed from customer
+names. Shared ProductivityStatus renders green check/red cross icons for
+Productive/Nonproductive with accessible labels and tooltips; LPO and incomplete
+statuses retain text. Collection and Orders/Invoices subtext remains under status
+in both popups. Added component resources/js/views/routelocation/ProductivityStatus.vue.
+Presentation only; formulas unchanged. Production build and diff check passed.
+
 ## Productivity and Efficiency popup badges: 2026-11-03
 
 Fixed DashboardCustomerDetails productivity/efficiency visit query to select

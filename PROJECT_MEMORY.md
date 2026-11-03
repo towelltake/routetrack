@@ -1,3 +1,10 @@
+## Daily summary Route Code column: 2026-11-03
+
+Added Route Code immediately after Division Code in sp_daily_summary.sql's final
+output, using the journey routecode already carried through report. No metric
+changes. Static output-column check and diff check passed; reinstall the procedure
+to apply the additional column. Existing staged work preserved.
+
 ## Daily summary linked-server decimal metadata: 2026-11-03
 
 SQL Server OPENQUERY via MSDASQL rejected CFT IN MM with error 7354 (precision

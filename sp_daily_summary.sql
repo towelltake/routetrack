@@ -389,6 +389,7 @@ BEGIN
     )
     SELECT
         IFNULL(report_divisioncode, 0) AS `Division Code`,
+        IFNULL(routecode, 0) AS `Route Code`,
         IFNULL(fsm_name, 0) AS `FSM Name`,
         IFNULL(salesman_code_name, 0) AS `Salesman Code - Name`,
         IFNULL(DATE_FORMAT(start_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route Start Date`,

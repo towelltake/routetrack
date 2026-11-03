@@ -1,4 +1,182 @@
+## Productivity and Efficiency popup badges: 2026-11-03
+
+Fixed DashboardCustomerDetails productivity/efficiency visit query to select
+onpremisevisit and holdorder, eliminating false Off premises labels. Added
+journey-specific scheduled membership as planned. Efficiency displays JP/Unplanned
+without premises; Productivity displays both premises and JP/Unplanned. Applied
+to shared Dashboard details and Route Tracking modals. Productivity retains
+separate completed revisit rows; Efficiency retains customer grouping. Metric
+formulas and authorization scopes unchanged. Added PHP regression coverage for
+premises flags, plan classification and repeat-visit grouping.
+Validation: 20 Node tests, production build, PHP syntax and diff checks passed.
+Pest regression could not run because vendor dependencies are absent.
+
 # TRAC / routeTrack project memory
+
+## MTD outputs changed to converted counts: 2026-11-03
+
+User clarified JP Efficiency MTD and Non-JP Efficiency MTD should return converted
+customer counts only, not percentages or lost opportunities. Replaced both MTD
+ratio expressions with COUNT(DISTINCT matching customercode), preserving existing
+column names/order. JP/non-JP classification, active/LPO exclusions, positive
+nonvoid invoice/order rules and month-to-in_enddate window remain unchanged.
+Synthetic SQLite checks passed for both groups, duplicate documents, unconverted
+customers and route isolation; diff check passed. Requires reinstall on MySQL.
+
+## Daily summary qualification column order: 2026-11-03
+
+Moved CFT Missed and Qualified calls directly after UN-Planned Call, in that
+order, in sp_daily_summary.sql. Output order only; calculations unchanged.
+Column order/uniqueness checks and diff check passed. Reinstall SQL to apply.
+
+## Daily summary percentage rounding matches Dashboard: 2026-11-03
+
+Confirmed DashboardMetrics rounds productivity_percent and efficiency_percent to
+1 decimal. Changed sp_daily_summary Productivity from 2 decimals to 1; Efficiency
+already uses 1. MTD efficiencies retain their existing 2-decimal precision. Formula
+and denominator rules unchanged. Source comparison and diff check passed; no DB
+execution. Reinstall the SQL file to update the installed procedure.
+
+## Daily summary OTP Count: 2026-11-03
+
+Added OTP Count after Off Premise Visits in sp_daily_summary.sql. Counts distinct
+otplogid events from rank-1 otp_candidates per journey; multiple events on one
+visit count separately. Existing all-type journey-window/nearest-visit matching
+applies, so events without a matching active-customer visit are not counted.
+No events yields zero. Synthetic SQLite aggregation and diff checks passed for
+event deduplication and journey isolation. Native MySQL execution remains unverified.
+
+## Daily summary visit counts and Dashboard efficiency: 2026-11-03
+
+Added Customers Served (distinct visited active customers), Total Visits (all
+active-customer visit records including repeats), On Premise Visits (flag exactly
+1), Off Premise Visits (flag exactly 0) directly after Total KM Covered in
+sp_daily_summary.sql. NULL/other premises flags count in total only. Existing
+Calls Made remains and equals Customers Served. Added Efficiency immediately
+after Productivity: distinct non-LPO customers with completed productive visits /
+all distinct visited non-LPO customers, rounded to 1 decimal like Dashboard.
+Incomplete visits remain in denominator; positive nonvoid sales/orders/collections
+use existing operation linking; OTP/premises do not affect this metric.
+Synthetic SQLite aggregation/order checks and diff check passed, including
+repeat deduplication, exact flags, inactive/LPO conventions and incomplete visits.
+Native MySQL execution/client verification pending; reinstall updated SQL to apply.
+
+## Daily summary Division Code first column: 2026-11-03
+
+Added Division Code as the first sp_daily_summary output field, sourced from
+routemaster.divisioncode for each journey. ALL returns each row's actual division;
+NULL displays zero. Parameters/calculations unchanged. Static source/output-order
+checks and diff check passed; database procedure not installed by this change.
+User previously confirmed the direct-source JP-count workaround now shows counts
+on their MySQL server; the underlying earlier zero-count cause remains unproven.
+
+## Direct source JP count workaround pending MySQL confirmation: 2026-11-02
+
+User confirmed MySQL 8.0.21 and zero JP counts persist after splitting aggregates.
+Replaced plan_totals count/join with a correlated COUNT(DISTINCT customercode)
+from routesequencecustomerstatus joined to active customermaster, attached to
+each startendday row in journeys. Actual JP count and JP compliance denominator
+use this direct source count. Intended rules unchanged; optimizer/server cause
+is only a hypothesis, not established. Synthetic source-count checks passed for
+11/8/0, duplicates and inactive/missing masters; diff check passed. Requires user
+to reinstall and retest on MySQL; do not mark issue resolved without confirmation.
+
+## Investigate zero JP count in installed daily summary: 2026-11-02
+
+User supplied installed procedure and results for JNJ OU / 2026-11-01. Direct
+join/group query confirms positive active scheduled counts (e.g. routekey 378469
+= 11, 378530 = 8), while installed procedure displays zero for matching routes.
+Root cause remains unconfirmed without native MySQL reproduction. As a targeted
+query simplification, separated plan_totals COUNT(DISTINCT customercode) from
+unvisited_plan_totals, which now anti-joins distinct visits instead of embedding
+a correlated NOT EXISTS inside the count aggregate's companion SUM. Report uses
+the separate unvisited total for planned CFT. No intended business-rule changes.
+Synthetic SQLite checks passed for JP counts independent of visit state, duplicate
+visits and all-visited plans; diff check passed. Needs reinstall and confirmation
+on user's MySQL server; do not claim the zero-count issue is proven fixed yet.
+
+## Daily summary CFT Missed: 2026-11-02
+
+Added CFT Missed to sp_daily_summary.sql before final Operation Time. Counts
+distinct visited customers per journey with a completed on-premises non-OTP visit
+below its positive CFT target and no qualifying visit in that journey. Includes
+JP/non-JP, retains LPO as in CFT qualification. Unvisited customers, incomplete,
+OTP/off-premises-only visits and missing/nonpositive targets are not counted.
+This interpretation is stated in the SQL header. Synthetic SQLite checks passed
+for repeat deduplication, qualifying revisit, exclusions and journey isolation;
+diff check passed. Native MySQL/client verification remains outstanding.
+
+## Daily summary MTD customer efficiencies: 2026-11-02
+
+Added JP Efficiency MTD and Non-JP Efficiency MTD to sp_daily_summary.sql (23
+output columns; Operation Time remains last). User confirmed: first of in_enddate's
+month through in_enddate, same percentage repeated on each returned journey for
+that route; non-JP denominator is distinct visited non-JP customers; any scheduled
+JP appearance during MTD makes the customer JP for that route's entire MTD period.
+JP denominator is distinct scheduled active non-LPO customers. Numerators count
+distinct base customers with positive nonvoid invoice sales OR sales order headers
+in an MTD journey for that route. Excludes inactive/LPO customers from both sides;
+deduplicates repeats and overlapping documents. No CFT/premises/OTP requirement
+for these transaction-based efficiencies. Uses header routekey/customercode directly,
+not operation linkage. Collections and return-only invoices do not qualify.
+Dates use journey start scope, including overnight records; in_startdate only
+limits displayed rows. No-denominator outputs become zero; percentages numeric.
+
+Synthetic SQLite-adapted MTD CTE checks passed for bounds, route isolation, JP
+precedence across journeys, duplicates, invoice/order overlap, void/zero amounts,
+inactive/LPO exclusion and empty denominators. Verified 23 output fields and
+Operation Time last; diff check passed. Native MySQL installation/performance and
+Excel integration remain unverified. No database writes or procedure execution.
+
+## Expanded daily summary and unique customer calls: 2026-11-02
+
+sp_daily_summary.sql now returns 21 columns: original Excel fields plus Actual JP
+count, CFT COMPLIANCE, Distinct Order & Invoice Count, Qualified calls, LPO Customer
+calls, Actual CFT, Planned CFT, first non-OTP check-in, last non-OTP checkout and
+Operation Time last. JP base remains distinct active scheduled customers from
+routesequencecustomerstatus (the journey-plan snapshot used by the application).
+Calls Made and UN-Planned Call now count distinct visited customers per journey,
+not repeats. Qualified calls also count distinct customers meeting the existing
+on-premises/non-OTP/positive recorded visit CFT rule, keeping CFT COMPLIANCE on
+the same unique-customer base. JP compliance retains distinct qualifying scheduled
+customers / JP base. Productivity retains its completed non-LPO visit denominator.
+Planned CFT retains existing target rules; actual sums eligible visit durations.
+Operation Time uses the existing first-to-last non-OTP window; Total Time Spent
+retains that same previous definition. No silent switch to route-event duration.
+ALL division and date scope unchanged; only the new SQL file was edited.
+Synthetic SQLite aggregation checks passed for repeats, unplanned deduplication,
+OTP/premises eligibility, JP, LPO and productivity; checked 21 output fields and
+Operation Time last, plus diff check. Native MySQL/client validation outstanding.
+
+## Daily summary ALL divisions: 2026-11-02
+
+sp_daily_summary accepts ALL as in_divisioncode, case-insensitive and trimmed,
+to include every division (including unassigned divisions) within the unchanged
+inclusive journey-start date range. Specific codes retain the existing filter.
+Synthetic SQLite predicate checks passed for a specific division, ALL, mixed
+case/whitespace and unmatched code; diff check passed. No database execution.
+
+## Standalone daily Excel summary: 2026-11-02
+
+Created root sp_daily_summary.sql defining sp_daily_summary(in_divisioncode
+VARCHAR(50), in_startdate DATE, in_enddate DATE). Uses underlying SFA tables
+directly, independent of VW_salesman_routestatus, sp_report_route_strikerate_test,
+sp_salesman_route_status and shared scratch tables. One row per journey selected
+by routemaster.divisioncode and inclusive journey-start date range. Returns exactly
+the 11 columns from the client Excel image: FSM Name, Salesman Code - Name,
+Route Start Date, Route End Date, Total Time Spent, Total KM Covered, Calls Made,
+UN-Planned Call, CFT IN MM, JP COMPLIANCE, Productivity. Numeric outputs remain
+numeric; NULL outputs become zero. Retains current premises/OTP/CFT qualification
+and completed non-LPO productivity rules, not old strikerate scratch calculations.
+
+Legacy view in sfa_struct1.sql maps FSM to salesman.arbsalesmanname1; the new
+procedure preserves this Excel-specific mapping and uses salesmanname1 for the
+salesman name, with alternate code fallback. Historical salesman comes from the
+journey. Existing salesman_route_status.sql and old reports/views remain untouched.
+Uses the backup-style install wrapper and SQL SECURITY INVOKER. No DB execution.
+Schema-derived SQLite-adapted checks passed for 11-column output, FSM mapping,
+empty journeys/NULL zeroes, qualifying visit and off-premises hold-order exclusion.
+Native MySQL installation, performance and client Excel integration unverified.
 
 ## Short exclusion badge: 2026-11-02
 

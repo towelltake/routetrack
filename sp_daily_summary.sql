@@ -82,6 +82,8 @@ Report definitions / assumptions:
   These customer-level metrics use header routekey/customercode directly; they
   do not require visit/operation linkage, CFT achievement, premises status or OTP.
   No converted customers returns 0. Each customer counts once in its MTD group.
+* Decimal outputs have explicit precision below SQL Server's 38-digit limit
+  for linked-server OPENQUERY imports; metric rounding remains unchanged.
 * Returns all requested Excel fields plus Operation Time as the final column.
   First customer checking time / Last customer checkout time are non-OTP
   boundary timestamps. Operation Time is their elapsed H:MM, matching the
@@ -387,13 +389,14 @@ BEGIN
     )
     SELECT
         IFNULL(report_divisioncode, 0) AS `Division Code`,
+        IFNULL(routecode, 0) AS `Route Code`,
         IFNULL(fsm_name, 0) AS `FSM Name`,
         IFNULL(salesman_code_name, 0) AS `Salesman Code - Name`,
         IFNULL(DATE_FORMAT(start_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route Start Date`,
         IFNULL(DATE_FORMAT(close_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route End Date`,
         IFNULL(CASE WHEN total_seconds >= 0 THEN CONCAT(FLOOR(total_seconds / 3600), ':',
              LPAD(FLOOR(MOD(total_seconds, 3600) / 60), 2, '0')) END, 0) AS `Total Time Spent`,
-        IFNULL(km, 0) AS `Total KM Covered`,
+        CAST(IFNULL(km, 0) AS DECIMAL(18, 2)) AS `Total KM Covered`,
         IFNULL(calls_made, 0) AS `Customers Served`,
         IFNULL(total_visits, 0) AS `Total Visits`,
         IFNULL(on_premise_visits, 0) AS `On Premise Visits`,
@@ -404,12 +407,12 @@ BEGIN
         IFNULL(unplanned_calls, 0) AS `UN-Planned Call`,
         IFNULL(cft_missed, 0) AS `CFT Missed`,
         IFNULL(qualified_calls, 0) AS `Qualified calls`,
-        IFNULL(ROUND(actual_cft_seconds / 60.0, 2), 0) AS `CFT IN MM`,
-        IFNULL(jp_compliance, 0) AS `JP COMPLIANCE`,
-        IFNULL(cft_compliance, 0) AS `CFT COMPLIANCE`,
+        CAST(IFNULL(ROUND(actual_cft_seconds / 60.0, 2), 0) AS DECIMAL(18, 2)) AS `CFT IN MM`,
+        CAST(IFNULL(jp_compliance, 0) AS DECIMAL(7, 2)) AS `JP COMPLIANCE`,
+        CAST(IFNULL(cft_compliance, 0) AS DECIMAL(7, 2)) AS `CFT COMPLIANCE`,
         IFNULL(document_count, 0) AS `Distinct Order & Invoice Count`,
-        IFNULL(productivity, 0) AS `Productivity`,
-        IFNULL(efficiency, 0) AS `Efficiency`,
+        CAST(IFNULL(productivity, 0) AS DECIMAL(7, 1)) AS `Productivity`,
+        CAST(IFNULL(efficiency, 0) AS DECIMAL(7, 1)) AS `Efficiency`,
         IFNULL(lpo_customers, 0) AS `LPO Customer calls`,
         IFNULL(CONCAT(FLOOR(actual_cft_seconds / 3600), ':',
                LPAD(FLOOR(MOD(actual_cft_seconds, 3600) / 60), 2, '0')), 0) AS `Actual CFT`,

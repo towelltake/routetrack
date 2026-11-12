@@ -13,18 +13,21 @@ Division is matched to routemaster.divisioncode, linked by startendday.routecode
 Pass ALL (case-insensitive, ignoring surrounding spaces) for all divisions.
 Both dates apply to route START date, inclusive; route end date is not filtered.
 Overnight visits remain attached to their journey. One result row per routekey,
-including open/zero-call journeys. NULL/blank division and invalid dates are rejected.
+including open/zero-call journeys, plus one row per division route with no journey
+starting anywhere in the selected range. These not-started rows use route-master
+salesman details; journey dates and metrics show a dash (-). NULL/blank division and invalid dates are rejected.
 This standalone report is not an application authorization endpoint. Any future
 application integration must preserve session route/company/geographic restrictions.
 SQL SECURITY INVOKER retains the database caller's underlying privileges.
 
 Report definitions / assumptions:
+* Only routes with routemaster.activestatus = 1 are included, whether started or not.
 * Only active customers are included in plans, visits and transaction sources.
 * Actual JP count = distinct active scheduled customers in
   routesequencecustomerstatus for the journey (schelduledflag=1).
   Calls Made = distinct active customers in customervisitlog per journey; repeats
   count once. UN-Planned Call = distinct visited customers absent from that plan.
-  Customers Served uses that same unique customer count. Total Visits counts
+  Total Visits counts
   every visit record, including repeats. On Premise Visits / Off Premise Visits
   count visit records with onpremisevisit exactly 1 / 0; NULL/other flags are
   included in Total Visits but neither premises count.
@@ -38,12 +41,18 @@ Report definitions / assumptions:
   holdorder is internal reference only and does not affect any report metric.
 * Qualified calls = distinct customers with at least one CFT-eligible visit
   meeting its positive recorded visit target. Separate short revisits are not summed.
-  CFT COMPLIANCE = qualified distinct customers / Calls Made * 100, including
-  unscheduled customers. LPO Customer calls = distinct visited toplpo=1 customers.
-  Actual CFT is H:MM; Planned CFT is H:MM from completed non-OTP visit targets
-  plus unvisited journey-plan targets, retaining the application target rules.
+  CFT COMPLIANCE = JP actual CFT time / JP planned CFT time * 100,
+  rounded to 1 decimal: 100 at plan, below 100 under plan, uncapped above plan.
+  Missing/zero planned time returns 0 in the output.
+  LPO Customer calls = total visits to active toplpo=1 customers, including repeats.
+  Distinct LPO Calls = distinct active toplpo=1 customers visited per journey.
+  Actual CFT sums all CFT-eligible visits to JP customers, including repeat visits.
+  Planned CFT sums each JP customer's journey-plan target once, including unvisited
+  customers. Duplicate plan rows use the maximum nonnegative target per customer.
+  Unplanned customers contribute to neither CFT total. Both are displayed as H:MM.
   JP compliance = distinct scheduled customers with >=1 qualified call / JP count.
-* CFT IN MM = total completed on-premises non-OTP visit seconds / 60.
+  JP Compliant Calls exposes that distinct qualifying scheduled-customer count.
+* CFT IN MM = total completed on-premises non-OTP JP visit seconds / 60.
   Hold orders do not affect inclusion; visit targets determine qualification.
 * CFT Missed = distinct visited customers with at least one completed on-premises,
   non-OTP visit below its positive recorded CFT target, and no qualifying visit
@@ -58,16 +67,26 @@ Report definitions / assumptions:
   visits remain in its denominator. Sales, orders OR collections qualify via
   existing visit-operation links; premises and OTP do not affect efficiency.
   Productivity and Efficiency percentages round to 1 decimal, as in Dashboard.
-* Total Time Spent uses first non-OTP check-in to checkout of the LAST non-OTP
-  visit by check-in order. An unfinished last visit yields NULL, not an earlier end.
-  The repeated '1st customer' wording for last checkout is treated as a typo.
+  Productive Calls returns the productivity numerator (productive completed
+  non-LPO visits, including repeats). Efficiency Count returns the efficiency
+  numerator (unique non-LPO customers with any completed productive visit).
+* Total Time Spent is elapsed H:MM from the recorded route start to recorded
+  route end, including overnight journeys. Requires routeclosed=1 and valid
+  timestamps with end >= start; otherwise returns 0.
 * End date and odometer distance require routeclosed=1 and valid recorded values.
 * Missing/NULL output values return 0, including percentages with no denominator
   and missing formatted dates/times. Existing zero durations remain H:MM.
-  No matching journeys returns an empty result set, not an invented journey.
+  Routes without matching journeys retain their six identity fields; all other
+  columns show a dash (-). These mixed text/numeric output columns are returned
+  as text by MySQL; started-route numeric expressions retain their rounding.
 * FSM Name = salesman.arbsalesmanname1, matching the legacy Excel view.
-  Salesman Code - Name = alternatesalesmancode (fallback internal salesmancode)
-  plus salesmanname1. This procedure uses the journey-recorded salesmancode.
+  Salesman Code = alternatesalesmancode (fallback internal salesmancode);
+  Salesman Name = salesmanname1. Uses the journey-recorded salesmancode for started
+  routes and routemaster.salesmancode for routes without a journey in the range.
+  arbroutename comes from routemaster for the journey's routecode.
+* Receipt Count = distinct positive, nonvoid arheader collections linked to
+  active-customer visits via the existing operation links. Repeated links count
+  once per transactionkey per journey; no matching collections returns zero.
 * MTD efficiencies use the first day of in_enddate's month through in_enddate,
   scoped by journey start date, per route; repeated on each returned route row.
   in_startdate limits displayed journeys only, not the MTD calculation window.
@@ -82,13 +101,14 @@ Report definitions / assumptions:
   These customer-level metrics use header routekey/customercode directly; they
   do not require visit/operation linkage, CFT achievement, premises status or OTP.
   No converted customers returns 0. Each customer counts once in its MTD group.
+* Total KM Covered is numeric, rounded to the nearest whole kilometre.
 * Decimal outputs have explicit precision below SQL Server's 38-digit limit
   for linked-server OPENQUERY imports; metric rounding remains unchanged.
-* Returns all requested Excel fields plus Operation Time as the final column.
+* Returns the requested Excel fields in the specified report column order.
   First customer checking time / Last customer checkout time are non-OTP
-  boundary timestamps. Operation Time is their elapsed H:MM, matching the
-  existing Total Time Spent definition (both intentionally use this window).
-  Numeric fields remain numeric for Excel; do not append KM or percent symbols.
+  boundary timestamps. Operation Time is their elapsed H:MM. Last checkout is
+  from the last non-OTP visit by check-in order; an unfinished last visit returns 0.
+  Do not append KM or percent symbols to metric values.
   No dependency on VW_salesman_routestatus, sp_report_route_strikerate_test,
   sp_salesman_route_status or shared scratch tables. No dynamic SQL or data writes.
   Existing reports/views/procedures are left untouched.
@@ -116,8 +136,21 @@ BEGIN
     END IF;
 
     WITH
+    route_directory AS (
+        SELECT rm.routecode AS directory_routecode,
+            rm.divisioncode AS directory_divisioncode,
+            rm.arbroutename AS directory_location,
+            s.arbsalesmanname1 AS directory_fsm_name,
+            COALESCE(NULLIF(s.alternatesalesmancode, ''), CAST(rm.salesmancode AS CHAR)) AS directory_salesman_code,
+            s.salesmanname1 AS directory_salesman_name
+        FROM routemaster rm
+        LEFT JOIN salesman s ON s.salesmancode = rm.salesmancode
+        WHERE (UPPER(TRIM(in_divisioncode)) = 'ALL' OR rm.divisioncode = TRIM(in_divisioncode))
+          AND rm.activestatus = 1
+    ),
     journeys AS (
         SELECT s.*, rm.divisioncode AS report_divisioncode,
+            rm.arbroutename AS report_arbroutename,
             (SELECT COUNT(DISTINCT jp.customercode)
              FROM routesequencecustomerstatus jp
              JOIN customermaster jc ON jc.customercode = jp.customercode
@@ -134,6 +167,7 @@ BEGIN
         FROM startendday s
         JOIN routemaster rm ON rm.routecode = s.routecode
         WHERE (UPPER(TRIM(in_divisioncode)) = 'ALL' OR rm.divisioncode = TRIM(in_divisioncode))
+          AND rm.activestatus = 1
           AND s.routestartdate >= in_startdate
           AND s.routestartdate < DATE_ADD(in_enddate, INTERVAL 1 DAY)
     ),
@@ -250,10 +284,10 @@ BEGIN
             COUNT(DISTINCT CASE WHEN scheduled = 0 THEN customercode END) AS unplanned_calls,
             COUNT(DISTINCT CASE WHEN qualified = 1 THEN customercode END) AS qualified_calls,
             COUNT(DISTINCT CASE WHEN scheduled = 1 AND qualified = 1 THEN customercode END) AS qualified_jp,
-            COUNT(DISTINCT CASE WHEN lpo = 1 THEN customercode END) AS lpo_customers,
-            SUM(CASE WHEN otp = 0 AND premises_eligible = 1 AND completed = 1
+            SUM(CASE WHEN lpo = 1 THEN 1 ELSE 0 END) AS lpo_customers,
+            COUNT(DISTINCT CASE WHEN lpo = 1 THEN customercode END) AS distinct_lpo_calls,
+            SUM(CASE WHEN scheduled = 1 AND otp = 0 AND premises_eligible = 1 AND completed = 1
                      THEN duration_seconds ELSE 0 END) AS actual_cft_seconds,
-            SUM(CASE WHEN otp = 0 AND completed = 1 THEN cft ELSE 0 END) AS visited_planned_minutes,
             SUM(CASE WHEN lpo <> 1 AND completed = 1 THEN 1 ELSE 0 END) AS productivity_base,
             SUM(CASE WHEN lpo <> 1 AND completed = 1 AND productive = 1 THEN 1 ELSE 0 END) AS productive_calls
         FROM visit_facts GROUP BY routekey
@@ -271,17 +305,12 @@ BEGIN
         SELECT routekey, COUNT(*) AS cft_missed
         FROM cft_missed_customers GROUP BY routekey
     ),
-    unvisited_plan_totals AS (
-        SELECT p.routekey, SUM(p.cft) AS unvisited_planned_minutes
-        FROM plans p
-        LEFT JOIN (SELECT DISTINCT routekey, customercode FROM visits) v
-            ON v.routekey = p.routekey AND v.customercode = p.customercode
-        WHERE v.customercode IS NULL
-        GROUP BY p.routekey
-    ),
     document_totals AS (
-        SELECT routekey, COUNT(DISTINCT source, transactionkey) AS document_count
-        FROM visit_documents WHERE source IN ('I', 'O') GROUP BY routekey
+        SELECT routekey,
+            COUNT(DISTINCT CASE WHEN source IN ('I', 'O') THEN source END,
+                           CASE WHEN source IN ('I', 'O') THEN transactionkey END) AS document_count,
+            COUNT(DISTINCT CASE WHEN source = 'C' THEN transactionkey END) AS receipt_count
+        FROM visit_documents GROUP BY routekey
     ),
     boundary_visits AS (
         SELECT routekey, logkey, check_in, check_out,
@@ -351,11 +380,12 @@ BEGIN
         GROUP BY b.routecode
     ),
     report AS (
-        SELECT j.routekey, j.routecode, j.salesmancode, j.report_divisioncode,
+        SELECT j.routekey, j.routecode, j.salesmancode, j.report_divisioncode, j.report_arbroutename,
             s.arbsalesmanname1 AS fsm_name,
-            CONCAT(COALESCE(NULLIF(s.alternatesalesmancode, ''), CAST(j.salesmancode AS CHAR)),
-                   ' - ', COALESCE(s.salesmanname1, '')) AS salesman_code_name,
+            COALESCE(NULLIF(s.alternatesalesmancode, ''), CAST(j.salesmancode AS CHAR)) AS salesman_code,
+            s.salesmanname1 AS salesman_name,
             j.start_at, j.close_at,
+            TIMESTAMPDIFF(SECOND, j.start_at, j.close_at) AS route_duration_seconds,
             CASE WHEN j.routeclosed = 1 AND j.routestartodometer >= 0
                       AND j.routeendodometer >= j.routestartodometer
                  THEN j.routeendodometer - j.routestartodometer END AS km,
@@ -365,14 +395,31 @@ BEGIN
             COALESCE(vt.off_premise_visits, 0) AS off_premise_visits,
             COALESCE(ot.otp_count, 0) AS otp_count,
             COALESCE(vt.unplanned_calls, 0) AS unplanned_calls,
+            COALESCE(vt.qualified_jp, 0) AS jp_compliant_calls,
             ROUND(100.0 * COALESCE(vt.qualified_jp, 0) / NULLIF(j.actual_jp_customers, 0), 2) AS jp_compliance,
             COALESCE(vt.actual_cft_seconds, 0) AS actual_cft_seconds,
-            ROUND(100.0 * COALESCE(vt.qualified_calls, 0) / NULLIF(vt.calls_made, 0), 2) AS cft_compliance,
             COALESCE(dt.document_count, 0) AS document_count,
+            COALESCE(dt.receipt_count, 0) AS receipt_count,
+            COALESCE(vt.productive_calls, 0) AS productive_calls,
+            COALESCE(vt.efficient_customers, 0) AS efficient_customers,
             ROUND(100.0 * COALESCE(vt.productive_calls, 0) / NULLIF(vt.productivity_base, 0), 1) AS productivity,
             ROUND(100.0 * COALESCE(vt.efficient_customers, 0) / NULLIF(vt.efficiency_base, 0), 1) AS efficiency,
             COALESCE(vt.qualified_calls, 0) AS qualified_calls, COALESCE(vt.lpo_customers, 0) AS lpo_customers,
-            COALESCE(vt.visited_planned_minutes, 0) + COALESCE(up.unvisited_planned_minutes, 0) AS planned_minutes,
+            COALESCE(vt.distinct_lpo_calls, 0) AS distinct_lpo_calls,
+            -- Read original JP targets directly, independent of the reused plans CTE.
+            COALESCE((
+                SELECT SUM(jp_targets.cft)
+                FROM (
+                    SELECT p.routekey, p.customercode,
+                        MAX(GREATEST(COALESCE(p.cft, 0), 0)) AS cft
+                    FROM routesequencecustomerstatus p
+                    JOIN customermaster c ON c.customercode = p.customercode
+                        AND c.activecustomer = 1
+                    WHERE p.schelduledflag = 1
+                    GROUP BY p.routekey, p.customercode
+                ) AS jp_targets
+                WHERE jp_targets.routekey = j.routekey
+            ), 0) AS planned_minutes,
             me.jp_efficiency_mtd, me.non_jp_efficiency_mtd,
             COALESCE(cm.cft_missed, 0) AS cft_missed,
             b.first_check_in, b.last_check_out,
@@ -381,49 +428,57 @@ BEGIN
         LEFT JOIN salesman s ON s.salesmancode = j.salesmancode
         LEFT JOIN visit_totals vt ON vt.routekey = j.routekey
         LEFT JOIN otp_totals ot ON ot.routekey = j.routekey
-        LEFT JOIN unvisited_plan_totals up ON up.routekey = j.routekey
         LEFT JOIN document_totals dt ON dt.routekey = j.routekey
         LEFT JOIN boundaries b ON b.routekey = j.routekey
         LEFT JOIN mtd_efficiency me ON me.routecode = j.routecode
         LEFT JOIN cft_missed_totals cm ON cm.routekey = j.routekey
     )
     SELECT
-        IFNULL(report_divisioncode, 0) AS `Division Code`,
-        IFNULL(routecode, 0) AS `Route Code`,
-        IFNULL(fsm_name, 0) AS `FSM Name`,
-        IFNULL(salesman_code_name, 0) AS `Salesman Code - Name`,
-        IFNULL(DATE_FORMAT(start_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route Start Date`,
-        IFNULL(DATE_FORMAT(close_at, '%d/%m/%Y %H:%i:%s'), 0) AS `Route End Date`,
-        IFNULL(CASE WHEN total_seconds >= 0 THEN CONCAT(FLOOR(total_seconds / 3600), ':',
-             LPAD(FLOOR(MOD(total_seconds, 3600) / 60), 2, '0')) END, 0) AS `Total Time Spent`,
-        CAST(IFNULL(km, 0) AS DECIMAL(18, 2)) AS `Total KM Covered`,
-        IFNULL(calls_made, 0) AS `Customers Served`,
-        IFNULL(total_visits, 0) AS `Total Visits`,
-        IFNULL(on_premise_visits, 0) AS `On Premise Visits`,
-        IFNULL(off_premise_visits, 0) AS `Off Premise Visits`,
-        IFNULL(otp_count, 0) AS `OTP Count`,
-        IFNULL(jp_count, 0) AS `Actual JP count`,
-        IFNULL(calls_made, 0) AS `Calls Made`,
-        IFNULL(unplanned_calls, 0) AS `UN-Planned Call`,
-        IFNULL(cft_missed, 0) AS `CFT Missed`,
-        IFNULL(qualified_calls, 0) AS `Qualified calls`,
-        CAST(IFNULL(ROUND(actual_cft_seconds / 60.0, 2), 0) AS DECIMAL(18, 2)) AS `CFT IN MM`,
-        CAST(IFNULL(jp_compliance, 0) AS DECIMAL(7, 2)) AS `JP COMPLIANCE`,
-        CAST(IFNULL(cft_compliance, 0) AS DECIMAL(7, 2)) AS `CFT COMPLIANCE`,
-        IFNULL(document_count, 0) AS `Distinct Order & Invoice Count`,
-        CAST(IFNULL(productivity, 0) AS DECIMAL(7, 1)) AS `Productivity`,
-        CAST(IFNULL(efficiency, 0) AS DECIMAL(7, 1)) AS `Efficiency`,
-        IFNULL(lpo_customers, 0) AS `LPO Customer calls`,
-        IFNULL(CONCAT(FLOOR(actual_cft_seconds / 3600), ':',
-               LPAD(FLOOR(MOD(actual_cft_seconds, 3600) / 60), 2, '0')), 0) AS `Actual CFT`,
-        IFNULL(CONCAT(FLOOR(planned_minutes / 60), ':', LPAD(MOD(planned_minutes, 60), 2, '0')), 0) AS `Planned CFT`,
-        IFNULL(DATE_FORMAT(first_check_in, '%d/%m/%Y %H:%i:%s'), 0) AS `First customer checking time`,
-        IFNULL(DATE_FORMAT(last_check_out, '%d/%m/%Y %H:%i:%s'), 0) AS `Last customer checkout time`,
-        IFNULL(jp_efficiency_mtd, 0) AS `JP Efficiency MTD`,
-        IFNULL(non_jp_efficiency_mtd, 0) AS `Non-JP Efficiency MTD`,
-        IFNULL(CASE WHEN total_seconds >= 0 THEN CONCAT(FLOOR(total_seconds / 3600), ':',
-             LPAD(FLOOR(MOD(total_seconds, 3600) / 60), 2, '0')) END, 0) AS `Operation Time`
-    FROM report ORDER BY start_at, routecode, routekey;
+        IFNULL(directory_divisioncode, 0) AS `Division Code`,
+        IFNULL(directory_routecode, 0) AS `Route Code`,
+        IFNULL(REPLACE(directory_location, 'Collection Bank', ''), 0) AS `Location`,
+        IFNULL(CASE WHEN routekey IS NULL THEN directory_fsm_name ELSE fsm_name END, 0) AS `FSM Name`,
+        IFNULL(CASE WHEN routekey IS NULL THEN directory_salesman_code ELSE salesman_code END, 0) AS `Salesman Code`,
+        IFNULL(CASE WHEN routekey IS NULL THEN directory_salesman_name ELSE salesman_name END, 0) AS `Salesman Name`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(DATE_FORMAT(start_at, '%d/%m/%Y %H:%i:%s'), 0) END AS `Route Start Date`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(DATE_FORMAT(close_at, '%d/%m/%Y %H:%i:%s'), 0) END AS `Route End Date`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(CASE WHEN route_duration_seconds >= 0 THEN CONCAT(FLOOR(route_duration_seconds / 3600), ':',
+             LPAD(FLOOR(MOD(route_duration_seconds, 3600) / 60), 2, '0')) END, 0) END AS `Total Time Spent`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(DATE_FORMAT(first_check_in, '%d/%m/%Y %H:%i:%s'), 0) END AS `First customer check-in time`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(DATE_FORMAT(last_check_out, '%d/%m/%Y %H:%i:%s'), 0) END AS `Last customer check-out time`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(CASE WHEN total_seconds >= 0 THEN CONCAT(FLOOR(total_seconds / 3600), ':',
+             LPAD(FLOOR(MOD(total_seconds, 3600) / 60), 2, '0')) END, 0) END AS `Operation Time`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE CAST(IFNULL(km, 0) AS DECIMAL(18, 0)) END AS `Total KM Covered`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(jp_count, 0) END AS `Actual JP count`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(unplanned_calls, 0) END AS `UN-Planned Call`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(calls_made, 0) END AS `Calls Made`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(cft_missed, 0) END AS `CFT Missed`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(qualified_calls, 0) END AS `Qualified calls-All`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(jp_compliant_calls, 0) END AS `JP Compliant Calls`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE CAST(IFNULL(jp_compliance, 0) AS DECIMAL(7, 2)) END AS `JP COMPLIANCE`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE CAST(IFNULL(ROUND(actual_cft_seconds / 60.0, 0), 0) AS DECIMAL(18, 0)) END AS `Actual CFT IN MM`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(CONCAT(FLOOR(actual_cft_seconds / 3600), ':',
+               LPAD(FLOOR(MOD(actual_cft_seconds, 3600) / 60), 2, '0')), 0) END AS `Actual CFT IN HH:MM`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(CONCAT(FLOOR(planned_minutes / 60), ':', LPAD(MOD(planned_minutes, 60), 2, '0')), 0) END AS `Planned CFT`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE CAST(IFNULL(ROUND(100.0 * (actual_cft_seconds / 60.0)
+            / NULLIF(planned_minutes, 0), 1), 0) AS DECIMAL(7, 1)) END AS `CFT COMPLIANCE`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(total_visits, 0) END AS `Total Visits`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(on_premise_visits, 0) END AS `On Premise Visits`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(off_premise_visits, 0) END AS `Off Premise Visits`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(otp_count, 0) END AS `OTP Count`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(document_count, 0) END AS `Distinct Order & Invoice Count`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(receipt_count, 0) END AS `Receipt Count`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(lpo_customers, 0) END AS `LPO Customer calls`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(distinct_lpo_calls, 0) END AS `Distinct LPO Calls`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(productive_calls, 0) END AS `Productive Calls`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE CAST(IFNULL(productivity, 0) AS DECIMAL(7, 1)) END AS `Productivity`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(efficient_customers, 0) END AS `Efficiency Count`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE CAST(IFNULL(efficiency, 0) AS DECIMAL(7, 1)) END AS `Efficiency`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(jp_efficiency_mtd, 0) END AS `JP Efficiency MTD`,
+        CASE WHEN routekey IS NULL THEN '-' ELSE IFNULL(non_jp_efficiency_mtd, 0) END AS `Non-JP Efficiency MTD`
+    FROM route_directory rd
+    LEFT JOIN report ON report.routecode = rd.directory_routecode
+    ORDER BY start_at, directory_routecode, routekey;
 END */$$
 
 DELIMITER ;

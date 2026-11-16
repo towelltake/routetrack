@@ -1,3 +1,72 @@
+## Company-only login authorization implemented locally: 2026-11-16
+
+User corrected countrycode to company code. This supersedes the country-only
+implementation immediately below. Login now reads only useraccesscodes.cmpycode
+for the authenticated username and resolves routemaster.cmpycode membership.
+Multiple company rows union; country/region/depot/area/subarea permission fields
+neither add nor narrow access. Blank/NULL/no/unknown company grants deny routes;
+there is no geographic fallback. Existing filled() handling of zero is retained
+without wildcard semantics. Session route/company/geography lists still derive
+from permitted routes and fully replace the previous scope at successful login.
+Dashboard dropdowns, endpoint restrictions and metric/date formulas unchanged.
+The reported company grant plus a NULL-company subarea row now grants only the
+explicit company; the geographic-only row adds no access.
+
+Updated AuthenticatedSessionController.php and LoginCompanyPermissionsTest.php.
+Focused login/Dashboard tests: 48 warning-only tests, 236 assertions, no assertion
+failures. PHP controller syntax and diff checks passed. No frontend edits since
+the previous 20 passing Node checks. No production deployment/database changes;
+deploy updated PHP and logout/login to validate against live grants. Existing
+sessions keep their old scope until login. Workbook remains untracked/untouched.
+
+## Superseded country-only login implementation: 2026-11-16
+
+User explicitly selected country-only authorization while retaining Dashboard
+dropdowns. Supersedes the multi-level grant policy described below. Login reads
+only useraccesscodes.countrycode for the authenticated username, unions distinct
+nonblank countries, and resolves routes through company.countrycode. Company,
+region, depot, area and subarea permission fields neither grant nor narrow access.
+Empty/no/unknown country grants deny routes. Existing filled() treatment of zero
+remains; there is no zero wildcard or fallback to other permission fields.
+Resolved route/company/geographic session lists are still derived from those
+routes for existing endpoint restrictions; Dashboard dropdowns and metric/date
+semantics are unchanged. Each successful login fully replaces prior scope;
+existing sessions retain their scope until logout/login. Country grants include
+all matching companies, not just a company named on the same permission row.
+No production deployment or business database changes performed.
+
+Files: AuthenticatedSessionController.php and LoginCompanyPermissionsTest.php.
+Focused login/Dashboard tests: 48 warnings, 236 assertions, no assertion failures
+(local .env absent). PHP syntax and git diff checks passed; Dashboard Node tests
+20 passed. Native live database/browser validation remains outstanding. Frontend
+unchanged; no build needed. Export workbook remains untracked and untouched.
+
+## Live company-access investigation pending: 2026-11-16
+
+User reports all divisions/routes remain visible after logout/login on the live
+Dashboard. Inspected user-supplied root useraccesscodes.xlsx read-only; the
+affected account has one company grant (102), with geographic fields exported as
+\\N. Do not interpret the export marker as proof of literal database contents.
+Current login resolver and Dashboard endpoints should constrain a company-only
+grant; the failure is not reproduced locally. Focused login/Dashboard tests
+completed: 46 warnings, 229 assertions, no assertion failures. Local .env absent;
+live database, deployed revision and authenticated API responses unverified.
+Public web tool could not access the live Dashboard. User supplied authenticated
+/dashboard/companies.json response containing 11 companies instead of the single
+exported company grant. Confirms extra companies originate in the live backend,
+not solely frontend options. Next: inspect auth.access.company_codes and signed-in
+identity from existing Inertia props, then deployed code/session/database comparison.
+Fresh HTML fetch subsequently confirmed affected logged-in identity with 25
+company_codes, matching the previously observed broader account scope. This
+localizes the discrepancy to live session scope resolution/persistence or live
+grant/deployment differences; it does not prove cross-account carryover. Initial
+DOM data-page can be stale across Inertia navigation; do not use it as current
+session evidence. Bare X-Inertia JSON fetch returned 409; fresh HTML fetch worked.
+Current local login replaces user_access in full, including on empty grants.
+Need live database grant query and deployed controller/revision comparison.
+No application fix or production deployment in this audit.
+Workbook contains account access data; do not commit or reproduce it in memory.
+
 ## Dashboard permission correction implemented: 2026-11-16
 
 User explicitly requested implementation, leaving egm-draft. Login resolution

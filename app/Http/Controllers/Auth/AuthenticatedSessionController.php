@@ -34,40 +34,22 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $rows = UserAccessCode::query()
+        $companyCodes = UserAccessCode::query()
             ->where('username', $request->user()->username)
-            ->get(['cmpycode', 'countrycode', 'regionmstcode', 'depotcode', 'areacode', 'subareacode']);
+            ->pluck('cmpycode')
+            ->filter(fn ($code) => filled($code))
+            ->unique()
+            ->values()
+            ->all();
 
         $routes = DB::connection('sfa_mysql')->table('routemaster as route')
             ->leftJoin('company as company', 'company.cmpycode', '=', 'route.cmpycode')
             ->leftJoin('subareamaster as subarea', 'subarea.subareacode', '=', 'route.subareacode')
             ->leftJoin('areamaster as area', 'area.areacode', '=', 'subarea.areacode')
             ->leftJoin('depotmaster as depot', 'depot.depotcode', '=', 'area.depotcode')
-            ->where(function ($query) use ($rows) {
-                // Empty or unusable permission rows must never grant every route.
-                $query->whereRaw('1 = 0');
-
-                foreach ($rows as $row) {
-                    $permission = collect([
-                        'route.subareacode' => $row->subareacode,
-                        'area.areacode' => $row->areacode,
-                        'depot.depotcode' => $row->depotcode,
-                        'route.regionmstcode' => $row->regionmstcode,
-                        'company.countrycode' => $row->countrycode,
-                        'route.cmpycode' => $row->cmpycode,
-                    ]);
-                    $column = $permission->search(fn ($value) => filled($value));
-
-                    if ($column !== false) {
-                        $query->orWhere(function ($scope) use ($row, $column, $permission) {
-                            $scope->where($column, $permission[$column]);
-                            // Geography can be shared by several companies. Keep the
-                            // company restriction attached to this permission row.
-                            if (filled($row->cmpycode)) $scope->where('route.cmpycode', $row->cmpycode);
-                        });
-                    }
-                }
-            })
+            // Only explicit company grants authorize routes. An empty list denies
+            // access; country and other geographic permission fields are ignored.
+            ->whereIn('route.cmpycode', $companyCodes)
             ->get([
                 'route.routecode',
                 'route.cmpycode',

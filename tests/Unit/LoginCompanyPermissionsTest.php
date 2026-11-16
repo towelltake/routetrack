@@ -29,7 +29,7 @@ beforeEach(function () {
     foreach ([[1, 10, 1], [2, 20, 1], [3, 10, 2], [4, 20, 2]] as [$route, $company, $subarea]) $db->table('routemaster')->insert(['routecode' => $route, 'cmpycode' => $company, 'subareacode' => $subarea, 'regionmstcode' => 1]);
 });
 
-test('login applies company and geographic permissions together per permission row', function ($permissions, $expectedRoutes, $expectedCompanies) {
+test('login authorizes only explicitly granted companies', function ($permissions, $expectedRoutes, $expectedCompanies) {
     $db = DB::connection('sfa_mysql');
     foreach ($permissions as $permission) $db->table('useraccesscodes')->insert(['username' => 'permitted-user'] + $permission);
     $db->table('useraccesscodes')->insert(['username' => 'someone-else', 'cmpycode' => 20]);
@@ -42,21 +42,23 @@ test('login applies company and geographic permissions together per permission r
         ->and(session('user_access.company_codes'))->toEqualCanonicalizing($expectedCompanies);
 })->with([
     'company only' => [[['cmpycode' => 10]], [1, 3], [10]],
-    'multiple companies' => [[['cmpycode' => 10], ['cmpycode' => 20]], [1, 2, 3, 4], [10, 20]],
-    'country uses company membership rather than depot country' => [[['countrycode' => 1]], [1, 3], [10]],
-    'region only' => [[['regionmstcode' => 1]], [1, 2, 3, 4], [10, 20]],
-    'depot only' => [[['depotcode' => 1]], [1, 2, 3, 4], [10, 20]],
-    'area only' => [[['areacode' => 1]], [1, 2, 3, 4], [10, 20]],
-    'multiple subareas and overlapping grants' => [[['subareacode' => 1], ['subareacode' => 2], ['cmpycode' => 10]], [1, 2, 3, 4], [10, 20]],
-    'company and shared subarea' => [[['cmpycode' => 10, 'subareacode' => 1]], [1], [10]],
-    'company and shared region' => [[['cmpycode' => 10, 'regionmstcode' => 1]], [1, 3], [10]],
-    'separate company scopes' => [[['cmpycode' => 10, 'subareacode' => 1], ['cmpycode' => 20, 'subareacode' => 2]], [1, 4], [10, 20]],
-    'legacy geographic permission' => [[['subareacode' => 1]], [1, 2], [10, 20]],
+    'multiple companies union' => [[['cmpycode' => 10], ['cmpycode' => 20]], [1, 2, 3, 4], [10, 20]],
+    'country only denies' => [[['countrycode' => 1]], [], []],
+    'region only denies' => [[['regionmstcode' => 1]], [], []],
+    'depot only denies' => [[['depotcode' => 1]], [], []],
+    'area only denies' => [[['areacode' => 1]], [], []],
+    'subarea only denies' => [[['subareacode' => 1]], [], []],
+    'geography does not narrow company' => [[['countrycode' => 1, 'cmpycode' => 20, 'regionmstcode' => 99, 'depotcode' => 99, 'areacode' => 99, 'subareacode' => 99]], [2, 4], [20]],
+    'separate geographic grants do not broaden company' => [[['cmpycode' => 10], ['countrycode' => 2], ['subareacode' => 1]], [1, 3], [10]],
+    'duplicate companies' => [[['cmpycode' => 10], ['cmpycode' => 10]], [1, 3], [10]],
+    'blank company denies' => [[['cmpycode' => '']], [], []],
+    'null company with geography denies' => [[['cmpycode' => null, 'countrycode' => 1, 'subareacode' => 1]], [], []],
+    'unknown company denies' => [[['cmpycode' => 999]], [], []],
     'empty permission row' => [[[]], [], []],
     'no permission rows' => [[], [], []],
 ]);
 
-test('company grants retain routes with missing geography and region grants use the route region', function () {
+test('company grants retain missing geography and replace previous login scope', function () {
     $db = DB::connection('sfa_mysql');
     $db->table('routemaster')->insert([
         ['routecode' => 5, 'cmpycode' => 10, 'subareacode' => null, 'regionmstcode' => 2],
@@ -74,12 +76,13 @@ test('company grants retain routes with missing geography and region grants use 
         ->and(session('user_access.region_codes'))->toEqualCanonicalizing([1, 2]);
 
     $db->table('useraccesscodes')->where('username', 'permitted-user')->delete();
-    $db->table('useraccesscodes')->insert(['username' => 'permitted-user', 'regionmstcode' => 2]);
+    $db->table('useraccesscodes')->insert(['username' => 'permitted-user', 'cmpycode' => 20]);
     // Editing grants does not mutate the existing login snapshot.
     expect(session('user_access.route_codes'))->toEqualCanonicalizing([1, 3, 5, 6]);
     $controller->store($request);
-    expect(session('user_access.route_codes'))->toEqualCanonicalizing([5, 6])
-        ->and(session('user_access.company_codes'))->toBe([10]);
+    expect(session('user_access.route_codes'))->toEqualCanonicalizing([2, 4])
+        ->and(session('user_access.company_codes'))->toBe([20])
+        ->and(session('user_access.country_codes'))->toBe([2]);
 
     $db->table('useraccesscodes')->where('username', 'permitted-user')->delete();
     $controller->store($request);

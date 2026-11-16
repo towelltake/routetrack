@@ -39,22 +39,21 @@ class AuthenticatedSessionController extends Controller
             ->get(['cmpycode', 'countrycode', 'regionmstcode', 'depotcode', 'areacode', 'subareacode']);
 
         $routes = DB::connection('sfa_mysql')->table('routemaster as route')
+            ->leftJoin('company as company', 'company.cmpycode', '=', 'route.cmpycode')
             ->leftJoin('subareamaster as subarea', 'subarea.subareacode', '=', 'route.subareacode')
             ->leftJoin('areamaster as area', 'area.areacode', '=', 'subarea.areacode')
             ->leftJoin('depotmaster as depot', 'depot.depotcode', '=', 'area.depotcode')
-            ->leftJoin('regionmaster as region', 'region.regionmstcode', '=', 'depot.regionmstcode')
-            ->leftJoin('country', 'country.countrycode', '=', 'region.countrycode')
             ->where(function ($query) use ($rows) {
                 // Empty or unusable permission rows must never grant every route.
                 $query->whereRaw('1 = 0');
 
                 foreach ($rows as $row) {
                     $permission = collect([
-                        'subarea.subareacode' => $row->subareacode,
+                        'route.subareacode' => $row->subareacode,
                         'area.areacode' => $row->areacode,
                         'depot.depotcode' => $row->depotcode,
-                        'region.regionmstcode' => $row->regionmstcode,
-                        'country.countrycode' => $row->countrycode,
+                        'route.regionmstcode' => $row->regionmstcode,
+                        'company.countrycode' => $row->countrycode,
                         'route.cmpycode' => $row->cmpycode,
                     ]);
                     $column = $permission->search(fn ($value) => filled($value));
@@ -72,11 +71,11 @@ class AuthenticatedSessionController extends Controller
             ->get([
                 'route.routecode',
                 'route.cmpycode',
-                'subarea.subareacode',
+                'route.subareacode',
                 'area.areacode',
                 'depot.depotcode',
-                'region.regionmstcode',
-                'country.countrycode',
+                'route.regionmstcode',
+                'company.countrycode',
             ]);
 
         $accessType = (int) $request->user()->accesstypeid;

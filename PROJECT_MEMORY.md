@@ -1,3 +1,55 @@
+## Dashboard permission correction implemented: 2026-11-16
+
+User explicitly requested implementation, leaving egm-draft. Login resolution
+now uses company.countrycode for country grants, routemaster.regionmstcode for
+region grants, and raw route.subareacode for subarea grants/derived scope. Company
+grants retain routes without geographic master records. Area/depot retain their
+hierarchy paths; multiple entries union, legacy mixed rows keep company AND
+deepest-geography restrictions, empty/no grants deny access. Permission changes
+still apply only at next login and fully replace the previous scope.
+
+Dashboard companies/routes endpoints now reuse matchingRoutes; all Dashboard
+data/filter paths retain route/company/subarea session checks. NULL subarea is
+allowed only within explicit resolved route and company membership, avoiding
+loss of company-granted routes without geography. Active/sequence eligibility,
+existing frontend option behavior and date/metric formulas are unchanged.
+Files: AuthenticatedSessionController.php, DashboardController.php,
+LoginCompanyPermissionsTest.php, DashboardFiltersTest.php. sp_daily_summary.sql
+and other screen controllers were not edited.
+
+Installed composer.lock dependencies with --no-scripts; no migrations or database
+mutations. Focused permission/Dashboard tests: 46 completed without assertion
+failures (229 assertions), all warn about absent .env. Node filter/analytics:
+20 passed. Changed PHP files syntax checks passed. Full Unit: 4 failures,
+158 warning-only tests, 5 passed (1419 assertions). Failures directly exercise
+unchanged services: DashboardMetricsTest actual-face count 8 vs 6, two missing
+routename fixtures in DashboardCustomerDetails, DashboardOutsideVisitsTest status
+GPS tracking vs Work window. Native business database/browser validation is
+unavailable without local configuration; sign out/in to validate new scope.
+Zero-valued unused permission-field semantics remain unverified; current filled()
+handling was preserved rather than broadening legacy grants by assumption.
+
+## Confirmed Dashboard permission model: 2026-11-16
+
+Formal drafting started from concepts_brief.md using egm-draft. User approved
+Overview/Goals and Technical Plan. design_draft.md now includes Alternatives
+Considered, pending section approval. User chose permission changes effective at next successful login;
+existing sessions retain their resolved scope. Each login replaces prior scope,
+including empty grants. No per-request refresh or permission version required.
+Proposed country grants use company.countrycode and region grants use direct
+routemaster.regionmstcode; these are design choices, not applied code changes.
+Detailed implementation is not drafted or applied.
+
+User confirmed resolve each permission entry to allowed routes, union all entries,
+then derive Dashboard data and filter options from that route set. Company grants
+all its routes across regions; country resolves companies in that country then
+their routes; region resolves routes in that region; depot follows areas/subareas;
+area follows subareas; subarea resolves its routes. Derive linked company, region,
+legal entity and cluster options from allowed routes. No separate region grant is
+needed for company permission. Updated concepts_brief.md after initial seven-lens
+review; this clarification has not received a new review. Implementation pending;
+no application changes or new tests in this documentation-only update.
+
 ## Planned CFT zero workaround pending confirmation: 2026-11-11
 
 User reports positive routesequencecustomerstatus.cft for the journey but zero
@@ -2163,3 +2215,19 @@ journey; includes incomplete visits. Existing LPO Customer calls retains all
 visits including repeats. Started journeys without LPO visits show 0; unstarted
 routes show '-'. Static aggregation/report/output linkage checks and git diff
 check passed. Native MySQL execution unverified; reinstall procedure to apply.
+## Dashboard permission brainstorm: 2026-11-16
+
+User confirmed Dashboard data and filter options must follow permitted routes;
+multiple company/geographic grants combine as union. Company-only grants span
+its depots/routes without region restriction. Geographic chain is country >
+region > depot > area > subarea; depot links to company. Region, legal entity
+and cluster options should derive from permitted routes. Seven fresh-context
+Goldfish reviews completed; findings/proposals saved in concepts_brief.md.
+No application behavior changed. Root cause remains unconfirmed. Risks include
+route versus depot company/region mappings, stale login session scope, missing
+hierarchy and existing sequence eligibility differences between catalog/map
+and metrics/status/details. Preserve legacy mixed-row intersection pending
+explicit policy resolution. Node filter/analytics baseline: 20 passed; PHP
+tests blocked by missing vendor/autoload.php. No database changes. Next: review
+brief, settle authoritative hierarchy and diagnose a failing scenario before
+implementing a scoped correction.

@@ -225,6 +225,46 @@ test('dashboard rejects malformed multi-select inputs', function () {
     ]));
 })->throws(ValidationException::class);
 
+test('dashboard retains explicitly authorized company routes without geographic labels', function () {
+    DB::table('routemaster')->where('routecode', 1)->update(['subareacode' => null]);
+    // A missing subarea label still has an explicit resolved route grant.
+    session(['user_access.subarea_codes' => [1, 99]]);
+    $controller = app(DashboardController::class);
+    expect(array_column($controller->filters()->getData(true), 'routecode'))->toBe([1, 2, 3, 6]);
+    expect(array_column($controller->routes(Request::create('/', 'GET', ['companycode' => 1]))->getData(true), 'routecode'))
+        ->toBe([1, 2, 6]);
+    expect(array_column($controller->companies()->getData(true), 'cmpycode'))->toBe([1, 2]);
+    session(['user_access.route_codes' => [2, 3]]);
+    expect(array_column($controller->filters()->getData(true), 'routecode'))->toBe([2, 3]);
+    expect($controller->lastLocations(Request::create('/', 'GET', ['date' => '2026-09-07', 'routes' => [1]]))->getData(true))->toBe([]);
+});
+
+test('empty or forged selections cannot expand access on dashboard data endpoints', function (array $access, array $filters) {
+    session(['user_access' => $access]);
+    $controller = app(DashboardController::class);
+    $request = Request::create('/', 'GET', ['date' => '2026-09-07', ...$filters]);
+    expect($controller->lastLocations($request)->getData(true))->toBe([]);
+    $status = $controller->routeStatus($request)->getData(true);
+    expect($status['routes'])->toBe([])->and($status['journeys'])->toBe([]);
+    $this->mock(\App\Services\DashboardMetrics::class, function ($mock) {
+        $mock->shouldReceive('summarize')->once()->withArgs(fn ($journeys) => $journeys->isEmpty())->andReturn([]);
+    });
+    expect($controller->metrics($request)->getData(true)['route_count'])->toBe(0);
+    $this->mock(\App\Services\DashboardCustomerDetails::class, function ($mock) {
+        $mock->shouldReceive('build')->once()->withArgs(fn ($journeys, $type) => $journeys->isEmpty() && $type === 'planned')->andReturn(['groups' => []]);
+    });
+    expect($controller->customerDetails(Request::create('/', 'GET', ['date' => '2026-09-07', 'type' => 'planned', ...$filters]))->getData(true))
+        ->toBe(['groups' => []]);
+})->with([
+    'no resolved grants' => [[], []],
+    'unauthorized route despite shared company and subarea' => [
+        ['route_codes' => [1], 'company_codes' => [1, 2], 'subarea_codes' => [1]], ['routes' => [5]],
+    ],
+    'conflicting region and company' => [
+        ['route_codes' => [1, 2, 3], 'company_codes' => [1], 'subarea_codes' => [1]], ['divisions' => [2], 'regions' => [100]],
+    ],
+]);
+
 test('metric endpoint passes all and only authorized journeys started in the period', function () {
     DB::table('startendday')->insert(['routekey' => 99, 'routecode' => 1, 'routestartdate' => '2026-09-06', 'routestarttime' => '08:00:00', 'routeclosed' => 1]);
     DB::table('startendday')->insert(['routekey' => 100, 'routecode' => 1, 'routestartdate' => '2026-09-05', 'routestarttime' => '08:00:00', 'routeclosed' => 0]);

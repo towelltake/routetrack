@@ -31,7 +31,11 @@ class DashboardController extends Controller
             ->where('routemaster.activestatus', 1)
             ->whereIn('routemaster.routecode', session('user_access.route_codes', []))
             ->whereIn('routemaster.cmpycode', session('user_access.company_codes', []))
-            ->whereIn('routemaster.subareacode', session('user_access.subarea_codes', []))
+            ->where(fn ($scope) => $scope
+                ->whereIn('routemaster.subareacode', session('user_access.subarea_codes', []))
+                // Route and company membership above still authorize company
+                // routes that have no descriptive geographic assignment.
+                ->orWhereNull('routemaster.subareacode'))
             ->when($requireSequence, fn ($query) => $query->whereIn('routemaster.routecode', RouteSequence::query()->select('routecode')));
 
         foreach ([
@@ -65,12 +69,8 @@ class DashboardController extends Controller
 
     public function companies(): JsonResponse
     {
-        $routedCmpyCodes = RouteMaster::query()
-            ->where('activestatus', 1)
-            ->whereIn('routecode', session('user_access.route_codes', []))
-            ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
-            ->distinct()
-            ->pluck('cmpycode');
+        $routedCmpyCodes = $this->matchingRoutes()
+            ->select('routemaster.cmpycode');
 
         $companies = CompanyMaster::query()
             ->whereIn('cmpycode', session('user_access.company_codes', []))
@@ -87,15 +87,10 @@ class DashboardController extends Controller
             'companycode' => ['nullable', 'integer'],
         ]);
 
-        $routes = RouteMaster::query()
-            ->where('activestatus', 1)
-            ->whereIn('routecode', session('user_access.route_codes', []))
-            ->whereIn('cmpycode', session('user_access.company_codes', []))
-            ->whereIn('subareacode', session('user_access.subarea_codes', []))
-            ->whereIn('routecode', RouteSequence::query()->distinct()->pluck('routecode'))
-            ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('cmpycode', $companycode))
-            ->orderBy('routename')
-            ->get(['routecode', 'routename']);
+        $routes = $this->matchingRoutes()
+            ->when($validated['companycode'] ?? null, fn ($query, $companycode) => $query->where('routemaster.cmpycode', $companycode))
+            ->orderBy('routemaster.routename')
+            ->get(['routemaster.routecode', 'routemaster.routename']);
 
         return response()->json($routes);
     }

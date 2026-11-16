@@ -1,3 +1,217 @@
+## Dashboard permission correction implemented: 2026-11-16
+
+User explicitly requested implementation, leaving egm-draft. Login resolution
+now uses company.countrycode for country grants, routemaster.regionmstcode for
+region grants, and raw route.subareacode for subarea grants/derived scope. Company
+grants retain routes without geographic master records. Area/depot retain their
+hierarchy paths; multiple entries union, legacy mixed rows keep company AND
+deepest-geography restrictions, empty/no grants deny access. Permission changes
+still apply only at next login and fully replace the previous scope.
+
+Dashboard companies/routes endpoints now reuse matchingRoutes; all Dashboard
+data/filter paths retain route/company/subarea session checks. NULL subarea is
+allowed only within explicit resolved route and company membership, avoiding
+loss of company-granted routes without geography. Active/sequence eligibility,
+existing frontend option behavior and date/metric formulas are unchanged.
+Files: AuthenticatedSessionController.php, DashboardController.php,
+LoginCompanyPermissionsTest.php, DashboardFiltersTest.php. sp_daily_summary.sql
+and other screen controllers were not edited.
+
+Installed composer.lock dependencies with --no-scripts; no migrations or database
+mutations. Focused permission/Dashboard tests: 46 completed without assertion
+failures (229 assertions), all warn about absent .env. Node filter/analytics:
+20 passed. Changed PHP files syntax checks passed. Full Unit: 4 failures,
+158 warning-only tests, 5 passed (1419 assertions). Failures directly exercise
+unchanged services: DashboardMetricsTest actual-face count 8 vs 6, two missing
+routename fixtures in DashboardCustomerDetails, DashboardOutsideVisitsTest status
+GPS tracking vs Work window. Native business database/browser validation is
+unavailable without local configuration; sign out/in to validate new scope.
+Zero-valued unused permission-field semantics remain unverified; current filled()
+handling was preserved rather than broadening legacy grants by assumption.
+
+## Confirmed Dashboard permission model: 2026-11-16
+
+Formal drafting started from concepts_brief.md using egm-draft. User approved
+Overview/Goals and Technical Plan. design_draft.md now includes Alternatives
+Considered, pending section approval. User chose permission changes effective at next successful login;
+existing sessions retain their resolved scope. Each login replaces prior scope,
+including empty grants. No per-request refresh or permission version required.
+Proposed country grants use company.countrycode and region grants use direct
+routemaster.regionmstcode; these are design choices, not applied code changes.
+Detailed implementation is not drafted or applied.
+
+User confirmed resolve each permission entry to allowed routes, union all entries,
+then derive Dashboard data and filter options from that route set. Company grants
+all its routes across regions; country resolves companies in that country then
+their routes; region resolves routes in that region; depot follows areas/subareas;
+area follows subareas; subarea resolves its routes. Derive linked company, region,
+legal entity and cluster options from allowed routes. No separate region grant is
+needed for company permission. Updated concepts_brief.md after initial seven-lens
+review; this clarification has not received a new review. Implementation pending;
+no application changes or new tests in this documentation-only update.
+
+## Planned CFT zero workaround pending confirmation: 2026-11-11
+
+User reports positive routesequencecustomerstatus.cft for the journey but zero
+Planned CFT in procedure. Cause unconfirmed without affected-row/native MySQL
+results. Replaced plan_totals reused-CTE join with direct-source scalar SUM over
+targets grouped by routekey/customer (MAX nonnegative cft), correlated to report
+journey. Preserves scheduled/active filters and original target deduplication;
+no visit target fallback. Similar to prior confirmed JP-count source workaround,
+but this CFT fix needs reinstall/retest before claiming resolution. Derived target
+aggregation may scan broader plan history; native performance unverified.
+Extracted SQL SQLite checks passed for duplicates, scheduled/active/missing-master
+filters, NULL/negative targets, journey isolation and absent plans; diff check passed.
+
+## Daily summary active routes only: 2026-11-11
+
+Added rm.activestatus = 1 to both route_directory and journeys in
+sp_daily_summary.sql, matching Dashboard's active-route filter. Applies to selected
+division and ALL, including unstarted routes; inactive/NULL-status routes excluded.
+Existing started metrics and unstarted dash presentation retained. Extracted SQL
+checks in SQLite passed for division/ALL and inactive/NULL exclusion; journey
+filter source check and git diff check passed. Native MySQL execution unverified;
+reinstall procedure to apply.
+
+## Daily summary unstarted placeholders: 2026-11-11
+
+User clarified remaining columns should show a dash. All 31 non-identity output
+columns in sp_daily_summary.sql now return '-' when joined report.routekey is
+NULL. Six identity columns remain populated. Started rows retain existing values
+and zero fallbacks. MySQL mixed dash/numeric CASE outputs have text metadata;
+numeric expressions retain rounding but exports may need numeric conversion.
+Static coverage checks for all 31 columns, SQLite absent/started-zero CASE checks
+and git diff check passed. Native MySQL unverified; reinstall procedure to apply.
+Supersedes prior notes saying unstarted metrics/dates return zero.
+
+## Daily summary includes unstarted routes: 2026-11-11
+
+sp_daily_summary.sql now starts final output from a division-scoped route directory
+and LEFT JOINs journey report rows. All routemaster routes in the selected division
+(or ALL) appear. A route with no journey starting anywhere in the selected range
+appears once, with the six supplied identity columns (Division Code, Route Code,
+Location, FSM Name, Salesman Code, Salesman Name); dates and metrics return 0.
+Range-level absence is the stated assumption; daily missing-start rows were not
+requested explicitly. User supplied six names despite initially saying seven.
+Started routes retain one row per journey and historical journey salesman; absent
+routes use routemaster.salesmancode. No status column added. CFT formulas unchanged.
+Extracted route-directory SQL checks in SQLite passed: division/ALL, unstarted,
+missing salesman, historical salesman and multiple journeys; diff check passed.
+Native MySQL execution unverified; reinstall procedure to apply.
+
+## Daily summary client JP-only CFT ratio: 2026-11-11
+
+Supersedes the time-variance formula below. Client specifies CFT COMPLIANCE as
+JP actual time / JP required time * 100 (100 at plan, uncapped above), rounded
+to 1 decimal. sp_daily_summary.sql Actual CFT outputs now sum completed on-premises
+non-OTP visits to scheduled active customers, including all repeats. Planned CFT
+sums plans.cft once per journey/customer, including unvisited customers, using
+existing MAX(nonnegative target) deduplication. Unplanned customers excluded from
+both totals. Zero denominator retains output 0. Qualified calls/JP compliance
+unchanged; Dashboard unchanged. Revisit policy if Rami provides revised guidance.
+Extracted SQL aggregation checks using SQLite passed for repeats, unplanned/OTP/
+off-premises/incomplete exclusions, unvisited targets and journey isolation;
+ratio/projection checks and git diff check passed. Native MySQL execution not
+verified; reinstall procedure to apply.
+
+## Daily summary CFT time variance: 2026-11-11
+
+Changed sp_daily_summary.sql CFT COMPLIANCE from qualified-customer percentage
+to Dashboard's time variance: 100 * (actual seconds / 60 - planned minutes) /
+planned minutes, rounded to 1 decimal. Uses the existing actual/planned CFT totals;
+negative below plan, zero at plan, uncapped positive above plan (including 120/130).
+Zero/missing planned time retains report output 0. Numeric DECIMAL(7,1) keeps
+linked-server precision bounded. Qualified calls and JP compliance unchanged.
+Static SQL expression and seven synthetic time-variance checks passed, including
+negative, zero, over-100, zero-plan and fractional-minute cases; diff check passed.
+Native MySQL execution unverified; reinstall the procedure to apply.
+
+## Daily summary Location text: 2026-11-09
+
+Location output in sp_daily_summary.sql removes every exact occurrence of
+Collection Bank using REPLACE; underlying route data is unchanged. Existing NULL
+fallback to 0 is retained. Static expression and diff checks passed; database
+execution not performed. Reinstall the procedure to apply.
+
+## Daily summary column labels: 2026-11-09
+
+Renamed sp_daily_summary.sql output headings from Actual IN MM to Actual CFT IN MM
+and arbroutename to Location, using the user's corrected capitalization.
+Expressions and column order are unchanged.
+Static label checks and git diff check passed; database execution not performed.
+Reinstall the procedure to apply the updated headings.
+
+## Daily summary whole CFT minutes: 2026-11-05
+
+Actual IN MM in sp_daily_summary.sql now rounds actual CFT minutes to the nearest
+whole minute and returns DECIMAL(18,0), removing decimal places. Column order,
+other outputs and underlying CFT seconds remain unchanged. Static expression
+check and git diff check passed; native MySQL execution unverified. Reinstall
+the procedure to apply.
+
+## Daily summary revised Excel sequence and labels: 2026-11-05
+
+Updated all 37 output columns in sp_daily_summary.sql to the latest requested
+sequence. First/last customer timestamps now follow Total Time Spent, followed
+by Operation Time. Renamed headings to First customer check-in time, Last customer
+check-out time, Qualified calls-All, Actual IN MM and Actual CFT IN HH:MM.
+JP Compliant Calls precedes JP COMPLIANCE; CFT and LPO fields follow the supplied
+order. All expressions and metric calculations retained. Static verification
+passed for all 37 names/positions and unchanged expression set; git diff check
+passed. Native MySQL execution unverified; reinstall procedure to apply.
+
+## Daily summary requested Excel column order: 2026-11-05
+
+Reordered all 37 sp_daily_summary.sql output columns to the user's supplied list.
+Operation Time now follows Total Time Spent; Non-JP Efficiency MTD is last.
+Headings match that list, superseding prior renames: CFT COMPLIANCE, Productivity,
+Efficiency, First customer checking time and Last customer checkout time.
+All output expressions and metric calculations retained. Node static validation
+passed for every column name and position; git diff check passed. Native MySQL
+execution unverified; reinstall procedure to apply.
+
+## Daily summary remove Customers Served: 2026-11-05
+
+Removed the duplicate Customers Served output column from sp_daily_summary.sql.
+Calls Made retains the same distinct active visited-customer count; calculations
+unchanged. Static absence/retained-column checks and git diff check passed.
+Native MySQL execution unverified; reinstall the procedure to apply.
+
+## Daily summary route duration: 2026-11-05
+
+Total Time Spent in sp_daily_summary.sql now uses recorded route start to recorded
+route end (start_at/close_at), formatted H:MM. Overnight dates are retained; open
+journeys, missing end timestamps and reversed durations return 0. Existing
+routeclosed=1 end-time requirement retained. Operation Time still uses first
+non-OTP check-in to last non-OTP visit checkout, independently of route duration.
+PowerShell source-linkage and synthetic same-day/overnight/zero/reversed-duration
+checks and git diff check passed. Native MySQL execution unverified; reinstall
+the procedure to apply. Existing user changes preserved.
+
+## Daily summary labels and JP compliant count: 2026-11-05
+
+sp_daily_summary.sql renames first/last customer timestamps to First customer
+check-in time / Last customer check-out time; percentage labels now read
+CFT COMPLIANCE%, Productivity% NO# of Visits and Efficiency% NO# of Unique Visit.
+Total KM Covered uses numeric DECIMAL(18,0), rounding to whole kilometres.
+Added JP Compliant Calls immediately before JP COMPLIANCE, exposing the existing
+distinct scheduled customers with a qualifying visit numerator (zero when absent).
+Metric formulas and existing user edits preserved. PowerShell static checks for
+labels, uniqueness, KM precision and JP numerator linkage passed; diff check passed.
+Python unavailable; native MySQL execution unverified. Reinstall procedure to apply.
+
+## Daily summary salesman fields, route name and receipts: 2026-11-04
+
+sp_daily_summary.sql splits Salesman Code - Name into Salesman Code (existing
+alternate-code fallback preserved) and Salesman Name. Adds routemaster.arbroutename
+after Route Code and Receipt Count after Distinct Order & Invoice Count. Receipts
+count distinct positive nonvoid arheader transactionkeys per journey using existing
+active-customer visit/operation links; repeated links count once, missing counts
+return zero. Existing user changes to productive/efficiency counts preserved.
+Static output checks, synthetic SQLite receipt aggregation (duplicates, source
+separation, journey isolation, zero receipts) and diff check passed. Native MySQL
+execution remains unverified; reinstall the procedure to apply output changes.
+
 ## Daily summary Route Code column: 2026-11-03
 
 Added Route Code immediately after Division Code in sp_daily_summary.sql's final
@@ -1965,3 +2179,55 @@ Renamed the Stationary Time card to Idle Time and bound its displayed value to
 stationary_without_customer_seconds (the popup's Idle time without customer
 visits total). Card note explicitly identifies that measure. The stationary
 popup, click action and calculations remain unchanged. Diff check passed.
+## Daily summary productive and efficiency counts: 2026-11-03
+
+Added Productive Calls before Productivity and Efficiency Count before Efficiency
+in sp_daily_summary.sql. Exposes existing percentage numerators: completed non-LPO
+productive visits (repeats count) and distinct non-LPO customers with at least one
+completed productive visit per journey. Existing active-customer, transaction-link
+and positive nonvoid sales/order/collection rules apply; percentages unchanged.
+Static projection/numerator checks and git diff check passed. Native MySQL execution
+not verified; reinstall the procedure to apply these additional output columns.
+## Dashboard welcome and login presentation: 2026-11-03
+
+Dashboard Index.vue now has a Welcome to TRAC banner using the existing Font Awesome
+chart, route and customer icons. This is a new welcome treatment in the existing
+style, not a verified exact historical restoration. Login.vue now uses a white
+rounded form card on a pale background, TRAC badge, clearer heading, username/lock
+label icons and full-width submit. Existing company artwork/logos, translations,
+form submission, remember/reset and logout handling retained. Mobile welcome hides
+decorative trailing icons. Production build, 20 dashboard Node tests and diff check
+passed; browser visual verification remains outstanding.
+## Daily summary LPO total visits: 2026-11-12
+
+Changed sp_daily_summary.sql LPO Customer calls from distinct LPO customers to
+total visits to active toplpo=1 customers per journey, including repeats and
+incomplete visits. Output label and internal lpo_customers alias retained.
+Productivity/efficiency LPO exclusions unchanged. Static expression checks and
+git diff check passed. Native MySQL execution unverified; reinstall procedure
+to apply.
+
+## Daily summary distinct LPO column: 2026-11-12
+
+Added Distinct LPO Calls immediately after LPO Customer calls in
+sp_daily_summary.sql. Counts distinct active toplpo=1 customers visited per
+journey; includes incomplete visits. Existing LPO Customer calls retains all
+visits including repeats. Started journeys without LPO visits show 0; unstarted
+routes show '-'. Static aggregation/report/output linkage checks and git diff
+check passed. Native MySQL execution unverified; reinstall procedure to apply.
+## Dashboard permission brainstorm: 2026-11-16
+
+User confirmed Dashboard data and filter options must follow permitted routes;
+multiple company/geographic grants combine as union. Company-only grants span
+its depots/routes without region restriction. Geographic chain is country >
+region > depot > area > subarea; depot links to company. Region, legal entity
+and cluster options should derive from permitted routes. Seven fresh-context
+Goldfish reviews completed; findings/proposals saved in concepts_brief.md.
+No application behavior changed. Root cause remains unconfirmed. Risks include
+route versus depot company/region mappings, stale login session scope, missing
+hierarchy and existing sequence eligibility differences between catalog/map
+and metrics/status/details. Preserve legacy mixed-row intersection pending
+explicit policy resolution. Node filter/analytics baseline: 20 passed; PHP
+tests blocked by missing vendor/autoload.php. No database changes. Next: review
+brief, settle authoritative hierarchy and diagnose a failing scenario before
+implementing a scoped correction.

@@ -1,3 +1,38 @@
+## Customer CFT detail procedure: 2026-11-16
+
+Created sp_cft_report.sql with the same three parameters/validation as
+sp_daily_summary.sql: in_divisioncode VARCHAR(50), in_startdate DATE,
+in_enddate DATE. Division uses routemaster.divisioncode; trimmed case-insensitive
+ALL supported. Inclusive dates apply to journey start, not visit dates.
+User clarified output must include only onpremisevisit = 1. Active routes and
+active customers only; one row per visit, preserving revisits and incomplete
+visits. No unvisited/unstarted placeholders. Twelve requested headers retained,
+including spelling Achived CFT IN MM. Visit start/end dates/times are separate;
+raw duration is H:MM:SS (unbounded hours), missing/reversed duration displays 0.
+Salesman uses journey historical salesman, alternate code with internal fallback;
+customer code uses alternatecode with internal fallback, name uses customername.
+
+Report follows daily-summary JP CFT rules: planned target is MAX(nonnegative cft)
+per scheduled journey/customer, DECIMAL(18,2), repeats on revisits for reference
+and must not be summed as a total. Achieved minutes are rounded whole minutes
+from completed, scheduled, on-premises, non-OTP visit seconds; other displayed
+rows return zero. Row rounding may differ from daily-summary total rounding.
+OTP candidate matching includes all active-customer visits before final premises
+filter, retaining daily-summary nearest-visit/window behavior. Holdorder/LPO do
+not exclude CFT. Standalone SQL SECURITY INVOKER procedure; application integration
+would require application session restrictions. Installation replaces only this
+new procedure; no business database changes or installation were performed.
+
+Added tests/Unit/CftReportSqlTest.php: executes extracted report SELECT over
+synthetic in-memory SQLite data with MySQL scalar-function equivalents. Four
+tests passed (27 assertions): column order, duplicate plan isolation, repeats,
+overnight timestamps, CFT exclusions, missing/inactive customers, active routes,
+missing salesman/customer alternate fallbacks, OTP nearest/window/next-start
+matching, premises flags, division/ALL/date filtering and empty ranges. PHP
+syntax and diff checks passed. Native MySQL procedure syntax/installation and
+live data/performance remain unverified; SQLite checks do not validate those.
+Existing daily-summary SQL and application code unchanged for this request.
+
 ## Company-only login authorization implemented locally: 2026-11-16
 
 User corrected countrycode to company code. This supersedes the country-only

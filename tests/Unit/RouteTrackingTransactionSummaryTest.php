@@ -63,6 +63,12 @@ test('visit transactions use dashboard amount fields and void rules', function (
         'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
     ]]);
     DB::purge('transaction_sources_test');
+    DB::statement('CREATE TABLE customeroperationscontrol (routekey integer, visitkey integer, collectiononly integer)');
+    DB::table('customeroperationscontrol')->insert([
+        ['routekey' => 7, 'visitkey' => 10, 'collectiononly' => 1],
+        ['routekey' => 7, 'visitkey' => 10, 'collectiononly' => 1],
+        ['routekey' => 99, 'visitkey' => 8, 'collectiononly' => 1],
+    ]);
     DB::statement('CREATE TABLE customermaster (customercode integer, activecustomer integer)');
     DB::table('customermaster')->insert(['customercode' => 8, 'activecustomer' => 1]);
     DB::table('customermaster')->insert(['customercode' => 9, 'activecustomer' => 0]);
@@ -112,6 +118,7 @@ test('visit transactions use dashboard amount fields and void rules', function (
     expect($visits[0]['transactions']['sales'])->toHaveCount(3)
         ->and($visits[0]['transactions']['collections'])->toHaveCount(1)
         ->and($visits[0]['transactions']['collections']->sum('amount'))->toEqual(25)
+        ->and($visits[0]['transactions']['collections']->first()['direct_collection'])->toBeTrue()
         ->and($visits[0]['transactions']['sales']->first()['visitkey'])->toBe(8);
     expect((new ReflectionMethod(RouteTrackingController::class, 'summarizeEfficiency'))->invoke($controller, $visits))
         ->toMatchArray([

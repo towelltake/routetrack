@@ -35,7 +35,6 @@ beforeEach(function () {
         'customermaster (customercode integer, alternatecode text, customername text, activecustomer integer)',
         'customervisitlog (routekey integer, logkey integer, customercode integer, onpremisevisit integer, logstartdate text, logstarttime text, logenddate text, logendtime text)',
         'routesequencecustomerstatus (routekey integer, customercode integer, schelduledflag integer, cft real)',
-        'otplogdetail (otplogid integer, routecode integer, customercode integer, otpdate text, otptime text)',
     ] as $table) $db->exec('CREATE TABLE '.$table);
     $db->exec("INSERT INTO routemaster VALUES (1,'A',1),(2,'B',1),(3,'A',0),(4,'A',1)");
     $db->exec("INSERT INTO startendday VALUES
@@ -60,37 +59,22 @@ beforeEach(function () {
         (40,11,1,1,'2026-11-02','04:00:00','2026-11-02','04:10:00')");
 });
 
-test('CFT report keeps visit detail and excludes ineligible time without multiplying plans', function () {
+test('CFT report keeps visit durations without multiplying plans', function () {
     $rows = cftReportRows($this->cftDb, ' A ');
     expect($rows)->toHaveCount(5);
-    expect(array_keys($rows[0]))->toBe(['ROUTECODE', 'SALESMANCODE', 'SALESMAN', 'CUST CODE', 'CUSTOMER NAME', 'START DATE', 'START TIME', 'END DATE', 'END TIME', 'DURATION', 'Planned CFT', 'Achived CFT IN MM']);
+    expect(array_keys($rows[0]))->toBe(['ROUTECODE', 'SALESMANCODE', 'SALESMAN', 'CUST CODE', 'CUSTOMER NAME', 'START DATE', 'START TIME', 'END DATE', 'END TIME', 'Achieved CFT per visit', 'Planned CFT']);
     expect($rows[0]['SALESMANCODE'])->toBe('S7')
         ->and($rows[0]['CUST CODE'])->toBe('C1')
         ->and($rows[0]['START DATE'])->toBe('01/11/2026')
         ->and($rows[0]['END DATE'])->toBe('02/11/2026')
-        ->and($rows[0]['DURATION'])->toBe('0:20:00')
+        ->and($rows[0]['Achieved CFT per visit'])->toBe('0:20:00')
         ->and($rows[0]['Planned CFT'])->toEqual(15)
-        ->and(array_column($rows, 'Achived CFT IN MM'))->toEqual([20, 5, 0, 0, 0])
         ->and($rows[2]['END DATE'])->toBe('0')
-        ->and($rows[2]['DURATION'])->toBe('0')
-        ->and($rows[3]['DURATION'])->toBe('0')
+        ->and($rows[2]['Achieved CFT per visit'])->toBe('0')
+        ->and($rows[3]['Achieved CFT per visit'])->toBe('0')
+        ->and($rows[4]['Achieved CFT per visit'])->toBe('0:10:00')
         ->and($rows[4]['CUST CODE'])->toBe('2')
         ->and($rows[4]['Planned CFT'])->toEqual(0);
-});
-
-test('CFT report matches nearest OTP visit once and ignores events beyond journey closure', function () {
-    $this->cftDb->exec("INSERT INTO otplogdetail VALUES
-        (1,1,1,'2026-11-02','00:31:00'),
-        (2,1,1,'2026-11-02','00:32:00'),
-        (3,1,1,'2026-11-02','03:30:00')");
-    $rows = cftReportRows($this->cftDb, 'A');
-    expect($rows)->toHaveCount(5)
-        ->and(array_column($rows, 'Achived CFT IN MM'))->toEqual([20, 0, 0, 0, 0]);
-    // An open journey is instead bounded by its next start, even outside range.
-    $this->cftDb->exec("UPDATE startendday SET routeclosed=0 WHERE routekey=10");
-    $this->cftDb->exec("DELETE FROM otplogdetail");
-    $this->cftDb->exec("INSERT INTO otplogdetail VALUES (4,1,1,'2026-11-02','04:01:00')");
-    expect(cftReportRows($this->cftDb, 'A')[0]['Achived CFT IN MM'])->toEqual(20);
 });
 
 test('CFT report scopes by division and journey start including ALL and empty results', function () {
@@ -99,18 +83,16 @@ test('CFT report scopes by division and journey start including ALL and empty re
         ->and($rows[0]['SALESMANCODE'])->toBe('8')
         ->and($rows[0]['SALESMAN'])->toBe('0')
         ->and($rows[0]['Planned CFT'])->toEqual(0)
-        ->and($rows[0]['Achived CFT IN MM'])->toEqual(2)
+        ->and($rows[0]['Achieved CFT per visit'])->toBe('0:01:30')
         ->and(cftReportRows($this->cftDb, 'missing'))->toBe([])
         ->and(cftReportRows($this->cftDb, 'ALL', '2026-11-03', '2026-11-03'))->toBe([])
         ->and(cftReportRows($this->cftDb, 'A', '2026-11-02', '2026-11-02'))->toHaveCount(1);
 });
 
-test('CFT report excludes null and other premises flags without reassigning their OTP events', function () {
+test('CFT report excludes null and other premises flags', function () {
     $this->cftDb->exec("INSERT INTO customervisitlog VALUES
         (10,12,1,NULL,'2026-11-02','02:21:00','2026-11-02','02:22:00'),
         (10,13,1,2,'2026-11-02','02:23:00','2026-11-02','02:24:00')");
-    $this->cftDb->exec("INSERT INTO otplogdetail VALUES (5,1,1,'2026-11-02','01:01:00')");
     $rows = cftReportRows($this->cftDb, 'A');
-    expect($rows)->toHaveCount(5)
-        ->and(array_column($rows, 'Achived CFT IN MM'))->toEqual([20, 5, 0, 0, 0]);
+    expect($rows)->toHaveCount(5);
 });

@@ -1120,9 +1120,10 @@ class RouteTrackingController extends Controller
                 ->where(fn ($query) => $query->whereNull('voidflag')->orWhere('voidflag', 0))
                 ->orderBy('transactiondate')
                 ->orderBy('transactiontime')
-                ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), DB::raw("{$config['returns']} as return_amount"), 'voidflag'])
+                ->get(['transactionkey', 'visitkey', 'documentnumber', 'transactiondate', 'transactiontime', DB::raw("{$config['amount']} as amount"), DB::raw("{$config['returns']} as return_amount"), 'voidflag', DB::raw($type === 'collections' ? 'EXISTS (SELECT 1 FROM customeroperationscontrol coc WHERE coc.routekey = arheader.routekey AND coc.visitkey = arheader.visitkey AND coc.collectiononly = 1) as direct_collection' : '0 as direct_collection')])
                 ->map(fn (object $transaction) => [
                     'type' => $type,
+                    'direct_collection' => (bool) $transaction->direct_collection,
                     'transactionkey' => (int) $transaction->transactionkey,
                     'visitkey' => (int) $transaction->visitkey,
                     'documentnumber' => (string) $transaction->documentnumber,

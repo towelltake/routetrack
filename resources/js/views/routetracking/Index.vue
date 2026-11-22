@@ -1843,6 +1843,7 @@ function focusEnd() {
                                 >
                                     <div>
                                         <strong>Document {{ transaction.documentnumber }}</strong>
+                                        <span v-if="transaction.direct_collection" class="badge bg-primary ms-2">Direct Collection</span>
                                         <span v-if="transaction.voided" class="badge bg-danger ms-2">Voided</span>
                                         <div class="small text-muted">{{ transaction.date }} {{ transaction.time }}</div>
                                     </div>
@@ -1856,7 +1857,7 @@ function focusEnd() {
                                 <button type="button" class="btn btn-sm btn-light mb-3" @click="selectTransactionType(selectedTransactionType)">
                                     <i class="fa fa-arrow-left me-1"></i> Back
                                 </button>
-                                <h6>Document {{ selectedTransaction.documentnumber }}</h6>
+                                <h6>Document {{ selectedTransaction.documentnumber }} <span v-if="selectedTransaction.direct_collection" class="badge bg-primary ms-2">Direct Collection</span></h6>
                                 <div v-if="transactionDetailsLoading" class="text-muted">Loading details...</div>
                                 <div v-else-if="!transactionDetails.length" class="text-muted">No detail records available.</div>
                                 <div v-else class="table-responsive">

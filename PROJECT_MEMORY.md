@@ -1,3 +1,50 @@
+## CFT report duration column: 2026-11-22
+
+Updated sp_cft_report.sql to remove the rounded achieved-minutes column and
+rename DURATION to Achieved CFT per visit. It still displays raw H:MM:SS for
+each on-premises visit, with 0 for missing or reversed timestamps. Removed OTP
+matching used solely by the deleted column. Updated CftReportSqlTest.php.
+Both report test files passed (7 tests, 56 assertions). Diff check passed.
+Native MySQL verification and procedure installation remain pending.
+
+## Customer visit qualification procedure: 2026-11-17
+
+Created sp_customer_visit_report.sql with daily-summary parameters and validation:
+in_divisioncode VARCHAR(50), in_startdate DATE, in_enddate DATE. Trimmed
+case-insensitive ALL supported; divisioncode and inclusive journey START dates.
+Active routes/customers only. User confirmed one row per individual visit and
+Non-Premise Vist (OTP) uses customervisitlog.onpremisevisit exactly 0 (not OTP
+matching); NULL/other flags return No. Repeats and incomplete/unplanned visits
+remain visible; unvisited plans have no rows. Nine requested headers retained.
+Division is divisioncode; historical journey salesman; customer alternatecode
+with internal fallback and customername. Planned Call is scheduled plan existence;
+Actual Visit is always Yes for these recorded visits. CFT Achieved follows daily
+summary per-visit qualification: positive visit cft target met by valid completed
+on-premises duration with no matched OTP. Short revisits are not summed; no
+holdorder/LPO exclusion. OTP matching remains used only for CFT exclusion, with
+existing nearest-visit/window/next-start rules. SQL SECURITY INVOKER, SELECT-only
+calls; script replaces only this new procedure. No installation/data changes.
+Tests/Unit/CustomerVisitReportSqlTest.php executes extracted SELECT in synthetic
+SQLite with MySQL scalar equivalents. New and existing CFT tests: 8 passed,
+60 assertions. PHP syntax and diff checks passed. Native MySQL syntax,
+installation and live performance unverified. Prior popup changes preserved.
+
+## Direct Collection popup marker: 2026-11-17
+
+Dashboard and Route Tracking collection popups now label receipts Direct Collection
+when customeroperationscontrol.collectiononly = 1 for the receipt's exact
+(routekey, visitkey). User confirmed this source flag. Correlated EXISTS avoids
+receipt duplication from duplicate operation rows and prevents cross-journey
+visitkey collisions. No amount, authorization or metric formulas changed.
+Route Tracking retains the marker in its document-detail heading.
+Files: DashboardCustomerDetails.php, RouteTrackingController.php, Dashboard
+CustomerDetailsDialog.vue and Route Tracking Index.vue; SQLite fixtures updated
+with collectiononly. Focused receipt tests pass (37 assertions), covering duplicate
+links and journey isolation. Production build passed. Broader focused suite had
+61 warning-only tests and three previously documented Dashboard failures (face
+count and missing routename fixtures); local .env absent. Live DB/browser behavior
+not verified. No database mutation or deployment performed.
+
 ## Customer CFT detail procedure: 2026-11-16
 
 Created sp_cft_report.sql with the same three parameters/validation as

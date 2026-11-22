@@ -314,6 +314,11 @@ test('face time details retain individual visits and handle missing plans incomp
 });
 
 test('transaction drilldowns list headers once and returns only from both sources with negative amounts', function () {
+    DB::table('customeroperationscontrol')->insert([
+        ['primary_id' => 900, 'routekey' => 2, 'visitkey' => 500, 'collectiononly' => 1],
+        ['primary_id' => 901, 'routekey' => 2, 'visitkey' => 500, 'collectiononly' => 1],
+        ['primary_id' => 902, 'routekey' => 1, 'visitkey' => 501, 'collectiononly' => 0],
+    ]);
     foreach (['invoiceheader', 'salesorderheader', 'arheader'] as $table) {
         foreach (['transactionkey integer', 'documentnumber text', 'transactiondate text', 'transactiontime text'] as $column) DB::statement("ALTER TABLE {$table} ADD COLUMN {$column}");
         DB::table($table)->update(['customercode' => 101, 'transactionkey' => 1, 'documentnumber' => 'D1', 'transactiondate' => '2026-09-02', 'transactiontime' => '10:00:00']);
@@ -324,6 +329,8 @@ test('transaction drilldowns list headers once and returns only from both source
     $sales = $service->build($journeys, 'sales')['groups'][0]['rows'];
     expect($sales)->toHaveCount(2)->and($sales->sum('amount'))->toEqual(150)->and($sales[0]['currency'])->toBe('OMR');
     expect($service->build($journeys, 'orders')['groups'][0]['rows']->sum('amount'))->toEqual(60);
+    DB::table('arheader')->insert(['routekey' => 1, 'customercode' => 101, 'visitkey' => 500, 'transactionkey' => 900, 'amountpaid' => 10, 'voidflag' => 0]);
+    expect($service->build($journeys, 'collections')['groups'][0]['rows'][0]['direct_collection'])->toBeFalse();
     foreach (['invoiceheader', 'salesorderheader'] as $table) DB::table($table)->where('routekey', 1)->where('visitkey', 500)->update(['totalreturnamount' => 3, 'totaldamagedamount' => 2]);
     DB::table('invoiceheader')->insert(['routekey' => 1, 'voidflag' => 1, 'totalreturnamount' => 99]);
     $returns = $service->build($journeys, 'returns')['groups'][0]['rows'];
@@ -332,6 +339,8 @@ test('transaction drilldowns list headers once and returns only from both source
     $journeys = DB::table('startendday')->where('routekey', 2)->get();
     $journeys->each(function ($journey) { $journey->routename = 'Route'; $journey->salesman = 'Salesman'; });
     expect($service->build($journeys, 'collections')['groups'][0]['rows']->sum('amount'))->toEqual(75);
+    expect($service->build($journeys, 'collections')['groups'][0]['rows'])->toHaveCount(1)
+        ->and($service->build($journeys, 'collections')['groups'][0]['rows'][0]['direct_collection'])->toBeTrue();
 });
 
 test('duration drilldown shares card timing for closed open and unavailable journeys', function () {
@@ -380,7 +389,7 @@ beforeEach(function () {
         'routesequencecustomerstatus (cft integer default 0, routekey integer, customercode integer, schelduledflag integer, sequencenumber integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
         'customervisitlog (onpremisevisit integer default 1, holdorder integer default 0, logkey integer, routekey integer, customercode integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft integer, autocheckout integer default 0)',
-        'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer)',
+        'customeroperationscontrol (collectiononly integer, primary_id integer, routekey integer, log_id integer, visitkey integer)',
         'invoiceheader (customercode integer default 101, routekey integer, visitkey integer, totalsalesamount decimal, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'salesorderheader (customercode integer default 101, routekey integer, visitkey integer, totalinvoiceamount decimal, currencycode integer, voidflag integer, totalreturnamount decimal, totaldamagedamount decimal)',
         'arheader (customercode integer default 101, routekey integer, visitkey integer, amountpaid decimal, currencycode integer, voidflag integer)',

@@ -16,7 +16,7 @@ test('dashboard and tracking use recorded visit CFT without master fallback', fu
         'routesequencecustomerstatus (cft integer default 0, routekey integer, customercode integer, schelduledflag integer)',
         'customerclustermapping (divisioncode text, channel text, cft integer, UNIQUE (divisioncode, channel))',
         'customervisitlog (onpremisevisit integer default 1, holdorder integer default 0, logkey integer, customercode integer, routekey integer, logstartdate text, logstarttime text, logenddate text, logendtime text, cft real, autocheckout integer default 0)',
-        'customeroperationscontrol (primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
+        'customeroperationscontrol (collectiononly integer, primary_id integer, routekey integer, log_id integer, visitkey integer, latitude real, longitude real)',
     ] as $table) {
         DB::statement('CREATE TABLE '.$table);
     }

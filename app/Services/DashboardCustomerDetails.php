@@ -305,11 +305,13 @@ class DashboardCustomerDetails
             else $query->where(fn ($q) => $q->whereNull('voidflag')->orWhere('voidflag', 0));
             $records = $query->orderBy('transactiondate')->orderBy('transactiontime')->get([
                 'routekey', 'customercode', 'transactionkey', 'documentnumber', 'transactiondate', 'transactiontime', 'currencycode', DB::raw($expression.' as amount'),
+                DB::raw($source === 'collections' ? 'EXISTS (SELECT 1 FROM customeroperationscontrol coc WHERE coc.routekey = arheader.routekey AND coc.visitkey = arheader.visitkey AND coc.collectiononly = 1) as direct_collection' : '0 as direct_collection'),
             ]);
             foreach ($records as $record) $rows->push([
                 'id' => $source.':'.$record->transactionkey, 'routekey' => $record->routekey, 'customercode' => $record->customercode,
                 'date' => $record->transactiondate, 'time' => $record->transactiontime, 'document' => $record->documentnumber,
                 'source' => ['sales' => 'Invoice', 'orders' => 'Order', 'collections' => 'Receipt'][$source],
+                'direct_collection' => (bool) $record->direct_collection,
                 'currencycode' => (int) ($record->currencycode ?? 0), 'amount' => (float) $record->amount * ($type === 'returns' ? -1 : 1),
             ]);
         }

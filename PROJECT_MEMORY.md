@@ -1,3 +1,66 @@
+## MTD route activity summary procedure: 2026-11-23
+
+Added sp_mtd_route_activity_report.sql with 31 report columns, including FSM
+Name from the journey salesman's arbsalesmanname1. The division/ALL and
+inclusive journey-start date parameters follow sp_daily_summary. Returns one
+row per division and journey salesman with a recorded journey in the range.
+Daily-summary journey metrics are totaled across journeys; percentages use
+summed numerators and denominators. JP and non-JP efficiency MTD count distinct
+converted non-LPO customers across the salesman's routes within a division,
+from the first of the end date's month through the end date. A plan on any
+of those journeys classifies the customer as JP for the period.
+
+An isolated MySQL 8.4.7 fixture passed output count, FSM mapping, division
+and ALL grouping, overnight duration, summed time/KM/JP/CFT/receipts, and
+MTD conversion deduplication and scope. The existing procedures were not
+changed for this request. Business database installation and live performance
+verification remain pending.
+
+## Route activity missing visit times: 2026-11-23
+
+Each customer visit time field displays OFF PRIMISE when its timestamp is
+unavailable. Available times display as HH:MM:SS. Unavailable customer face
+durations display as 0, verified on MySQL 8.4.7 for valid, incomplete, and
+missing visits. Missing document numbers display as numeric 0. MySQL 8.4.7
+fixtures passed for complete, partial, and missing visit times and for missing
+document numbers. Business database installation remains pending.
+
+## Route activity reason display: 2026-11-23
+
+NON SERVICED rows display an empty string when the reason lookup has no
+description. Other transaction types continue to display VISITED.
+
+## Route activity FSM column: 2026-11-23
+
+Added FSM Name before Salesman Name in sp_route_activity_report.sql. It uses
+salesman.arbsalesmanname1 from the journey salesman, matching sp_daily_summary.
+An isolated MySQL 8.4.7 fixture verified distinct FSM and salesman values on
+all seven report rows. Business database installation remains pending.
+
+## Route activity report procedure: 2026-11-23
+
+Added sp_route_activity_report.sql with the CFT report's division/ALL and
+inclusive journey-start date parameters. Active routes and customers only.
+Returns the 18 requested columns, one row per non-void order/invoice/AR
+receipt/no-sale document, with a NON SERVICED fallback for an operation
+without documents. Uses nonservreasons descriptions with reason-code
+fallback, and VISITED for other rows. Invoice amountpaid populates Amount
+Collected; arheader.amountpaid populates Receipt Collected. Transaction
+Amount uses invoice/order totalinvoiceamount. Transaction Date uses each
+document's date with activity date for documentless rows. Route uses route
+code and Customer uses customer name. Activity comes from operations and
+visit timing from routekey/log_id. Durations use elapsed whole minutes and
+support overnight activity. Planned CFT is the maximum nonnegative scheduled
+target per journey/customer and repeats across relevant rows.
+
+The procedure is standalone, SQL SECURITY INVOKER and SELECT-only when
+called. No application endpoint or business database installation.
+An isolated MySQL 8.4.7 synthetic fixture passed division/ALL, journey
+date scope, mixed documents, void filtering, collection totals, no-service
+reasons, overnight duration and planned CFT checks. Existing CFT and
+customer visit SQL tests passed (7 tests, 56 assertions). Live performance
+and business database verification remain pending.
+
 ## CFT report duration column: 2026-11-22
 
 Updated sp_cft_report.sql to remove the rounded achieved-minutes column and
